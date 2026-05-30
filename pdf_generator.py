@@ -634,9 +634,15 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         resolved = split_and_resolve_fonts(str(text), current_font)
         cx = x
         for part, font in resolved:
+            try:
+                from reportlab.pdfbase.ttfonts import shapeStr
+                shaped_part = shapeStr(part, font, current_size)
+            except Exception:
+                shaped_part = part
+            
             c.setFont(font, current_size)
-            canvas.Canvas.drawString(c, cx, y, part, mode=mode, charSpace=charSpace)
-            cx += c.stringWidth(part, font, current_size)
+            canvas.Canvas.drawString(c, cx, y, shaped_part, mode=mode, charSpace=charSpace)
+            cx += c.stringWidth(shaped_part, font, current_size)
         c.setFont(current_font, current_size)
 
     def patched_drawCentredString(x, y, text, mode=None, charSpace=0):
@@ -644,15 +650,22 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         current_size = c._fontsize
         resolved = split_and_resolve_fonts(str(text), current_font)
         
+        shaped_resolved = []
         total_width = 0
         for part, font in resolved:
-            total_width += c.stringWidth(part, font, current_size)
+            try:
+                from reportlab.pdfbase.ttfonts import shapeStr
+                shaped_part = shapeStr(part, font, current_size)
+            except Exception:
+                shaped_part = part
+            shaped_resolved.append((shaped_part, font))
+            total_width += c.stringWidth(shaped_part, font, current_size)
             
         cx = x - total_width / 2.0
-        for part, font in resolved:
+        for shaped_part, font in shaped_resolved:
             c.setFont(font, current_size)
-            canvas.Canvas.drawString(c, cx, y, part, mode=mode, charSpace=charSpace)
-            cx += c.stringWidth(part, font, current_size)
+            canvas.Canvas.drawString(c, cx, y, shaped_part, mode=mode, charSpace=charSpace)
+            cx += c.stringWidth(shaped_part, font, current_size)
         c.setFont(current_font, current_size)
 
     def patched_drawRightString(x, y, text, mode=None, charSpace=0):
@@ -660,15 +673,22 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         current_size = c._fontsize
         resolved = split_and_resolve_fonts(str(text), current_font)
         
+        shaped_resolved = []
         total_width = 0
         for part, font in resolved:
-            total_width += c.stringWidth(part, font, current_size)
+            try:
+                from reportlab.pdfbase.ttfonts import shapeStr
+                shaped_part = shapeStr(part, font, current_size)
+            except Exception:
+                shaped_part = part
+            shaped_resolved.append((shaped_part, font))
+            total_width += c.stringWidth(shaped_part, font, current_size)
             
         cx = x - total_width
-        for part, font in resolved:
+        for shaped_part, font in shaped_resolved:
             c.setFont(font, current_size)
-            canvas.Canvas.drawString(c, cx, y, part, mode=mode, charSpace=charSpace)
-            cx += c.stringWidth(part, font, current_size)
+            canvas.Canvas.drawString(c, cx, y, shaped_part, mode=mode, charSpace=charSpace)
+            cx += c.stringWidth(shaped_part, font, current_size)
         c.setFont(current_font, current_size)
 
     c.drawString = patched_drawString
