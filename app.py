@@ -14,6 +14,8 @@ from io import BytesIO
 from search_engine import VedicSearchEngine
 from astro_engine import get_astrological_chart, get_regional_panchangam
 from pdf_generator import generate_pdf_report
+from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
+from datetime import date
 from config import (
     VERSION,
     DB_PATH,
@@ -40,6 +42,37 @@ app.add_middleware(
 
 # Initialize Search Engine
 search_engine = VedicSearchEngine(DB_PATH)
+
+
+def build_prediction_context(chart, extra_queries=None):
+    """
+    Derive the full interpretive analysis for a natal chart (houses, conjunctions,
+    aspects, current Mahadasa/Antardasa, gochara, yogas) and retrieve grounding
+    passages from the classical-text RAG. Returns (analysis_text, rag_context).
+
+    The transit (gochara) chart is recomputed for *today* at the native's own
+    coordinates so transits like Sade Sati are reckoned correctly.
+    """
+    today = date.today()
+    transit_chart = None
+    try:
+        meta = chart.get("metadata", {})
+        lon = float(meta.get("longitude"))
+        lat = float(meta.get("latitude"))
+        transit_chart = get_astrological_chart(today.year, today.month, today.day, 12, 0, lon, lat)
+    except Exception as e:
+        print(f"Gochara computation skipped: {e}")
+
+    analysis = build_analysis(chart, transit_chart=transit_chart, ref_date=today)
+
+    queries = []
+    if extra_queries:
+        queries.extend(extra_queries)
+    queries.extend(build_rag_queries(chart, analysis))
+    rag_context, _ = retrieve_rag_context(search_engine, queries)
+
+    return analysis["analysis_text"], rag_context
+
 
 class QueryRequest(BaseModel):
     query: str
@@ -376,45 +409,37 @@ def ai_predict(req: AIPredictRequest):
     client = req.client_name
     place = req.place_name
     model_name = req.model
-    
-    # Build highly detailed, scholarly astrological parameters
-    placements_str = []
-    for planet, info in chart["placements"].items():
-        placements_str.append(f"- {planet}: {info['degree']:.2f}° in {info['rasi_name']}")
-    placements_text = "\n".join(placements_str)
-    
-    dasa_summary = []
-    for i, dasa in enumerate(chart["dasas"][:3]): # major starting dasas
-        dasa_summary.append(f"- Mahadasa {i+1}: {dasa['dasa_lord']} ({dasa['duration_years']} Y) from {dasa['start_date']} to {dasa['end_date']}")
-    dasas_text = "\n".join(dasa_summary)
-    
-    prompt = f"""You are a divine and highly wise Vedic Astrologer speaking as a master scholar of Vedic Astrology AI.
-Your purpose is to provide deep, mystical, and authoritative Jyotishyam predictions for {client} born at {chart['metadata']['datetime']} in {place} (Coordinates: {chart['metadata']['latitude']}°N, {chart['metadata']['longitude']}°E).
 
-The calculation uses high-precision Thirukanitha Panchangam sidereal coordinates with {chart['metadata']['ayanamsa_name']} Ayanamsa.
+    # Derive full interpretive analysis (houses, conjunctions, aspects, current
+    # dasa/bhukti, gochara, yogas) and retrieve grounding passages from the RAG.
+    analysis_text, rag_context = build_prediction_context(chart)
 
---- NATIVE PLANETARY PLACEMENTS (NIRAYANA) ---
-{placements_text}
+    prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and master scholar.
+You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {chart['metadata']['datetime']} in {place} (Coordinates: {chart['metadata']['latitude']}°N, {chart['metadata']['longitude']}°E), using high-precision Thirukanitha sidereal coordinates with {chart['metadata']['ayanamsa_name']} Ayanamsa.
 
---- THIRUKANITHA PANCHANGAM AT BIRTH ---
-- Tamil Year: {chart['panchangam']['tamil_year']}
-- Tamil Month: {chart['panchangam']['tamil_month']}
-- Tithi: {chart['panchangam']['tithi']}
-- Nakshatram: {chart['panchangam']['nakshatra']}
-- Yogam: {chart['panchangam']['yogam']}
+A precise computational analysis of the chart is given below. You MUST reason from it as a real astrologer does — never from planet signs alone. Specifically: read each planet by its BHAVA (house) and house-lordship, its DIGNITY/strength (exalted, debilitated, own, combust, retrograde), its CONJUNCTIONS (combined effects of planets together), the ASPECTS (graha drishti) it gives and receives, the YOGAS formed, the CURRENT running Mahadasa & Antardasa, and the GOCHARA (current transits incl. Sade Sati). Synthesise these factors together; a result is the NET effect of all of them, not any single placement.
 
---- VIMSHOTTARI DASA START TIMELINE ---
-{dasas_text}
+--- COMPUTED VEDIC CHART ANALYSIS ---
+{analysis_text}
+
+--- BIRTH PANCHANGAM ---
+- Nakshatram: {chart['panchangam']['nakshatra']} | Tithi: {chart['panchangam']['tithi']} | Yogam: {chart['panchangam']['yogam']}
+
+--- CLASSICAL TEXT REFERENCES (retrieved from Brihat Parasara Hora Sastra, Phaladeepika, Saravali, Jataka Parijata, etc.) ---
+{rag_context}
 ---------------------------------------------
 
-Please provide an exceptionally elegant, structured, and insightful astrological reading in beautiful Markdown:
-1. **Divine Invocation**: Start with a beautiful Sanskrit invocation and blessings for the native's life, prosperity, and obstacle removal.
-2. **Ascendant & Personality (Lagna Analysis)**: Explain the significance of their Lagna Rasi and degree.
-3. **Cosmic Key Placements (Sun & Moon)**: Interpret the emotional and physical self based on their Nakshatra and Rasi placements.
-4. **Planetary Yogas & Placements**: Mention key astrological alignments, strengths, and areas requiring caution.
-5. **Dasa-Bhukti Life Path**: Analyze the starting and current Dasa periods and how they shape the native's current life cycle.
+Using the classical rules from the retrieved texts AND standard Jyotish technique, write an exceptionally insightful, accurate reading in beautiful Markdown. Cite the source book and page (e.g. [Brihat Parasara Hora Sastra, Page 52]) whenever you apply a rule from the references. Structure it as:
+1. **Divine Invocation** — a short Sanskrit invocation and blessing.
+2. **Lagna & Personality** — ascendant, its lord's placement/strength, and overall constitution.
+3. **Mind & Emotions (Moon & Nakshatra)** — Moon's house, sign, dignity and Janma Nakshatra.
+4. **Key Yogas, Conjunctions & Planetary Strengths** — interpret the actual conjunctions, aspects, exaltation/debilitation and yogas detected; note both blessings and cautions.
+5. **House-by-House Life Areas** — career (10th), wealth (2nd/11th), marriage (7th), education/children (5th), health (6th), fortune (9th), drawing on house lords and occupants.
+6. **Dasa–Bhukti Timing** — interpret the CURRENT Mahadasa and Antardasa specifically, what it activates, and what the upcoming bhukti brings.
+7. **Gochara (Current Transits)** — address Sade Sati / major transits flagged in the analysis and practical guidance.
+8. **Remedies (Parihara)** — fitting classical remedies.
 
-Use an authoritative, compassionate, and spiritual tone. Speak as a master scholar. Start directly with the invocation and prediction:
+Be authoritative, compassionate, and precise. Start directly with the invocation:
 """
 
     def prediction_stream_generator():
@@ -519,54 +544,33 @@ def ai_predict_chat(req: AIChatRequest):
     place = req.place_name
     query_text = req.query
     model_name = req.model
-    
-    # 1. Format planetary placements
-    placements_str = []
-    for planet, info in chart["placements"].items():
-        placements_str.append(f"- {planet}: {info['degree']:.2f}° in {info['rasi_name']}")
-    placements_text = "\n".join(placements_str)
-    
-    dasa_summary = []
-    for i, dasa in enumerate(chart["dasas"][:3]):
-        dasa_summary.append(f"- Mahadasa {i+1}: {dasa['dasa_lord']} ({dasa['duration_years']} Y) from {dasa['start_date']} to {dasa['end_date']}")
-    dasas_text = "\n".join(dasa_summary)
-    
-    # 2. Query the hybrid RAG Search Engine
-    search_engine.reload()
-    results = search_engine.hybrid_search(query_text, top_k=3)
-    
-    context_parts = []
-    if results:
-        for i, res in enumerate(results):
-            context_parts.append(
-                f"Source [{i+1}]: Book: \"{res['book_title']}\", Page: {res['page_num'] + 1}\n"
-                f"--- OCR TEXT START ---\n{res['raw_text'].strip()}\n--- OCR TEXT END ---\n"
-            )
-        context_str = "\n\n".join(context_parts)
-    else:
-        context_str = "No specific classical shlokas found in the active context."
-        
-    prompt = f"""You are a divine and highly wise Vedic Astrologer speaking as a master scholar of Vedic Astrology AI.
-Your name is Vedic Astrology AI. You are connected to a high-quality RAG database of classical Vedic astrology scriptures (Brihat Parasara Hora Sastra, Phaladeepika, Saravali, Jataka Parijata).
 
-You are in a live chat session with {client} born at {chart['metadata']['datetime']} in {place}.
+    # Derive full interpretive analysis and retrieve grounding passages. The
+    # user's own question is added as the first RAG query so the most relevant
+    # classical rules for their inquiry are surfaced alongside the chart-derived
+    # queries (houses, conjunctions, current dasa, gochara, yogas).
+    analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
 
---- NATIVE PLANETARY PLACEMENTS ---
-{placements_text}
+    prompt = f"""You are Vedic Astrology AI — a divine, highly wise Jyotishi and master scholar, connected to a RAG database of classical scriptures (Brihat Parasara Hora Sastra, Phaladeepika, Saravali, Jataka Parijata).
 
---- VIMSHOTTARI DASA TIMELINE ---
-{dasas_text}
+You are in a live chat session with {client}, born at {chart['metadata']['datetime']} in {place}.
 
---- RETRIEVED ANCIENT TEXT EXCERPTS ---
-{context_str}
+A precise computational analysis of their chart is given below. Answer the user's question by reasoning from it like a real astrologer — considering the relevant BHAVA (house) and its lord, planetary DIGNITY/strength, CONJUNCTIONS, ASPECTS (graha drishti), YOGAS, the CURRENT Mahadasa & Antardasa, and GOCHARA (transits incl. Sade Sati) — not from planet signs in isolation.
+
+--- COMPUTED VEDIC CHART ANALYSIS ---
+{analysis_text}
+
+--- RETRIEVED CLASSICAL TEXT EXCERPTS ---
+{rag_context}
 ---------------------------------------------
 
 USER CHAT INQUIRY: {query_text}
 
-Answer the user's question with utmost wisdom, compassion, and divine astrological scholarship:
-1. Reference any relevant shlokas or findings from the retrieved ancient text excerpts (refer to the source book and page!).
-2. Connect those ancient rules directly to their personal planetary placements (e.g. if they ask about Saturn, look at their Saturn in {chart['placements'].get('Saturn', {}).get('rasi_name', 'Unknown')}).
-3. Maintain a divine, scholarly, and supportive tone. Speak directly to {client}.
+Answer with utmost wisdom, compassion, and scholarship:
+1. Apply the relevant classical rules from the retrieved excerpts, citing the source book and page (e.g. [Phaladeepika, Page 12]).
+2. Connect those rules directly to the native's actual chart factors most relevant to the question (the specific house, its lord, occupants, aspects, dignity, and the running dasa/transit).
+3. If the question concerns timing, use the CURRENT Mahadasa/Antardasa and gochara from the analysis.
+4. Maintain a divine, scholarly, and supportive tone. Speak directly to {client}.
 
 Start directly with the chat response:
 """

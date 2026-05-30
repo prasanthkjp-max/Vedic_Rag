@@ -10,6 +10,7 @@ from config import (
     EMBEDDING_MODEL,
     EMBEDDING_DIM,
     OLLAMA_EMBED_URL,
+    OLLAMA_EMBED_BATCH_URL,
     EMBED_TIMEOUT,
     connect_db,
 )
@@ -24,6 +25,10 @@ class VedicSearchEngine:
         # Guards index mutation: FastAPI runs sync endpoints in a threadpool, so
         # concurrent reload()/search calls would otherwise race on the arrays.
         self._lock = threading.Lock()
+        # Caches query-text -> embedding. Embedding on the Pi CPU is ~3s each, so
+        # caching makes repeated/identical queries (common across predictions)
+        # effectively free.
+        self._embed_cache = {}
         self.load_index()
 
     def get_ollama_embedding(self, text):
@@ -49,6 +54,48 @@ class VedicSearchEngine:
         except Exception as e:
             print(f"Error generating embedding in search engine: {e}")
             return None
+
+    def get_ollama_embeddings_batch(self, texts):
+        """
+        Embed many texts in a single /api/embed round trip (the Pi computes them
+        serially, but one HTTP call avoids per-request overhead). Results are
+        cached by text. Returns a list aligned to `texts`, each a vector or None.
+        """
+        results = [None] * len(texts)
+        to_embed = []      # texts needing a fresh embedding
+        to_embed_idx = []  # their positions in `texts`
+
+        for i, t in enumerate(texts):
+            if t in self._embed_cache:
+                results[i] = self._embed_cache[t]
+            else:
+                to_embed.append(t)
+                to_embed_idx.append(i)
+
+        if not to_embed:
+            return results
+
+        data = {"model": EMBEDDING_MODEL, "input": to_embed}
+        req = urllib.request.Request(
+            OLLAMA_EMBED_BATCH_URL,
+            data=json.dumps(data).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            # Scale the timeout with batch size (serial CPU embedding).
+            timeout = EMBED_TIMEOUT * max(1, len(to_embed))
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                embeddings = res_data.get("embeddings", []) or []
+            for j, emb in enumerate(embeddings):
+                if emb and len(emb) == EMBEDDING_DIM:
+                    pos = to_embed_idx[j]
+                    results[pos] = emb
+                    self._embed_cache[to_embed[j]] = emb
+        except Exception as e:
+            print(f"Error generating batch embeddings: {e}")
+            # Leave the uncached entries as None; callers fall back to sparse.
+        return results
 
     def load_index(self):
         """Load books and page embeddings from the SQLite database into memory"""
@@ -131,28 +178,31 @@ class VedicSearchEngine:
         self.load_index()
 
     def dense_search(self, query_text, top_k=10):
-        """Perform semantic cosine similarity search"""
-        if self.embeddings is None or len(self.page_map) == 0:
-            return []
-            
+        """Perform semantic cosine similarity search (embeds the query first)."""
         # Get query embedding. None / wrong-dim means the embedding service
         # failed; return nothing so hybrid_search falls back to sparse instead
         # of fabricating zero-score "matches".
         query_vector = self.get_ollama_embedding(query_text)
+        return self.dense_search_with_vector(query_vector, top_k=top_k)
+
+    def dense_search_with_vector(self, query_vector, top_k=10):
+        """Cosine-similarity search from a precomputed query embedding."""
+        if self.embeddings is None or len(self.page_map) == 0:
+            return []
         if not query_vector or len(query_vector) != EMBEDDING_DIM:
             return []
-            
+
         query_np = np.array(query_vector, dtype=np.float32)
         query_norm = np.linalg.norm(query_np)
         if query_norm > 0:
             query_np = query_np / query_norm
-            
+
         # Calculate dot product (cosine similarity of normalized vectors)
         similarities = np.dot(self.embeddings, query_np)
-        
+
         # Get top-K indices
         top_indices = np.argsort(similarities)[::-1][:top_k]
-        
+
         results = []
         for idx in top_indices:
             score = float(similarities[idx])
@@ -160,7 +210,7 @@ class VedicSearchEngine:
             page_info["score"] = score
             page_info["type"] = "dense"
             results.append(page_info)
-            
+
         return results
 
     def sparse_search(self, query_text, top_k=10):

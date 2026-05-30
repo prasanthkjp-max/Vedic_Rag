@@ -9,7 +9,7 @@ import os
 import sqlite3
 
 # --- Version ---
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +21,8 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # --- Ollama ---
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_EMBED_URL = f"{OLLAMA_HOST}/api/embeddings"
+OLLAMA_EMBED_URL = f"{OLLAMA_HOST}/api/embeddings"        # single-prompt (legacy)
+OLLAMA_EMBED_BATCH_URL = f"{OLLAMA_HOST}/api/embed"       # batched (input: [..])
 OLLAMA_GENERATE_URL = f"{OLLAMA_HOST}/api/generate"
 
 # --- Models ---
