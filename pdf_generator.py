@@ -490,6 +490,10 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     rasi_planets = {i: [] for i in range(12)}
     for planet, info in placements.items():
         abbr = PLANET_ABBR_LOCAL.get(lang, PLANET_ABBR_LOCAL["en"]).get(planet, planet[:2])
+        if info.get("is_retrograde", False):
+            abbr += "(R)"
+        if info.get("is_combust", False):
+            abbr += "(C)"
         rasi_idx = info["navamsha_rasi_index"] if chart_type == "navamsha" else info["rasi_index"]
         rasi_planets[rasi_idx].append(abbr)
         
@@ -504,7 +508,6 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         
         # Draw planets inside the cell
         c.setFillColor(HexColor("#e2e8f0")) # Crisp white/light grey planets for readability on dark or light slate
-        c.setFont(FONT_BOLD, 8.5)
         
         # Arrange planets in rows of 2 inside the cell
         col_idx = 0
@@ -513,6 +516,10 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
             px = x + 6 + (col_idx * 26)
             py = y + box_size - 24 - (row_idx * 14)
             c.setFillColor(HexColor("#1e293b"))
+            if len(p_abbr) > 2:
+                c.setFont(FONT_BOLD, 7) # Smaller font for marked planets
+            else:
+                c.setFont(FONT_BOLD, 8.5)
             c.drawString(px, py, p_abbr)
             col_idx += 1
             if col_idx >= 2:
@@ -566,6 +573,10 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     house_planets = {h: [] for h in range(1, 13)}
     for planet, info in placements.items():
         abbr = PLANET_ABBR_LOCAL.get(lang, PLANET_ABBR_LOCAL["en"]).get(planet, planet[:2])
+        if info.get("is_retrograde", False):
+            abbr += "(R)"
+        if info.get("is_combust", False):
+            abbr += "(C)"
         p_rasi = info["navamsha_rasi_index"] if chart_type == "navamsha" else info["rasi_index"]
         house = (p_rasi - lagna_rasi) % 12 + 1
         house_planets[house].append(abbr)
@@ -579,7 +590,6 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         c.drawString(hx - 15, hy + 12, str(sign_num))
         
     # Draw planets in their respective houses
-    c.setFont(FONT_BOLD, 8.5)
     c.setFillColor(HexColor("#1e293b"))
     
     for h, center in house_centers.items():
@@ -587,6 +597,12 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         hx, hy = center
         
         if len(planets_in_house) > 0:
+            has_long_abbr = any(len(p) > 2 for p in planets_in_house)
+            if has_long_abbr:
+                c.setFont(FONT_BOLD, 7)
+            else:
+                c.setFont(FONT_BOLD, 8.5)
+                
             row_1 = planets_in_house[:3]
             row_2 = planets_in_house[3:]
             
@@ -922,6 +938,24 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         # Style the dignity beautifully
         raw_dig = plac.get("dignity", "Neutral")
         dig_local = DIGNITY_TRANSLATIONS.get(lang, DIGNITY_TRANSLATIONS["en"]).get(raw_dig, raw_dig)
+        
+        # Check retrograde and combustion
+        status_tags = []
+        if plac.get("is_retrograde", False) and planet != "Lagna":
+            tag_local = {
+                "en": "Retro", "ta": "வக்ரம்", "te": "వక్రం", 
+                "ml": "വക്രം", "kn": "ವಕ್ರ", "hi": "वक्री"
+            }.get(lang, "Retro")
+            status_tags.append(tag_local)
+        if plac.get("is_combust", False) and planet != "Lagna":
+            tag_local = {
+                "en": "Combust", "ta": "அஸ்தங்கம்", "te": "అస్తంగతం",
+                "ml": "മൗഢ്യം", "kn": "ಅಸ್ತಂಗತ", "hi": "अस्त"
+            }.get(lang, "Combust")
+            status_tags.append(tag_local)
+            
+        status_str = f" [{', '.join(status_tags)}]" if status_tags else ""
+        dig_local = f"{dig_local}{status_str}"
         
         if "Exalted" in raw_dig or "Own" in raw_dig:
             c.setFillColor(HexColor("#16a34a")) # Green

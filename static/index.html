@@ -1200,7 +1200,7 @@
                 <div class="form-grid">
                     <div class="input-group">
                         <label id="lbl-name">Native Full Name</label>
-                        <input type="text" id="in-name" placeholder="e.g. Prasanth" value="Prasanth">
+                        <input type="text" id="in-name" placeholder="e.g. Name" value="Name">
                     </div>
                     <div class="input-group">
                         <label id="lbl-dob">Date of Birth</label>
@@ -1297,7 +1297,19 @@
                                 <div class="svg-chart-card" id="svg-chart-rendered"></div>
                             </div>
                             <div class="svg-chart-card-wrapper">
-                                <h5 class="chart-label" id="lbl-navamsha-chart-title">Navamsha Chart (D9)</h5>
+                                <div style="display: flex; gap: 8px; align-items: center; justify-content: center; width: 100%; margin-bottom: 6px;">
+                                    <h5 class="chart-label" id="lbl-navamsha-chart-title" style="margin: 0;">Navamsha Chart (D9)</h5>
+                                    <select id="d-chart-select" style="background: #fffbeb; border: 1px solid var(--border-gold); border-radius: 6px; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: bold; color: var(--accent-gold); outline: none; cursor: pointer; transition: all 0.2s ease;">
+                                        <option value="d9">Navamsha (D9)</option>
+                                        <option value="d2">Hora (D2)</option>
+                                        <option value="d3">Drekkana (D3)</option>
+                                        <option value="d4">Chaturthamsa (D4)</option>
+                                        <option value="d7">Saptamsha (D7)</option>
+                                        <option value="d10">Dasamsha (D10)</option>
+                                        <option value="d12">Dwadasamsha (D12)</option>
+                                        <option value="d1">Rasi (D1)</option>
+                                    </select>
+                                </div>
                                 <div class="svg-chart-card" id="svg-navamsha-rendered"></div>
                             </div>
                         </div>
@@ -2185,7 +2197,46 @@ function translateTamilYear(yearStr) {
             renderMonthlyCalendar();
         }
 
-        // SVG South Indian chart drawing function (translates planetary abbreviations to full regional names on legend legend)
+        function getDChartRasiIndex(planet, info, dType) {
+            const longVal = info.longitude;
+            const rasiIdx = Math.floor(longVal / 30.0) % 12;
+            const degInSign = longVal % 30.0;
+            
+            switch (dType) {
+                case 'd1': return rasiIdx;
+                case 'd2':
+                    const isOddSign = (rasiIdx % 2) === 0;
+                    if (isOddSign) return (degInSign < 15.0) ? 4 : 3;
+                    else return (degInSign < 15.0) ? 3 : 4;
+                case 'd3':
+                    if (degInSign < 10.0) return rasiIdx;
+                    if (degInSign < 20.0) return (rasiIdx + 4) % 12;
+                    return (rasiIdx + 8) % 12;
+                case 'd4':
+                    return (rasiIdx + (Math.floor(degInSign / 7.5) * 3)) % 12;
+                case 'd7':
+                    const saptPart = Math.floor(degInSign / (30.0 / 7.0));
+                    return ((rasiIdx % 2) === 0) ? (rasiIdx + saptPart) % 12 : (rasiIdx + 6 + saptPart) % 12;
+                case 'd9':
+                    const navPart = Math.floor(degInSign / (30.0 / 9.0));
+                    let navStart = 0;
+                    if ([0, 4, 8].includes(rasiIdx)) navStart = 0;
+                    else if ([1, 5, 9].includes(rasiIdx)) navStart = 9;
+                    else if ([2, 6, 10].includes(rasiIdx)) navStart = 6;
+                    else navStart = 3;
+                    return (navStart + navPart) % 12;
+                case 'd10':
+                    const dasPart = Math.floor(degInSign / 3.0);
+                    return ((rasiIdx % 2) === 0) ? (rasiIdx + dasPart) % 12 : (rasiIdx + 8 + dasPart) % 12;
+                case 'd12':
+                    return (rasiIdx + Math.floor(degInSign / 2.5)) % 12;
+                default:
+                    if (dType === 'navamsha') return info.navamsha_rasi_index;
+                    return rasiIdx;
+            }
+        }
+
+        // SVG South Indian chart drawing function
         function drawSouthIndianChartSVG(containerId, placements, chartType = 'rasi') {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -2202,12 +2253,21 @@ function translateTamilYear(yearStr) {
             }
             
             // Center dark panel
-            const centerTitle = chartType === 'navamsha' ? 'NAVAMSHA' : (chartType === 'gochara' ? 'SIDEREAL' : 'RASI (D1)');
-            const centerSub = chartType === 'navamsha' ? 'D9 KUNDALI' : (chartType === 'gochara' ? 'TRANSITS' : 'D1 KUNDALI');
+            const dChartTitles = {
+                d1: 'RASI (D1)', d2: 'HORA (D2)', d3: 'DREKKANA (D3)', d4: 'CHATURTHAMSA (D4)',
+                d7: 'SAPTAMSHA (D7)', d9: 'NAVAMSHA (D9)', d10: 'DASAMSHA (D10)', d12: 'DWADASAMSHA (D12)',
+                navamsha: 'NAVAMSHA (D9)'
+            };
+            const dChartSubs = {
+                d1: 'D1 KUNDALI', d2: 'D2 KUNDALI', d3: 'D3 KUNDALI', d4: 'D4 KUNDALI',
+                d7: 'D7 KUNDALI', d9: 'D9 KUNDALI', d10: 'D10 KUNDALI', d12: 'D12 KUNDALI',
+                navamsha: 'D9 KUNDALI'
+            };
+            const centerTitle = dChartTitles[chartType] || (chartType === 'gochara' ? 'SIDEREAL' : 'RASI (D1)');
+            const centerSub = dChartSubs[chartType] || (chartType === 'gochara' ? 'TRANSITS' : 'D1 KUNDALI');
             svgContent += `<rect x="60" y="60" width="120" height="120" fill="#fffbeb" stroke="var(--border-gold)" stroke-width="1"/>`;
             svgContent += `<text x="120" y="115" font-family="'Space Grotesk', sans-serif" font-weight="bold" font-size="10" fill="var(--accent-gold)" text-anchor="middle">${centerTitle}</text>`;
             svgContent += `<text x="120" y="130" font-family="'Space Grotesk', sans-serif" font-weight="bold" font-size="8" fill="var(--text-muted)" text-anchor="middle">${centerSub}</text>`;
-            
             // Traditional South Indian Rasi order indices mapped to layout coordinates
             const cellCoordinates = [
                 { idx: 11, label: "Meen", x: 0, y: 0 },
@@ -2252,9 +2312,12 @@ function translateTamilYear(yearStr) {
                 // Fetch planets in this Rasi
                 let planetsInCell = [];
                 for (let planet in placements) {
-                    const matchIdx = (chartType === 'navamsha') ? placements[planet].navamsha_rasi_index : placements[planet].rasi_index;
+                    const matchIdx = getDChartRasiIndex(planet, placements[planet], chartType);
                     if (matchIdx === cell.idx) {
-                        planetsInCell.push(activeAbbr[planet] || planet.slice(0, 2));
+                        let p = activeAbbr[planet] || planet.slice(0, 2);
+                        if (placements[planet].is_retrograde && planet !== "Lagna") p += "(R)";
+                        if (placements[planet].is_combust && planet !== "Lagna") p += "(C)";
+                        planetsInCell.push(p);
                     }
                 }
                 
@@ -2264,7 +2327,9 @@ function translateTamilYear(yearStr) {
                 planetsInCell.forEach(p => {
                     const px = cell.x + 6 + (col * 26);
                     const py = cell.y + 28 + (row * 15);
-                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="9.5" fill="var(--text-primary)">${p}</text>`;
+                    const isLong = p.length > 3;
+                    const fSize = isLong ? 7.2 : 9.5;
+                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="var(--text-primary)">${p}</text>`;
                     col++;
                     if (col >= 2) {
                         col = 0;
@@ -2313,7 +2378,7 @@ function translateTamilYear(yearStr) {
                 12: { x: 168, y: 36 }    // Top-right triangle
             };
             
-            const lagnaRasi = chartType === 'navamsha' ? placements["Lagna"].navamsha_rasi_index : placements["Lagna"].rasi_index;
+            const lagnaRasi = getDChartRasiIndex("Lagna", placements["Lagna"], chartType);
             const PLANET_ABBR_LOCAL = {
                 en: { Lagna: "Lg", Sun: "Su", Moon: "Mo", Mars: "Ma", Mercury: "Me", Jupiter: "Ju", Venus: "Ve", Saturn: "Sa", Rahu: "Ra", Ketu: "Ke" },
                 ta: { Lagna: "லக்", Sun: "சூரி", Moon: "சந்", Mars: "செவ்", Mercury: "புத", Jupiter: "குரு", Venus: "சுக்", Saturn: "சனி", Rahu: "ராகு", Ketu: "கேது" },
@@ -2335,20 +2400,25 @@ function translateTamilYear(yearStr) {
                 // Retrieve planets in this sign
                 let planetsInHouse = [];
                 for (let planet in placements) {
-                    const matchIdx = chartType === 'navamsha' ? placements[planet].navamsha_rasi_index : placements[planet].rasi_index;
+                    const matchIdx = getDChartRasiIndex(planet, placements[planet], chartType);
                     if (matchIdx === signIndex) {
-                        planetsInHouse.push(activeAbbr[planet] || planet.slice(0, 2));
+                        let p = activeAbbr[planet] || planet.slice(0, 2);
+                        if (placements[planet].is_retrograde && planet !== "Lagna") p += "(R)";
+                        if (placements[planet].is_combust && planet !== "Lagna") p += "(C)";
+                        planetsInHouse.push(p);
                     }
                 }
                 
                 // Render planets text
                 if (planetsInHouse.length > 0) {
+                    const hasLong = planetsInHouse.some(p => p.length > 3);
+                    const fSize = hasLong ? 7 : 9;
                     const row1 = planetsInHouse.slice(0, 2).join(' ');
                     const row2 = planetsInHouse.slice(2, 4).join(' ');
                     
-                    svgContent += `<text x="${center.x}" y="${center.y}" font-family="sans-serif" font-weight="bold" font-size="9" fill="var(--text-primary)" text-anchor="middle">${row1}</text>`;
+                    svgContent += `<text x="${center.x}" y="${center.y}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="var(--text-primary)" text-anchor="middle">${row1}</text>`;
                     if (row2) {
-                        svgContent += `<text x="${center.x}" y="${center.y + 10}" font-family="sans-serif" font-weight="bold" font-size="9" fill="var(--text-primary)" text-anchor="middle">${row2}</text>`;
+                        svgContent += `<text x="${center.x}" y="${center.y + 10}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="var(--text-primary)" text-anchor="middle">${row2}</text>`;
                     }
                 }
             }
@@ -2506,7 +2576,7 @@ function translateTamilYear(yearStr) {
                 };
                 
                 const activeLbl = lbls[currentLang] || lbls['en'];
-                const rawName = document.getElementById('in-name').value || "Prasanth";
+                const rawName = document.getElementById('in-name').value || "Name";
                 const rawPob = document.getElementById('in-pob').value || "Nellore";
                 
                 // Translate metadata title
@@ -2626,13 +2696,23 @@ function translateTamilYear(yearStr) {
             const rasiContainerId = 'svg-chart-rendered';
             const navamshaContainerId = 'svg-navamsha-rendered';
             
-            // Draw Chart Graphics (South vs North) for BOTH D1 Rasi & D9 Navamsha side-by-side
+            // Draw Chart Graphics (South vs North) for BOTH D1 Rasi & selected D chart side-by-side
+            const dChartSelect = document.getElementById('d-chart-select');
+            const dType = dChartSelect ? dChartSelect.value : 'd9';
+            
+            // Reset right chart label on new generation
+            const navLbl = document.getElementById('lbl-navamsha-chart-title');
+            if (navLbl && dChartSelect) {
+                const optText = dChartSelect.options[dChartSelect.selectedIndex].text;
+                navLbl.innerText = `${optText} Chart`;
+            }
+            
             if (style === 'north') {
-                drawNorthIndianChartSVG(rasiContainerId, calculatedChartData.placements, 'rasi');
-                drawNorthIndianChartSVG(navamshaContainerId, calculatedChartData.placements, 'navamsha');
+                drawNorthIndianChartSVG(rasiContainerId, calculatedChartData.placements, 'd1');
+                drawNorthIndianChartSVG(navamshaContainerId, calculatedChartData.placements, dType);
             } else {
-                drawSouthIndianChartSVG(rasiContainerId, calculatedChartData.placements, 'rasi');
-                drawSouthIndianChartSVG(navamshaContainerId, calculatedChartData.placements, 'navamsha');
+                drawSouthIndianChartSVG(rasiContainerId, calculatedChartData.placements, 'd1');
+                drawSouthIndianChartSVG(navamshaContainerId, calculatedChartData.placements, dType);
             }
 
             // Render placements table translating planet names & dignities dynamically!
@@ -2650,6 +2730,25 @@ function translateTamilYear(yearStr) {
                 // Translate dignity
                 const rawDignity = plac.dignity || "Neutral";
                 const translatedDignity = (dignityTranslations[currentLang] && dignityTranslations[currentLang][rawDignity]) || rawDignity;
+                
+                // Check retrograde and combustion
+                const statusTags = [];
+                if (plac.is_retrograde && planet !== "Lagna") {
+                    const tagLocal = {
+                        en: "Retro", ta: "வக்ரம்", te: "వక్రం", 
+                        ml: "வക്രം", kn: "ವಕ್ರ", hi: "वक्री"
+                    }[currentLang] || "Retro";
+                    statusTags.push(tagLocal);
+                }
+                if (plac.is_combust && planet !== "Lagna") {
+                    const tagLocal = {
+                        en: "Combust", ta: "அஸ்தங்கம்", te: "அஸ்தంగతం",
+                        ml: "മൗഢ്യം", kn: "ಅಸ್ತಂಗత", hi: "अस्त"
+                    }[currentLang] || "Combust";
+                    statusTags.push(tagLocal);
+                }
+                const statusStr = statusTags.length ? ` [${statusTags.join(', ')}]` : '';
+                const finalDignityDisplay = `${translatedDignity}${statusStr}`;
                 
                 // Apply premium color coding for planetary dignity strength (exaltation vs debilitation)
                 let dignityStyle = 'color: var(--text-secondary); font-size: 11px;';
@@ -2669,7 +2768,7 @@ function translateTamilYear(yearStr) {
                         <td>${plac.longitude}°</td>
                         <td style="font-family: var(--font-serif);">${translatedRasiName}</td>
                         <td>${plac.degree.toFixed(2)}°</td>
-                        <td style="${dignityStyle}">${translatedDignity}</td>
+                        <td style="${dignityStyle}">${finalDignityDisplay}</td>
                     </tr>
                 `;
                 tableBody.innerHTML += rowHtml;
@@ -3027,6 +3126,30 @@ function translateTamilYear(yearStr) {
             
             fetchDailyPanchangam(today);
             renderMonthlyCalendar();
+            
+            // Add listener to D-chart dropdown select
+            const dChartSelect = document.getElementById('d-chart-select');
+            if (dChartSelect) {
+                dChartSelect.addEventListener('change', function(e) {
+                    if (!calculatedChartData) return;
+                    const dType = e.target.value;
+                    const navamshaContainerId = 'svg-navamsha-rendered';
+                    const style = calculatedChartData.visual_style || 'south';
+                    
+                    // Update right chart label dynamically
+                    const navLbl = document.getElementById('lbl-navamsha-chart-title');
+                    const optText = e.target.options[e.target.selectedIndex].text;
+                    if (navLbl) {
+                        navLbl.innerText = `${optText} Chart`;
+                    }
+                    
+                    if (style === 'north') {
+                        drawNorthIndianChartSVG(navamshaContainerId, calculatedChartData.placements, dType);
+                    } else {
+                        drawSouthIndianChartSVG(navamshaContainerId, calculatedChartData.placements, dType);
+                    }
+                });
+            }
         };
     </script>
 </body>

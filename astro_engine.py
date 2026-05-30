@@ -707,11 +707,47 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         
     sidereal_lagna = (tropical_lagna - ayanamsa) % 360.0
     
+    # Calculate planet positions at JD + 0.01 to check for retrograde motion (difference over ~14.4 mins)
+    T_next = (JD + 0.01 - 2451545.0) / 36525.0
+    tropical_positions_next = get_planet_longitudes(T_next, JD + 0.01)
+    ayanamsa_next = get_ayanamsa(T_next, ayanamsa_name)
+    sidereal_positions_next = {}
+    for planet, long_val in tropical_positions_next.items():
+        sidereal_positions_next[planet] = (long_val - ayanamsa_next) % 360.0
+    
     # 6. Map positions to Rasis (zodiac signs, 30 degrees each)
     rasi_placements = {}
     for planet, long_val in sidereal_positions.items():
         rasi_idx = math.floor(long_val / 30.0) % 12
         deg_in_sign = long_val % 30.0
+        
+        # Calculate retrograde and combustion
+        is_retrograde = False
+        if planet in ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"]:
+            diff = (sidereal_positions_next[planet] - long_val) % 360.0
+            if diff > 180.0:
+                diff -= 360.0
+            if diff < 0.0:
+                is_retrograde = True
+        elif planet in ["Rahu", "Ketu"]:
+            is_retrograde = True
+            
+        is_combust = False
+        if planet in ["Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]:
+            sun_long = sidereal_positions["Sun"]
+            diff_sun = abs(long_val - sun_long) % 360.0
+            angular_distance = min(diff_sun, 360.0 - diff_sun)
+            
+            combustion_limits = {
+                "Moon": 12.0,
+                "Mars": 17.0,
+                "Mercury": 14.0,
+                "Jupiter": 11.0,
+                "Venus": 10.0,
+                "Saturn": 15.0
+            }
+            if angular_distance <= combustion_limits[planet]:
+                is_combust = True
         
         # D9 Navamsha calculation
         nav_idx = math.floor(deg_in_sign / (30.0 / 9.0)) % 9
@@ -734,7 +770,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "rasi_name": RASIS[rasi_idx],
             "navamsha_rasi_index": nav_rasi_idx,
             "navamsha_rasi_name": RASIS[nav_rasi_idx],
-            "dignity": dignity
+            "dignity": dignity,
+            "is_retrograde": is_retrograde,
+            "is_combust": is_combust
         }
         
     lagna_rasi_idx = math.floor(sidereal_lagna / 30.0) % 12
@@ -758,7 +796,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         "rasi_name": RASIS[lagna_rasi_idx],
         "navamsha_rasi_index": lag_nav_rasi_idx,
         "navamsha_rasi_name": RASIS[lag_nav_rasi_idx],
-        "dignity": "Neutral"
+        "dignity": "Neutral",
+        "is_retrograde": False,
+        "is_combust": False
     }
     
     # 7. Compute Panchangam Details
