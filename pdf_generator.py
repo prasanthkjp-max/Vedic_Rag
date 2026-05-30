@@ -139,13 +139,14 @@ TITHI_TRANSLATIONS = {
     }
 }
 
-GANESHA_MANTRAS_LOCAL = {
-    "en": "Vakratunda Mahakaya Suryakoti Samaprabha | Nirvighnam Kuru Me Deva Sarvakaryeshu Sarvada ||",
-    "ta": "வக்ரதுண்ட மஹாகாய சூர்யகோடி ஸமப்ரப। நிர்விக்னம் குரு மே தேவ ஸர்வ கார்யேஷு ஸர்வதா॥",
-    "te": "వక్రతుండ మహాకాయ సూర్యకోటి సమప్రభ। నిర్విఘ్నం కురు మే దేవ సర్వకార్యేషు సర్వదా॥",
-    "ml": "വക്രതുണ്ഡ മഹാകായ സൂര്യകോടി സമപ്രഭ। നിർവിഘ്നം കുരു മേ ദേവ സർവകാര്യേഷు സർവദാ॥",
-    "kn": "ವಕ್ರತುಂಡ ಮಹಾಕಾಯ ಸೂರ್ಯಕೋಟಿ ಸಮಪ್ರಭ। ನಿರ್ವಿಘ್ನಂ ಕುರು ಮೇ ದೇವ ಸರ್ವಕಾರ್ಯೇಷು ಸರ್ವದಾ॥",
-    "hi": "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ। निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥"
+# Traditional Janma Patrika invocation shloka, written at the head of a horoscope.
+INVOCATION_SHLOKA_LOCAL = {
+    "en": "Janani Janma Sowkhyanaam Vardhanee Kula Sampadaam | Padavee Purva Punyanaam Likhyathe Janma Pathrika ||",
+    "ta": "ஜனனீ ஜன்ம ஸௌக்யானாம் வர்தனீ குல ஸம்பதாம்। பதவீ பூர்வ புண்யானாம் லிக்யதே ஜன்ம பத்ரிகா॥",
+    "te": "జననీ జన్మ సౌఖ్యానాం వర్ధనీ కుల సంపదాం। పదవీ పూర్వ పుణ్యానాం లిఖ్యతే జన్మ పత్రికా॥",
+    "ml": "ജനനീ ജന്മ സൗഖ്യാനാം വർധനീ കുല സമ്പദാം। പദവീ പൂർവ പുണ്യാനാം ലിഖ്യതേ ജന്മ പത്രികാ॥",
+    "kn": "ಜನನೀ ಜನ್ಮ ಸೌಖ್ಯಾನಾಂ ವರ್ಧನೀ ಕುಲ ಸಂಪದಾಂ। ಪದವೀ ಪೂರ್ವ ಪುಣ್ಯಾನಾಂ ಲಿಖ್ಯತೇ ಜನ್ಮ ಪತ್ರಿಕಾ॥",
+    "hi": "जननी जन्मसौख्यानां वर्धनी कुलसम्पदाम्। पदवी पूर्वपुण्यानां लिख्यते जन्मपत्रिका॥"
 }
 
 def translate_tithi(tithi_str, lang):
@@ -705,11 +706,11 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         # Center at x = 306 (width=32, height=32) -> x = 290
         c.drawImage(ganesha_img_path, 290, 756, width=32, height=32, mask='auto')
         
-    # 2. Pillaiyar Suzhi & Ganesha Mantra at the top
+    # 2. Pillaiyar Suzhi & Janma Patrika invocation shloka at the top
     c.setFillColor(HexColor("#b45309")) # Premium deep gold / amber color
     c.setFont(FONT_BOLD, 7.5)
     suzhi = "உ" if lang == "ta" else "Sri"
-    mantra_text = f" {suzhi}  |  {GANESHA_MANTRAS_LOCAL.get(lang, GANESHA_MANTRAS_LOCAL['en'])} "
+    mantra_text = f" {suzhi}  |  {INVOCATION_SHLOKA_LOCAL.get(lang, INVOCATION_SHLOKA_LOCAL['en'])} "
     c.drawCentredString(306, 744, mantra_text)
     
     # 3. Premium Background Frame & Title - Sleek white background with a beautiful gold double-border
