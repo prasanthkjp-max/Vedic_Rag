@@ -1,0 +1,19 @@
+# Databases
+vedic_astrology_rag.db
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated Artifacts and Temp Files
+*.pdf
+*.png
+temp_page_14.png
+birth_chart_report.pdf
+test_birth_chart.pdf
+
+# Environment
+.env
+venv/
+.venv/
