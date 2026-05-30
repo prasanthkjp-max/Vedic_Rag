@@ -317,7 +317,7 @@ LABEL_LOCALIZATION = {
         "longitude": "Sidereal Longitude", "rasi": "Zodiac Sign (Rasi)", "rasi_deg": "Rasi Degree",
         "dignity": "Dignity (Avastha / Strength)", "rasi_chart": "RASI KUNDALI (D1 BIRTH CHART)",
         "navamsha_chart": "NAVAMSHA DIVISIONS (D9 CHART)",
-        "dasa_title": "VIMSHOTTARI DASA TIMELINE REPORT (100 YEARS)",
+        "dasa_title": "VIMSHOTTARI DASA TIMELINE REPORT (120 YEARS)",
         "dasa_subtitle": "Starting Lord based on Birth Moon Nakshatram: {}",
         "dasa_header": "CHRONOLOGICAL VIMSHOTTARI DASA MAHADASAS & SUB-PERIODS (BHUKTIS)",
         "mahadasa": "MAHADASA: {} ({} Y)", "from_to": "From: {} To: {}"
@@ -336,7 +336,7 @@ LABEL_LOCALIZATION = {
         "longitude": "தீர்க்கரேகை பாகை", "rasi": "ராசி சக்கரம்", "rasi_deg": "ராசி பாகை",
         "dignity": "கிரக பலம் / நிலை (Dignity)", "rasi_chart": "ராசி சக்கரம் (D1 ஜாதகம்)",
         "navamsha_chart": "நவாம்ச சக்கரம் (D9 ஜாதகம்)",
-        "dasa_title": "விம்சோத்தரி தசா புத்திகள் காலவரிசை (100 ஆண்டுகள்)",
+        "dasa_title": "விம்சோத்தரி தசா புத்திகள் காலவரிசை (120 ஆண்டுகள்)",
         "dasa_subtitle": "ஜனன சந்திர நட்சத்திரத்தின் அடிப்படை தசா அதிபதி: {}",
         "dasa_header": "காலவரிசை விம்சோத்தரி தசா மஹா தசைகள் மற்றும் புத்திகள்",
         "mahadasa": "மஹா தசை: {} ({} வருடங்கள்)", "from_to": "துவக்கம்: {} முடிவு: {}"
@@ -355,7 +355,7 @@ LABEL_LOCALIZATION = {
         "longitude": "రేఖాంశం డిగ్రీ", "rasi": "రాశి చక్రం", "rasi_deg": "రాశి డిగ్రీ",
         "dignity": "గ్రహ బలం / స్థితి", "rasi_chart": "రాశి చక్రం (D1 జన్మ కుండలి)",
         "navamsha_chart": "నవాంశ చక్రం (D9 కుండలి)",
-        "dasa_title": "వింశోత్తరి దశా భుక్తులు కాలపట్టిక (100 సంవత్సరాలు)",
+        "dasa_title": "వింశోత్తరి దశా భుక్తులు కాలపట్టిక (120 సంవత్సరాలు)",
         "dasa_subtitle": "జన్మ చంద్ర నక్షత్ర దశా అధిపతి: {}",
         "dasa_header": "వింశోత్తరి మహర్షి దశా కాలాలు మరియు అంతర్దశలు",
         "mahadasa": "మహా దశ: {} ({} సం)", "from_to": "ప్రారంభం: {} ముగింపు: {}"
@@ -374,7 +374,7 @@ LABEL_LOCALIZATION = {
         "longitude": "രേഖാംശം ഡിഗ്രി", "rasi": "രാശി ചക്രം", "rasi_deg": "രാശി ഡിഗ്രി",
         "dignity": "ഗ്രഹ ബലം / നില", "rasi_chart": "രാശി ചക്രം (D1 ജാതകം)",
         "navamsha_chart": "നവാംശ ചക്രം (D9 ജാതകം)",
-        "dasa_title": "വിംശോത്തരി ദശാ ഭുക്തി കാലപ്പട്ടിക (100 വർഷം)",
+        "dasa_title": "വിംശോത്തരി ദശാ ഭുക്തി കാലപ്പട്ടിക (120 വർഷം)",
         "dasa_subtitle": "ജനന നക്ഷത്ര ദശാധിപൻ: {}",
         "dasa_header": "വിംശോത്തരി ദശാ കാലങ്ങളും അപഹാരങ്ങളും",
         "mahadasa": "മഹാ ദശ: {} ({} വർഷം)", "from_to": "തുടക്കം: {} ഒടുക്കം: {}"
@@ -393,7 +393,7 @@ LABEL_LOCALIZATION = {
         "longitude": "ರೇಖಾಂಶ ಡಿಗ್ರಿ", "rasi": "ರಾಶಿ ಚಕ್ರ", "rasi_deg": "ರಾಶಿ ಡಿಗ್ರಿ",
         "dignity": "ಗ್ರಹ ಬಲ / ಸ್ಥಿತಿ", "rasi_chart": "ರಾಶಿ ಚಕ್ರ (D1 ಜನ್ಮ ಕುಂಡಲಿ)",
         "navamsha_chart": "ನವಾಂಶ ಚಕ್ರ (D9 ಕುಂಡಲಿ)",
-        "dasa_title": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಭುಕ್ತಿ ಕಾಲಪಟ್ಟಿ (100 ವರ್ಷಗಳು)",
+        "dasa_title": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಭುಕ್ತಿ ಕಾಲಪಟ್ಟಿ (120 ವರ್ಷಗಳು)",
         "dasa_subtitle": "ಜನ್ಮ ನಕ್ಷತ್ರ ದಶಾ ಅಧಿಪತಿ: {}",
         "dasa_header": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಅವಧಿಗಳು ಮತ್ತು ಭುಕ್ತಿಗಳು",
         "mahadasa": "ಮಹಾ ದಶ: {} ({} ವರ್ಷ)", "from_to": "ಪ್ರಾರಂಭ: {} ಮುಕ್ತಾಯ: {}"
@@ -412,7 +412,7 @@ LABEL_LOCALIZATION = {
         "longitude": "रेखांश डिग्री", "rasi": "राशि चक्र", "rasi_deg": "राशि अंश",
         "dignity": "ग्रह बल / स्थिति", "rasi_chart": "राशि कुंडली (D1 जन्म चक्र)",
         "navamsha_chart": "नवांश कुंडली (D9 चक्र)",
-        "dasa_title": "विंशोत्तरी दशा भुक्ति समय सारिणी (100 वर्ष)",
+        "dasa_title": "विंशोत्तरी दशा भुक्ति समय सारिणी (120 वर्ष)",
         "dasa_subtitle": "जन्म नक्षत्र दशा अधिपति: {}",
         "dasa_header": "क्रमशः विंशोत्तरी महादशाएं एवं अंतर्दशाएं (भुक्ति)",
         "mahadasa": "महादशा: {} ({} वर्ष)", "from_to": "प्रारंभ: {} अंत: {}"
@@ -708,10 +708,13 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         
     # 2. Pillaiyar Suzhi & Janma Patrika invocation shloka at the top
     c.setFillColor(HexColor("#b45309")) # Premium deep gold / amber color
-    c.setFont(FONT_BOLD, 7.5)
     suzhi = "உ" if lang == "ta" else "Sri"
-    mantra_text = f" {suzhi}  |  {INVOCATION_SHLOKA_LOCAL.get(lang, INVOCATION_SHLOKA_LOCAL['en'])} "
-    c.drawCentredString(306, 744, mantra_text)
+    c.setFont(FONT_BOLD, 8.5)
+    c.drawCentredString(306, 746, suzhi) # Suzhi drawn separately below Ganesha image
+    
+    c.setFont(FONT_BOLD, 7.2)
+    mantra_text = INVOCATION_SHLOKA_LOCAL.get(lang, INVOCATION_SHLOKA_LOCAL['en'])
+    c.drawCentredString(306, 737, mantra_text) # Mantra drawn below suzhi
     
     # 3. Premium Background Frame & Title - Sleek white background with a beautiful gold double-border
     c.setFillColor(HexColor("#ffffff")) # White background
@@ -963,55 +966,69 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     c.setFont(FONT_REGULAR, 8.5)
     c.drawCentredString(306, 734, labels["dasa_subtitle"].format(naks_local))
     
-    # Render the 100-year Dasas and Bhuktis in a 3-column structured grid
+    # Render the 120-year Dasas and Bhuktis in a balanced 2-column structured grid
     c.setFillColor(HexColor("#b45309")) # Elegant deep gold section header
-    c.setFont(FONT_BOLD, 9.5)
+    c.setFont(FONT_BOLD, 10)
     c.drawString(36, 705, labels["dasa_header"])
     
+    total_dasas = len(chart_data["dasas"])
+    cards_per_column = (total_dasas + 1) // 2
+    
     dasa_text_y = 675
-    column = 0 # 0, 1, or 2
-    col_width = 175
+    column = 0 # 0 or 1
+    col_width = 255
+    cards_drawn = 0
     
     for dasa in chart_data["dasas"]:
-        if dasa_text_y < 120 and column == 2:
-            break # Avoid overflow
-        elif dasa_text_y < 120:
-            column += 1
+        if cards_drawn >= cards_per_column and column == 0:
+            column = 1
             dasa_text_y = 675
+            cards_drawn = 0
             
-        cx = 36 + (column * col_width)
+        # Calculate horizontal starting point (30pt spacer between columns)
+        cx = 36 + (column * (col_width + 30))
         
-        # Draw Dasa header card - Completely white card background with elegant gold borders
+        # Draw Dasa card box - Completely white card background with elegant gold borders
         c.setFillColor(HexColor("#ffffff"))
-        c.rect(cx, dasa_text_y - 2, col_width - 15, 14, fill=True, stroke=False)
         c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border line
-        c.setLineWidth(1)
-        c.line(cx, dasa_text_y + 12, cx + col_width - 15, dasa_text_y + 12)
+        c.setLineWidth(0.75)
+        c.roundRect(cx, dasa_text_y - 74, col_width, 86, 4, fill=True, stroke=True)
         
+        # Draw elegant light gold horizontal line under title
+        c.setStrokeColor(HexColor("#fef3c7"))
+        c.setLineWidth(0.5)
+        c.line(cx + 4, dasa_text_y - 2, cx + col_width - 4, dasa_text_y - 2)
+        
+        # 1. Mahadasa Lord & Duration
         c.setFillColor(HexColor("#b45309")) # Highlight active Dasa lord in elegant gold
-        c.setFont(FONT_BOLD, 8)
-        
+        c.setFont(FONT_BOLD, 8.5)
         dasa_lord_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(dasa['dasa_lord'], dasa['dasa_lord']).upper()
         lbl_mahadasa_formatted = labels["mahadasa"].format(dasa_lord_local, dasa['duration_years'])
+        c.drawString(cx + 8, dasa_text_y + 2, lbl_mahadasa_formatted)
         
-        c.drawString(cx + 4, dasa_text_y + 2, lbl_mahadasa_formatted)
-        dasa_text_y -= 12
-        
+        # 2. From-To Dates
         c.setFont(FONT_REGULAR, 7.5)
         c.setFillColor(HexColor("#475569"))
-        c.drawString(cx + 4, dasa_text_y, labels["from_to"].format(dasa['start_date'], dasa['end_date']))
-        dasa_text_y -= 10
+        c.drawString(cx + 8, dasa_text_y - 12, labels["from_to"].format(dasa['start_date'], dasa['end_date']))
         
-        # Print sub-periods (Bhuktis)
-        c.setFont(FONT_REGULAR, 7)
+        # 3. Print sub-periods (Bhuktis) in a beautifully balanced 3-column sub-grid
+        c.setFont(FONT_REGULAR, 6.5)
         c.setFillColor(HexColor("#334155"))
         
-        for bhukti in dasa["bhuktis"]:
-            bhukti_lord_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(bhukti['bhukti_lord'], bhukti['bhukti_lord'])
-            c.drawString(cx + 8, dasa_text_y, f"- {bhukti_lord_local}: {bhukti['start_date']}")
-            dasa_text_y -= 9
+        sub_col_width = (col_width - 16) / 3
+        for b_idx, bhukti in enumerate(dasa["bhuktis"]):
+            b_row = b_idx // 3  # 0, 1, 2
+            b_col = b_idx % 3   # 0, 1, 2
             
-        dasa_text_y -= 8 # spacer between Dasas
+            bx = cx + 8 + (b_col * sub_col_width)
+            by = dasa_text_y - 28 - (b_row * 13.5)
+            
+            bhukti_lord_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(bhukti['bhukti_lord'], bhukti['bhukti_lord'])
+            short_date = bhukti['start_date'][:7] # YYYY-MM format
+            c.drawString(bx, by, f"• {bhukti_lord_local}: {short_date}")
+            
+        dasa_text_y -= 98 # 86pt card height + 12pt spacer
+        cards_drawn += 1
         
     # Footer on Page 2
     c.setFont(FONT_REGULAR, 7.5)

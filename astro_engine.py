@@ -413,13 +413,14 @@ def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
     # 3. Calculate remaining duration of the first Dasa at birth (in years)
     remaining_years = lord_duration * (1.0 - fraction)
     
-    # 4. Generate Dasas for the next 100 years
+    # 4. Generate Dasas for a full 120-year cycle
     current_jd = birth_jd
     dasa_list = []
     
     # Re-order planet sequence starting from the birth Dasa lord
     start_idx = DASA_PLANETS.index(start_lord)
-    ordered_planets = DASA_PLANETS[start_idx:] + DASA_PLANETS[:start_idx]
+    # Double the list to allow the birth lord to repeat at the end, completing the 120-year cycle
+    ordered_planets = (DASA_PLANETS[start_idx:] + DASA_PLANETS[:start_idx]) * 2
     
     # Keep track of years
     years_elapsed = 0.0
@@ -428,11 +429,18 @@ def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
     DAYS_IN_YEAR = 365.25
     
     for i, planet in enumerate(ordered_planets):
-        if years_elapsed >= 100.0:
+        if years_elapsed >= 120.0:
             break
             
-        duration = remaining_years if i == 0 else DASA_DURATIONS[planet]
-        
+        if i == 0:
+            duration = remaining_years
+        elif i == 9:
+            duration = lord_duration * fraction
+            if duration <= 0.01:
+                break
+        else:
+            duration = DASA_DURATIONS[planet]
+            
         # Period start & end Julian dates
         start_jd = current_jd
         end_jd = start_jd + (duration * DAYS_IN_YEAR)
@@ -457,6 +465,8 @@ def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
             # Scale proportionally if the first Dasa is fractional
             if i == 0:
                 b_dur_years *= (1.0 - fraction)
+            elif i == 9:
+                b_dur_years *= fraction
                 
             b_end_jd = b_current_jd + (b_dur_years * DAYS_IN_YEAR)
             
