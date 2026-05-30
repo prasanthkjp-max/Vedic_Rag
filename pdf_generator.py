@@ -9,27 +9,59 @@ from reportlab.platypus import SimpleDocTemplate
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+# Set of successfully registered fonts (with standard fallback cores always available)
+REGISTERED_FONTS = set(['Helvetica', 'Helvetica-Bold', 'Times-Roman', 'Times-Bold', 'Courier', 'Courier-Bold'])
 
-# Register FreeSans and Lohit regional fonts for comprehensive Indic Unicode support
-try:
-    pdfmetrics.registerFont(TTFont('FreeSans', '/usr/share/fonts/truetype/freefont/FreeSans.ttf'))
-    pdfmetrics.registerFont(TTFont('FreeSansBold', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf'))
-    FONT_REGULAR = 'FreeSans'
-    FONT_BOLD = 'FreeSansBold'
-except Exception as e:
-    print(f"Error registering FreeSans: {e}")
-    FONT_REGULAR = 'Helvetica'
-    FONT_BOLD = 'Helvetica-Bold'
+def safe_register_font(name, path):
+    try:
+        if os.path.exists(path):
+            pdfmetrics.registerFont(TTFont(name, path))
+            REGISTERED_FONTS.add(name)
+            return True
+        return False
+    except Exception as e:
+        print(f"Error registering font {name} from {path}: {e}")
+        return False
 
-# Register Lohit Indic script fonts
-try:
-    pdfmetrics.registerFont(TTFont('Lohit-Telugu', '/usr/share/fonts/truetype/lohit-telugu/Lohit-Telugu.ttf'))
-    pdfmetrics.registerFont(TTFont('Lohit-Tamil', '/usr/share/fonts/truetype/lohit-tamil/Lohit-Tamil.ttf'))
-    pdfmetrics.registerFont(TTFont('Lohit-Devanagari', '/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf'))
-    pdfmetrics.registerFont(TTFont('Lohit-Kannada', '/usr/share/fonts/truetype/lohit-kannada/Lohit-Kannada.ttf'))
-    pdfmetrics.registerFont(TTFont('Lohit-Malayalam', '/usr/share/fonts/truetype/lohit-malayalam/Lohit-Malayalam.ttf'))
-except Exception as e:
-    print(f"Error registering Lohit fonts: {e}")
+# Register FreeSans
+safe_register_font('FreeSans', '/usr/share/fonts/truetype/freefont/FreeSans.ttf')
+safe_register_font('FreeSansBold', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf')
+
+PRIMARY_REGULAR = 'FreeSans' if 'FreeSans' in REGISTERED_FONTS else 'Helvetica'
+PRIMARY_BOLD = 'FreeSansBold' if 'FreeSansBold' in REGISTERED_FONTS else 'Helvetica-Bold'
+
+# Register Lohit Indic script fonts individually so one failure does not impact others
+safe_register_font('Lohit-Telugu', '/usr/share/fonts/truetype/lohit-telugu/Lohit-Telugu.ttf')
+safe_register_font('Lohit-Tamil', '/usr/share/fonts/truetype/lohit-tamil/Lohit-Tamil.ttf')
+safe_register_font('Lohit-Devanagari', '/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf')
+safe_register_font('Lohit-Kannada', '/usr/share/fonts/truetype/lohit-kannada/Lohit-Kannada.ttf')
+safe_register_font('Lohit-Malayalam', '/usr/share/fonts/truetype/lohit-malayalam/Lohit-Malayalam.ttf')
+
+def resolve_fonts(lang):
+    """Dynamically select registered regular and bold fonts based on language preference."""
+    font_map = {
+        "te": "Lohit-Telugu",
+        "ta": "Lohit-Tamil",
+        "hi": "Lohit-Devanagari",
+        "kn": "Lohit-Kannada",
+        "ml": "Lohit-Malayalam",
+        "en": "FreeSans"
+    }
+    font_bold_map = {
+        "te": "Lohit-Telugu",
+        "ta": "Lohit-Tamil",
+        "hi": "Lohit-Devanagari",
+        "kn": "Lohit-Kannada",
+        "ml": "Lohit-Malayalam",
+        "en": "FreeSansBold"
+    }
+    
+    selected_reg = font_map.get(lang, "FreeSans")
+    selected_bold = font_bold_map.get(lang, "FreeSansBold")
+    
+    reg_font = selected_reg if selected_reg in REGISTERED_FONTS else PRIMARY_REGULAR
+    bold_font = selected_bold if selected_bold in REGISTERED_FONTS else PRIMARY_BOLD
+    return reg_font, bold_font
 
 PLANET_ABBR_LOCAL = {
     "en": {"Lagna": "Lg", "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me", "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke"},
@@ -391,23 +423,19 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     Draw a traditional 4x4 South Indian chart using ReportLab canvas
     Each cell is 60x60 points. Total grid is 240x240 points.
     """
-    # Shadow font variables locally based on language to support correct scripts
-    font_map = {"te": "Lohit-Telugu", "ta": "Lohit-Tamil", "hi": "Lohit-Devanagari", "kn": "Lohit-Kannada", "ml": "Lohit-Malayalam", "en": "FreeSans"}
-    font_bold_map = {"te": "Lohit-Telugu", "ta": "Lohit-Tamil", "hi": "Lohit-Devanagari", "kn": "Lohit-Kannada", "ml": "Lohit-Malayalam", "en": "FreeSansBold"}
-    FONT_REGULAR = font_map.get(lang, "FreeSans")
-    FONT_BOLD = font_bold_map.get(lang, "FreeSansBold")
+    FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
     box_size = 60
     grid_size = 240
     
     # 1. Draw outer boundary
-    c.setStrokeColor(HexColor("#fbbf24")) # Gold border
+    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
     c.setLineWidth(2)
     c.rect(x_offset, y_offset, grid_size, grid_size)
     
     # 2. Draw interior grid lines
     c.setLineWidth(1)
-    c.setStrokeColor(HexColor("#d1d5db")) # Light grey inner lines
+    c.setStrokeColor(HexColor("#e2e8f0")) # Light grey inner lines
     
     # Horizontal lines
     c.line(x_offset, y_offset + box_size, x_offset + grid_size, y_offset + box_size)
@@ -419,12 +447,16 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     c.line(x_offset + 2 * box_size, y_offset, x_offset + 2 * box_size, y_offset + grid_size)
     c.line(x_offset + 3 * box_size, y_offset, x_offset + 3 * box_size, y_offset + grid_size)
     
-    # 3. Erase the center 2x2 grid lines (draw a filled dark panel for details)
-    c.setFillColor(HexColor("#0f172a")) # Dark slate center
+    # 3. Draw a clean white center panel with an elegant golden inner frame
+    c.setFillColor(HexColor("#ffffff")) # Sleek white background
     c.rect(x_offset + box_size + 0.5, y_offset + box_size + 0.5, 2 * box_size - 1, 2 * box_size - 1, fill=True, stroke=False)
     
-    # Central label
-    c.setFillColor(HexColor("#fbbf24"))
+    c.setStrokeColor(HexColor("#dfb73c")) # Gold inner frame
+    c.setLineWidth(1)
+    c.rect(x_offset + box_size + 3, y_offset + box_size + 3, 2 * box_size - 6, 2 * box_size - 6, fill=False, stroke=True)
+    
+    # Central label in elegant deep gold/amber
+    c.setFillColor(HexColor("#b45309"))
     c.setFont(FONT_BOLD, 10)
     
     lbl_d9 = "D9 KUNDALI" if lang != "ta" else "D9 நவாம்சம்"
@@ -491,20 +523,16 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     Draw a traditional diamond-shaped North Indian chart
     Size is 240x240 points.
     """
-    # Shadow font variables locally based on language to support correct scripts
-    font_map = {"te": "Lohit-Telugu", "ta": "Lohit-Tamil", "hi": "Lohit-Devanagari", "kn": "Lohit-Kannada", "ml": "Lohit-Malayalam", "en": "FreeSans"}
-    font_bold_map = {"te": "Lohit-Telugu", "ta": "Lohit-Tamil", "hi": "Lohit-Devanagari", "kn": "Lohit-Kannada", "ml": "Lohit-Malayalam", "en": "FreeSansBold"}
-    FONT_REGULAR = font_map.get(lang, "FreeSans")
-    FONT_BOLD = font_bold_map.get(lang, "FreeSansBold")
+    FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
     size = 240
-    c.setStrokeColor(HexColor("#fbbf24")) # Gold border
+    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
     c.setLineWidth(2)
     c.rect(x_offset, y_offset, size, size)
     
     # 1. Draw internal diagonals
     c.setLineWidth(1)
-    c.setStrokeColor(HexColor("#334155")) # Dark slate lines
+    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold inner diagonal lines
     c.line(x_offset, y_offset, x_offset + size, y_offset + size)
     c.line(x_offset, y_offset + size, x_offset + size, y_offset)
     
@@ -571,11 +599,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     both Rasi D1 & Navamsha D9 charts side-by-side, Pillaiyar Suzhi & Lord Ganesha Invocation,
     20+ traditional birth/astronomical panchangam details, and 100-year Vimshottari Dasas.
     """
-    # Shadow font variables locally based on language to support correct scripts
-    font_map = {"te": "Lohit-Telugu", "ta": "Lohit-Tamil", "hi": "Lohit-Devanagari", "kn": "Lohit-Kannada", "ml": "Lohit-Malayalam", "en": "FreeSans"}
-    font_bold_map = {"te": "Lohit-Telugu", "ta": "Lohit-Tamil", "hi": "Lohit-Devanagari", "kn": "Lohit-Kannada", "ml": "Lohit-Malayalam", "en": "FreeSansBold"}
-    FONT_REGULAR = font_map.get(lang, "FreeSans")
-    FONT_BOLD = font_bold_map.get(lang, "FreeSansBold")
+    FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
     # Initialize Document
     doc = SimpleDocTemplate(output_path, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
@@ -668,28 +692,36 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     mantra_text = f" {suzhi}  |  {GANESHA_MANTRAS_LOCAL.get(lang, GANESHA_MANTRAS_LOCAL['en'])} "
     c.drawCentredString(306, 744, mantra_text)
     
-    # 3. Premium Background Frame & Title
-    c.setFillColor(HexColor("#0f172a")) # Slate dark header
-    c.rect(36, 680, 540, 56, fill=True, stroke=False)
+    # 3. Premium Background Frame & Title - Sleek white background with a beautiful gold double-border
+    c.setFillColor(HexColor("#ffffff")) # White background
+    c.setStrokeColor(HexColor("#dfb73c")) # Premium gold border
+    c.setLineWidth(1.5)
+    c.rect(36, 680, 540, 56, fill=True, stroke=True)
     
-    c.setFillColor(HexColor("#fbbf24")) # Gold title
+    # Elegant light gold thin inner border for double border effect
+    c.setStrokeColor(HexColor("#fef3c7"))
+    c.setLineWidth(0.75)
+    c.rect(38.5, 682.5, 535, 51, fill=False, stroke=True)
+    
+    c.setFillColor(HexColor("#b45309")) # Elegant deep gold title
     c.setFont(FONT_BOLD, 15)
     c.drawCentredString(306, 712, labels["title"])
     
-    c.setFillColor(HexColor("#94a3b8")) # Muted grey
+    c.setFillColor(HexColor("#475569")) # Charcoal subtitle for crisp readability
     c.setFont(FONT_REGULAR, 8.5)
     c.drawCentredString(306, 694, labels["subtitle"])
     
     # 4. Two beautiful grids side-by-side for 20+ details (y = 450 to 670, height = 220)
-    c.setStrokeColor(HexColor("#fbbf24"))
+    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
     c.setLineWidth(1)
-    c.setFillColor(HexColor("#334155"))
+    c.setFillColor(HexColor("#ffffff")) # Clean white card backgrounds
     
-    # Left Box (Birth Details)
-    c.rect(36, 450, 260, 220)
+    # Left Box (Birth Details) - Completely white card background with elegant gold border
+    c.rect(36, 450, 260, 220, fill=True, stroke=True)
+    c.setFillColor(HexColor("#b45309")) # Deep gold for block header
     c.setFont(FONT_BOLD, 9.5)
     c.drawString(46, 654, labels["birth_details"])
-    c.setStrokeColor(HexColor("#e2e8f0"))
+    c.setStrokeColor(HexColor("#fef3c7")) # Very light gold inner separator line
     c.line(46, 648, 286, 648)
     
     # Left Box Data Fill (y = 632 down to 462, 10 lines of 17 points spacing)
@@ -754,12 +786,14 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         c.drawString(146, ly, str(field_val))
         ly -= 18
         
-    # Right Box (Panchangam Details)
-    c.setStrokeColor(HexColor("#fbbf24"))
-    c.rect(316, 450, 260, 220)
+    # Right Box (Panchangam Details) - Completely white card background with elegant gold border
+    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
+    c.setFillColor(HexColor("#ffffff")) # White background
+    c.rect(316, 450, 260, 220, fill=True, stroke=True)
+    c.setFillColor(HexColor("#b45309")) # Deep gold for block header
     c.setFont(FONT_BOLD, 9.5)
     c.drawString(326, 654, labels["panchangam"])
-    c.setStrokeColor(HexColor("#e2e8f0"))
+    c.setStrokeColor(HexColor("#fef3c7")) # Very light gold inner separator line
     c.line(326, 648, 566, 648)
     
     # Right Box Data Fill (y = 632 down to 462, 10 lines of 17 points spacing)
@@ -808,7 +842,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     chart_y = 180
     style_str = visual_style.lower()
     
-    c.setFillColor(HexColor("#1e293b"))
+    c.setFillColor(HexColor("#b45309")) # Elegant deep gold/amber headers
     c.setFont(FONT_BOLD, 10)
     
     c.drawString(46, chart_y + 248, labels["rasi_chart"])
@@ -823,12 +857,12 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         
     # 6. Draw Planetary Positions & Dignities Table at the bottom (y = 35 to 160)
     table_y = 30
-    c.setFillColor(HexColor("#334155"))
+    c.setFillColor(HexColor("#b45309")) # Elegant deep gold header
     c.setFont(FONT_BOLD, 10)
     c.drawString(36, table_y + 128, "PLANETARY LONGITUDES & DIGNITY STRENGTH" if lang != "ta" else "கிரக நிலைகள் மற்றும் பலம் (உச்ச, நீச கணிதம்)")
     
-    # Table headers bg
-    c.setFillColor(HexColor("#f1f5f9")) 
+    # Table headers bg - Light warm gold background for premium feel
+    c.setFillColor(HexColor("#fffbeb")) 
     c.rect(36, table_y + 110, 540, 14, fill=True, stroke=False)
     
     c.setFillColor(HexColor("#1e293b"))
@@ -844,9 +878,9 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     planets_order = ["Lagna", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
     
     for i, planet in enumerate(planets_order):
-        # Alternate row backgrounds
+        # Alternate row backgrounds - Soft warm ivory
         if i % 2 == 1:
-            c.setFillColor(HexColor("#f8fafc"))
+            c.setFillColor(HexColor("#faf8f5"))
             c.rect(36, row_y - 2, 540, 10, fill=True, stroke=False)
             
         c.setFillColor(HexColor("#1e293b"))
@@ -889,20 +923,27 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     c.showPage()
     
     # ------------------ PAGE 2 ------------------
-    # 100-Year Vimshottari Dasa Table
-    c.setFillColor(HexColor("#0f172a")) # Slate dark header
-    c.rect(36, 730, 540, 46, fill=True, stroke=False)
+    # 100-Year Vimshottari Dasa Table - White background with golden double borders
+    c.setFillColor(HexColor("#ffffff")) # White background
+    c.setStrokeColor(HexColor("#dfb73c")) # Gold border
+    c.setLineWidth(1.5)
+    c.rect(36, 730, 540, 46, fill=True, stroke=True)
     
-    c.setFillColor(HexColor("#fbbf24")) # Gold title
+    # Elegant thin inner gold border line
+    c.setStrokeColor(HexColor("#fef3c7"))
+    c.setLineWidth(0.75)
+    c.rect(38.5, 732.5, 535, 41, fill=False, stroke=True)
+    
+    c.setFillColor(HexColor("#b45309")) # Elegant deep gold title
     c.setFont(FONT_BOLD, 14)
     c.drawCentredString(306, 748, labels["dasa_title"])
     
-    c.setFillColor(HexColor("#64748b"))
+    c.setFillColor(HexColor("#475569")) # Charcoal subtitle
     c.setFont(FONT_REGULAR, 8.5)
     c.drawCentredString(306, 734, labels["dasa_subtitle"].format(naks_local))
     
     # Render the 100-year Dasas and Bhuktis in a 3-column structured grid
-    c.setFillColor(HexColor("#1e293b"))
+    c.setFillColor(HexColor("#b45309")) # Elegant deep gold section header
     c.setFont(FONT_BOLD, 9.5)
     c.drawString(36, 705, labels["dasa_header"])
     
@@ -919,14 +960,14 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
             
         cx = 36 + (column * col_width)
         
-        # Draw Dasa header card
-        c.setFillColor(HexColor("#f1f5f9"))
+        # Draw Dasa header card - Completely white card background with elegant gold borders
+        c.setFillColor(HexColor("#ffffff"))
         c.rect(cx, dasa_text_y - 2, col_width - 15, 14, fill=True, stroke=False)
-        c.setStrokeColor(HexColor("#fbbf24"))
+        c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border line
         c.setLineWidth(1)
         c.line(cx, dasa_text_y + 12, cx + col_width - 15, dasa_text_y + 12)
         
-        c.setFillColor(HexColor("#1e293b"))
+        c.setFillColor(HexColor("#b45309")) # Highlight active Dasa lord in elegant gold
         c.setFont(FONT_BOLD, 8)
         
         dasa_lord_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(dasa['dasa_lord'], dasa['dasa_lord']).upper()
