@@ -1,107 +1,130 @@
-import sqlite3
 import struct
 import numpy as np
 import json
 import urllib.request
 import re
+import threading
 
-EMBEDDING_MODEL = "nomic-embed-text"
-OLLAMA_URL = "http://localhost:11434/api/embeddings"
+from config import (
+    DB_PATH,
+    EMBEDDING_MODEL,
+    EMBEDDING_DIM,
+    OLLAMA_EMBED_URL,
+    EMBED_TIMEOUT,
+    connect_db,
+)
 
 class VedicSearchEngine:
-    def __init__(self, db_path="/home/prasanth/vedic_rag/vedic_astrology_rag.db"):
+    def __init__(self, db_path=DB_PATH):
         self.db_path = db_path
         self.books = {}      # book_id -> book_metadata
         self.page_map = []   # List of dicts with page metadata: {book_id, page_num, raw_text}
-        self.embeddings = None # NumPy matrix [N, 768]
+        self.embeddings = None # NumPy matrix [N, EMBEDDING_DIM]
         self.last_page_count = -1 # Cache count to avoid redundant reads
+        # Guards index mutation: FastAPI runs sync endpoints in a threadpool, so
+        # concurrent reload()/search calls would otherwise race on the arrays.
+        self._lock = threading.Lock()
         self.load_index()
 
     def get_ollama_embedding(self, text):
-        """Generate a 768-dim embedding using the local Ollama instance"""
+        """Generate an embedding using the local Ollama instance.
+
+        Returns None on failure so callers can distinguish a real vector from a
+        silent all-zero fallback (which would otherwise produce garbage hits).
+        """
         data = {
             "model": EMBEDDING_MODEL,
             "prompt": text
         }
         req = urllib.request.Request(
-            OLLAMA_URL, 
+            OLLAMA_EMBED_URL,
             data=json.dumps(data).encode("utf-8"),
             headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with urllib.request.urlopen(req, timeout=EMBED_TIMEOUT) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
-                return res_data.get("embedding", [])
+                embedding = res_data.get("embedding", [])
+                return embedding if embedding else None
         except Exception as e:
             print(f"Error generating embedding in search engine: {e}")
-            return [0.0] * 768
+            return None
 
     def load_index(self):
         """Load books and page embeddings from the SQLite database into memory"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Fast count check for caching
-            cursor.execute("SELECT count(*) FROM pages")
-            page_count = cursor.fetchone()[0]
-            
-            # Check if tables exist and have entries. If matches cache, return immediately!
-            if page_count == self.last_page_count and page_count > 0:
-                conn.close()
-                return
-                
-            self.last_page_count = page_count
-            
-            # Load books
-            cursor.execute("SELECT id, filename, title, total_pages FROM books")
-            for row in cursor.fetchall():
-                self.books[row[0]] = {
-                    "id": row[0],
-                    "filename": row[1],
-                    "title": row[2],
-                    "total_pages": row[3]
-                }
-                
-            # Load pages
-            cursor.execute("SELECT book_id, page_num, raw_text, embedding FROM pages")
-            rows = cursor.fetchall()
-            
-            self.page_map = []
-            emb_list = []
-            
-            for row in rows:
-                book_id, page_num, raw_text, emb_blob = row
-                
-                # Deserialization of binary float BLOB
-                if emb_blob:
-                    num_floats = len(emb_blob) // 4  # float is 4 bytes
-                    embedding = list(struct.unpack(f"{num_floats}f", emb_blob))
-                    
-                    # Ensure embedding has the expected dimensions (768)
-                    if len(embedding) == 768:
-                        self.page_map.append({
-                            "book_id": book_id,
-                            "page_num": page_num,
-                            "raw_text": raw_text,
-                            "book_title": self.books[book_id]["title"] if book_id in self.books else "Unknown Book"
-                        })
-                        emb_list.append(embedding)
-            
-            if emb_list:
-                self.embeddings = np.array(emb_list, dtype=np.float32)
-                # L2 normalize embeddings for fast cosine similarity via dot product
-                norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True)
-                # Avoid division by zero
-                norms[norms == 0] = 1.0
-                self.embeddings = self.embeddings / norms
-                
-            print(f"Loaded search index: {len(self.page_map)} pages from {len(self.books)} books.")
-            conn.close()
-        except Exception as e:
-            print(f"Error loading search index: {e}. Index might be empty or still ingesting.")
-            self.page_map = []
-            self.embeddings = None
+        with self._lock:
+            conn = None
+            try:
+                conn = connect_db(self.db_path)
+                cursor = conn.cursor()
+
+                # Fast count check for caching
+                cursor.execute("SELECT count(*) FROM pages")
+                page_count = cursor.fetchone()[0]
+
+                # Check if tables exist and have entries. If matches cache, return immediately!
+                if page_count == self.last_page_count and page_count > 0:
+                    return
+
+                # Load books
+                books = {}
+                cursor.execute("SELECT id, filename, title, total_pages FROM books")
+                for row in cursor.fetchall():
+                    books[row[0]] = {
+                        "id": row[0],
+                        "filename": row[1],
+                        "title": row[2],
+                        "total_pages": row[3]
+                    }
+
+                # Load pages
+                cursor.execute("SELECT book_id, page_num, raw_text, embedding FROM pages")
+                rows = cursor.fetchall()
+
+                page_map = []
+                emb_list = []
+
+                for row in rows:
+                    book_id, page_num, raw_text, emb_blob = row
+
+                    # Deserialization of binary float BLOB
+                    if emb_blob:
+                        num_floats = len(emb_blob) // 4  # float is 4 bytes
+                        embedding = list(struct.unpack(f"{num_floats}f", emb_blob))
+
+                        # Ensure embedding has the expected dimensions
+                        if len(embedding) == EMBEDDING_DIM:
+                            page_map.append({
+                                "book_id": book_id,
+                                "page_num": page_num,
+                                "raw_text": raw_text,
+                                "book_title": books[book_id]["title"] if book_id in books else "Unknown Book"
+                            })
+                            emb_list.append(embedding)
+
+                embeddings = None
+                if emb_list:
+                    embeddings = np.array(emb_list, dtype=np.float32)
+                    # L2 normalize embeddings for fast cosine similarity via dot product
+                    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+                    # Avoid division by zero
+                    norms[norms == 0] = 1.0
+                    embeddings = embeddings / norms
+
+                # Atomically swap in the freshly built index
+                self.books = books
+                self.page_map = page_map
+                self.embeddings = embeddings
+                self.last_page_count = page_count
+
+                print(f"Loaded search index: {len(self.page_map)} pages from {len(self.books)} books.")
+            except Exception as e:
+                print(f"Error loading search index: {e}. Index might be empty or still ingesting.")
+                # Preserve any previously loaded index rather than wiping it on a
+                # transient read error.
+            finally:
+                if conn is not None:
+                    conn.close()
 
     def reload(self):
         """Reload the search index to include newly ingested pages"""
@@ -112,9 +135,11 @@ class VedicSearchEngine:
         if self.embeddings is None or len(self.page_map) == 0:
             return []
             
-        # Get query embedding
+        # Get query embedding. None / wrong-dim means the embedding service
+        # failed; return nothing so hybrid_search falls back to sparse instead
+        # of fabricating zero-score "matches".
         query_vector = self.get_ollama_embedding(query_text)
-        if not query_vector or len(query_vector) != 768:
+        if not query_vector or len(query_vector) != EMBEDDING_DIM:
             return []
             
         query_np = np.array(query_vector, dtype=np.float32)

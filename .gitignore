@@ -1,5 +1,7 @@
 # Databases
 vedic_astrology_rag.db
+*.db-wal
+*.db-shm
 
 # Python
 __pycache__/
@@ -17,3 +19,4 @@ test_birth_chart.pdf
 .env
 venv/
 .venv/
+memory.md

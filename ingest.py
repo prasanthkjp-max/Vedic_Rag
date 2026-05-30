@@ -16,14 +16,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from io import BytesIO
 
-BOOKS_DIR = "/home/prasanth/.openclaw/workspace/vedic_astrology_books"
-DB_PATH = "/home/prasanth/vedic_rag/vedic_astrology_rag.db"
-EMBEDDING_MODEL = "nomic-embed-text"
-OLLAMA_URL = "http://localhost:11434/api/embeddings"
+from config import (
+    BOOKS_DIR,
+    DB_PATH,
+    EMBEDDING_MODEL,
+    EMBEDDING_DIM,
+    OLLAMA_EMBED_URL as OLLAMA_URL,
+    connect_db,
+)
+
 NUM_THREADS = 4  # Matches the 4 CPU cores
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = connect_db(DB_PATH)
     cursor = conn.cursor()
     
     # Create books table
@@ -78,9 +83,11 @@ def get_ollama_embedding(text):
             if attempt == 2:
                 print(f"Error calling Ollama embedding API: {e}")
             time.sleep(1)
-            
-    # Fallback to zero vector if failed
-    return [0.0] * 768
+
+    # Signal failure so the page is left unindexed and retried next run, rather
+    # than persisting a useless zero vector that the resume check would skip
+    # forever.
+    return None
 
 def serialize_embedding(vector):
     """Convert a list of floats to a binary BLOB"""
@@ -92,9 +99,9 @@ def process_page(book_id, pdf_path, page_num):
     """
     try:
         # Connect to DB locally in thread to avoid threading issues
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db(DB_PATH)
         cursor = conn.cursor()
-        
+
         # Check if page is already indexed (Resume Support)
         cursor.execute("SELECT id FROM pages WHERE book_id = ? AND page_num = ?", (book_id, page_num))
         if cursor.fetchone() is not None:
@@ -125,7 +132,13 @@ def process_page(book_id, pdf_path, page_num):
         # If the page is empty, embed a simple placeholder to prevent errors
         embed_prompt = raw_text.strip() if raw_text.strip() else f"Book page {page_num}"
         embedding = get_ollama_embedding(embed_prompt)
-        
+
+        # If embedding failed, leave the page unindexed so it is retried on the
+        # next run instead of being permanently stored as a zero vector.
+        if embedding is None:
+            conn.close()
+            return page_num, "ERROR: embedding failed (will retry next run)", 0
+
         # 4. Save to Database
         blob = serialize_embedding(embedding)
         cursor.execute("""
@@ -155,7 +168,7 @@ def ingest_book(book_filename):
     doc.close()
     
     # 1. Register book in DB
-    conn = sqlite3.connect(DB_PATH)
+    conn = connect_db(DB_PATH)
     cursor = conn.cursor()
     # Simple rule to format book title
     title = book_filename.replace(".pdf", "").replace("-- ( WeLib.org )", "").replace("pdfcoffee.com_", "").replace("-pdf-free", "").replace("_", " ").strip()
@@ -174,7 +187,7 @@ def ingest_book(book_filename):
     conn.close()
     
     # 2. Get pages already processed
-    conn = sqlite3.connect(DB_PATH)
+    conn = connect_db(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT page_num FROM pages WHERE book_id = ?", (book_id,))
     processed_pages = set([row[0] for row in cursor.fetchall()])

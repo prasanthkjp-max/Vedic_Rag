@@ -1,6 +1,4 @@
 import os
-import sys
-import sqlite3
 import json
 import urllib.request
 import urllib.error
@@ -16,17 +14,26 @@ from io import BytesIO
 from search_engine import VedicSearchEngine
 from astro_engine import get_astrological_chart, get_regional_panchangam
 from pdf_generator import generate_pdf_report
+from config import (
+    VERSION,
+    DB_PATH,
+    BOOKS_DIR,
+    STATIC_DIR,
+    DEFAULT_LLM_MODEL,
+    OLLAMA_GENERATE_URL,
+    LLM_STREAM_TIMEOUT,
+    connect_db,
+)
 
-DB_PATH = "/home/prasanth/vedic_rag/vedic_astrology_rag.db"
-BOOKS_DIR = "/home/prasanth/.openclaw/workspace/vedic_astrology_books"
+app = FastAPI(title="Vedic Astrology AI RAG Portal", version=VERSION)
 
-app = FastAPI(title="Vedic Astrology AI RAG Portal")
-
-# Enable CORS for frontend flexibility
+# Enable CORS for frontend flexibility.
+# Note: a wildcard origin cannot be combined with allow_credentials=True (the
+# browser rejects it), so credentials are disabled to keep "*" working.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -36,13 +43,13 @@ search_engine = VedicSearchEngine(DB_PATH)
 
 class QueryRequest(BaseModel):
     query: str
-    model: str = "gemma4:31b-cloud"  # Default high-quality model
+    model: str = DEFAULT_LLM_MODEL
 
 @app.get("/api/status")
 def get_status():
     """Get the current progress of the OCR database indexing"""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db(DB_PATH)
         cursor = conn.cursor()
         
         # Count books
@@ -123,65 +130,78 @@ def search(query: str = Query(..., min_length=1), limit: int = 5):
 @app.get("/api/page-image/{book_id}/{page_num}")
 def get_page_image(book_id: int, page_num: int):
     """Render a book page as a PNG image on the fly and return it"""
+    doc = None
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT filename FROM books WHERE id = ?", (book_id,))
         row = cursor.fetchone()
         conn.close()
-        
+
         if not row:
             raise HTTPException(status_code=404, detail="Book not found")
-            
+
         filename = row[0]
         pdf_path = os.path.join(BOOKS_DIR, filename)
-        
+
         if not os.path.exists(pdf_path):
             raise HTTPException(status_code=404, detail="PDF file not found")
-            
+
         # Render page
         doc = fitz.open(pdf_path)
         if page_num < 0 or page_num >= len(doc):
-            doc.close()
             raise HTTPException(status_code=400, detail="Invalid page number")
-            
+
         page = doc.load_page(page_num)
         zoom = 150 / 72  # 150 DPI is crisp but fast to load
         mat = fitz.Matrix(zoom, zoom)
         pix = page.get_pixmap(matrix=mat)
-        
+
         img_bytes = pix.tobytes("png")
-        doc.close()
-        
+
         return StreamingResponse(BytesIO(img_bytes), media_type="image/png")
+    except HTTPException:
+        # Preserve intended 404/400 status codes instead of masking them as 500.
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if doc is not None:
+            doc.close()
 
 @app.get("/api/page-text/{book_id}/{page_num}")
 def get_page_text(book_id: int, page_num: int):
     """Get the raw Sanskrit+English OCR text of a specific page"""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT raw_text FROM pages WHERE book_id = ? AND page_num = ?", (book_id, page_num))
         row = cursor.fetchone()
-        conn.close()
-        
+
         if not row:
-            # Fallback: render text on the fly if not yet indexed
-            cursor = conn.cursor()
+            # Fallback: render text on the fly if not yet indexed.
+            # Reuse the still-open connection to look up the source file.
             cursor.execute("SELECT filename FROM books WHERE id = ?", (book_id,))
             b_row = cursor.fetchone()
+            conn.close()
             if not b_row:
                 raise HTTPException(status_code=404, detail="Book not found")
             pdf_path = os.path.join(BOOKS_DIR, b_row[0])
+            if not os.path.exists(pdf_path):
+                raise HTTPException(status_code=404, detail="PDF file not found")
             doc = fitz.open(pdf_path)
-            page = doc.load_page(page_num)
-            text = page.get_text()
-            doc.close()
+            try:
+                if page_num < 0 or page_num >= len(doc):
+                    raise HTTPException(status_code=400, detail="Invalid page number")
+                text = doc.load_page(page_num).get_text()
+            finally:
+                doc.close()
             return {"raw_text": text, "status": "fallback"}
-            
+
+        conn.close()
         return {"raw_text": row[0], "status": "ocr_indexed"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -231,7 +251,7 @@ Provide an elegant, authoritative, and helpful answer. Start directly with the a
 """
 
     def ollama_stream_generator():
-        url = "http://localhost:11434/api/generate"
+        url = OLLAMA_GENERATE_URL
         data = {
             "model": model_name,
             "prompt": prompt,
@@ -243,7 +263,7 @@ Provide an elegant, authoritative, and helpful answer. Start directly with the a
             headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=LLM_STREAM_TIMEOUT) as response:
                 for line in response:
                     if line:
                         chunk = json.loads(line.decode("utf-8"))
@@ -282,7 +302,7 @@ class AIPredictRequest(BaseModel):
     chart_data: dict
     client_name: str
     place_name: str
-    model: str = "gemma4:31b-cloud"
+    model: str = DEFAULT_LLM_MODEL
 
 @app.get("/api/panchangam")
 def get_daily_panchangam(date_str: str = None, lang: str = "en"):
@@ -398,7 +418,7 @@ Use an authoritative, compassionate, and spiritual tone. Speak as a master schol
 """
 
     def prediction_stream_generator():
-        url = "http://localhost:11434/api/generate"
+        url = OLLAMA_GENERATE_URL
         data = {
             "model": model_name,
             "prompt": prompt,
@@ -410,7 +430,7 @@ Use an authoritative, compassionate, and spiritual tone. Speak as a master schol
             headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req_api, timeout=45) as response:
+            with urllib.request.urlopen(req_api, timeout=LLM_STREAM_TIMEOUT) as response:
                 for line in response:
                     if line:
                         chunk = json.loads(line.decode("utf-8"))
@@ -426,7 +446,7 @@ class AIChatRequest(BaseModel):
     client_name: str
     place_name: str
     query: str
-    model: str = "gemma4:31b-cloud"
+    model: str = DEFAULT_LLM_MODEL
 
 @app.get("/api/month-panchangam")
 def get_month_panchangam(year: int, month: int, lang: str = "en"):
@@ -552,7 +572,7 @@ Start directly with the chat response:
 """
 
     def chat_stream_generator():
-        url = "http://localhost:11434/api/generate"
+        url = OLLAMA_GENERATE_URL
         data = {
             "model": model_name,
             "prompt": prompt,
@@ -564,7 +584,7 @@ Start directly with the chat response:
             headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req_api, timeout=45) as response:
+            with urllib.request.urlopen(req_api, timeout=LLM_STREAM_TIMEOUT) as response:
                 for line in response:
                     if line:
                         chunk = json.loads(line.decode("utf-8"))
@@ -575,15 +595,46 @@ Start directly with the chat response:
             
     return StreamingResponse(chat_stream_generator(), media_type="text/event-stream")
 
+@app.get("/api/version")
+def get_version():
+    """Report the running application version."""
+    return {"name": "Vedic Astrology AI RAG Portal", "version": VERSION}
+
+@app.get("/api/health")
+def health_check():
+    """Lightweight readiness probe: checks the DB and the Ollama backend."""
+    status = {"version": VERSION, "database": "down", "ollama": "down"}
+    code = 200
+    try:
+        conn = connect_db(DB_PATH)
+        conn.execute("SELECT 1 FROM pages LIMIT 1")
+        conn.close()
+        status["database"] = "ok"
+        status["indexed_pages"] = len(search_engine.page_map)
+    except Exception as e:
+        status["database_error"] = str(e)
+        code = 503
+
+    try:
+        with urllib.request.urlopen(f"{OLLAMA_GENERATE_URL.rsplit('/', 2)[0]}/api/tags", timeout=5):
+            status["ollama"] = "ok"
+    except Exception as e:
+        status["ollama_error"] = str(e)
+        code = 503
+
+    if code != 200:
+        raise HTTPException(status_code=503, detail=status)
+    return status
+
 # Serve Frontend static files
-os.makedirs("/home/prasanth/vedic_rag/static", exist_ok=True)
+os.makedirs(STATIC_DIR, exist_ok=True)
 
 @app.get("/")
 def read_root():
-    return FileResponse("/home/prasanth/vedic_rag/static/index.html")
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 # Mount static files folder
-app.mount("/", StaticFiles(directory="/home/prasanth/vedic_rag/static", html=True), name="static")
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

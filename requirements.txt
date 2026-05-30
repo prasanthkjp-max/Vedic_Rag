@@ -1,0 +1,23 @@
+# Vedic Astrology RAG Portal — pinned to the versions verified on the Pi.
+# Regenerate after upgrades with: pip freeze > requirements.txt
+
+# Web backend
+fastapi==0.135.3
+uvicorn==0.44.0
+pydantic==2.12.5
+
+# PDF generation + complex-script (Tamil/Indic) text shaping
+reportlab==4.5.1
+uharfbuzz==0.54.1
+
+# OCR ingestion pipeline
+PyMuPDF==1.27.2.3
+pillow==11.1.0
+pytesseract==0.3.13
+
+# Vector search
+numpy==2.2.6
+
+# Note: pytesseract requires the system 'tesseract-ocr' binary plus the
+# 'san' (Sanskrit) and 'eng' language packs installed via the OS package manager.
+# The RAG chat and embeddings require a running Ollama instance (see config.py).
