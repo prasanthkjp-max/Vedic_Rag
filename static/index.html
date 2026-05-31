@@ -2093,11 +2093,15 @@
                 kn: ["ಪ್ರಭವ", "ವಿಭವ", "ಶುಕ್ಲ", "ಪ್ರಮೋದೂತ", "ಪ್ರಜೋತ್ಪತ್ತಿ", "ಅಂಗೀರಸ", "ಶ್ರೀಮುಖ", "ಭವ", "ಯುವ", "ಧಾತೃ", "ಈಶ್ವರ", "ಬಹುಧಾನ್ಯ", "ಪ್ರಮಾದಿ", "ವಿಕ್ರಮ", "ವೃಷ", "ಚಿತ್ರಭಾನು", "ಸ್ವಭಾನು", "ತಾರಣ", "ಪಾರ್ಥಿವ", "ವ್ಯಯ", "ಸರ್ವಜಿತ್ತು", "ಸರ್ವಧಾರಿ", "ವಿರೋಧಿ", "ವಿಕೃತಿ", "ಖರ", "ನಂದನ", "ವಿಜಯ", "ಜಯ", "ಮನ್ಮಥ", "ದುರ್ಮುಖಿ", "ಹೇವಿಳಂಬಿ", "ವಿಳಂಬಿ", "ವಿಕಾರಿ", "ಶಾರ್ವರಿ", "ಪ್ಲವ", "ಶುಭಕೃತು", "ಶೋಭಕೃತು", "ಕ್ರೋಧಿ", "ವಿಶ್ವಾವಸು", "ಪರಾಭವ", "ಪ್ಲವಂಗ", "ಕೀಲಕ", "ಸೌಮ್ಯ", "ಸಾಧಾರಣ", "ವಿರೋಧಿಕೃತು", "ಪರೀಧಾವಿ", "ಪ್ರಮಾದೀಚ", "ಆನಂದ", "ರಾಕ್ಷಸ", "ನಲ", "ಪಿಂಗಳ", "ಕಾಳಯುಕ್ತಿ", "ಸಿದ್ಧಾರ್ಥಿ", "ರೌದ್ರಿ", "ದುರ್ಮತಿ", "ದುಂದುಭಿ", "ರುಧಿರೋದ್ಗಾರಿ", "ರಕ್ತಾಕ್ಷಿ", "ಕ್ರೋಧನ", "ಅಕ್ಷಯ"]
             };
             const lower = localizedYear.toLowerCase();
-            let foundIdx = -1;
+            // Pick the LONGEST matching name, not the first: several samvatsara
+            // names are substrings of others (e.g. "bhava" inside "parabhava"),
+            // and a first-match would translate only the inner fragment, yielding
+            // half-English output like "Paraபவ".
+            let foundIdx = -1, bestLen = 0;
             for (let i = 0; i < enYears.length; i++) {
-                if (lower.includes(enYears[i])) {
+                if (lower.includes(enYears[i]) && enYears[i].length > bestLen) {
                     foundIdx = i;
-                    break;
+                    bestLen = enYears[i].length;
                 }
             }
             if (foundIdx === -1) return localizedYear;
@@ -2522,7 +2526,7 @@
             const netraVal = netraMap[naksIdx];
             const jeevanVal = jeevanMap[naksIdx];
             document.getElementById('panch-netram').innerText = `${netraVal} (${netraVal >= 1.5 ? 'Highly Auspicious' : netraVal >= 1.0 ? 'Auspicious' : 'Average'})`;
-            document.getElementById('panch-jeevan').innerText = `${jevanVal} (${jeevanVal >= 1.0 ? 'Highly Auspicious' : jeevanVal >= 0.5 ? 'Auspicious' : 'Inauspicious'})`;
+            document.getElementById('panch-jeevan').innerText = `${jeevanVal} (${jeevanVal >= 1.0 ? 'Highly Auspicious' : jeevanVal >= 0.5 ? 'Auspicious' : 'Inauspicious'})`;
 
             // Calculate Horas starting from Sunrise
             const DAY_LORDS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
