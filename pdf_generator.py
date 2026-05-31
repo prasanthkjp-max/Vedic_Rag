@@ -512,24 +512,23 @@ LABEL_LOCALIZATION = {
     }
 }
 
-def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en"):
+def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", grid_size=220):
     """
     Draw a traditional 4x4 South Indian chart using ReportLab canvas
-    Each cell is 60x60 points. Total grid is 240x240 points.
+    Each cell is dynamically sized. Total grid is grid_size x grid_size points.
     """
     FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
-    box_size = 60
-    grid_size = 240
+    box_size = grid_size / 4
     
-    # 1. Draw outer boundary
-    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
-    c.setLineWidth(2)
+    # 1. Draw outer boundary in premium crimson
+    c.setStrokeColor(HexColor("#7A1C0B"))
+    c.setLineWidth(1.5)
     c.rect(x_offset, y_offset, grid_size, grid_size)
     
-    # 2. Draw interior grid lines
-    c.setLineWidth(1)
-    c.setStrokeColor(HexColor("#e2e8f0")) # Light grey inner lines
+    # 2. Draw interior grid lines in elegant antique gold
+    c.setLineWidth(0.75)
+    c.setStrokeColor(HexColor("#E5DCC6"))
     
     # Horizontal lines
     c.line(x_offset, y_offset + box_size, x_offset + grid_size, y_offset + box_size)
@@ -541,27 +540,27 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     c.line(x_offset + 2 * box_size, y_offset, x_offset + 2 * box_size, y_offset + grid_size)
     c.line(x_offset + 3 * box_size, y_offset, x_offset + 3 * box_size, y_offset + grid_size)
     
-    # 3. Draw a clean white center panel with an elegant golden inner frame
-    c.setFillColor(HexColor("#ffffff")) # Sleek white background
+    # 3. Draw a clean warm center panel with an elegant golden inner frame
+    c.setFillColor(HexColor("#FDFBF7")) # Warm ivory background
     c.rect(x_offset + box_size + 0.5, y_offset + box_size + 0.5, 2 * box_size - 1, 2 * box_size - 1, fill=True, stroke=False)
     
-    c.setStrokeColor(HexColor("#dfb73c")) # Gold inner frame
-    c.setLineWidth(1)
+    c.setStrokeColor(HexColor("#C5A059")) # Muted Antique Gold
+    c.setLineWidth(0.75)
     c.rect(x_offset + box_size + 3, y_offset + box_size + 3, 2 * box_size - 6, 2 * box_size - 6, fill=False, stroke=True)
     
-    # Central label in elegant deep gold/amber
-    c.setFillColor(HexColor("#b45309"))
-    c.setFont(FONT_BOLD, 10)
+    # Central label in elegant deep crimson
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 8.5)
     
-    lbl_d9 = "D9 KUNDALI" if lang != "ta" else "D9 நவாம்சம்"
-    lbl_d1 = "D1 KUNDALI" if lang != "ta" else "D1 ஜனனம்"
+    lbl_d9 = "D9 NAVAMSHA" if lang != "ta" else "D9 நவாம்சம்"
+    lbl_d1 = "D1 JANMA" if lang != "ta" else "D1 ஜனனம்"
     
     if chart_type == "navamsha":
-        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size + 5, "NAVAMSHA")
-        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size - 10, lbl_d9)
+        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size + 4, "NAVAMSHA")
+        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size - 8, lbl_d9)
     else:
-        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size + 5, "JANMA")
-        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size - 10, lbl_d1)
+        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size + 4, "JANMA")
+        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size - 8, lbl_d1)
     
     # 4. Map Rasi indices (0 to 11 starting from Aries) to cells:
     cell_coords = {
@@ -594,46 +593,42 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         planets_in_cell = rasi_planets[rasi_idx]
         x, y = coords
         
-        # Cell Label
-        c.setFillColor(HexColor("#94a3b8"))
-        c.setFont(FONT_REGULAR, 7)
-        c.drawString(x + 4, y + box_size - 10, RASI_TRANSLATIONS.get(lang, RASI_TRANSLATIONS["en"])[rasi_idx][:5])
-        
-        # Draw planets inside the cell
-        c.setFillColor(HexColor("#e2e8f0")) # Crisp white/light grey planets for readability on dark or light slate
+        # Cell Label in soft slate
+        c.setFillColor(HexColor("#64748B"))
+        c.setFont(FONT_REGULAR, 6.5)
+        c.drawString(x + 4, y + box_size - 9, RASI_TRANSLATIONS.get(lang, RASI_TRANSLATIONS["en"])[rasi_idx][:5])
         
         # Arrange planets in rows of 2 inside the cell
         col_idx = 0
         row_idx = 0
         for p_abbr in planets_in_cell:
-            px = x + 6 + (col_idx * 26)
-            py = y + box_size - 24 - (row_idx * 14)
-            c.setFillColor(HexColor("#1e293b"))
+            px = x + 5 + (col_idx * 23)
+            py = y + box_size - 22 - (row_idx * 13)
+            c.setFillColor(HexColor("#2C3E50")) # Charcoal body text
             if len(p_abbr) > 2:
-                c.setFont(FONT_BOLD, 7) # Smaller font for marked planets
+                c.setFont(FONT_BOLD, 6.5) # Smaller font for retrograde/combust
             else:
-                c.setFont(FONT_BOLD, 8.5)
+                c.setFont(FONT_BOLD, 7.5)
             c.drawString(px, py, p_abbr)
             col_idx += 1
             if col_idx >= 2:
                 col_idx = 0
                 row_idx += 1
 
-def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en"):
+def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", size=220):
     """
     Draw a traditional diamond-shaped North Indian chart
-    Size is 240x240 points.
+    Size is dynamically scaled to size x size points.
     """
     FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
-    size = 240
-    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
-    c.setLineWidth(2)
+    c.setStrokeColor(HexColor("#7A1C0B")) # Deep royal crimson
+    c.setLineWidth(1.5)
     c.rect(x_offset, y_offset, size, size)
     
-    # 1. Draw internal diagonals
-    c.setLineWidth(1)
-    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold inner diagonal lines
+    # 1. Draw internal diagonals in elegant gold
+    c.setLineWidth(0.75)
+    c.setStrokeColor(HexColor("#C5A059"))
     c.line(x_offset, y_offset, x_offset + size, y_offset + size)
     c.line(x_offset, y_offset + size, x_offset + size, y_offset)
     
@@ -674,16 +669,16 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         house = (p_rasi - lagna_rasi) % 12 + 1
         house_planets[house].append(abbr)
         
-    # Write house numbers (Zodiac Sign indexes 1 to 12)
-    c.setFont(FONT_REGULAR, 7)
-    c.setFillColor(HexColor("#94a3b8"))
+    # Write house numbers (Zodiac Sign indexes 1 to 12) in soft slate
+    c.setFont(FONT_REGULAR, 6.5)
+    c.setFillColor(HexColor("#64748B"))
     for h, center in house_centers.items():
         hx, hy = center
         sign_num = (lagna_rasi + h - 1) % 12 + 1
-        c.drawString(hx - 15, hy + 12, str(sign_num))
+        c.drawString(hx - 13, hy + 10, str(sign_num))
         
-    # Draw planets in their respective houses
-    c.setFillColor(HexColor("#1e293b"))
+    # Draw planets in their respective houses in charcoal
+    c.setFillColor(HexColor("#2C3E50"))
     
     for h, center in house_centers.items():
         planets_in_house = house_planets[h]
@@ -692,31 +687,49 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         if len(planets_in_house) > 0:
             has_long_abbr = any(len(p) > 2 for p in planets_in_house)
             if has_long_abbr:
-                c.setFont(FONT_BOLD, 7)
+                c.setFont(FONT_BOLD, 6.5)
             else:
-                c.setFont(FONT_BOLD, 8.5)
+                c.setFont(FONT_BOLD, 7.5)
                 
             row_1 = planets_in_house[:3]
             row_2 = planets_in_house[3:]
             
-            c.drawCentredString(hx, hy - 2, " ".join(row_1))
+            c.drawCentredString(hx, hy - 1, " ".join(row_1))
             if row_2:
-                c.drawCentredString(hx, hy - 12, " ".join(row_2))
+                c.drawCentredString(hx, hy - 10, " ".join(row_2))
+
+def draw_page_border_decorations(c, page_num, lang):
+    """Draw a premium double-line border around the entire page with geometric gold corner accents."""
+    # Outer frame in rich royal maroon
+    c.setStrokeColor(HexColor("#7A1C0B"))
+    c.setLineWidth(0.75)
+    c.rect(20, 20, 572, 752, fill=False, stroke=True)
+    
+    # Inner frame in antique gold
+    c.setStrokeColor(HexColor("#C5A059"))
+    c.setLineWidth(0.4)
+    c.rect(23, 23, 566, 746, fill=False, stroke=True)
+    
+    # Subtle geometric solid gold squares in the four absolute corners
+    c.setFillColor(HexColor("#C5A059"))
+    c.rect(17.5, 17.5, 5, 5, fill=True, stroke=False)
+    c.rect(589.5, 17.5, 5, 5, fill=True, stroke=False)
+    c.rect(17.5, 769.5, 5, 5, fill=True, stroke=False)
+    c.rect(589.5, 769.5, 5, 5, fill=True, stroke=False)
 
 def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path="/home/prasanth/vedic_rag/birth_chart_report.pdf", lang="en"):
     """
-    Generate a 2-page elegant, scholarly Vedic Astrology Report PDF in selected languages containing
+    Generate a 2-page highly elegant, scholarly Vedic Astrology Report PDF in selected languages containing
     both Rasi D1 & Navamsha D9 charts side-by-side, Pillaiyar Suzhi & Lord Ganesha Invocation,
-    20+ traditional birth/astronomical panchangam details, and 100-year Vimshottari Dasas.
+    20+ traditional birth/astronomical panchangam details, and 120-year Vimshottari Dasas.
+    Includes a gorgeous divine astrological remedial guidance card at the bottom of page 2.
     """
     FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
-    # Initialize Document
-    doc = SimpleDocTemplate(output_path, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
+    # Initialize Canvas
     c = canvas.Canvas(output_path, pagesize=letter)
     
     # Enable robust mixed-font rendering for Indic regional PDF reports.
-    # Dynamically splits text to draw Indic glyphs in the localized font and Latin/symbols in FreeSans.
     import re
     INDIC_RE = re.compile(r'([\u0900-\u097f\u0b80-\u0bff\u0c00-\u0c7f\u0c80-\u0cff\u0d00-\u0d7f]+)')
 
@@ -821,7 +834,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         labels["tamil_month"] = "చాంద్రమాన నెల & తిథి"
     elif lang == "kn":
         labels["tamil_year"] = "ಸಂವತ್ಸರ (ಶಕ)"
-        labels["tamil_month"] = "ಚಾಂದ್ರಮಾನ ಮಾಸ & తిథి"
+        labels["tamil_month"] = "ಚಾಂದ್ರಮಾನ ಮಾಸ & తిಥಿ"
     elif lang == "ta":
         labels["tamil_year"] = "தமிழ் வருடம்"
         labels["tamil_month"] = "தமிழ் தேதி"
@@ -840,97 +853,80 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
             labels["tamil_month"] = "Solar Month & Date"
     
     # ------------------ PAGE 1 ------------------
-    # 1. Lord Ganesha Icon (Top Center, small and premium)
+    draw_page_border_decorations(c, 1, lang)
+    
+    # 1. Lord Ganesha Icon (Top Center, elegant)
     ganesha_img_path = "/home/prasanth/vedic_rag/static/assets/lord_vinayaka.png"
     if os.path.exists(ganesha_img_path):
-        # Center at x = 306 (width=32, height=32) -> x = 290
-        c.drawImage(ganesha_img_path, 290, 756, width=32, height=32, mask='auto')
+        # Center at x = 306 (width=28, height=28) -> x = 292
+        c.drawImage(ganesha_img_path, 292, 742, width=28, height=28, mask='auto')
         
     # 2. Pillaiyar Suzhi & Janma Patrika invocation shloka at the top
-    c.setFillColor(HexColor("#b45309")) # Premium deep gold / amber color
+    c.setFillColor(HexColor("#7A1C0B")) # Premium Royal Crimson
     suzhi = "உ" if lang == "ta" else "Sri"
-    c.setFont(FONT_BOLD, 8.5)
-    c.drawCentredString(306, 746, suzhi) # Suzhi drawn separately below Ganesha image
+    c.setFont(FONT_BOLD, 8)
+    c.drawCentredString(306, 732, suzhi)
     
-    c.setFont(FONT_BOLD, 7.2)
+    c.setFont(FONT_BOLD, 7)
     mantra_text = INVOCATION_SHLOKA_LOCAL.get(lang, INVOCATION_SHLOKA_LOCAL['en'])
-    c.drawCentredString(306, 737, mantra_text) # Mantra drawn below suzhi
+    c.drawCentredString(306, 722, mantra_text)
     
-    # 3. Premium Background Frame & Title - Sleek white background with a beautiful gold double-border
-    c.setFillColor(HexColor("#ffffff")) # White background
-    c.setStrokeColor(HexColor("#dfb73c")) # Premium gold border
-    c.setLineWidth(1.5)
-    c.rect(36, 680, 540, 56, fill=True, stroke=True)
+    # 3. Premium Background Frame & Title - Sleek ivory background with double border
+    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
+    c.setStrokeColor(HexColor("#7A1C0B")) # Burgundy
+    c.setLineWidth(1.25)
+    c.rect(36, 662, 540, 50, fill=True, stroke=True)
     
     # Elegant light gold thin inner border for double border effect
-    c.setStrokeColor(HexColor("#fef3c7"))
+    c.setStrokeColor(HexColor("#C5A059"))
+    c.setLineWidth(0.5)
+    c.rect(38.5, 664.5, 535, 45, fill=False, stroke=True)
+    
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 13)
+    c.drawCentredString(306, 692, labels["title"])
+    
+    c.setFillColor(HexColor("#2D3748")) # Charcoal subtitle
+    c.setFont(FONT_REGULAR, 7.5)
+    c.drawCentredString(306, 676, labels["subtitle"])
+    
+    # 4. Two beautiful cards side-by-side for birth & panchangam details (y = 478 to 650, height = 172)
+    c.setStrokeColor(HexColor("#C5A059")) # Muted Antique Gold
     c.setLineWidth(0.75)
-    c.rect(38.5, 682.5, 535, 51, fill=False, stroke=True)
+    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
     
-    c.setFillColor(HexColor("#b45309")) # Elegant deep gold title
-    c.setFont(FONT_BOLD, 15)
-    c.drawCentredString(306, 712, labels["title"])
+    # Left Box (Birth Details)
+    c.rect(36, 478, 260, 172, fill=True, stroke=True)
+    c.setFillColor(HexColor("#7A1C0B")) # Crimson
+    c.setFont(FONT_BOLD, 9)
+    c.drawString(46, 634, labels["birth_details"])
+    c.setStrokeColor(HexColor("#E5DCC6")) # Thin separator line
+    c.line(46, 628, 286, 628)
     
-    c.setFillColor(HexColor("#475569")) # Charcoal subtitle for crisp readability
-    c.setFont(FONT_REGULAR, 8.5)
-    c.drawCentredString(306, 694, labels["subtitle"])
+    # Left Box Data Fill (10 fields with 14.5 spacing)
+    c.setFont(FONT_REGULAR, 7.5)
+    c.setFillColor(HexColor("#2D3748"))
     
-    # 4. Two beautiful grids side-by-side for 20+ details (y = 450 to 670, height = 220)
-    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
-    c.setLineWidth(1)
-    c.setFillColor(HexColor("#ffffff")) # Clean white card backgrounds
-    
-    # Left Box (Birth Details) - Completely white card background with elegant gold border
-    c.rect(36, 450, 260, 220, fill=True, stroke=True)
-    c.setFillColor(HexColor("#b45309")) # Deep gold for block header
-    c.setFont(FONT_BOLD, 9.5)
-    c.drawString(46, 654, labels["birth_details"])
-    c.setStrokeColor(HexColor("#fef3c7")) # Very light gold inner separator line
-    c.line(46, 648, 286, 648)
-    
-    # Left Box Data Fill (y = 632 down to 462, 10 lines of 17 points spacing)
-    c.setFont(FONT_REGULAR, 8)
-    c.setFillColor(HexColor("#1e293b"))
-    
-    # Fetch Day of Week in localized language
     day_idx = math.floor(chart_data['metadata']['julian_date'] + 1.5) % 7
     day_local = DAYS_OF_WEEK_LOCAL.get(lang, DAYS_OF_WEEK_LOCAL["en"])[day_idx]
     
-    gender_local = "ஆண் / Male" if lang == "ta" else "Male"
-
-    # Dynamic gender and offset translations to prevent cross-language font crashes
-    gender_labels = {
-        "en": "Gender",
-        "ta": "பாலினம் / Gender",
-        "te": "లింగము / Gender",
-        "ml": "ലിംഗം / Gender",
-        "kn": "ಲಿಂಗ / Gender",
-        "hi": "लिंग / Gender"
-    }
-    gender_label = gender_labels.get(lang, "Gender")
-
-    gender_values = {
-        "en": "Male",
-        "ta": "ஆண் / Male",
-        "te": "పురుషుడు / Male",
-        "ml": "പുരുഷൻ / Male",
-        "kn": "ಪುರುಷ / Male",
-        "hi": "पुरुष / Male"
-    }
-    gender_local = gender_values.get(lang, "Male")
-
-    offset_labels = {
-        "en": "Standard Time Offset",
-        "ta": "பொதுநேர திருத்தம்",
-        "te": "ప్రామాణిక కాల వ్యత్యాసం",
-        "ml": "പ്രാദേശിക സമയ വ്യത്യാസം",
-        "kn": "ಪ್ರಮಾಣಿತ ಸಮಯದ ವ್ಯತ್ಯಾಸ",
-        "hi": "मानक समय अंतर"
-    }
-    offset_label = offset_labels.get(lang, "Standard Time Offset")
-
+    gender_label = {
+        "en": "Gender", "ta": "பாலினம் / Gender", "te": "లింగము / Gender",
+        "ml": "லிംഗം / Gender", "kn": "ಲಿಂಗ / Gender", "hi": "लिंग / Gender"
+    }.get(lang, "Gender")
+    
+    gender_local = {
+        "en": "Male", "ta": "ஆண் / Male", "te": "పురుషుడు / Male",
+        "ml": "పురుഷൻ / Male", "kn": "ಪುರುಷ / Male", "hi": "पुरुष / Male"
+    }.get(lang, "Male")
+    
+    offset_label = {
+        "en": "Standard Time Offset", "ta": "பொதுநேர திருத்தம்", "te": "ప్రామాణిక కాల వ్యత్యాసం",
+        "ml": "പ്രാദേശിക സമയ വ്യത്യാസം", "kn": "ಪ್ರಮಾಣಿತ ಸಮಯದ ವ್ಯತ್ಯಾಸ", "hi": "मानक समय अंतर"
+    }.get(lang, "Standard Time Offset")
+    
     lmt_label = labels.get("lmt", "LMT")
-
+    
     birth_fields = [
         (labels["name"], client_name),
         (labels["date"], chart_data['metadata']['datetime'].split(" ")[0]),
@@ -944,43 +940,35 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         (labels["ayanamsa"], f"{chart_data['metadata']['ayanamsa_name']} ({chart_data['metadata']['ayanamsa_dms']})")
     ]
     
-    ly = 632
+    ly = 614
     for field_label, field_val in birth_fields:
         c.drawString(46, ly, f"{field_label}:")
-        c.drawString(146, ly, str(field_val))
-        ly -= 18
+        c.drawString(140, ly, str(field_val))
+        ly -= 14.5
         
-    # Right Box (Panchangam Details) - Completely white card background with elegant gold border
-    c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border
-    c.setFillColor(HexColor("#ffffff")) # White background
-    c.rect(316, 450, 260, 220, fill=True, stroke=True)
-    c.setFillColor(HexColor("#b45309")) # Deep gold for block header
-    c.setFont(FONT_BOLD, 9.5)
-    c.drawString(326, 654, labels["panchangam"])
-    c.setStrokeColor(HexColor("#fef3c7")) # Very light gold inner separator line
-    c.line(326, 648, 566, 648)
+    # Right Box (Panchangam Details)
+    c.setStrokeColor(HexColor("#C5A059"))
+    c.setFillColor(HexColor("#FDFBF7"))
+    c.rect(316, 478, 260, 172, fill=True, stroke=True)
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9)
+    c.drawString(326, 634, labels["panchangam"])
+    c.setStrokeColor(HexColor("#E5DCC6"))
+    c.line(326, 628, 566, 628)
     
-    # Right Box Data Fill (y = 632 down to 462, 10 lines of 17 points spacing)
-    c.setFont(FONT_REGULAR, 8)
-    c.setFillColor(HexColor("#1e293b"))
+    # Right Box Data Fill (11 fields with 14.5 spacing)
+    c.setFont(FONT_REGULAR, 7.5)
+    c.setFillColor(HexColor("#2D3748"))
     
-    # Localize Tithi, Nakshatra, Yoga, Karana, Month/Date, and Kali Year prefix
     tithi_local = translate_tithi(chart_data['panchangam']['tithi'], lang)
     naks_local = translate_nakshatra(chart_data['panchangam']['nakshatra'], lang)
     yog_local = translate_yogam(chart_data['panchangam']['yogam'], lang)
     kar_local = translate_karanam(chart_data['panchangam']['karanam'], lang)
     month_local = translate_month(chart_data['panchangam']['tamil_date'], lang)
     
-    # Dynamically localize Kali prefix
-    kali_prefixes = {
-        "en": "Kali ",
-        "ta": "கலி-",
-        "te": "కలి-",
-        "ml": "കലി-",
-        "kn": "ಕಲಿ-",
-        "hi": "कलि-"
-    }
-    kali_prefix = kali_prefixes.get(lang, "Kali ")
+    kali_prefix = {
+        "en": "Kali ", "ta": "கலி-", "te": "కలి-", "ml": "கലി-", "kn": "ಕಲಿ-", "hi": "कलि-"
+    }.get(lang, "Kali ")
     
     panch_fields = [
         (labels["tamil_year"], translate_year(chart_data['panchangam']['tamil_year'], lang)),
@@ -996,61 +984,62 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         (labels["udayadhi"], chart_data['panchangam']['udayadhi_nazhikai'])
     ]
     
-    ry = 632
+    ry = 614
     for field_label, field_val in panch_fields:
         c.drawString(326, ry, f"{field_label}:")
-        c.drawString(436, ry, str(field_val))
-        ry -= 18
+        c.drawString(428, ry, str(field_val))
+        ry -= 14.5
         
-    # 5. Draw Kundali Charts Side-by-Side (D1 Rasi & D9 Navamsha) at y = 180 to 420
-    chart_y = 180
+    # 5. Draw Kundali Charts Side-by-Side (D1 Rasi & D9 Navamsha) at y = 222 to 442
+    chart_y = 222
     style_str = visual_style.lower()
     
-    c.setFillColor(HexColor("#b45309")) # Elegant deep gold/amber headers
-    c.setFont(FONT_BOLD, 10)
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9.5)
     
-    c.drawString(46, chart_y + 248, labels["rasi_chart"])
-    c.drawString(326, chart_y + 248, labels["navamsha_chart"])
+    c.drawString(46, chart_y + 230, labels["rasi_chart"])
+    c.drawString(346, chart_y + 230, labels["navamsha_chart"])
     
     if style_str == "north":
-        draw_north_indian_chart(c, 46, chart_y, chart_data["placements"], "rasi", lang=lang)
-        draw_north_indian_chart(c, 326, chart_y, chart_data["placements"], "navamsha", lang=lang)
+        draw_north_indian_chart(c, 46, chart_y, chart_data["placements"], "rasi", lang=lang, size=220)
+        draw_north_indian_chart(c, 346, chart_y, chart_data["placements"], "navamsha", lang=lang, size=220)
     else:
-        draw_south_indian_chart(c, 46, chart_y, chart_data["placements"], "rasi", lang=lang)
-        draw_south_indian_chart(c, 326, chart_y, chart_data["placements"], "navamsha", lang=lang)
+        draw_south_indian_chart(c, 46, chart_y, chart_data["placements"], "rasi", lang=lang, grid_size=220)
+        draw_south_indian_chart(c, 346, chart_y, chart_data["placements"], "navamsha", lang=lang, grid_size=220)
         
-    # 6. Draw Planetary Positions & Dignities Table at the bottom (y = 35 to 160)
-    table_y = 30
-    c.setFillColor(HexColor("#b45309")) # Elegant deep gold header
-    c.setFont(FONT_BOLD, 10)
-    c.drawString(36, table_y + 128, "PLANETARY LONGITUDES & DIGNITY STRENGTH" if lang != "ta" else "கிரக நிலைகள் மற்றும் பலம் (உச்ச, நீச கணிதம்)")
+    # 6. Draw Planetary Positions & Dignities Table at the bottom (y = 42 to 180)
+    table_y = 42
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9.5)
     
-    # Table headers bg - Light warm gold background for premium feel
-    c.setFillColor(HexColor("#fffbeb")) 
-    c.rect(36, table_y + 110, 540, 14, fill=True, stroke=False)
+    table_title = "PLANETARY LONGITUDES & DIGNITY STRENGTH" if lang != "ta" else "கிரக நிலைகள் மற்றும் பலம் (உச்ச, நீச கணிதம்)"
+    c.drawString(36, table_y + 138, table_title)
     
-    c.setFillColor(HexColor("#1e293b"))
-    c.setFont(FONT_BOLD, 7.5)
-    c.drawString(44, table_y + 113, labels["planet"])
-    c.drawString(124, table_y + 113, labels["longitude"])
-    c.drawString(224, table_y + 113, labels["rasi"])
-    c.drawString(344, table_y + 113, labels["rasi_deg"])
-    c.drawString(444, table_y + 113, labels["dignity"])
+    # Table headers bg - Soft gold warm background for premium feel
+    c.setFillColor(HexColor("#F9F4E8")) 
+    c.rect(36, table_y + 120, 540, 15, fill=True, stroke=False)
     
-    c.setFont(FONT_REGULAR, 7.5)
-    row_y = table_y + 96
+    c.setFillColor(HexColor("#2C3E50"))
+    c.setFont(FONT_BOLD, 7)
+    c.drawString(44, table_y + 124, labels["planet"])
+    c.drawString(124, table_y + 124, labels["longitude"])
+    c.drawString(224, table_y + 124, labels["rasi"])
+    c.drawString(344, table_y + 124, labels["rasi_deg"])
+    c.drawString(444, table_y + 124, labels["dignity"])
+    
+    c.setFont(FONT_REGULAR, 7)
+    row_y = table_y + 104
     planets_order = ["Lagna", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
     
     for i, planet in enumerate(planets_order):
         # Alternate row backgrounds - Soft warm ivory
         if i % 2 == 1:
-            c.setFillColor(HexColor("#faf8f5"))
+            c.setFillColor(HexColor("#FDFBF7"))
             c.rect(36, row_y - 2, 540, 10, fill=True, stroke=False)
             
-        c.setFillColor(HexColor("#1e293b"))
+        c.setFillColor(HexColor("#2C3E50"))
         plac = chart_data["placements"][planet]
         
-        # Translate planet & rasi names
         planet_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(planet, planet)
         rasi_local = RASI_TRANSLATIONS.get(lang, RASI_TRANSLATIONS["en"])[plac['rasi_index']]
         
@@ -1059,7 +1048,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         c.drawString(224, row_y, rasi_local)
         c.drawString(344, row_y, f"{plac['degree']:.2f}°")
         
-        # Style the dignity beautifully
+        # Style dignity beautifully
         raw_dig = plac.get("dignity", "Neutral")
         dig_local = DIGNITY_TRANSLATIONS.get(lang, DIGNITY_TRANSLATIONS["en"]).get(raw_dig, raw_dig)
         
@@ -1067,14 +1056,12 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         status_tags = []
         if plac.get("is_retrograde", False) and planet != "Lagna":
             tag_local = {
-                "en": "Retro", "ta": "வக்ரம்", "te": "వక్రం", 
-                "ml": "വക്രം", "kn": "ವಕ್ರ", "hi": "वक्री"
+                "en": "Retro", "ta": "வக்ரம்", "te": "వక్రం", "ml": "വക്രം", "kn": "ವಕ್ರ", "hi": "वक्री"
             }.get(lang, "Retro")
             status_tags.append(tag_local)
         if plac.get("is_combust", False) and planet != "Lagna":
             tag_local = {
-                "en": "Combust", "ta": "அஸ்தங்கம்", "te": "అస్తంగతం",
-                "ml": "മൗഢ്യം", "kn": "ಅಸ್ತಂಗತ", "hi": "अस्त"
+                "en": "Combust", "ta": "அஸ்தங்கம்", "te": "అస్తంగతం", "ml": "മൗഢ്യം", "kn": "ಅಸ್ತಂಗತ", "hi": "అस्त"
             }.get(lang, "Combust")
             status_tags.append(tag_local)
             
@@ -1082,57 +1069,59 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         dig_local = f"{dig_local}{status_str}"
         
         if "Exalted" in raw_dig or "Own" in raw_dig:
-            c.setFillColor(HexColor("#16a34a")) # Green
+            c.setFillColor(HexColor("#15803D")) # Forest Green
         elif "Debilitated" in raw_dig:
-            c.setFillColor(HexColor("#dc2626")) # Red
+            c.setFillColor(HexColor("#B91C1C")) # Crimson
         elif "Friendly" in raw_dig:
-            c.setFillColor(HexColor("#2563eb")) # Blue
+            c.setFillColor(HexColor("#1D4ED8")) # Royal Blue
         elif "Inimical" in raw_dig:
-            c.setFillColor(HexColor("#ea580c")) # Orange
+            c.setFillColor(HexColor("#C2410C")) # Deep Orange
         else:
             c.setFillColor(HexColor("#475569")) # Slate
             
         c.drawString(444, row_y, dig_local)
-        row_y -= 11.5
+        row_y -= 11.0
         
-    # Footer on Page 1
-    c.setFont(FONT_REGULAR, 7.5)
-    c.setFillColor(HexColor("#94a3b8"))
-    c.drawString(36, 15, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 15, "Page 1 of 2")
+    # Footer on Page 1 (Outside the borders)
+    c.setFont(FONT_REGULAR, 7)
+    c.setFillColor(HexColor("#94A3B8"))
+    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
+    c.drawRightString(576, 13, "Page 1 of 2")
     
     # Start Page 2
     c.showPage()
     
     # ------------------ PAGE 2 ------------------
-    # 100-Year Vimshottari Dasa Table - White background with golden double borders
-    c.setFillColor(HexColor("#ffffff")) # White background
-    c.setStrokeColor(HexColor("#dfb73c")) # Gold border
-    c.setLineWidth(1.5)
-    c.rect(36, 730, 540, 46, fill=True, stroke=True)
+    draw_page_border_decorations(c, 2, lang)
     
-    # Elegant thin inner gold border line
-    c.setStrokeColor(HexColor("#fef3c7"))
-    c.setLineWidth(0.75)
-    c.rect(38.5, 732.5, 535, 41, fill=False, stroke=True)
+    # 1. 120-Year Vimshottari Dasa Table Header - White background with golden double borders
+    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
+    c.setStrokeColor(HexColor("#7A1C0B")) # Burgundy
+    c.setLineWidth(1.25)
+    c.rect(36, 710, 540, 50, fill=True, stroke=True)
     
-    c.setFillColor(HexColor("#b45309")) # Elegant deep gold title
-    c.setFont(FONT_BOLD, 14)
-    c.drawCentredString(306, 748, labels["dasa_title"])
+    c.setStrokeColor(HexColor("#C5A059"))
+    c.setLineWidth(0.5)
+    c.rect(38.5, 712.5, 535, 45, fill=False, stroke=True)
     
-    c.setFillColor(HexColor("#475569")) # Charcoal subtitle
-    c.setFont(FONT_REGULAR, 8.5)
-    c.drawCentredString(306, 734, labels["dasa_subtitle"].format(naks_local))
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 13)
+    c.drawCentredString(306, 740, labels["dasa_title"])
+    
+    c.setFillColor(HexColor("#2D3748")) # Charcoal subtitle
+    c.setFont(FONT_REGULAR, 7.5)
+    c.drawCentredString(306, 724, labels["dasa_subtitle"].format(naks_local))
+    
+    # Dasa Section Header
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9.5)
+    c.drawString(36, 688, labels["dasa_header"])
     
     # Render the 120-year Dasas and Bhuktis in a balanced 2-column structured grid
-    c.setFillColor(HexColor("#b45309")) # Elegant deep gold section header
-    c.setFont(FONT_BOLD, 10)
-    c.drawString(36, 705, labels["dasa_header"])
-    
     total_dasas = len(chart_data["dasas"])
     cards_per_column = (total_dasas + 1) // 2
     
-    dasa_text_y = 675
+    dasa_text_y = 650
     column = 0 # 0 or 1
     col_width = 255
     cards_drawn = 0
@@ -1140,37 +1129,35 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     for dasa in chart_data["dasas"]:
         if cards_drawn >= cards_per_column and column == 0:
             column = 1
-            dasa_text_y = 675
+            dasa_text_y = 650
             cards_drawn = 0
             
-        # Calculate horizontal starting point (30pt spacer between columns)
         cx = 36 + (column * (col_width + 30))
         
-        # Draw Dasa card box - Completely white card background with elegant gold borders
-        c.setFillColor(HexColor("#ffffff"))
-        c.setStrokeColor(HexColor("#dfb73c")) # Elegant gold border line
+        # Dasa Card Background - Warm Ivory with Antique Gold Borders
+        c.setFillColor(HexColor("#FDFBF7"))
+        c.setStrokeColor(HexColor("#C5A059"))
         c.setLineWidth(0.75)
         c.roundRect(cx, dasa_text_y - 74, col_width, 86, 4, fill=True, stroke=True)
         
-        # Draw elegant light gold horizontal line under title
-        c.setStrokeColor(HexColor("#fef3c7"))
+        c.setStrokeColor(HexColor("#E5DCC6"))
         c.setLineWidth(0.5)
         c.line(cx + 4, dasa_text_y - 2, cx + col_width - 4, dasa_text_y - 2)
         
         # 1. Mahadasa Lord & Duration
-        c.setFillColor(HexColor("#b45309")) # Highlight active Dasa lord in elegant gold
-        c.setFont(FONT_BOLD, 8.5)
+        c.setFillColor(HexColor("#7A1C0B")) # Crimson for Active Dasa lord
+        c.setFont(FONT_BOLD, 8)
         dasa_lord_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(dasa['dasa_lord'], dasa['dasa_lord']).upper()
         lbl_mahadasa_formatted = labels["mahadasa"].format(dasa_lord_local, dasa['duration_years'])
         c.drawString(cx + 8, dasa_text_y + 2, lbl_mahadasa_formatted)
         
         # 2. From-To Dates
-        c.setFont(FONT_REGULAR, 7.5)
+        c.setFont(FONT_REGULAR, 7)
         c.setFillColor(HexColor("#475569"))
         c.drawString(cx + 8, dasa_text_y - 12, labels["from_to"].format(dasa['start_date'], dasa['end_date']))
         
         # 3. Print sub-periods (Bhuktis) in a beautifully balanced 3-column sub-grid
-        c.setFont(FONT_REGULAR, 6.5)
+        c.setFont(FONT_REGULAR, 6.2)
         c.setFillColor(HexColor("#334155"))
         
         sub_col_width = (col_width - 16) / 3
@@ -1188,11 +1175,96 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         dasa_text_y -= 98 # 86pt card height + 12pt spacer
         cards_drawn += 1
         
-    # Footer on Page 2
-    c.setFont(FONT_REGULAR, 7.5)
-    c.setFillColor(HexColor("#94a3b8"))
-    c.drawString(36, 15, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 15, "Page 2 of 2")
+    # 2. Beautiful divine astrological remedial guidance card at the bottom of Page 2 (y = 42 to 158)
+    c.setStrokeColor(HexColor("#C5A059")) # Antique Gold
+    c.setLineWidth(0.75)
+    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
+    c.rect(36, 42, 540, 116, fill=True, stroke=True)
+    
+    # Inner gold border
+    c.setStrokeColor(HexColor("#E5DCC6"))
+    c.setLineWidth(0.4)
+    c.rect(39, 45, 534, 110, fill=False, stroke=True)
+    
+    # Localized guidance details
+    guidance_data = {
+        "en": {
+            "title": "DIVINE PATHWAY: ASTROLOGICAL GUIDANCE & HARMONY",
+            "bullets": [
+                "Honor your Birth Nakshatra Lord to invoke prosperity, clear obstacles, and unlock your true karmic potential.",
+                "Each Vimshottari Mahadasa dictates a major phase of life; spiritual practices during transition periods bring immense peace.",
+                "To balance planetary energies, practice daily gratitude, engage in selfless charity, and maintain dietary purity.",
+                "Regular meditation and chanting of the Gayatri Mantra or planetary seed mantras align the soul with cosmic light."
+            ]
+        },
+        "ta": {
+            "title": "தெய்வீக வழிகாட்டுதல் மற்றும் கிரக தோஷ நிவர்த்தி",
+            "bullets": [
+                "உங்கள் ஜன்ம நட்சத்திர அதிபதியை வழிபட நன்மைகள் பெருகும், தடைகள் நீங்கி நல்வாழ்வு உண்டாகும்.",
+                "விம்சோத்தரி தசா காலங்கள் கர்மவினைகளின் வெளிப்பாடு; தசா சந்திப்புகளில் இறைவழிபாடு மன அமைதியைத் தரும்.",
+                "கிரகங்களின் சுப ஆற்றலை அதிகரிக்க ஏழைகளுக்கு அன்னதானம் செய்தல் மற்றும் தர்ம காரியங்களைச் செய்தல் நலம்.",
+                "தியானம், காயத்ரி மந்திரம் மற்றும் கிரகங்களுக்குரிய ஸ்தோத்திரங்களை உச்சரிப்பது ஆன்மாவைத் தூய்மைப்படுத்தும்."
+            ]
+        },
+        "te": {
+            "title": "దైవిక మార్గదర్శకత్వం మరియు గ్రహ శాంతి సూచనలు",
+            "bullets": [
+                "మీ జన్మ నక్షత్ర అధిపతిని ఆరాధించడం వల్ల అరిష్టాలు తొలగి, సకల శుభాలు మరియు ఐశ్వర్యం కలుగుతాయి.",
+                "వింశోత్తరి దశలు పూర్వజన్మ కర్మల ఫలితాలు; దశా సంధి సమయాలలో జపాలు మరియు పూజలు మానసిక ప్రశాంతతను ఇస్తాయి.",
+                "ग्रह అనుకూలత కోసం పేదలకు దానధర్మాలు చేయడం, సత్ప్రవర్తనతో జీవించడం అత్యంత శ్రేయస్కరం.",
+                "నిత్యం ధ్యానం, గాయత్రీ మంత్ర జపం మరియు గ్రహ బీజాక్షర మంత్రాల స్మరణ మీ ఆత్మకు ఆధ్యాత్మిక శక్తిని ఇస్తాయి."
+            ]
+        },
+        "kn": {
+            "title": "ದೈವಿಕ ಮಾರ್ಗದರ್ಶನ ಮತ್ತು ಗ್ರಹ ದೋಷ ನಿವಾರಣೆ",
+            "bullets": [
+                "ನಿಮ್ಮ ಜನ್ಮ ನಕ್ಷತ್ರದ ಅಧಿಪತಿಯನ್ನು ಆರಾಧಿಸುವುದರಿಂದ ಅಡೆತಡೆಗಳು ನಿವಾರಣೆಯಾಗಿ ಯಶಸ್ಸು ದೊರೆಯುತ್ತದೆ.",
+                "ವಿಂಶೋತ್ತರಿ ದಶಾ ಅವಧಿಗಳು ಕರ್ಮದ ಫಲಗಳು; ದಶಾಸಂಧಿ ಕಾಲದಲ್ಲಿ ದೇವತಾ ಆರಾಧನೆಯು ಮನಸ್ಸಿಗೆ ಶಾಂತಿಯನ್ನು ನೀಡುತ್ತದೆ.",
+                "ಗ್ರಹಗಳ ಶುಭ ಪ್ರಭಾವಕ್ಕಾಗಿ ಬಡವರಿಗೆ ಅನ್ನದಾನ ಮಾಡುವುದು ಮತ್ತು ಸತ್ಕಾರ್ಯಗಳಲ್ಲಿ ತೊಡಗಿಕೊಳ್ಳುವುದು ಶ್ರೇಯಸ್ಕರ.",
+                "ದಿನನಿತ್ಯ ಧ್ಯಾನ, ಗಾಯತ್ರಿ ಮಂತ್ರ ಪಠಣ ಮತ್ತು ಗ್ರಹ ಮಂತ್ರಗಳ ಜಪವು ಆತ್ಮಕ್ಕೆ ಚೈತನ್ಯವನ್ನು ನೀಡುತ್ತದೆ."
+            ]
+        },
+        "ml": {
+            "title": "ദൈവിക മാർഗ്ഗനിർദ്ദേശവും ഗ്രഹദോഷ പരിഹാരങ്ങളും",
+            "bullets": [
+                "ജന്മനക്ഷത്ര നാഥനെ ആരാധിക്കുന്നത് തടസ്സങ്ങൾ നീക്കി ഐശ്വര്യവും സർവ്വകാര്യ വിജയവും നൽകും.",
+                "വിംശോത്തരി ദശാകാലങ്ങൾ കർമ്മഫലങ്ങളാണ്; ദശാസന്ധി സമയങ്ങളിലെ പ്രാർത്ഥനകൾ മനസ്സിന് ശാന്തി നൽകും.",
+                "ഗ്രഹങ്ങളുടെ ശുഭാനുഗ്രഹത്തിനായി നിർധനർക്ക് ദാനധർമ്മങ്ങൾ ചെയ്യുകയും കാരുണ്യപ്രവർത്തനങ്ങളിൽ ഏർപ്പെടുകയും ചെയ്യുക.",
+                "ദിവസേനയുള്ള ധ്യാനം, ഗായത്രി മന്ത്ര ജപം എന്നിവ ആത്മീയ ഉണർവ്വും മനശ്ശക്തിയും പ്രധാനം ചെയ്യും."
+            ]
+        },
+        "hi": {
+            "title": "दैवीय मार्गदर्शन एवं ग्रह शांति के उपाय",
+            "bullets": [
+                "अपने जन्म नक्षत्र स्वामी की पूजा करने से बाधाएं दूर होती हैं, सुख-समृद्धि और सफलता की प्राप्ति होती है।",
+                "विंशोत्तरी महादशाएं कर्मों के फल को दर्शाती हैं; दशा संधि काल में साधना और जप करने से असीम शांति मिलती है।",
+                "ग्रहों की अनुकूलता के लिए निर्धनों को दान करना, अन्नदान करना और धर्म के मार्ग पर चलना परम कल्याणकारी है।",
+                "नित्य ध्यान, गायत्री मंत्र का जाप तथा ग्रह बीज मंत्रों का स्मरण आत्मा को ईश्वरीय प्रकाश से जोड़ता है।"
+            ]
+        }
+    }
+    
+    g_lang = guidance_data.get(lang, guidance_data["en"])
+    
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9)
+    c.drawString(48, 143, g_lang["title"])
+    c.setStrokeColor(HexColor("#E5DCC6"))
+    c.line(48, 137, 564, 137)
+    
+    c.setFont(FONT_REGULAR, 7)
+    c.setFillColor(HexColor("#2D3748"))
+    
+    gy = 124
+    for bullet in g_lang["bullets"]:
+        c.drawString(48, gy, bullet)
+        gy -= 12.5
+        
+    # Footer on Page 2 (Outside the borders)
+    c.setFont(FONT_REGULAR, 7)
+    c.setFillColor(HexColor("#94A3B8"))
+    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
+    c.drawRightString(576, 13, "Page 2 of 2")
     
     # Save Canvas Document
     c.save()
