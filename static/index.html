@@ -1192,7 +1192,7 @@
                 <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-book-open-reader"></i> 
-                        <span>Panchangam Wisdom & Astrological Timings</span>
+                        <span id="lbl-panch-wisdom-title">Panchangam Wisdom & Astrological Timings</span>
                     </div>
                     <!-- Selection of Panchangam Type -->
                     <div style="display: flex; gap: 6px; align-items: center; font-size: 11px;">
@@ -1204,7 +1204,7 @@
                     </div>
                 </div>
 
-                <div style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+                <div id="lbl-panch-wisdom-desc" style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
                     The Vedic Calendar is divided into two primary regional calculators: 
                     <strong>Sauramana</strong> (reckoned by the Sun's transit through sidereal zodiac signs) and 
                     <strong>Chandramana</strong> (reckoned by the astronomical alignment of synodic lunar cycles). 
@@ -1218,27 +1218,27 @@
                         <!-- Good/Bad Times in a day -->
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
                             <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-clock"></i> Daily Kaalams & Auspicious Timings
+                                <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title">Daily Kaalams & Auspicious Timings</span>
                             </div>
                             <div class="panchangam-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #dc2626;">Rahu Kalam (Inauspicious)</span>
+                                    <span id="lbl-rahu-kalam-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #dc2626;">Rahu Kalam (Inauspicious)</span>
                                     <span class="panch-value" id="panch-rahu-kalam" style="font-size: 11px; font-weight: bold; color: #dc2626;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #b45309;">Yamagandam (Inauspicious)</span>
+                                    <span id="lbl-yamagandam-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #b45309;">Yamagandam (Inauspicious)</span>
                                     <span class="panch-value" id="panch-yamagandam" style="font-size: 11px; font-weight: bold; color: #b45309;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral)</span>
+                                    <span id="lbl-gulika-kalam-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral)</span>
                                     <span class="panch-value" id="panch-gulika-kalam" style="font-size: 11px; font-weight: bold; color: #2563eb;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious)</span>
+                                    <span id="lbl-abhijit-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious)</span>
                                     <span class="panch-value" id="panch-abhijit" style="font-size: 11px; font-weight: bold; color: #16a34a;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
-                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious)</span>
+                                    <span id="lbl-brahma-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious)</span>
                                     <span class="panch-value" id="panch-brahma-muhurtha" style="font-size: 11px; font-weight: bold; color: #d97706;">--</span>
                                 </div>
                             </div>
@@ -1247,15 +1247,15 @@
                         <!-- Muhurtham, Netram & Jeevan -->
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
                             <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved"></i> Muhurtham, Netram & Jeevan Strength
+                                <i class="fa-solid fa-shield-halved"></i> <span id="lbl-strength-title">Muhurtham, Netram & Jeevan Strength</span>
                             </div>
                             <div class="panchangam-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px;">Netram (Eye of the Day)</span>
+                                    <span id="lbl-netram-label" class="panch-label" style="font-size: 9.5px;">Netram (Eye of the Day)</span>
                                     <span class="panch-value" id="panch-netram" style="font-size: 11px; font-weight: bold;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px;">Jeevan (Life of the Day)</span>
+                                    <span id="lbl-jeevan-label" class="panch-label" style="font-size: 9.5px;">Jeevan (Life of the Day)</span>
                                     <span class="panch-value" id="panch-jeevan" style="font-size: 11px; font-weight: bold;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
@@ -1358,6 +1358,7 @@
                             <option value="Raman">Raman (Dr. B.V. Raman offset)</option>
                             <option value="KP">KP (Krishnamurti Paddhati)</option>
                             <option value="DP">DP (Dasa Paddhati)</option>
+                            <option value="Tropical">Tropical (Western Coordinates)</option>
                         </select>
                     </div>
                     <div class="input-group advanced-only" style="display: none;">
@@ -1575,7 +1576,18 @@
                 sunset: "Sunset Time",
                 ahas: "Day Duration (Ahas)",
                 udayadhi: "Udayadhi Nazhikai",
-                kali_year: "Kali Yuga Year"
+                kali_year: "Kali Yuga Year",
+                panch_wisdom_title: "Panchangam Wisdom & Astrological Timings",
+                panch_wisdom_desc: "The Vedic Calendar is divided into two primary regional calculators: <strong>Sauramana</strong> (reckoned by the Sun's transit through sidereal zodiac signs) and <strong>Chandramana</strong> (reckoned by the astronomical alignment of synodic lunar cycles). Each cultural zone calculates festivals, good/bad times, and astrological coordinates accordingly.",
+                daily_kaalams_title: "Daily Kaalams & Auspicious Timings",
+                rahu_kalam_label: "Rahu Kalam (Inauspicious)",
+                yamagandam_label: "Yamagandam (Inauspicious)",
+                gulika_kalam_label: "Gulika Kalam (Auspicious/Neutral)",
+                abhijit_label: "Abhijit Muhurtha (Highly Auspicious)",
+                brahma_label: "Brahma Muhurtha (Predawn Auspicious)",
+                strength_title: "Muhurtham, Netram & Jeevan Strength",
+                netram_label: "Netram (Eye of the Day)",
+                jeevan_label: "Jeevan (Life of the Day)"
             },
             ta: {
                 title: "வைதிக ஜோதிடம்",
@@ -1612,7 +1624,18 @@
                 sunset: "சூரிய அஸ்தமனம்",
                 ahas: "பகலின் அளவு (அகஸ்)",
                 udayadhi: "உதயாதி நாழிகை",
-                kali_year: "கலி வருடம்"
+                kali_year: "கலி வருடம்",
+                panch_wisdom_title: "பஞ்சாங்க ஞானம் & ஜோதிட நேரங்கள்",
+                panch_wisdom_desc: "வைதிக பஞ்சாங்கம் இரண்டு முக்கிய பிராந்திய கணக்கீடுகளாகப் பிரிக்கப்பட்டுள்ளது: <strong>சௌரமானம்</strong> (சூரியன் கடந்து செல்லும் ராசிப் பாதையைக் கொண்டு கணக்கிடப்படுவது - எ.கா. தமிழ், மலையாளம்) மற்றும் <strong>சந்திரமானம்</strong> (சந்திரனின் சுழற்சியைக் கொண்டு கணக்கிடப்படுவது - எ.கா. தெலுங்கு, கன்னடம், வட இந்திய முறை). ஒவ்வொரு பகுதிக்கும் ஏற்ப விழாக்கள், நல்ல/கெட்ட நேரங்கள் மற்றும் ஜோதிடக் கணக்கீடுகள் மாறுபடும்.",
+                daily_kaalams_title: "தினசரி காலங்கள் & சுப நேரங்கள்",
+                rahu_kalam_label: "இராகு காலம் (அசுபம்)",
+                yamagandam_label: "எமகண்டம் (அசுபம்)",
+                gulika_kalam_label: "குளிகை காலம் (சுபம்/சாதாரணம்)",
+                abhijit_label: "அபிஜித் முகூர்த்தம் (மிகவும் சுபம்)",
+                brahma_label: "பிரம்ம முகூர்த்தம் (அதிகாலை சுபம்)",
+                strength_title: "முகூர்த்தம், நேத்திரம் & ஜீவன் பலம்",
+                netram_label: "நேத்திரம் (நாள் பார்வை)",
+                jeevan_label: "ஜீவன் (நாள் உயிர்)"
             },
             te: {
                 title: "వైదిక జ్యోతిష్యం",
@@ -1649,7 +1672,18 @@
                 sunset: "సూర్యాస్తమయం",
                 ahas: "పగటి ప్రమాణం (అహస్సు)",
                 udayadhi: "ఉదయాది ఘడియలు",
-                kali_year: "కలి యుగ వర్షం"
+                kali_year: "కలి యుగ వర్షం",
+                panch_wisdom_title: "పంచాంగ విజ్ఞానం & జ్యోతిష్య సమయాలు",
+                panch_wisdom_desc: "వైదిక పంచాంగం రెండు ప్రధాన ప్రాంతీయ పద్ధతులుగా విభజించబడింది: <strong>సౌరమానం</strong> (సూర్యుని సంచారం ఆధారంగా - ఉదా. తమిళం, మലయాళం) మరియు <strong>చాంద్రమానం</strong> (చంద్రుని తిథి చక్రం ఆధారంగా - ఉదా. తెలుగు, కన్నడ, ఉత్తర భారత పద్ధతి). ప్రతి ప్రాంతం దీని ప్రకారం పండుగలు, శుభ/అశుభ సమయాలు మరియు జ్యోతిష్య స్థానాలను లекకిస్తుంది.",
+                daily_kaalams_title: "దినసరి కాలాలు & శుభ సమయాలు",
+                rahu_kalam_label: "రాహు కాలం (అశుభం)",
+                yamagandam_label: "యమగండం (అశుభం)",
+                gulika_kalam_label: "గుళిక కాలం (శుభం/సాధారణం)",
+                abhijit_label: "అభిజిత్ ముహూర్తం (అత్యంత శుభప్రదం)",
+                brahma_label: "బ్రహ్మ ముహూర్తం (ఉషఃకాల శుభప్రదం)",
+                strength_title: "ముహూర్తం, నేత్రం & జీవ బలం",
+                netram_label: "నేత్రం (రోజు దృష్టి)",
+                jeevan_label: "జీవం (రోజు ప్రాణం)"
             },
             ml: {
                 title: "വൈദിക ജ്യോതിഷം",
@@ -1686,7 +1720,18 @@
                 sunset: "സൂര്യാസ്തമയം",
                 ahas: "പകൽ ദൈർഘ്യം (അഹസ്സ്)",
                 udayadhi: "ഉദയാദി നാഴിക",
-                kali_year: "കലി വർഷം"
+                kali_year: "കലി വർഷം",
+                panch_wisdom_title: "പഞ്ചാംഗ ജ്ഞാനവും ജ്യോതിഷ സമയങ്ങളും",
+                panch_wisdom_desc: "വൈദിക പഞ്ചാംഗം രണ്ട് പ്രധാന പ്രാദേശിക കണക്കുകൂട്ടലുകളായി തിരിച്ചിരിക്കുന്നു: <strong>സൗരമാനം</strong> (സൂര്യന്റെ രാശിമാറ്റം അടിസ്ഥാനമാക്കി - ഉദാ. തമിഴ്, മലയാളം), <strong>ചാന്ദ്രമാനം</strong> (ചന്ദ്രന്റെ തിഥികൾ അടിസ്ഥാനമാക്കി - ഉദാ. തെലുങ്ക്, കന്നഡ, ഉത്തരേന്ത്യൻ). ഓരോ പ്രദേശവും ഇതിനനുസരിച്ച് ഉത്സവങ്ങൾ, നല്ല/ചീത്ത സമയങ്ങൾ, ജ്യോതിഷ സ്ഥാനങ്ങൾ എന്നിവ കണക്കാക്കുന്നു.",
+                daily_kaalams_title: "ദിനസരി കാലങ്ങളും ശുഭ സമയങ്ങളും",
+                rahu_kalam_label: "രാഹുകാലം (അശുഭം)",
+                yamagandam_label: "യമകണ്ടകം (അശുഭം)",
+                gulika_kalam_label: "ഗുളികകാലം (ശുഭം/സാധാരണം)",
+                abhijit_label: "അഭിജിത്ത് മുഹൂർത്തം (അതിശുഭം)",
+                brahma_label: "ബ്രഹ്മമുഹൂർത്തം (അതിരാവിലെ ശുഭം)",
+                strength_title: "മുഹൂർത്തം, നേത്രം & ജീവൻ ബലം",
+                netram_label: "നേത്രം (ദിവസത്തെ ദൃഷ്ടി)",
+                jeevan_label: "ജീവൻ (ദിവസത്തെ ജീവൻ)"
             },
             kn: {
                 title: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ",
@@ -1723,7 +1768,18 @@
                 sunset: "ಸೂರ್ಯಾಸ್ತ",
                 ahas: "ಹಗಲಿನ ಅವಧಿ (ಅಹಸ್)",
                 udayadhi: "ಉದಯಾದಿ ಘಳಿಗೆ",
-                kali_year: "ಕಲಿ ವರ್ಷ"
+                kali_year: "ಕಲಿ ವರ್ಷ",
+                panch_wisdom_title: "ಪಂಚಾಂಗ ಜ್ಞಾನ ಮತ್ತು ಜ್ಯೋತಿಷ್ಯ ಸಮಯಗಳು",
+                panch_wisdom_desc: "ವೈದಿಕ ಪಂಚಾಂಗವನ್ನು ಎರಡು ಪ್ರಮುಖ ಪ್ರಾದೇಶಿಕ ಪದ್ಧತಿಗಳಾಗಿ ವಿಂಗಡಿಸಲಾಗಿದೆ: <strong>ಸೌರಮಾನ</strong> (ಸೂರ್ಯನ ಸಂಚಾರ ಆಧಾರಿತ - ಉದಾ. ತಮಿಳು, ಮಲಯಾಳಂ) ಮತ್ತು <strong>ಚಾಂದ್ರಮಾನ</strong> (ಚಂದ್ರನ ತಿಥಿ ಆಧಾರಿತ - ಉದಾ. ತೆಲುಗು, ಕನ್ನಡ, ಉತ್ತರ ಭಾರತೀಯ). ಪ್ರತಿಯೊಂದು ಪ್ರದೇಶವು ಇದರ ಪ್ರಕಾರ ಹಬ್ಬಗಳು, ಶುಭ/ಅಶುಭ ಸಮಯಗಳು ಮತ್ತು ಜ್ಯೋತಿಷ್ಯ ಸ್ಥಾನಗಳನ್ನು ಲೆಕ್ಕಾಚಾರ ಮಾಡುತ್ತದೆ.",
+                daily_kaalams_title: "ದೈನಂದಿನ ಕಾಲಗಳು ಮತ್ತು ಶುಭ ಸಮಯಗಳು",
+                rahu_kalam_label: "ರಾಹು ಕಾಲ (ಅಶುಭ)",
+                yamagandam_label: "ಯಮಗಂಡ (ಅಶುಭ)",
+                gulika_kalam_label: "ಗುಳಿಕ ಕಾಲ (ಶುಭ/ಸಾಮಾನ್ಯ)",
+                abhijit_label: "ಅಭಿಜಿತ್ ಮುಹೂರ್ತ (ಅತ್ಯಂತ ಶುಭ)",
+                brahma_label: "ಬ್ರಹ್ಮ ಮುಹೂರ್ತ (ಮುಂಜಾನೆ ಶುಭ)",
+                strength_title: "ಮುಹೂರ್ತ, ನೇತ್ರ ಮತ್ತು ಜೀವ ಬಲ",
+                netram_label: "ನೇತ್ರ (ದಿನದ ದೃಷ್ಟಿ)",
+                jeevan_label: "ಜೀವ (ದಿನದ ಪ್ರಾಣ)"
             },
             hi: {
                 title: "वैदिक ज्योतिष",
@@ -1760,7 +1816,18 @@
                 sunset: "सूर्यास्त",
                 ahas: "दिनमान (अहस)",
                 udayadhi: "उदयादि घटी",
-                kali_year: "कलि युग वर्ष"
+                kali_year: "कलि युग वर्ष",
+                panch_wisdom_title: " पंचांग ज्ञान और ज्योतिषीय समय",
+                panch_wisdom_desc: "वैदिक पंचांग को दो मुख्य क्षेत्रीय पद्धतियों में विभाजित किया गया है: <strong>सौरमान</strong> (सूर्य के गोचर पर आधारित - जैसे तमिल, मलयालम) और <strong>चंद्रमान</strong> (चंद्रमा की कलाओं पर आधारित - जैसे तेलुगु, कन्नड़, उत्तर भारतीय)। प्रत्येक क्षेत्र इसके अनुसार त्योहारों, शुभ/अशुभ समय और ज्योतिषीय गणनाओं का निर्धारण करता है।",
+                daily_kaalams_title: "दैनिक काल और शुभ समय",
+                rahu_kalam_label: "राहु काल (अशुभ)",
+                yamagandam_label: "यमगण्ड (अशुभ)",
+                gulika_kalam_label: "गुलिक काल (शुभ/सामान्य)",
+                abhijit_label: "अभिजित मुहूर्त (अत्यंत शुभ)",
+                brahma_label: "ब्रह्म मुहूर्त (प्रातःकाल शुभ)",
+                strength_title: "मुहूर्त, नेत्र और जीवन बल",
+                netram_label: "नेत्र (दिन की दृष्टि)",
+                jeevan_label: "जीवन (दिन का प्राण)"
             }
         };
 
@@ -1884,22 +1951,22 @@
             if (currentLang === 'en') return nakStr;
             const enNaks = [
                 "ashwini", "bharani", "krittika", "rohini", "mrigashira", "ardra", "punarvasu", "pushya", "ashlesha",
-                "magha", "purva phalguni", "uttara phalguni", "hasta", "swati", "chitra", "anuradha", "jyeshtha", "mula",
+                "magha", "purva phalguni", "uttara phalguni", "hasta", "chitra", "swati", "vishakha", "anuradha", "jyeshtha", "mula",
                 "purva ashadha", "uttara ashadha", "shravana", "dhanishta", "shatabhisha", "purva bhadrapada", "uttara bhadrapada", "revati"
             ];
             const translations = {
-                ta: ["அஸ்வினி", "பரணி", "கார்த்திகை", "ரோகிணி", "மிருகசீரிடம்", "திருவாதிரை", "புனர்பூசம்", "பூசம்", "ஆயில்யம்", "மகம்", "பூரம்", "உத்திரம்", "ஹஸ்தம்", "சுவாதி", "சித்திரை", "விசாகம்", "அனூராதம்", "கேட்டை", "மூலம்", "பூராடம்", "உத்திராடம்", "திருவோணம்", "அவிட்டம்", "சதயம்", "பூரட்டாதி", "உத்திரட்டாதி", "ரேவதி"],
-                te: ["అశ్విని", "భరణి", "కృత్తిక", "రోహిణి", "మృగశిర", "ఆరుద్ర", "పునర్వసు", "పుష్యమి", "ఆశ్లేష", "మఖ", "పూర్వాఫల్గుణి", "ఉత్తరాఫల్గుణి", "హస్త", "స్వాతి", "చిత్త", "విశాఖ", "అనూరాధ", "జ్యేష్ఠ", "మూల", "పూర్వాషాఢ", "ఉత్తరాషాఢ", "శ్రవణం", "ధనిష్ఠ", "శతభిషం", "పూర్వాభాద్ర", "ఉత్తరాభాద్ర", "రేవతి"],
-                hi: ["अश्वीनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशिरा", "आर्द्रा", "पुनर्वसु", "पुष्य", "श्लेषा", "मघा", "पूर्वाफाल्गुनी", "उत्तराफाल्गुनी", "हस्त", "स्वाति", "चित्रा", "विशाखा", "अनुराधा", "ज्येष्ठा", "मूल", "पूर्वाषाढ़ा", "उत्तराषाढ़ा", "श्रवण", "धनिष्ठा", "शतभीषा", "पूर्वाभाद्रपद", "उत्तराभाद्रपद", "रेवती"],
-                ml: ["അശ്വതി", "ഭരണി", "കാർത്തിക", "രോഹണി", "മകയിരം", "തിരുവാതിര", "പുണർതം", "പൂയം", "ആയില്യം", "മകം", "പൂരം", "ഉത്രം", "അത്തം", "ചോതി", "ചിത്ര", "വിശാഖം", "അനിഴം", "തൃക്കേട്ട", "മൂലം", "പൂരാടം", "ഉത്രാടം", "തിരുവോണം", "അവിട്ടം", "ചതയം", "പൂരുരുട്ടാതി", "ഉത്രട്ടാതി", "രേവതി"],
-                kn: ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಖಾ", "ಪೂರ್ವಾಫಾಲ್ಗುಣಿ", "ಉತ್ತರಾಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಸ್ವಾತಿ", "ಚಿತ್ತಾ", "ವಿಶಾಖಾ", "ಅನುರಾಧಾ", "ಜ್ಯೇಷ್ಠಾ", "ಮೂಲಾ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠಾ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರಪದ", "ಉತ್ತರಾಭಾದ್ರಪದ", "ರೇವತಿ"]
+                ta: ["அஸ்வினி", "பரணி", "கார்த்திகை", "ரோகிணி", "மிருகசீரிடம்", "திருவாதிரை", "புனர்பூசம்", "பூசம்", "ஆயில்யம்", "மகம்", "பூரம்", "உத்திரம்", "ஹஸ்தம்", "சித்திரை", "சுவாதி", "விசாகம்", "அனுஷம்", "கேட்டை", "மூலம்", "பூராடம்", "உத்திராடம்", "திருவோணம்", "அவிட்டம்", "சதயம்", "பூரட்டாதி", "உத்திரட்டாதி", "ரேவதி"],
+                te: ["అశ్విని", "భరణి", "కృత్తిక", "రోహిణి", "మృగశిర", "ఆరుద్ర", "పునర్వసు", "పుష్యమి", "ఆశ్లేష", "మఖ", "పూర్వాఫల్గుణి", "ఉత్తరాఫల్గుణి", "హస్త", "చిత్త", "స్వాతి", "విశాఖ", "అనూరాధ", "జ్యేష్ఠ", "మూల", "పూర్వాషాఢ", "ఉత్తరాషాఢ", "శ్రవణం", "ధనిష్ఠ", "శతభిషం", "పూర్వాభాద్ర", "ఉత్తరాభాద్ర", "రేవతి"],
+                hi: ["अश्वीनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशिरा", "आर्द्रा", "पुनर्वसु", "पुष्य", "श्लेषा", "मघा", "पूर्वाफाल्गुनी", "उत्तराफाल्गुनी", "हस्त", "चित्रा", "स्वाति", "विशाखा", "अनुराधा", "ज्येष्ठा", "मूल", "पूर्वाषाढ़ा", "उत्तराषाढ़ा", "श्रवण", "धनिष्ठा", "शतभीषा", "पूर्वाभाद्रपद", "उत्तराभाद्रपद", "रेवती"],
+                ml: ["അശ്വതി", "ഭരണി", "കാർത്തിക", "രോഹണി", "മകയിരം", "തിരുവാതിര", "പുണർതം", "പൂയം", "ആയില്യം", "മകം", "പൂരം", "ഉത്രം", "അത്തം", "ചിത്ര", "ചോതി", "വിശാഖം", "അനിഴം", "തൃക്കേട്ട", "മൂലം", "പൂരാടം", "ഉത്രാടം", "തിരുവോണം", "അവിട്ടം", "ചതയം", "പൂരുരുട്ടാതി", "ഉത്രട്ടാതി", "രേവതി"],
+                kn: ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಖಾ", "ಪೂರ್ವಾಫಾಲ್ಗುಣಿ", "ಉತ್ತರಾಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖಾ", "ಅನುರಾಧಾ", "ಜ್ಯೇಷ್ಠಾ", "ಮೂಲಾ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠಾ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರಪದ", "ಉತ್ತರಾಭಾದ್ರಪದ", "ರೇವತಿ"]
             };
             const lower = nakStr.toLowerCase();
             let idx = enNaks.findIndex(name => lower.includes(name));
             if (idx === -1) {
-                if (lower.includes("chitra")) idx = 14;
+                if (lower.includes("chitra")) idx = 13;
                 else if (lower.includes("mula")) idx = 18;
-                else if (lower.includes("swati")) idx = 13;
+                else if (lower.includes("swati")) idx = 14;
                 else return nakStr;
             }
             return (translations[currentLang] && translations[currentLang][idx]) || nakStr;
@@ -1914,7 +1981,7 @@
                 "shiva", "siddha", "sadhya", "subha", "sukla", "brahma", "indra", "vaidhriti"
             ];
             const translations = {
-                ta: ["விஷ்கம்பம்", "பிரீதி", "ஆயுஷ்மான்", "சௌபாக்கியம்", "சோபனம்", "அதிகண்டம்", "சுகர்மம்", "திருதி", "சூலம்", "கண்டம்", "விருத்தி", "துருவம்", "வியாகாதம்", "ஹர்ஷணம்", "வஜிரம", "சித்தி", "வியதீபாதம்", "வரியான்", "பரிகம்", "சிவம்", "சித்தர்", "சாத்தியம்", "சுபம்", "சுக்லம்", "பிரம்மா", "இந்திரன்", "வைதிருதி"],
+                ta: ["விஷ்கம்பம்", "பிரீதி", "ஆயுஷ்மான்", "சௌபாக்கியம்", "சோபனம்", "அதிகண்டம்", "சுகர்மம்", "திருதி", "சூலம்", "கண்டம்", "விருத்தி", "துருவம்", "வியாகாதம்", "ஹர்ஷணம்", "வஜிரம", "சித்தி", "வியதீபாதம்", "வரியான்", "பரிகம்", "சிவம்", "சித்தம்", "சாத்தியம்", "சுபம்", "சுக்லம்", "பிரம்மா", "இந்திரன்", "வைதிருதி"],
                 te: ["విష్కంభం", "ప్రీతి", "ఆయుష్మాన్", "సౌభాగ్యం", "శోభనం", "అతిగండం", "సుకర్మం", "ధృతి", "శూలం", "గండం", "వృద్ధి", "ధ్రువం", "వ్యాఘాతం", "హర్షణం", "వజ్రం", "సిద్ధి", "వ్యతీపాతం", "వరీయాన్", "పరిఘ", "శివం", "సిద్ధ", "సాధ్యం", "శుభం", "శుక్లం", "బ్రహ్మం", "ఇంద్రం", "వైధృతి"],
                 hi: ["विष्कम्भ", "प्रीति", "आयूष्मान", "सौभाग्य", "शोभन", "अतिगण्ड", "सुकर्मा", "धृति", "शूल", "गण्ड", "वृद्धि", "ध्रुव", "व्याघात", "हर्षण", "वज्र", "सिद्धि", "व्यतीपात", "वरीयान", "परिघ", "शिव", "सिद्ध", "साध्य", "शुभ", "शुक्ल", "ब्रह्म", "इन्द्र", "वैधृति"],
                 ml: ["വിഷ്കംഭം", "പ്രീതി", "ആയുഷ്മാൻ", "സൗഭാഗ്യം", "സുകർമ്മം", "ധൃതി", "ശൂലം", "ഗണ്ഡം", "വൃദ്ധി", "ധ്രുവം", "വ്യാഘാതം", "ഹർഷണം", "വജ്രം", "സിദ്ധി", "വ്യതീപാതം", "വരിയാൻ", "പരിഘം", "ശിവം", "സിദ്ധം", "സാധ്യം", "ശുഭം", "ശുക്ലം", "ബ്രഹ്മം", "ഇന്ദ്രൻ", "വൈധൃതി"],
@@ -2255,6 +2322,29 @@
             document.getElementById('lbl-udayadhi').innerText = dict.udayadhi || "Udayadhi Nazhikai";
             document.getElementById('lbl-kali-year').innerText = dict.kali_year || "Kali Yuga Year";
             
+            const panchWisdomTitle = document.getElementById('lbl-panch-wisdom-title');
+            if (panchWisdomTitle) panchWisdomTitle.innerText = dict.panch_wisdom_title || "Panchangam Wisdom & Astrological Timings";
+            const panchWisdomDesc = document.getElementById('lbl-panch-wisdom-desc');
+            if (panchWisdomDesc) panchWisdomDesc.innerHTML = dict.panch_wisdom_desc || "";
+            const dailyKaalamsTitle = document.getElementById('lbl-daily-kaalams-title');
+            if (dailyKaalamsTitle) dailyKaalamsTitle.innerText = dict.daily_kaalams_title || "Daily Kaalams & Auspicious Timings";
+            const rahuKalamLabel = document.getElementById('lbl-rahu-kalam-label');
+            if (rahuKalamLabel) rahuKalamLabel.innerText = dict.rahu_kalam_label || "Rahu Kalam (Inauspicious)";
+            const yamagandamLabel = document.getElementById('lbl-yamagandam-label');
+            if (yamagandamLabel) yamagandamLabel.innerText = dict.yamagandam_label || "Yamagandam (Inauspicious)";
+            const gulikaKalamLabel = document.getElementById('lbl-gulika-kalam-label');
+            if (gulikaKalamLabel) gulikaKalamLabel.innerText = dict.gulika_kalam_label || "Gulika Kalam (Auspicious/Neutral)";
+            const abhijitLabel = document.getElementById('lbl-abhijit-label');
+            if (abhijitLabel) abhijitLabel.innerText = dict.abhijit_label || "Abhijit Muhurtha (Highly Auspicious)";
+            const brahmaLabel = document.getElementById('lbl-brahma-label');
+            if (brahmaLabel) brahmaLabel.innerText = dict.brahma_label || "Brahma Muhurtha (Predawn Auspicious)";
+            const strengthTitle = document.getElementById('lbl-strength-title');
+            if (strengthTitle) strengthTitle.innerText = dict.strength_title || "Muhurtham, Netram & Jeevan Strength";
+            const netramLabel = document.getElementById('lbl-netram-label');
+            if (netramLabel) netramLabel.innerText = dict.netram_label || "Netram (Eye of the Day)";
+            const jeevanLabel = document.getElementById('lbl-jeevan-label');
+            if (jeevanLabel) jeevanLabel.innerText = dict.jeevan_label || "Jeevan (Life of the Day)";
+            
             document.getElementById('lbl-name').innerText = dict.name;
             document.getElementById('lbl-dob').innerText = dict.dob;
             document.getElementById('lbl-tob').innerText = dict.tob;
@@ -2525,8 +2615,21 @@
             const jeevanMap = [1.0, 0.5, 1.0, 0.0, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0, 0.5, 1.0, 0.0, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0, 0.5, 1.0, 0.0, 1.0, 0.5, 1.0, 1.0, 0.0];
             const netraVal = netraMap[naksIdx];
             const jeevanVal = jeevanMap[naksIdx];
-            document.getElementById('panch-netram').innerText = `${netraVal} (${netraVal >= 1.5 ? 'Highly Auspicious' : netraVal >= 1.0 ? 'Auspicious' : 'Average'})`;
-            document.getElementById('panch-jeevan').innerText = `${jeevanVal} (${jeevanVal >= 1.0 ? 'Highly Auspicious' : jeevanVal >= 0.5 ? 'Auspicious' : 'Inauspicious'})`;
+            const strengthStatusTranslations = {
+                en: { highly: "Highly Auspicious", auspicious: "Auspicious", average: "Average", inauspicious: "Inauspicious" },
+                ta: { highly: "மிகவும் சுபகரம்", auspicious: "சுபகரம்", average: "மத்திமம்", inauspicious: "அசுபகரம்" },
+                te: { highly: "అత్యంత శుభప్రదం", auspicious: "శుభప్రదం", average: "మధ్యమం", inauspicious: "అశుభప్రదం" },
+                hi: { highly: "अत्यंत शुभ", auspicious: "शुभ", average: "मध्यम", inauspicious: "अशुभ" },
+                ml: { highly: "അതിശുഭം", auspicious: "ശുഭം", average: "മധ്യമം", inauspicious: "അശുഭം" },
+                kn: { highly: "ಅತ್ಯಂತ ಶುಭ", auspicious: "ಶುಭ", average: "ಮಧ್ಯಮ", inauspicious: "ಅಶುಭ" }
+            };
+            const currentStatusTrans = strengthStatusTranslations[currentLang] || strengthStatusTranslations.en;
+            
+            const netraStatus = netraVal >= 1.5 ? currentStatusTrans.highly : netraVal >= 1.0 ? currentStatusTrans.auspicious : currentStatusTrans.average;
+            const jeevanStatus = jeevanVal >= 1.0 ? currentStatusTrans.highly : jeevanVal >= 0.5 ? currentStatusTrans.auspicious : currentStatusTrans.inauspicious;
+            
+            document.getElementById('panch-netram').innerText = `${netraVal} (${netraStatus})`;
+            document.getElementById('panch-jeevan').innerText = `${jeevanVal} (${jeevanStatus})`;
 
             // Calculate Horas starting from Sunrise
             const DAY_LORDS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
@@ -3004,7 +3107,7 @@
                 const summaryPanel = document.getElementById('ai-birth-loaded-summary');
                 summaryPanel.innerHTML = `
                     <strong>Loaded Birth Data:</strong> ${name} | Born in ${pob} on ${dob} at ${tob}<br>
-                    <strong>Coordinates:</strong> ${lat}°N, ${lon}°E | <strong>Nakshatra:</strong> ${calculatedChartData.panchangam.nakshatra} | <strong>Ayanamsa:</strong> ${ayanamsa}
+                    <strong>Coordinates:</strong> ${lat}°N, ${lon}°E | <strong>Nakshatra:</strong> ${translateNakshatra(calculatedChartData.panchangam.nakshatra)} | <strong>Ayanamsa:</strong> ${ayanamsa}
                 `;
                 summaryPanel.style.display = 'block';
                 
