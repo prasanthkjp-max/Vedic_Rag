@@ -2807,6 +2807,10 @@
                 hi: { Lagna: "लग्न", Sun: "सूर्य", Moon: "चन्द्र", Mars: "मंगल", Mercury: "बुध", Jupiter: "गुरु", Venus: "शुक्र", Saturn: "शनि", Rahu: "राहु", Ketu: "केतु" }
             };
             const activeAbbr = PLANET_ABBR_LOCAL[currentLang] || PLANET_ABBR_LOCAL.en;
+            const retroSyms = { en: "(R)", ta: "(வ)", te: "(వ)", kn: "(ವ)", ml: "(വ)", hi: "(व)" };
+            const combustSyms = { en: "(C)", ta: "(அ)", te: "(అ)", kn: "(ಅ)", ml: "(മ)", hi: "(अ)" };
+            const retroSym = retroSyms[currentLang] || "(R)";
+            const combustSym = combustSyms[currentLang] || "(C)";
             
             cellCoordinates.forEach(cell => {
                 // Rasi label translated
@@ -2819,8 +2823,8 @@
                     const matchIdx = getDChartRasiIndex(planet, placements[planet], chartType);
                     if (matchIdx === cell.idx) {
                         let p = activeAbbr[planet] || planet.slice(0, 2);
-                        if (placements[planet].is_retrograde && planet !== "Lagna") p += "(R)";
-                        if (placements[planet].is_combust && planet !== "Lagna") p += "(C)";
+                        if (placements[planet].is_retrograde && planet !== "Lagna") p += retroSym;
+                        if (placements[planet].is_combust && planet !== "Lagna") p += combustSym;
                         planetsInCell.push(p);
                     }
                 }
@@ -2892,6 +2896,10 @@
                 hi: { Lagna: "लग्न", Sun: "सूर्य", Moon: "चन्द्र", Mars: "मंगल", Mercury: "बुध", Jupiter: "गुरु", Venus: "शुक्र", Saturn: "शनि", Rahu: "राहु", Ketu: "केतु" }
             };
             const activeAbbr = PLANET_ABBR_LOCAL[currentLang] || PLANET_ABBR_LOCAL.en;
+            const retroSyms = { en: "(R)", ta: "(வ)", te: "(వ)", kn: "(ವ)", ml: "(വ)", hi: "(व)" };
+            const combustSyms = { en: "(C)", ta: "(அ)", te: "(అ)", kn: "(ಅ)", ml: "(മ)", hi: "(अ)" };
+            const retroSym = retroSyms[currentLang] || "(R)";
+            const combustSym = combustSyms[currentLang] || "(C)";
             
             for (let house = 1; house <= 12; house++) {
                 const signIndex = (lagnaRasi + house - 1) % 12;
@@ -2907,8 +2915,8 @@
                     const matchIdx = getDChartRasiIndex(planet, placements[planet], chartType);
                     if (matchIdx === signIndex) {
                         let p = activeAbbr[planet] || planet.slice(0, 2);
-                        if (placements[planet].is_retrograde && planet !== "Lagna") p += "(R)";
-                        if (placements[planet].is_combust && planet !== "Lagna") p += "(C)";
+                        if (placements[planet].is_retrograde && planet !== "Lagna") p += retroSym;
+                        if (placements[planet].is_combust && planet !== "Lagna") p += combustSym;
                         planetsInHouse.push(p);
                     }
                 }

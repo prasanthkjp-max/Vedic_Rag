@@ -580,12 +580,17 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     
     # Group planets by Rasi index
     rasi_planets = {i: [] for i in range(12)}
+    retro_syms = {"en": "(R)", "ta": "(வ)", "te": "(వ)", "kn": "(ವ)", "ml": "(വ)", "hi": "(व)"}
+    combust_syms = {"en": "(C)", "ta": "(அ)", "te": "(అ)", "kn": "(ಅ)", "ml": "(മ)", "hi": "(अ)"}
+    retro_sym = retro_syms.get(lang, "(R)")
+    combust_sym = combust_syms.get(lang, "(C)")
+
     for planet, info in placements.items():
         abbr = PLANET_ABBR_LOCAL.get(lang, PLANET_ABBR_LOCAL["en"]).get(planet, planet[:2])
         if info.get("is_retrograde", False):
-            abbr += "(R)"
+            abbr += retro_sym
         if info.get("is_combust", False):
-            abbr += "(C)"
+            abbr += combust_sym
         rasi_idx = info["navamsha_rasi_index"] if chart_type == "navamsha" else info["rasi_index"]
         rasi_planets[rasi_idx].append(abbr)
         
@@ -659,12 +664,17 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     
     # Group planets by their North Indian house index (derived from Lagna Rasi)
     house_planets = {h: [] for h in range(1, 13)}
+    retro_syms = {"en": "(R)", "ta": "(வ)", "te": "(వ)", "kn": "(ವ)", "ml": "(വ)", "hi": "(व)"}
+    combust_syms = {"en": "(C)", "ta": "(அ)", "te": "(అ)", "kn": "(ಅ)", "ml": "(മ)", "hi": "(अ)"}
+    retro_sym = retro_syms.get(lang, "(R)")
+    combust_sym = combust_syms.get(lang, "(C)")
+
     for planet, info in placements.items():
         abbr = PLANET_ABBR_LOCAL.get(lang, PLANET_ABBR_LOCAL["en"]).get(planet, planet[:2])
         if info.get("is_retrograde", False):
-            abbr += "(R)"
+            abbr += retro_sym
         if info.get("is_combust", False):
-            abbr += "(C)"
+            abbr += combust_sym
         p_rasi = info["navamsha_rasi_index"] if chart_type == "navamsha" else info["rasi_index"]
         house = (p_rasi - lagna_rasi) % 12 + 1
         house_planets[house].append(abbr)
