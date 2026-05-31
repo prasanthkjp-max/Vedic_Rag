@@ -7,9 +7,10 @@ an environment variable for portability (e.g. running on a different machine).
 """
 import os
 import sqlite3
+import secrets
 
 # --- Version ---
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,3 +49,85 @@ def connect_db(path=DB_PATH, timeout=30):
     conn.execute("PRAGMA busy_timeout=10000;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     return conn
+
+
+def ensure_fts(conn):
+    """
+    Create (idempotently) the FTS5 full-text index over pages.raw_text and the
+    triggers that keep it in sync with the `pages` table, then backfill any rows
+    not yet indexed. This replaces the previous O(N) Python keyword scan with a
+    BM25-ranked SQL search that scales with the corpus.
+
+    Uses an *external-content* FTS5 table (content='pages') so the text is not
+    duplicated; the triggers pass the row's own text on delete/update as the
+    documented external-content pattern requires. Requires the `pages` table to
+    already exist (created by ingest.init_db()).
+    """
+    cur = conn.cursor()
+    # No-op if `pages` isn't there yet (e.g. a brand-new empty database).
+    if not cur.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='pages'"
+    ).fetchone():
+        return
+    already_existed = cur.execute(
+        "SELECT name FROM sqlite_master WHERE name='pages_fts'"
+    ).fetchone()
+    cur.execute(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts "
+        "USING fts5(raw_text, content='pages', content_rowid='id')"
+    )
+    cur.executescript(
+        """
+        CREATE TRIGGER IF NOT EXISTS pages_fts_ai AFTER INSERT ON pages BEGIN
+            INSERT INTO pages_fts(rowid, raw_text) VALUES (new.id, new.raw_text);
+        END;
+        CREATE TRIGGER IF NOT EXISTS pages_fts_ad AFTER DELETE ON pages BEGIN
+            INSERT INTO pages_fts(pages_fts, rowid, raw_text)
+            VALUES ('delete', old.id, old.raw_text);
+        END;
+        CREATE TRIGGER IF NOT EXISTS pages_fts_au AFTER UPDATE ON pages BEGIN
+            INSERT INTO pages_fts(pages_fts, rowid, raw_text)
+            VALUES ('delete', old.id, old.raw_text);
+            INSERT INTO pages_fts(rowid, raw_text) VALUES (new.id, new.raw_text);
+        END;
+        """
+    )
+    if not already_existed:
+        # Populate the freshly created index from the content table. A manual
+        # INSERT..SELECT cannot be guarded for external-content tables (their
+        # rowid enumeration reflects the content table, not the index), so use
+        # FTS5's own 'rebuild' command — the canonical backfill. Thereafter the
+        # triggers keep it in sync incrementally, so this runs only once.
+        cur.execute("INSERT INTO pages_fts(pages_fts) VALUES('rebuild')")
+    conn.commit()
+
+
+def _load_api_key():
+    """
+    Resolve the API key used to gate the data endpoints.
+
+    Precedence: the VEDIC_API_KEY env var, else a key persisted in `.api_key`
+    next to the app (auto-generated on first run and printed once). This keeps
+    the key stable across restarts for a single-user deployment without baking a
+    secret into source control.
+    """
+    env_key = os.environ.get("VEDIC_API_KEY")
+    if env_key:
+        return env_key
+    key_file = os.path.join(BASE_DIR, ".api_key")
+    try:
+        if os.path.exists(key_file):
+            existing = open(key_file, encoding="utf-8").read().strip()
+            if existing:
+                return existing
+        new_key = secrets.token_urlsafe(24)
+        with open(key_file, "w", encoding="utf-8") as f:
+            f.write(new_key + "\n")
+        print(f"[config] Generated new API key (saved to {key_file}): {new_key}")
+        return new_key
+    except Exception:
+        # Last resort: an ephemeral key. Auth stays enforced for this process.
+        return secrets.token_urlsafe(24)
+
+
+API_KEY = _load_api_key()

@@ -23,6 +23,7 @@ from config import (
     EMBEDDING_DIM,
     OLLAMA_EMBED_URL as OLLAMA_URL,
     connect_db,
+    ensure_fts,
 )
 
 NUM_THREADS = 4  # Matches the 4 CPU cores
@@ -53,8 +54,11 @@ def init_db():
         UNIQUE(book_id, page_num)
     )
     """)
-    
+
     conn.commit()
+    # Build the FTS5 full-text index + sync triggers now that `pages` exists,
+    # so freshly ingested rows are searchable immediately.
+    ensure_fts(conn)
     conn.close()
 
 def get_ollama_embedding(text):

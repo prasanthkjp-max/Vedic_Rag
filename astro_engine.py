@@ -12,9 +12,9 @@ TAMIL_YEARS = [
     "Prabhava", "Vibhava", "Sukla", "Pramodoota", "Prajopathi", "Angirasa", "Srimukha", "Bhava", "Yuva", "Dhatu",
     "Eesvara", "Bahudhanya", "Pramathi", "Vikrama", "Vishu", "Chitrabanu", "Subanu", "Tharana", "Parthiba", "Viya",
     "Sarvajith", "Sarvadhari", "Virodhi", "Vikruthi", "Kara", "Nandhana", "Vijaya", "Jaya", "Manmadha", "Dhunmuki",
-    "Hevilambi", "Vilambi", "Vikari", "Sarvari", "Plava", "Subakruth", "Sobakruth", "Krodhi", "Visvavasu", "Paridhaabi",
-    "Pramadhicha", "Anandha", "Rakshasa", "Nala", "Pingala", "Kalayukthi", "Siddharthi", "Raudhri", "Dunmathi", "Dhundubhi",
-    "Rudhirodhगारी", "Raktakshi", "Krodhana", "Akshaya", "Prabhava", "Vibhava", "Sukla", "Pramodoota", "Prajopathi", "Angirasa"
+    "Hevilambi", "Vilambi", "Vikari", "Sarvari", "Plava", "Subakruth", "Sobakruth", "Krodhi", "Visvavasu", "Parabhava",
+    "Plavanga", "Keelaka", "Saumya", "Sadharana", "Virodhikruthu", "Paridhaabi", "Pramadhicha", "Anandha", "Rakshasa", "Nala",
+    "Pingala", "Kalayukthi", "Siddharthi", "Raudhri", "Dunmathi", "Dhundubhi", "Rudhirodhgari", "Raktakshi", "Krodhana", "Akshaya"
 ]
 
 # Nakshatra Names
@@ -252,28 +252,17 @@ def get_tamil_year_month(JD, sun_sidereal_long):
     month_idx = math.floor(sun_sidereal_long / 30.0) % 12
     tamil_month = TAMIL_MONTHS[month_idx]
     
-    # 2026 matches Tamil Year 'Krodhi' (index 37) starting around mid-April 2026.
-    # 2000 was Tamil Year Pramathi (index 12).
-    # We estimate based on Gregorian Year
-    epoch_jd = JD - 2451545.0 # Days since J2000 (Jan 1 2000 is index 12/13)
+    epoch_jd = JD - 2451545.0
     gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
     
-    # Tamil New Year happens mid-April (when Sun enters Mesha/Aries = 0 deg)
-    # If sun_sidereal_long is before Mesha entry in early months, it is previous Tamil Year
-    month_offset = 0
-    if month_idx < 0: # not possible due to mod 12
-         month_offset = -1
-         
-    # Compute cycle index
-    tamil_year_idx = (gregorian_year - 1987 + 60) % 60
-    # Adjust for New Year (mid-April transition)
-    # If months are Thai, Maasi, Panguni, they belong to the previous year cycle in old calculations
-    # but since Sun enters Mesha in Chithirai, months Chithirai (0) to Panguni (11) run linearly.
-    # Let's align with Sun position
-    if month_idx >= 0: # Sun has transitioned into Chithirai
-         # Standard offset
-         pass
-         
+    # Since Gregorian year rolls over on Jan 1st, but Tamil year only rolls over
+    # at Chithirai 1st (mid-April, Sun entering Aries = 0 deg),
+    # the months Thai (9), Maasi (10), Panguni (11) belong to the previous year's cycle.
+    calc_year = gregorian_year
+    if month_idx >= 9:
+        calc_year -= 1
+        
+    tamil_year_idx = (calc_year - 1987 + 60) % 60
     tamil_year = TAMIL_YEARS[tamil_year_idx]
     return tamil_year, tamil_month
 
@@ -641,7 +630,7 @@ GANESHA_MANTRAS = {
     "ta": "வக்ரதுண்ட மஹாகாய சூர்யகோடி ஸமப்ரப। நிர்விக்னம் குரு மே தேவ ஸர்வ கார்யேஷு ஸர்வதா॥",
     "te": "వక్రతుండ మహాకాయ సూర్యకోటి సమప్రభ। నిర్విఘ్నం కురు మే దేవ సర్వకార్యేషు సర్వదా॥",
     "ml": "വക്രതുണ്ഡ മഹാകായ സൂര്യകോടി സമപ്രഭ। നിർവിഘ്നം കുരു മേ ദേവ സർവകാര്യേഷു സർവദാ॥",
-    "kn": "ವಕ್ರತುಂಡ ಮಹಾಕಾಯ ಸೂರ್ಯಕೋಟಿ ಸಮಪ್ರಭ। ನಿರ್ವಿಘ್ನं ಕುರು ಮೇ ದೇವ ಸರ್ವಕಾರ್ಯೇಷು ಸರ್ವದಾ॥",
+    "kn": "ವಕ್ರತುಂಡ ಮಹಾಕಾಯ ಸೂರ್ಯಕೋಟಿ ಸಮಪ್ರಭ। ನಿರ್ವಿಘ್ನಂ ಕುರು ಮೇ ದೇವ ಸರ್ವಕಾರ್ಯೇಷು ಸರ್ವದಾ॥",
     "hi": "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ। निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥"
 }
 
