@@ -1237,6 +1237,10 @@
                                     <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious)</span>
                                     <span class="panch-value" id="panch-abhijit" style="font-size: 11px; font-weight: bold; color: #16a34a;">--</span>
                                 </div>
+                                <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
+                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious)</span>
+                                    <span class="panch-value" id="panch-brahma-muhurtha" style="font-size: 11px; font-weight: bold; color: #d97706;">--</span>
+                                </div>
                             </div>
                         </div>
 
@@ -1253,6 +1257,14 @@
                                 <div class="panch-item" style="padding: 6px 0;">
                                     <span class="panch-label" style="font-size: 9.5px;">Jeevan (Life of the Day)</span>
                                     <span class="panch-value" id="panch-jeevan" style="font-size: 11px; font-weight: bold;">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px;">Vedic Ritu (Season)</span>
+                                    <span class="panch-value" id="panch-ritu" style="font-size: 11px; font-weight: bold; color: var(--accent-gold);">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px;">Ayana (Solar Course)</span>
+                                    <span class="panch-value" id="panch-ayana" style="font-size: 11px; font-weight: bold; color: var(--accent-gold);">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
                                     <span class="panch-label" style="font-size: 9.5px;">Auspicious Muhurtham Timings (Good Hours)</span>
@@ -2005,6 +2017,86 @@ function translateTamilYear(yearStr) {
 
         
 
+        function updateDynamicPanchangamLabels(lang, system) {
+            const yearLbl = document.getElementById('lbl-tamil-year');
+            const monthLbl = document.getElementById('lbl-tamil-month');
+            const kaliLbl = document.getElementById('lbl-kali-year');
+            
+            if (!yearLbl || !monthLbl) return;
+            
+            if (lang === 'ta') {
+                yearLbl.innerText = "தமிழ் வருடம்";
+                monthLbl.innerText = "தமிழ் தேதி";
+                if (kaliLbl) kaliLbl.innerText = "கலி வருடம்";
+            } else if (lang === 'ml') {
+                yearLbl.innerText = "മലയാള വർഷം (കൊല്ലവർഷം)";
+                monthLbl.innerText = "മലയാള തീയതി";
+                if (kaliLbl) kaliLbl.innerText = "കൊല്ലവർഷം";
+            } else if (lang === 'te') {
+                if (system === 'sauramana') {
+                    yearLbl.innerText = "సౌర సంవత్సరం";
+                    monthLbl.innerText = "సౌర తేదీ";
+                } else {
+                    yearLbl.innerText = "సంవత్సరం (శక)";
+                    monthLbl.innerText = "చాంద్రమాన నెల & తిథి";
+                }
+                if (kaliLbl) kaliLbl.innerText = "కలి యుగ వర్షం";
+            } else if (lang === 'kn') {
+                if (system === 'sauramana') {
+                    yearLbl.innerText = "ಸೌರ ವರ್ಷ";
+                    monthLbl.innerText = "ಸೌರ ದಿನಾಂಕ";
+                } else {
+                    yearLbl.innerText = "ಸಂವತ್ಸರ (ಶಕ)";
+                    monthLbl.innerText = "ಚಾಂದ್ರಮಾನ ಮಾಸ & ತಿಥಿ";
+                }
+                if (kaliLbl) kaliLbl.innerText = "ಕಲಿ ವರ್ಷ";
+            } else if (lang === 'hi') {
+                if (system === 'sauramana') {
+                    yearLbl.innerText = "सौर वर्ष";
+                    monthLbl.innerText = "सौर तिथि/दिनांक";
+                } else {
+                    yearLbl.innerText = "विक्रम संवत वर्ष";
+                    monthLbl.innerText = "चंद्र मास और तिथि";
+                }
+                if (kaliLbl) kaliLbl.innerText = "कलि युग वर्ष";
+            } else { // English
+                if (system === 'sauramana') {
+                    yearLbl.innerText = "Solar Year";
+                    monthLbl.innerText = "Solar Month & Date";
+                } else {
+                    yearLbl.innerText = "Lunar Year (Samvatsara)";
+                    monthLbl.innerText = "Lunar Month & Tithi";
+                }
+                if (kaliLbl) kaliLbl.innerText = "Kali Yuga Year";
+            }
+        }
+
+        function translateAyana(ayanaStr) {
+            if (!ayanaStr) return "--";
+            if (currentLang === 'en') return ayanaStr;
+            const trans = {
+                ta: { "Uttarayana": "உத்தராயணம் (வடக்கு நோக்கிய பயணம்)", "Dakshinayana": "தக்ஷிணாயனம் (தெற்கு நோக்கிய பயணம்)" },
+                te: { "Uttarayana": "ఉత్తరాయణం", "Dakshinayana": "దక్షిణాయనం" },
+                hi: { "Uttarayana": "उत्तरायण", "Dakshinayana": "दक्षिणायन" },
+                ml: { "Uttarayana": "ഉത്തരായനം", "Dakshinayana": "ദക്ഷിണായനം" },
+                kn: { "Uttarayana": "ಅುತ್ತರಾಯಣ", "Dakshinayana": "ದಕ್ಷಿಣಾಯನ" }
+            };
+            return (trans[currentLang] && trans[currentLang][ayanaStr]) || ayanaStr;
+        }
+
+        function translateRitu(rituStr) {
+            if (!rituStr) return "--";
+            if (currentLang === 'en') return rituStr;
+            const trans = {
+                ta: { "Vasanta": "வசந்த பருவம் (Vasanta)", "Grishma": "கிரீஷ்ம பருவம் (Grishma)", "Varsha": "வர்ஷ பருவம் (Varsha)", "Sharad": "சரத் பருவம் (Sharad)", "Hemanta": "ஹேமந்த பருவம் (Hemanta)", "Shishira": "சிசிர பருவம் (Shishira)" },
+                te: { "Vasanta": "వసంత ఋతువు", "Grishma": "గ్రీష్మ ఋతువు", "Varsha": "ವರ್ష ఋతువు", "Sharad": "శరదృతువు", "Hemanta": "హేమంత ఋతువు", "Shishira": "శిశిర ఋతువు" },
+                hi: { "Vasanta": "वसन्त ऋतु", "Grishma": "ग्रीष्म ऋतु", "Varsha": "वर्षा ऋतु", "Sharad": "शरद ऋतु", "Hemanta": "हेमन्त ऋतु", "Shishira": "शिशिर ऋतु" },
+                ml: { "Vasanta": "വസന്തം", "Grishma": "ഗ്രീഷ്മം", "Varsha": "വർഷം", "Sharad": "ശരത്", "Hemanta": "ഹേമന്തം", "Shishira": "ശിശിരം" },
+                kn: { "Vasanta": "ವಸಂತ ಋತು", "Grishma": "ಗ್ರೀಷ್ಮ ಋತು", "Varsha": "ವರ್ಷ ಋತು", "Sharad": "ಶರದ್ ಋತು", "Hemanta": "ಹೇಮಂತ ಋತು", "Shishira": "ಶಿಶಿರ ಋತು" }
+            };
+            return (trans[currentLang] && trans[currentLang][rituStr]) || rituStr;
+        }
+
         let currentLang = 'en';
         let activeMainTab = 'home'; // navigation pages switcher
         let activeSubTab = 'basic';
@@ -2055,8 +2147,7 @@ function translateTamilYear(yearStr) {
             document.getElementById('lbl-title-panch').innerText = dict.title_panch;
             document.getElementById('lbl-title-gochara').innerText = dict.title_gochara;
             document.getElementById('lbl-desc-gochara').innerText = dict.desc_gochara;
-            document.getElementById('lbl-tamil-year').innerText = dict.tamil_year;
-            document.getElementById('lbl-tamil-month').innerText = dict.tamil_month;
+            updateDynamicPanchangamLabels(langCode, systemSelect ? systemSelect.value : 'sauramana');
             document.getElementById('lbl-tithi').innerText = dict.tithi;
             document.getElementById('lbl-naks').innerText = dict.naks;
             document.getElementById('lbl-yogam').innerText = dict.yogam;
@@ -2238,6 +2329,10 @@ function translateTamilYear(yearStr) {
             document.getElementById('gregorian-date-str').innerText = gregDateStr;
 
             // Fill Panchangam details
+            const systemSelect = document.getElementById('panch-system-select');
+            const activeSys = systemSelect ? systemSelect.value : 'sauramana';
+            updateDynamicPanchangamLabels(currentLang, activeSys);
+
             document.getElementById('panch-tamil-year').innerText = translateTamilYear(dailyPanchangamData.panchangam.tamil_year);
             document.getElementById('panch-tamil-month').innerText = translateTamilMonth(dailyPanchangamData.panchangam.tamil_date || dailyPanchangamData.panchangam.tamil_month);
             document.getElementById('panch-tithi').innerText = translateTithi(dailyPanchangamData.panchangam.tithi);
@@ -2254,6 +2349,10 @@ function translateTamilYear(yearStr) {
             const isTa = currentLang === 'ta';
             const kPrefix = isTa ? "கலி-" : "Kali ";
             document.getElementById('panch-kali-year').innerText = dailyPanchangamData.panchangam.kali_yuga_year ? (kPrefix + dailyPanchangamData.panchangam.kali_yuga_year) : "--";
+
+            // Set Ayana and Ritu
+            document.getElementById('panch-ayana').innerText = translateAyana(dailyPanchangamData.panchangam.ayana);
+            document.getElementById('panch-ritu').innerText = translateRitu(dailyPanchangamData.panchangam.ritu);
 
             // Draw Gochara South Indian Chart (SVG)
             drawSouthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
@@ -2304,6 +2403,13 @@ function translateTamilYear(yearStr) {
             const abhijitStart = noon - (dayDuration / 30);
             const abhijitEnd = noon + (dayDuration / 30);
             document.getElementById('panch-abhijit').innerText = formatRange(abhijitStart, abhijitEnd);
+
+            // Brahma Muhurtha (starts 1 hour 36 mins = 1.6 hrs before sunrise, ends 48 mins = 0.8 hrs before)
+            const brahmaStart = sunriseDec - 1.6;
+            const brahmaEnd = sunriseDec - 0.8;
+            const wrappedBrahmaStart = brahmaStart < 0 ? brahmaStart + 24 : brahmaStart;
+            const wrappedBrahmaEnd = brahmaEnd < 0 ? brahmaEnd + 24 : brahmaEnd;
+            document.getElementById('panch-brahma-muhurtha').innerText = formatRange(wrappedBrahmaStart, wrappedBrahmaEnd);
 
             // Netram & Jeevan
             const naksName = dailyPanchangamData.panchangam.nakshatra;

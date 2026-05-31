@@ -713,7 +713,38 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     c.drawRightString = patched_drawRightString
     
     # Get localized labels dictionary
-    labels = LABEL_LOCALIZATION.get(lang, LABEL_LOCALIZATION["en"])
+    labels = LABEL_LOCALIZATION.get(lang, LABEL_LOCALIZATION["en"]).copy()
+    
+    # Dynamically adjust labels for Tamil/Malayalam/Telugu/Kannada/Hindi calendars in the PDF
+    m_name = chart_data['panchangam'].get('tamil_month', '')
+    if lang == "ml":
+        labels["tamil_year"] = "വർഷം (കൊല്ലവർഷം)"
+        labels["tamil_month"] = "മലയാള തീയതി"
+    elif lang == "hi":
+        labels["tamil_year"] = "विक्रम संवत वर्ष"
+        labels["tamil_month"] = "चंद्र मास और तिथि"
+    elif lang == "te":
+        labels["tamil_year"] = "సంవత్సరం (శక)"
+        labels["tamil_month"] = "చాంద్రమాన నెల & తిథి"
+    elif lang == "kn":
+        labels["tamil_year"] = "ಸಂವತ್ಸರ (ಶಕ)"
+        labels["tamil_month"] = "ಚಾಂದ್ರಮಾನ ಮಾಸ & తిథి"
+    elif lang == "ta":
+        labels["tamil_year"] = "தமிழ் வருடம்"
+        labels["tamil_month"] = "தமிழ் தேதி"
+    else:  # English (en)
+        # Check month name to detect calendar system
+        is_lunar = any(m in m_name for m in ["Chaitra", "Vaishakha", "Jyeshtha", "Ashadha", "Shravana", "Bhadrapada", "Ashvina", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"])
+        is_malayalam = any(m in m_name for m in ["Chingam", "Kanni", "Thulam", "Vrischikam", "Dhanu", "Makaram", "Kumbham", "Meenam", "Medam", "Edavam", "Mithunam", "Karkidakam"])
+        if is_lunar:
+            labels["tamil_year"] = "Lunar Year (Samvatsara)"
+            labels["tamil_month"] = "Lunar Month & Tithi"
+        elif is_malayalam:
+            labels["tamil_year"] = "Malayalam Year (Kolla Varsham)"
+            labels["tamil_month"] = "Malayalam Month & Date"
+        else:
+            labels["tamil_year"] = "Solar Year (Tamil)"
+            labels["tamil_month"] = "Solar Month & Date"
     
     # ------------------ PAGE 1 ------------------
     # 1. Lord Ganesha Icon (Top Center, small and premium)

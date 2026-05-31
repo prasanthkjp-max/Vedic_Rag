@@ -282,33 +282,71 @@ LUNI_SOLAR_MONTHS = [
     "Ashvina", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"
 ]
 
+MALAYALAM_MONTHS = [
+    "Chingam", "Kanni", "Thulam", "Vrischikam", "Dhanu", "Makaram",
+    "Kumbham", "Meenam", "Medam", "Edavam", "Mithunam", "Karkidakam"
+]
+
+def calculate_ayana(sun_long):
+    """
+    Uttarayana: Sun in Makara (10) to Mithuna (3) -> 270 deg to 90 deg.
+    Dakshinayana: Sun in Karka (4) to Dhanus (9) -> 90 deg to 270 deg.
+    """
+    deg = sun_long % 360.0
+    if 270.0 <= deg or deg < 90.0:
+        return "Uttarayana"
+    else:
+        return "Dakshinayana"
+
+def calculate_ritu(sun_long):
+    """
+    Ritu (6 seasons of the Vedic calendar based on Sun's sidereal longitude)
+    - Vasanta (Spring): Sun in Pisces/Aries (330 to 30 deg)
+    - Grishma (Summer): Sun in Taurus/Gemini (30 to 90 deg)
+    - Varsha (Monsoon): Sun in Cancer/Leo (90 to 150 deg)
+    - Sharad (Autumn): Sun in Virgo/Libra (150 to 210 deg)
+    - Hemanta (Pre-winter): Sun in Scorpio/Sagittarius (210 to 270 deg)
+    - Shishira (Winter): Sun in Capricorn/Aquarius (270 to 330 deg)
+    """
+    deg = sun_long % 360.0
+    if 330.0 <= deg or deg < 30.0:
+        return "Vasanta"
+    elif 30.0 <= deg and deg < 90.0:
+        return "Grishma"
+    elif 90.0 <= deg and deg < 150.0:
+        return "Varsha"
+    elif 150.0 <= deg and deg < 210.0:
+        return "Sharad"
+    elif 210.0 <= deg and deg < 270.0:
+        return "Hemanta"
+    else:
+        return "Shishira"
+
+def calculate_luni_solar_month_index(sun_long, moon_long):
+    """
+    Astronomically computes the synodic Luni-Solar month index (0 to 11).
+    """
+    diff = (moon_long - sun_long) % 360.0
+    days_since_new_moon = diff / 12.2
+    sun_long_at_new_moon = (sun_long - (days_since_new_moon * 0.9856)) % 360.0
+    sun_sign_at_new_moon = math.floor(sun_long_at_new_moon / 30.0) % 12
+    luni_month_idx = (sun_sign_at_new_moon + 1) % 12
+    return luni_month_idx
+
 def calculate_luni_solar_month(sun_long, moon_long):
     """
-    Astronomically computes the correct Luni-Solar lunar month based on the 
-    zodiac sign of the Sun at the preceding New Moon (Amavasya conjunction).
+    Amanta style (default for Telugu, Kannada)
     """
-    # Elongation angle between Moon and Sun (from 0 to 360)
-    diff = (moon_long - sun_long) % 360.0
-    
-    # Estimate days since the preceding new moon (Moon relative speed is ~12.2 deg/day)
-    days_since_new_moon = diff / 12.2
-    
-    # Sun moves about 0.9856 degrees per day. Sun's position at the preceding conjunction:
-    sun_long_at_new_moon = (sun_long - (days_since_new_moon * 0.9856)) % 360.0
-    
-    # Determine the zodiac sign at new moon (0 = Mesha, ..., 11 = Meena)
-    sun_sign_at_new_moon = math.floor(sun_long_at_new_moon / 30.0) % 12
-    
-    # Map sign to Luni-Solar Month: Meena (11) -> Chaitra (0), Mesha (0) -> Vaishakha (1), etc.
-    luni_month_idx = (sun_sign_at_new_moon + 1) % 12
-    return LUNI_SOLAR_MONTHS[luni_month_idx]
+    idx = calculate_luni_solar_month_index(sun_long, moon_long)
+    return LUNI_SOLAR_MONTHS[idx]
 
 def get_regional_panchangam(chart, lang_code):
     """
     Returns localized and adapted panchangam terms based on selected language.
-    For English/Tamil: Tamil Panchangam remains default.
-    For Hindi: North Indian Luni-solar months and Vikrama Samvat.
-    For Telugu, Kannada, Malayalam: Luni-solar months and Shalivahana Shaka.
+    Tamil: Solar months, Sanskrit/Tamil 60-Year cycle, Kali Yuga era.
+    Malayalam: Solar months (Chingam starting at Sun 120°), Kolla Varsham era incremented on Chingam 1st.
+    Hindi: Purnimanta system (shifted Krishna Paksha) and Vikrama Samvat year.
+    Telugu/Kannada: Amanta system (Shalivahana Shaka year).
     """
     panch = chart["panchangam"].copy()
     tamil_month = panch["tamil_month"]
@@ -320,26 +358,68 @@ def get_regional_panchangam(chart, lang_code):
     epoch_jd = JD - 2451545.0
     gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
     
-    # Adapt translations based on language
-    if lang_code in ["hi", "te", "kn", "ml"]:
-        # Regional luni-solar month name calculated astronomically from Sun and Moon positions!
-        sun_long = chart["placements"]["Sun"]["longitude"]
-        moon_long = chart["placements"]["Moon"]["longitude"]
-        luni_month = calculate_luni_solar_month(sun_long, moon_long)
+    sun_long = chart["placements"]["Sun"]["longitude"]
+    moon_long = chart["placements"]["Moon"]["longitude"]
+    
+    if lang_code == "ml":
+        # Malayalam Solar Calendar (Kollavarsham)
+        # Chingam (Month 0) starts when Sun enters Simha (120 deg)
+        mal_month_idx = math.floor((sun_long - 120.0) % 360.0 / 30.0) % 12
+        mal_month = MALAYALAM_MONTHS[mal_month_idx]
         
+        # Calculate precise Kolla Varsham Year
+        # Transition happens when Sun enters Leo (Chingam 1st) in August
+        dt_str = chart["metadata"].get("datetime", "")
+        if dt_str:
+            date_part = dt_str.split(" ")[0]
+            y_str, m_str, _ = date_part.split("-")
+            greg_yr = int(y_str)
+            greg_mo = int(m_str)
+        else:
+            greg_yr = gregorian_year
+            greg_mo = 8
+            
+        if greg_mo >= 9:
+            me_year = greg_yr - 824
+        elif greg_mo <= 7:
+            me_year = greg_yr - 825
+        else:  # August
+            if mal_month_idx == 0:
+                me_year = greg_yr - 824
+            else:
+                me_year = greg_yr - 825
+                
+        panch["tamil_month"] = mal_month
+        panch["tamil_date"] = f"{mal_month} {tamil_day}"
+        panch["tamil_year"] = f"Kolla Varsham {me_year}"
+        
+    elif lang_code == "hi":
+        # Hindi Luni-Solar Calendar (Purnimanta)
+        # Months end on Full Moon (Pournami), shifting Krishna Paksha forward
+        luni_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+        diff = (moon_long - sun_long) % 360.0
+        if diff >= 180.0:  # Krishna Paksha (after Full Moon)
+            luni_idx = (luni_idx + 1) % 12
+        luni_month = LUNI_SOLAR_MONTHS[luni_idx]
+        
+        # Vikrama Samvat Year
+        vs_year = gregorian_year + 57
         panch["tamil_month"] = luni_month
         panch["tamil_date"] = f"{luni_month} {tamil_day}"
+        panch["tamil_year"] = f"Vikrama Samvat {vs_year}"
         
-        if lang_code == "hi":
-            # Vikrama Samvat Year
-            vs_year = gregorian_year + 57
-            panch["tamil_year"] = f"Vikrama Samvat {vs_year}"
-        else:
-            # Shalivahana Shaka Year
-            shaka_year = gregorian_year - 78
-            panch["tamil_year"] = f"Shalivahana Shaka {shaka_year}"
+    elif lang_code in ["te", "kn"]:
+        # Telugu / Kannada Lunar Calendar (Amanta)
+        luni_month = calculate_luni_solar_month(sun_long, moon_long)
+        
+        # Shalivahana Shaka Year
+        shaka_year = gregorian_year - 78
+        panch["tamil_month"] = luni_month
+        panch["tamil_date"] = f"{luni_month} {tamil_day}"
+        panch["tamil_year"] = f"Shalivahana Shaka {shaka_year}"
+        
     else:
-        # Default Tamil Panchangam formatting (in English or Tamil)
+        # Default Tamil Solar Formatting
         panch["tamil_month"] = tamil_month
         panch["tamil_date"] = f"{tamil_month} {tamil_day}"
         panch["tamil_year"] = tamil_year
@@ -862,6 +942,10 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     # Format Ayanamsa beautifully (DD°MM')
     ayanamsa_dms = format_deg_to_dms(ayanamsa)
 
+    # Compute Ayana and Ritu
+    ayana = calculate_ayana(sidereal_positions["Sun"])
+    ritu = calculate_ritu(sidereal_positions["Sun"])
+
     return {
         "metadata": {
             "datetime": f"{year}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}",
@@ -888,7 +972,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "udayadhi_nazhikai": udayadhi_nazhikai_str,
             "lmt": lmt_str,
             "kali_yuga_year": kali_yuga_year,
-            "day_of_week": day_of_week_en
+            "day_of_week": day_of_week_en,
+            "ayana": ayana,
+            "ritu": ritu
         },
         "placements": rasi_placements,
         "dasas": dasa_table
