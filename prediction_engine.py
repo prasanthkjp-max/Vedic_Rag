@@ -137,16 +137,19 @@ def _parse(d):
 
 def get_current_dasa(dasa_table, ref_date=None):
     """
-    Find the Mahadasa, Antardasa (bhukti) running on ref_date (default: today).
-    Returns a dict with lords, the date windows, and the upcoming bhukti.
+    Find the Mahadasa, Antardasa (bhukti) and Pratyantar Dasa running on ref_date (default: today).
+    Returns a dict with lords, the date windows, and the upcoming bhukti/pratyantar.
     """
     if ref_date is None:
         ref_date = date.today()
     elif isinstance(ref_date, datetime):
         ref_date = ref_date.date()
 
-    current = {"mahadasa": None, "antardasa": None, "next_antardasa": None,
-               "maha_window": None, "antar_window": None}
+    current = {
+        "mahadasa": None, "antardasa": None, "pratyantardasa": None,
+        "next_antardasa": None, "next_pratyantardasa": None,
+        "maha_window": None, "antar_window": None, "pratyantar_window": None
+    }
 
     for dasa in dasa_table:
         ds, de = _parse(dasa["start_date"]), _parse(dasa["end_date"])
@@ -166,6 +169,22 @@ def get_current_dasa(dasa_table, ref_date=None):
                             "start_date": nb["start_date"],
                             "end_date": nb["end_date"],
                         }
+                    
+                    # Compute Pratyantar Dasa
+                    pratyantars = b.get("pratyantars", [])
+                    for j, p in enumerate(pratyantars):
+                        ps, pe = _parse(p["start_date"]), _parse(p["end_date"])
+                        if ps and pe and ps <= ref_date < pe:
+                            current["pratyantardasa"] = p["pratyantar_lord"]
+                            current["pratyantar_window"] = (p["start_date"], p["end_date"])
+                            if j + 1 < len(pratyantars):
+                                np = pratyantars[j + 1]
+                                current["next_pratyantardasa"] = {
+                                    "lord": np["pratyantar_lord"],
+                                    "start_date": np["start_date"],
+                                    "end_date": np["end_date"],
+                                }
+                            break
                     break
             break
     return current
@@ -350,11 +369,30 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
         if current_dasa["antardasa"]:
             aw = current_dasa["antar_window"]
             lines.append(f"  - Antardasa (Bhukti): {current_dasa['antardasa']} ({aw[0]} to {aw[1]})")
+        if current_dasa.get("pratyantardasa"):
+            pw = current_dasa["pratyantar_window"]
+            lines.append(f"  - Pratyantar Dasa (Sub-sub): {current_dasa['pratyantardasa']} ({pw[0]} to {pw[1]})")
         if current_dasa["next_antardasa"]:
             n = current_dasa["next_antardasa"]
             lines.append(f"  - Next Bhukti: {n['lord']} (from {n['start_date']})")
+        if current_dasa.get("next_pratyantardasa"):
+            np = current_dasa["next_pratyantardasa"]
+            lines.append(f"  - Next Pratyantar: {np['lord']} (from {np['start_date']})")
     else:
         lines.append("  - Could not resolve current period from the dasa table.")
+
+    # Expose Ashtakavarga House Strengths
+    ashtakavarga = chart.get("ashtakavarga", {})
+    if ashtakavarga:
+        sav = ashtakavarga.get("sav", [])
+        if sav:
+            lines.append("\nASHTAKAVARGA HOUSE STRENGTHS (SAV points per sign):")
+            signs_names = ["Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)", "Karka (Cancer)",
+                           "Simha (Leo)", "Kanya (Virgo)", "Tula (Libra)", "Vrischika (Scorpio)",
+                           "Dhanu (Sagittarius)", "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)"]
+            for idx, score in enumerate(sav):
+                status = "Strong (>28)" if score > 28 else ("Weak (<20)" if score < 20 else "Average")
+                lines.append(f"  - {signs_names[idx]}: {score} points ({status})")
 
     if gochara:
         lines.append("\nGOCHARA (current transits as of {}):".format(ref_date.isoformat()))

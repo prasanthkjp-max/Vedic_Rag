@@ -1,5 +1,6 @@
 import math
 from datetime import datetime, date, time as dtime
+import swisseph as swe
 
 # Traditional Tamil Month Names
 TAMIL_MONTHS = [
@@ -20,8 +21,8 @@ TAMIL_YEARS = [
 # Nakshatra Names
 NAKSHATRAS = [
     "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha",
-    "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Swati", "Chitra", "Anuradha", "Jyeshtha", "Mula",
-    "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati", "Ashwini"
+    "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula",
+    "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
 ]
 
 # Rasi (Zodiac Sign) Names
@@ -80,13 +81,31 @@ def get_obliquity(T):
     """Earth Obliquity (ecliptic tilt)"""
     return 23.439291 - 0.01300416 * T
 
-def get_ayanamsa(T, ayanamsa_name="Lahiri"):
+def get_ayanamsa(T, ayanamsa_name="Lahiri", JD=None):
     """
     Get Ayanamsa correction (difference between Tropical and Sidereal zodiac).
-    J2000.0 Ayanamsa = 23.85 degrees approx (Lahiri).
+    Uses high-precision Swiss Ephemeris if JD is supplied, falling back to analytical.
     """
-    # Lahiri value (23 deg 51 min 25 sec at 2000)
-    lahiri = 23.85694 + 0.01396 * T
+    if ayanamsa_name == "Tropical":
+        return 0.0
+
+    if JD is not None:
+        try:
+            if ayanamsa_name == "Raman":
+                swe.set_sid_mode(swe.SIDM_RAMAN)
+            elif ayanamsa_name == "KP":
+                swe.set_sid_mode(swe.SIDM_KP)
+            else:
+                swe.set_sid_mode(swe.SIDM_LAHIRI)
+            val = swe.get_ayanamsa(JD)
+            if ayanamsa_name == "DP":
+                val += 0.20
+            return val
+        except Exception:
+            pass
+
+    # Fallback Century Calculation
+    lahiri = 23.85694 + 1.39638 * T
     if ayanamsa_name == "Raman":
         return lahiri + 1.45  # Raman offset
     elif ayanamsa_name == "KP":
@@ -158,90 +177,34 @@ def calculate_keplerian(planet, T):
 
 def get_planet_longitudes(T, JD):
     """
-    Computes geocentric ecliptic longitudes (tropical) for Sun, Moon, Rahu, Ketu and planets.
+    Computes geocentric ecliptic longitudes (tropical) for Sun, Moon, Rahu, Ketu and planets
+    using high-precision Swiss Ephemeris.
     """
-    # 1. Earth/Sun geocentric position (Keplerian)
-    L_sun, B_sun, R_sun = calculate_keplerian("Sun", T)
-    # Geocentric Sun longitude is heliocentric Earth longitude + 180
-    sun_long = (L_sun) % 360.0
-    
-    # 2. Moon Geocentric Position (Simplified Brown's series for high precision)
-    # Mean Longitude
-    L_prime = (218.316447 + 481267.881234 * T) % 360.0
-    # Mean Anomaly Moon
-    M_prime = (134.963396 + 477198.867505 * T) % 360.0
-    # Mean Anomaly Sun
-    M_sun = (357.529109 + 35999.050290 * T) % 360.0
-    # Argument of Latitude Moon
-    F = (93.272095 + 483202.017538 * T) % 360.0
-    # Mean Elongation
-    D = (297.850192 + 445267.111403 * T) % 360.0
-    
-    # Principal lunar inequality perturbations
-    moon_long = L_prime + 6.288774 * math.sin(math.radians(M_prime)) \
-                          + 1.274027 * math.sin(math.radians(2*D - M_prime)) \
-                          + 0.658314 * math.sin(math.radians(2*D)) \
-                          + 0.213618 * math.sin(math.radians(2*M_prime)) \
-                          - 0.185116 * math.sin(math.radians(M_sun)) \
-                          - 0.114332 * math.sin(math.radians(2*F))
-    moon_long = moon_long % 360.0
-    
-    # 3. Rahu & Ketu (Mean lunar nodes, very stable)
-    rahu_long = (125.044547 - 1934.136261 * T + 0.002078 * T**2) % 360.0
-    ketu_long = (rahu_long + 180.0) % 360.0
-    
-    longitudes = {
-        "Sun": sun_long,
-        "Moon": moon_long,
-        "Rahu": rahu_long,
-        "Ketu": ketu_long
+    planets_map = {
+        "Sun": swe.SUN,
+        "Moon": swe.MOON,
+        "Mercury": swe.MERCURY,
+        "Venus": swe.VENUS,
+        "Mars": swe.MARS,
+        "Jupiter": swe.JUPITER,
+        "Saturn": swe.SATURN,
+        "Rahu": swe.MEAN_NODE,
     }
+    longitudes = {}
+    for name, swe_id in planets_map.items():
+        res = swe.calc_ut(JD, swe_id)
+        longitudes[name] = res[0][0]
     
-    # 4. Geocentric Planet Positions (Translate Heliocentric to Geocentric)
-    # Geocentric X_g = X_planet - X_earth
-    # X_earth = R_sun * cos(Sun_long), etc.
-    x_earth = R_sun * math.cos(math.radians(sun_long))
-    y_earth = R_sun * math.sin(math.radians(sun_long))
-    
-    for planet in ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"]:
-        L_h, B_h, R_h = calculate_keplerian(planet, T)
-        
-        # Heliocentric equatorial/ecliptic cartesian coordinates of planet
-        x_planet = R_h * math.cos(math.radians(L_h)) * math.cos(math.radians(B_h))
-        y_planet = R_h * math.sin(math.radians(L_h)) * math.cos(math.radians(B_h))
-        
-        # Geocentric coordinates
-        x_geo = x_planet + x_earth # relative geocentric vector addition
-        y_geo = y_planet + y_earth
-        
-        geo_long = math.degrees(math.atan2(y_geo, x_geo)) % 360.0
-        longitudes[planet] = geo_long
-        
+    # Ketu is exactly 180 degrees from Rahu
+    longitudes["Ketu"] = (longitudes["Rahu"] + 180.0) % 360.0
     return longitudes
 
 def calculate_lagna(JD, longitude, latitude, T):
     """
-    Calculate Lagna (Ascendant Ecliptic Longitude)
-    LST = GMST + Longitude
-    tan(Lagna) = cos(LST) / -(sin(obliq) * tan(lat) + cos(obliq) * sin(LST))
+    Calculate Lagna (Ascendant Ecliptic Longitude) using high-precision Swiss Ephemeris.
     """
-    # Greenwich Mean Sidereal Time (GMST) in degrees
-    d = JD - 2451545.0
-    gmst = (280.46061837 + 360.98564736629 * d) % 360.0
-    
-    # Local Sidereal Time (LST) in degrees
-    lst = (gmst + longitude) % 360.0
-    
-    lst_rad = math.radians(lst)
-    lat_rad = math.radians(latitude)
-    obliq_rad = math.radians(get_obliquity(T))
-    
-    # Correct Spherical trigonometry formula for Ascendant
-    num = math.cos(lst_rad)
-    den = -(math.sin(obliq_rad) * math.tan(lat_rad) + math.cos(obliq_rad) * math.sin(lst_rad))
-    
-    lagna_long = math.degrees(math.atan2(num, den)) % 360.0
-    return lagna_long
+    res = swe.houses(JD, latitude, longitude, b'P')
+    return res[1][0]
 
 def get_tamil_year_month(JD, sun_sidereal_long):
     """
@@ -413,6 +376,22 @@ def get_regional_panchangam(chart, lang_code):
         panch["tamil_date"] = f"{tamil_month} {tamil_day}"
         panch["tamil_year"] = tamil_year
         
+    # Localize Ahas and Udayadhi Nazhikai units
+    # "நா.வி" -> Tamil: "நா.வி", Malayalam: "നാ.വി", Telugu: "ఘ.వి", Kannada: "ಘ.ವಿ", Hindi: "घ.प", English: "gh.vigh"
+    units = {
+        "en": "gh.vigh",
+        "ta": "நா.வி",
+        "te": "ఘ.வி",
+        "ml": "നാ.വി",
+        "kn": "ಘ.ವಿ",
+        "hi": "घ.प"
+    }
+    unit = units.get(lang_code, "gh.vigh")
+    if "ahas" in panch:
+        panch["ahas"] = panch["ahas"].replace("நா.வி", unit)
+    if "udayadhi_nazhikai" in panch:
+        panch["udayadhi_nazhikai"] = panch["udayadhi_nazhikai"].replace("நா.வி", unit)
+        
     return panch
 
 def get_panchangam_details(sun_long, moon_long):
@@ -424,15 +403,20 @@ def get_panchangam_details(sun_long, moon_long):
     tithi_num = math.floor(diff / 12.0) + 1
     tithi_num = min(tithi_num, 30)
     
-    if tithi_num <= 15:
-        tithi_name = f"Sukla Paksha Dwitiya/Prathama (Tithi {tithi_num})"
-        if tithi_num == 1: tithi_name = "Sukla Paksha Prathama"
-        elif tithi_num == 15: tithi_name = "Pournami (Full Moon)"
+    TITHI_NAMES = [
+        "Prathama", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
+        "Shashti", "Saptami", "Ashtami", "Navami", "Dashami",
+        "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi"
+    ]
+    if tithi_num == 15:
+        tithi_name = "Pournami (Full Moon)"
+    elif tithi_num == 30:
+        tithi_name = "Amavasya (New Moon)"
+    elif tithi_num < 15:
+        tithi_name = f"Sukla Paksha {TITHI_NAMES[tithi_num - 1]} (Tithi {tithi_num})"
     else:
         k_num = tithi_num - 15
-        tithi_name = f"Krishna Paksha Dwitiya/Prathama (Tithi {k_num})"
-        if k_num == 1: tithi_name = "Krishna Paksha Prathama"
-        elif k_num == 15: tithi_name = "Amavasya (New Moon)"
+        tithi_name = f"Krishna Paksha {TITHI_NAMES[k_num - 1]} (Tithi {k_num})"
         
     # 2. Nakshatram (Sidereal Moon)
     naks_num = math.floor(moon_long / (360.0 / 27.0)) % 27
@@ -463,6 +447,35 @@ def get_panchangam_details(sun_long, moon_long):
         karanam = KARANAS[(kar_num - 1) % 7 + 1]
         
     return tithi_name, nakshatra, yogam, karanam, naks_num
+
+def jd_to_date_string(jd):
+    """
+    Convert Julian Date to a Gregorian date string (YYYY-MM-DD).
+    Robust astronomical algorithm (Meeus/Fliegel-Van Flandern) that works for all dates,
+    avoiding any Unix epoch/platform timezone limits.
+    """
+    jd = jd + 0.5
+    I = math.floor(jd)
+    F = jd - I
+    if I > 2299160:
+        A = math.floor((I - 1867216.25) / 36524.25)
+        B = I + 1 + A - math.floor(A / 4)
+    else:
+        B = I
+    C = B + 1524
+    D = math.floor((C - 122.1) / 365.25)
+    E = math.floor(365.25 * D)
+    G = math.floor((C - E) / 30.6001)
+    day = C - E - math.floor(30.6001 * G) + F
+    if G < 13.5:
+        month = G - 1
+    else:
+        month = G - 13
+    if month > 2.5:
+        year = D - 4716
+    else:
+        year = D - 4715
+    return f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
 
 def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
     """
@@ -518,8 +531,8 @@ def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
         # Simple estimation:
         # 1 JD = 1 day, so we can convert directly using datetime offset
         epoch = datetime(2000, 1, 1, 12, 0, 0)
-        start_dt = datetime.fromtimestamp((start_jd - 2451545.0) * 86400 + 946684800) if abs(start_jd - 2451545.0) < 50000 else datetime(1990,1,1)
-        end_dt = datetime.fromtimestamp((end_jd - 2451545.0) * 86400 + 946684800) if abs(end_jd - 2451545.0) < 50000 else datetime(1990,1,1)
+        start_date_str = jd_to_date_string(start_jd)
+        end_date_str = jd_to_date_string(end_jd)
         
         # Generate Bhuktis (Sub-periods)
         bhuktis = []
@@ -539,22 +552,44 @@ def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
                 
             b_end_jd = b_current_jd + (b_dur_years * DAYS_IN_YEAR)
             
-            b_start_dt = datetime.fromtimestamp((b_current_jd - 2451545.0) * 86400 + 946684800) if abs(b_current_jd - 2451545.0) < 50000 else datetime(1990,1,1)
-            b_end_dt = datetime.fromtimestamp((b_end_jd - 2451545.0) * 86400 + 946684800) if abs(b_end_jd - 2451545.0) < 50000 else datetime(1990,1,1)
+            b_start_date_str = jd_to_date_string(b_current_jd)
+            b_end_date_str = jd_to_date_string(b_end_jd)
             
+            # Generate Pratyantar Dasas (sub-sub-periods)
+            pratyantars = []
+            pd_start_idx = DASA_PLANETS.index(b_planet)
+            pd_order = DASA_PLANETS[pd_start_idx:] + DASA_PLANETS[:pd_start_idx]
+            pd_current_jd = b_current_jd
+            
+            for pd_planet in pd_order:
+                pd_dur_years = (b_dur_years * DASA_DURATIONS[pd_planet]) / 120.0
+                pd_end_jd = pd_current_jd + (pd_dur_years * DAYS_IN_YEAR)
+                
+                pd_start_date_str = jd_to_date_string(pd_current_jd)
+                pd_end_date_str = jd_to_date_string(pd_end_jd)
+                
+                pratyantars.append({
+                    "pratyantar_lord": pd_planet,
+                    "duration_years": round(pd_dur_years, 4),
+                    "start_date": pd_start_date_str,
+                    "end_date": pd_end_date_str
+                })
+                pd_current_jd = pd_end_jd
+                
             bhuktis.append({
                 "bhukti_lord": b_planet,
                 "duration_years": round(b_dur_years, 2),
-                "start_date": b_start_dt.strftime("%Y-%m-%d"),
-                "end_date": b_end_dt.strftime("%Y-%m-%d")
+                "start_date": b_start_date_str,
+                "end_date": b_end_date_str,
+                "pratyantars": pratyantars
             })
             b_current_jd = b_end_jd
             
         dasa_list.append({
             "dasa_lord": planet,
             "duration_years": round(duration, 2),
-            "start_date": start_dt.strftime("%Y-%m-%d"),
-            "end_date": end_dt.strftime("%Y-%m-%d"),
+            "start_date": start_date_str,
+            "end_date": end_date_str,
             "bhuktis": bhuktis
         })
         
@@ -742,8 +777,115 @@ def get_timezone_offset(longitude, latitude):
     if 2.0 <= longitude <= 20.0 and 35.0 <= latitude <= 60.0:
         return 1.0
         
-    # 4. Standard mathematical rounding to nearest 30 mins (0.5 hour)
-    return round(longitude / 15.0 * 2) / 2
+ASHTAKAVARGA_RULES = {
+    "Sun": {
+        "Sun": [1, 2, 4, 7, 8, 9, 10, 11],
+        "Moon": [3, 6, 10, 11],
+        "Mars": [1, 2, 4, 7, 8, 9, 10, 11],
+        "Mercury": [3, 5, 6, 9, 10, 11, 12],
+        "Jupiter": [5, 6, 9, 11],
+        "Venus": [6, 7, 12],
+        "Saturn": [1, 2, 4, 7, 8, 9, 10, 11],
+        "Lagna": [3, 4, 6, 10, 11, 12]
+    },
+    "Moon": {
+        "Sun": [3, 6, 7, 8, 10, 11],
+        "Moon": [1, 3, 6, 7, 10, 11],
+        "Mars": [2, 3, 5, 6, 9, 10, 11],
+        "Mercury": [1, 3, 4, 5, 7, 8, 10, 11],
+        "Jupiter": [1, 4, 7, 8, 10, 11, 12],
+        "Venus": [3, 4, 5, 7, 9, 10, 11],
+        "Saturn": [3, 5, 6, 11],
+        "Lagna": [3, 6, 10, 11]
+    },
+    "Mars": {
+        "Sun": [3, 5, 6, 10, 11],
+        "Moon": [3, 6, 11],
+        "Mars": [1, 2, 4, 7, 8, 10, 11],
+        "Mercury": [3, 5, 6, 11],
+        "Jupiter": [6, 10, 11, 12],
+        "Venus": [6, 8, 11, 12],
+        "Saturn": [1, 4, 7, 8, 9, 10, 11],
+        "Lagna": [1, 3, 6, 10, 11]
+    },
+    "Mercury": {
+        "Sun": [5, 6, 9, 11, 12],
+        "Moon": [2, 4, 6, 8, 10, 11],
+        "Mars": [1, 2, 4, 7, 8, 9, 10, 11],
+        "Mercury": [1, 3, 5, 6, 9, 10, 11, 12],
+        "Jupiter": [6, 8, 11, 12],
+        "Venus": [1, 2, 3, 4, 5, 8, 9, 11],
+        "Saturn": [1, 2, 4, 7, 8, 9, 10, 11],
+        "Lagna": [1, 2, 4, 6, 8, 10, 11]
+    },
+    "Jupiter": {
+        "Sun": [1, 2, 3, 4, 7, 8, 9, 10, 11],
+        "Moon": [2, 5, 6, 9, 10, 11],
+        "Mars": [1, 2, 4, 7, 8, 10, 11],
+        "Mercury": [1, 2, 4, 5, 6, 9, 10, 11],
+        "Jupiter": [1, 2, 3, 4, 7, 8, 10, 11],
+        "Venus": [2, 5, 6, 9, 11],
+        "Saturn": [3, 5, 6, 12],
+        "Lagna": [1, 2, 4, 5, 6, 7, 9, 10, 11]
+    },
+    "Venus": {
+        "Sun": [8, 11, 12],
+        "Moon": [1, 2, 3, 4, 5, 8, 9, 11, 12],
+        "Mars": [3, 5, 6, 9, 11, 12],
+        "Mercury": [3, 5, 6, 9, 11],
+        "Jupiter": [5, 8, 9, 10, 11],
+        "Venus": [1, 2, 3, 4, 5, 8, 9, 10, 11],
+        "Saturn": [3, 4, 5, 8, 9, 10, 11],
+        "Lagna": [1, 2, 3, 4, 5, 8, 9, 11]
+    },
+    "Saturn": {
+        "Sun": [1, 2, 4, 7, 8, 10, 11],
+        "Moon": [3, 6, 11],
+        "Mars": [3, 5, 6, 10, 11, 12],
+        "Mercury": [6, 8, 9, 10, 11, 12],
+        "Jupiter": [5, 6, 11, 12],
+        "Venus": [6, 11, 12],
+        "Saturn": [3, 5, 6, 11],
+        "Lagna": [1, 3, 4, 6, 10, 11]
+    }
+}
+
+def calculate_ashtakavarga(sidereal_positions, sidereal_lagna):
+    """
+    Calculate Bhinnashtakavarga (BAV) for the 7 classical planets and
+    the combined Sarvashtakavarga (SAV) for the 12 signs.
+    """
+    planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    
+    # Map positions to 0-based sign indices (0 to 11)
+    signs = {}
+    for p in planets:
+        signs[p] = math.floor(sidereal_positions[p] / 30.0) % 12
+    signs["Lagna"] = math.floor(sidereal_lagna / 30.0) % 12
+    
+    # Initialize BAV tables: planet -> sign (0-11) -> points
+    bav = {}
+    for p in planets:
+        bav[p] = [0] * 12
+        
+    # Calculate BAV for each target planet
+    for target in planets:
+        rules = ASHTAKAVARGA_RULES[target]
+        for source, offsets in rules.items():
+            source_sign = signs[source]
+            for offset in offsets:
+                target_sign = (source_sign + offset - 1) % 12
+                bav[target][target_sign] += 1
+                
+    # Calculate Sarvashtakavarga (SAV)
+    sav = [0] * 12
+    for sign_idx in range(12):
+        sav[sign_idx] = sum(bav[p][sign_idx] for p in planets)
+        
+    return {
+        "bav": bav,
+        "sav": sav
+    }
 
 def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None):
     """
@@ -761,7 +903,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     T = (JD - 2451545.0) / 36525.0
     
     # 2. Obliquity & Ayanamsa
-    ayanamsa = get_ayanamsa(T, ayanamsa_name)
+    ayanamsa = get_ayanamsa(T, ayanamsa_name, JD=JD)
     
     # 3. Get Tropical Planet positions
     tropical_positions = get_planet_longitudes(T, JD)
@@ -779,7 +921,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     # Calculate planet positions at JD + 0.01 to check for retrograde motion (difference over ~14.4 mins)
     T_next = (JD + 0.01 - 2451545.0) / 36525.0
     tropical_positions_next = get_planet_longitudes(T_next, JD + 0.01)
-    ayanamsa_next = get_ayanamsa(T_next, ayanamsa_name)
+    ayanamsa_next = get_ayanamsa(T_next, ayanamsa_name, JD=JD + 0.01)
     sidereal_positions_next = {}
     for planet, long_val in tropical_positions_next.items():
         sidereal_positions_next[planet] = (long_val - ayanamsa_next) % 360.0
@@ -830,6 +972,43 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             start_sign = 3
         nav_rasi_idx = (start_sign + nav_idx) % 12
         
+        # D10 Dashamsha calculation
+        d10_idx = math.floor(deg_in_sign / 3.0)
+        d10_idx = min(d10_idx, 9)
+        if rasi_idx % 2 == 0:
+            d10_rasi_idx = (rasi_idx + d10_idx) % 12
+        else:
+            d10_rasi_idx = (rasi_idx + 8 + d10_idx) % 12
+            
+        # D12 Dwadashamsha calculation
+        d12_idx = math.floor(deg_in_sign / 2.5)
+        d12_idx = min(d12_idx, 11)
+        d12_rasi_idx = (rasi_idx + d12_idx) % 12
+        
+        # D30 Trishamsha calculation
+        if rasi_idx % 2 == 0: # Odd sign
+            if deg_in_sign < 5.0:
+                d30_rasi_idx = 0 # Aries (Mars)
+            elif deg_in_sign < 10.0:
+                d30_rasi_idx = 10 # Aquarius (Saturn)
+            elif deg_in_sign < 18.0:
+                d30_rasi_idx = 8 # Sagittarius (Jupiter)
+            elif deg_in_sign < 25.0:
+                d30_rasi_idx = 2 # Gemini (Mercury)
+            else:
+                d30_rasi_idx = 1 # Taurus (Venus)
+        else: # Even sign
+            if deg_in_sign < 5.0:
+                d30_rasi_idx = 1 # Taurus (Venus)
+            elif deg_in_sign < 12.0:
+                d30_rasi_idx = 5 # Virgo (Mercury)
+            elif deg_in_sign < 20.0:
+                d30_rasi_idx = 11 # Pisces (Jupiter)
+            elif deg_in_sign < 25.0:
+                d30_rasi_idx = 9 # Capricorn (Saturn)
+            else:
+                d30_rasi_idx = 7 # Scorpio (Mars)
+                
         dignity = get_planetary_dignity(planet, rasi_idx, deg_in_sign)
         
         rasi_placements[planet] = {
@@ -839,6 +1018,12 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "rasi_name": RASIS[rasi_idx],
             "navamsha_rasi_index": nav_rasi_idx,
             "navamsha_rasi_name": RASIS[nav_rasi_idx],
+            "dashamsha_rasi_index": d10_rasi_idx,
+            "dashamsha_rasi_name": RASIS[d10_rasi_idx],
+            "dwadashamsha_rasi_index": d12_rasi_idx,
+            "dwadashamsha_rasi_name": RASIS[d12_rasi_idx],
+            "trishamsha_rasi_index": d30_rasi_idx,
+            "trishamsha_rasi_name": RASIS[d30_rasi_idx],
             "dignity": dignity,
             "is_retrograde": is_retrograde,
             "is_combust": is_combust
@@ -858,6 +1043,43 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         lag_start_sign = 3
     lag_nav_rasi_idx = (lag_start_sign + lag_nav_idx) % 12
     
+    # D10 for Lagna
+    d10_lag_idx = math.floor(lag_deg_in_sign / 3.0)
+    d10_lag_idx = min(d10_lag_idx, 9)
+    if lagna_rasi_idx % 2 == 0:
+        lag_d10_rasi_idx = (lagna_rasi_idx + d10_lag_idx) % 12
+    else:
+        lag_d10_rasi_idx = (lagna_rasi_idx + 8 + d10_lag_idx) % 12
+        
+    # D12 for Lagna
+    d12_lag_idx = math.floor(lag_deg_in_sign / 2.5)
+    d12_lag_idx = min(d12_lag_idx, 11)
+    lag_d12_rasi_idx = (lagna_rasi_idx + d12_lag_idx) % 12
+    
+    # D30 for Lagna
+    if lagna_rasi_idx % 2 == 0:
+        if lag_deg_in_sign < 5.0:
+            lag_d30_rasi_idx = 0
+        elif lag_deg_in_sign < 10.0:
+            lag_d30_rasi_idx = 10
+        elif lag_deg_in_sign < 18.0:
+            lag_d30_rasi_idx = 8
+        elif lag_deg_in_sign < 25.0:
+            lag_d30_rasi_idx = 2
+        else:
+            lag_d30_rasi_idx = 1
+    else:
+        if lag_deg_in_sign < 5.0:
+            lag_d30_rasi_idx = 1
+        elif lag_deg_in_sign < 12.0:
+            lag_d30_rasi_idx = 5
+        elif lag_deg_in_sign < 20.0:
+            lag_d30_rasi_idx = 11
+        elif lag_deg_in_sign < 25.0:
+            lag_d30_rasi_idx = 9
+        else:
+            lag_d30_rasi_idx = 7
+            
     rasi_placements["Lagna"] = {
         "longitude": round(sidereal_lagna, 4),
         "degree": round(lag_deg_in_sign, 4),
@@ -865,6 +1087,12 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         "rasi_name": RASIS[lagna_rasi_idx],
         "navamsha_rasi_index": lag_nav_rasi_idx,
         "navamsha_rasi_name": RASIS[lag_nav_rasi_idx],
+        "dashamsha_rasi_index": lag_d10_rasi_idx,
+        "dashamsha_rasi_name": RASIS[lag_d10_rasi_idx],
+        "dwadashamsha_rasi_index": lag_d12_rasi_idx,
+        "dwadashamsha_rasi_name": RASIS[lag_d12_rasi_idx],
+        "trishamsha_rasi_index": lag_d30_rasi_idx,
+        "trishamsha_rasi_name": RASIS[lag_d30_rasi_idx],
         "dignity": "Neutral",
         "is_retrograde": False,
         "is_combust": False
@@ -935,6 +1163,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     ayana = calculate_ayana(sidereal_positions["Sun"])
     ritu = calculate_ritu(sidereal_positions["Sun"])
 
+    # Calculate Ashtakavarga
+    ashtakavarga = calculate_ashtakavarga(sidereal_positions, sidereal_lagna)
+
     return {
         "metadata": {
             "datetime": f"{year}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}",
@@ -966,7 +1197,8 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "ritu": ritu
         },
         "placements": rasi_placements,
-        "dasas": dasa_table
+        "dasas": dasa_table,
+        "ashtakavarga": ashtakavarga
     }
 
 if __name__ == "__main__":
