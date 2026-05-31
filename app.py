@@ -1,5 +1,7 @@
 import os
 import json
+import uuid
+import secrets
 import urllib.request
 import urllib.error
 import tempfile
@@ -7,7 +9,7 @@ from datetime import datetime
 import fitz  # PyMuPDF
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from io import BytesIO
@@ -22,10 +24,25 @@ from config import (
     BOOKS_DIR,
     STATIC_DIR,
     DEFAULT_LLM_MODEL,
+    OLLAMA_HOST,
     OLLAMA_GENERATE_URL,
     LLM_STREAM_TIMEOUT,
+    EMBEDDING_DIM,
+    API_KEY,
     connect_db,
 )
+import re
+
+
+def _safe_slug(name, fallback="chart"):
+    """Sanitize a user-supplied name for safe use in a filesystem path.
+
+    Strips directory separators and anything outside [A-Za-z0-9_-] so a value
+    like '../../etc/foo' cannot escape the temp directory. Falls back to a
+    constant if nothing usable remains.
+    """
+    slug = re.sub(r"[^A-Za-z0-9_-]+", "_", (name or "").strip()).strip("_")
+    return slug or fallback
 
 app = FastAPI(title="Vedic Astrology AI RAG Portal", version=VERSION)
 
@@ -39,6 +56,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Endpoints reachable without an API key: the readiness/version probes and the
+# OPTIONS preflight. Everything else under /api/ requires the key.
+_OPEN_API_PATHS = {"/api/version", "/api/health"}
+
+
+@app.middleware("http")
+async def api_key_guard(request, call_next):
+    """
+    Gate every /api/* data endpoint behind a shared API key. The key is accepted
+    either as the `X-API-Key` header (used by the SPA's fetch wrapper) or an
+    `api_key` query parameter (handy for direct links / tools). The static
+    frontend, root, version and health probes stay open so the page can load
+    and prompt for the key.
+    """
+    path = request.url.path
+    if (
+        path.startswith("/api/")
+        and path not in _OPEN_API_PATHS
+        and request.method != "OPTIONS"
+    ):
+        provided = request.headers.get("x-api-key") or request.query_params.get("api_key")
+        if not provided or not secrets.compare_digest(provided, API_KEY):
+            return JSONResponse(status_code=401, content={"detail": "Invalid or missing API key"})
+    return await call_next(request)
+
 
 # Initialize Search Engine
 search_engine = VedicSearchEngine(DB_PATH)
@@ -81,18 +124,19 @@ class QueryRequest(BaseModel):
 @app.get("/api/status")
 def get_status():
     """Get the current progress of the OCR database indexing"""
+    conn = None
     try:
         conn = connect_db(DB_PATH)
         cursor = conn.cursor()
-        
+
         # Count books
         cursor.execute("SELECT id, title, total_pages FROM books")
         books_rows = cursor.fetchall()
-        
+
         books = []
         total_indexed_pages = 0
         total_vectorized_pages = 0
-        
+
         for row in books_rows:
             b_id, title, tot_pages = row
             # Total rows in DB (OCR completed)
@@ -100,8 +144,13 @@ def get_status():
             indexed = cursor.fetchone()[0]
             total_indexed_pages += indexed
             
-            # Rows with valid embeddings (excluding zeroblob placeholders)
-            cursor.execute("SELECT count(*) FROM pages WHERE book_id = ? AND embedding != zeroblob(3072)", (b_id,))
+            # Rows with valid embeddings (excluding zeroblob placeholders).
+            # Blob size is EMBEDDING_DIM 4-byte floats, derived so a config change
+            # to the embedding dimension stays consistent here.
+            cursor.execute(
+                "SELECT count(*) FROM pages WHERE book_id = ? AND embedding != zeroblob(?)",
+                (b_id, EMBEDDING_DIM * 4),
+            )
             vectorized = cursor.fetchone()[0]
             total_vectorized_pages += vectorized
             
@@ -113,13 +162,11 @@ def get_status():
                 "vectorized_pages": vectorized,
                 "progress_percent": round((vectorized / tot_pages) * 100, 1) if tot_pages > 0 else 0
             })
-            
-        conn.close()
-        
+
         # Reload search engine index if new pages are vectorized
         if len(search_engine.page_map) < total_vectorized_pages:
             search_engine.reload()
-            
+
         return {
             "status": "active",
             "total_books": len(books),
@@ -129,6 +176,9 @@ def get_status():
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    finally:
+        if conn is not None:
+            conn.close()
 
 @app.get("/api/books")
 def get_books():
@@ -378,9 +428,12 @@ def calculate_chart(req: BirthChartRequest):
 def download_pdf(req: PdfDownloadRequest):
     """Generate ReportLab PDF and stream it for download"""
     try:
-        # Create a secure temporary file path
+        # Create a secure temporary file path. The client name is slugified so a
+        # crafted value (e.g. "../../etc/foo") cannot escape the temp directory,
+        # and a short uuid avoids collisions between concurrent downloads.
         temp_dir = tempfile.gettempdir()
-        pdf_path = os.path.join(temp_dir, f"birth_chart_{req.client_name.replace(' ', '_')}.pdf")
+        safe_name = _safe_slug(req.client_name)
+        pdf_path = os.path.join(temp_dir, f"birth_chart_{safe_name}_{uuid.uuid4().hex[:8]}.pdf")
 
         # Ensure the panchangam data is localized dynamically for the PDF report
         localized_chart_data = req.chart_data.copy()
@@ -397,7 +450,7 @@ def download_pdf(req: PdfDownloadRequest):
         return FileResponse(
             pdf_path, 
             media_type="application/pdf", 
-            filename=f"Birth_Chart_Report_{req.client_name.replace(' ', '_')}.pdf"
+            filename=f"Birth_Chart_Report_{safe_name}.pdf"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -620,7 +673,7 @@ def health_check():
         code = 503
 
     try:
-        with urllib.request.urlopen(f"{OLLAMA_GENERATE_URL.rsplit('/', 2)[0]}/api/tags", timeout=5):
+        with urllib.request.urlopen(f"{OLLAMA_HOST}/api/tags", timeout=5):
             status["ollama"] = "ok"
     except Exception as e:
         status["ollama_error"] = str(e)

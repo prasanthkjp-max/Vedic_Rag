@@ -13,6 +13,7 @@ from config import (
     OLLAMA_EMBED_BATCH_URL,
     EMBED_TIMEOUT,
     connect_db,
+    ensure_fts,
 )
 
 class VedicSearchEngine:
@@ -30,6 +31,15 @@ class VedicSearchEngine:
         # effectively free.
         self._embed_cache = {}
         self.load_index()
+        # Build/sync the FTS5 keyword index once at startup (idempotent).
+        try:
+            conn = connect_db(self.db_path)
+            try:
+                ensure_fts(conn)
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"FTS index setup skipped: {e}")
 
     def get_ollama_embedding(self, text):
         """Generate an embedding using the local Ollama instance.
@@ -214,35 +224,57 @@ class VedicSearchEngine:
         return results
 
     def sparse_search(self, query_text, top_k=10):
-        """Perform simple keyword occurrence matching across the raw text"""
-        if not self.page_map:
-            return []
-            
-        # Tokenize and clean query into words (case insensitive, ignoring very short words)
-        words = re.findall(r"\b\w{3,}\b", query_text.lower())
+        """
+        BM25-ranked keyword search via the FTS5 index (pages_fts).
+
+        Each query word (>=3 chars) is wrapped as an FTS5 phrase literal and
+        OR-combined, preserving the previous "any keyword matches" semantics
+        while letting SQLite rank by relevance. Wrapping in double quotes also
+        neutralises FTS5 query operators in user input. Returns None-free dicts
+        shaped like the rest of the engine's results.
+        """
+        # \w (unicode) keeps Indic OCR terms; dedupe preserves first-seen order.
+        words = re.findall(r"\w{3,}", query_text.lower())
         if not words:
             return []
-            
-        scored_results = []
-        for page in self.page_map:
-            text_lower = page["raw_text"].lower()
-            score = 0
-            
-            # Simple TF-like score based on keyword match frequencies
-            for word in words:
-                matches = len(re.findall(re.escape(word), text_lower))
-                if matches > 0:
-                    score += matches * 1.5  # weigh exact matches
-                    
-            if score > 0:
-                page_info = page.copy()
-                page_info["score"] = score
-                page_info["type"] = "sparse"
-                scored_results.append(page_info)
-                
-        # Sort by score descending
-        scored_results.sort(key=lambda x: x["score"], reverse=True)
-        return scored_results[:top_k]
+        match_expr = " OR ".join(f'"{w}"' for w in dict.fromkeys(words))
+
+        conn = None
+        try:
+            conn = connect_db(self.db_path)
+            cursor = conn.cursor()
+            # bm25() returns a cost (lower = more relevant), so ORDER BY ascending.
+            cursor.execute(
+                """
+                SELECT p.book_id, p.page_num, p.raw_text, bm25(pages_fts) AS rank
+                FROM pages_fts JOIN pages p ON p.id = pages_fts.rowid
+                WHERE pages_fts MATCH ?
+                ORDER BY rank
+                LIMIT ?
+                """,
+                (match_expr, top_k),
+            )
+            rows = cursor.fetchall()
+        except Exception as e:
+            print(f"Sparse (FTS) search failed: {e}")
+            return []
+        finally:
+            if conn is not None:
+                conn.close()
+
+        results = []
+        for book_id, page_num, raw_text, rank in rows:
+            book_meta = self.books.get(book_id) if self.books else None
+            results.append({
+                "book_id": book_id,
+                "page_num": page_num,
+                "raw_text": raw_text,
+                "book_title": book_meta["title"] if book_meta else "Unknown Book",
+                # Flip BM25 cost into a positive relevance score for consistency.
+                "score": -float(rank),
+                "type": "sparse",
+            })
+        return results
 
     def hybrid_search(self, query_text, top_k=5):
         """
