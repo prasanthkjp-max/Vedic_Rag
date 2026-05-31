@@ -15,19 +15,19 @@
     
     <style>
         :root {
-            --bg-obsidian: #f8fafc; /* Light slate */
-            --bg-glass: rgba(255, 255, 255, 0.92); /* More solid white card background for maximum contrast */
-            --bg-glass-hover: rgba(248, 250, 252, 0.97);
-            --bg-darker: rgba(255, 255, 255, 0.98);
-            --accent-gold: #b45309; /* Dark gold/amber for readability on light */
+            --bg-obsidian: #faf8f5; /* Light warm slate/ivory */
+            --bg-glass: rgba(255, 255, 255, 0.88); /* Transparent glass opaque white */
+            --bg-glass-hover: rgba(255, 255, 255, 0.95);
+            --bg-darker: rgba(250, 248, 245, 0.94); /* Semi-solid warm cream */
+            --accent-gold: #b45309; /* Golden-orange/amber for high readability on white card background */
             --accent-gold-glow: rgba(180, 83, 9, 0.15);
             --accent-indigo: #4f46e5;
             --accent-violet: #7c3aed;
-            --text-primary: #0f172a; /* Slate 900 */
-            --text-secondary: #334155; /* Slate 700 */
-            --text-muted: #64748b; /* Slate 500 */
-            --border-gold: rgba(180, 83, 9, 0.25);
-            --border-glass: rgba(79, 70, 229, 0.12);
+            --text-primary: #0f172a; /* Black fonts for high visibility */
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --border-gold: rgba(180, 83, 9, 0.35); /* Golden borders */
+            --border-glass: rgba(180, 83, 9, 0.15);
             
             --font-sans: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Kannada', 'Noto Sans Malayalam', system-ui, -apple-system, sans-serif;
             --font-heading: 'Space Grotesk', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Kannada', 'Noto Sans Malayalam', sans-serif;
@@ -90,12 +90,12 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            background: url('/assets/lord_vinayaka.png') no-repeat center center fixed;
+            background: url('/assets/cosmic_galaxy_bg.png') no-repeat center center fixed;
             background-size: cover;
             position: relative;
         }
 
-        /* Soft white light cosmic overlay to preserve background while granting premium light theme reading contrast */
+        /* Soft white transparent 10% overlay wash to make cosmic background slightly softened */
         body::before {
             content: '';
             position: absolute;
@@ -103,7 +103,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(248, 250, 252, 0.68); /* Reduced overlay opacity to make Lord Vinayaka background stand out with rich contrast */
+            background: rgba(255, 255, 255, 0.1);
             z-index: 1;
         }
 
@@ -136,10 +136,11 @@
             gap: 12px;
         }
 
-        .logo-section i {
-            font-size: 28px;
-            color: var(--accent-gold);
-            text-shadow: 0 0 15px var(--accent-gold-glow);
+        .logo-section img {
+            height: 42px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(180, 83, 9, 0.25));
             animation: pulse-gold 3s infinite alternate;
         }
 
@@ -148,7 +149,7 @@
             font-weight: 700;
             font-size: 22px;
             letter-spacing: 1px;
-            background: linear-gradient(to right, var(--accent-gold), #7c3aed, #4f46e5);
+            background: linear-gradient(to right, #b45309, #ea580c, #d97706);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -156,7 +157,8 @@
         .logo-title p {
             font-size: 10px;
             letter-spacing: 0.5px;
-            color: var(--text-secondary);
+            color: #e5e7eb; /* Silver-champagne */
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
             text-transform: uppercase;
         }
 
@@ -180,22 +182,23 @@
             font-size: 13.5px;
             font-family: var(--font-heading);
             font-weight: 600;
-            color: var(--text-secondary);
+            color: #cbd5e1; /* Bright metallic silver */
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.25s ease;
         }
 
         .nav-tab:hover {
-            color: var(--accent-gold);
-            background: rgba(180, 83, 9, 0.06);
+            color: #fcd34d; /* Glowing champagne gold */
+            background: rgba(252, 211, 77, 0.12);
         }
 
         .nav-tab.active {
-            color: var(--accent-gold);
-            background: rgba(180, 83, 9, 0.12);
-            border-color: var(--border-gold);
-            box-shadow: 0 2px 8px rgba(180, 83, 9, 0.08);
+            color: #fcd34d; /* Bright sun-gold */
+            background: rgba(252, 211, 77, 0.18);
+            border-color: rgba(252, 211, 77, 0.45);
+            box-shadow: 0 2px 10px rgba(252, 211, 77, 0.2);
         }
 
         .lang-selector {
@@ -335,12 +338,12 @@
 
         /* Monthly Calendar Grid styles */
         .calendar-section {
-            background: white;
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 12px;
-            border: 1px solid var(--border-gold);
+            border: 1px solid var(--border-glass);
             padding: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .calendar-header {
@@ -351,7 +354,7 @@
         }
 
         .calendar-nav-btn {
-            background: rgba(180, 83, 9, 0.06);
+            background: rgba(252, 211, 77, 0.06);
             border: 1px solid var(--border-gold);
             color: var(--accent-gold);
             width: 32px;
@@ -366,7 +369,7 @@
 
         .calendar-nav-btn:hover {
             background: var(--accent-gold);
-            color: white;
+            color: #06020f;
         }
 
         .calendar-month-title {
@@ -392,8 +395,8 @@
         }
 
         .calendar-cell {
-            background: #fafaf9;
-            border: 1px solid rgba(180, 83, 9, 0.08);
+            background: var(--bg-darker);
+            border: 1px solid var(--border-glass);
             border-radius: 8px;
             min-height: 72px;
             padding: 6px;
@@ -406,15 +409,15 @@
         }
 
         .calendar-cell:hover {
-            background: #fffbeb;
+            background: var(--bg-glass-hover);
             border-color: var(--accent-gold);
             transform: translateY(-1px);
         }
 
         .calendar-cell.active {
-            background: #fef3c7;
+            background: var(--accent-gold-glow);
             border-color: var(--accent-gold);
-            box-shadow: 0 0 8px rgba(180, 83, 9, 0.15);
+            box-shadow: 0 0 8px var(--accent-gold-glow);
         }
 
         .calendar-cell.today {
@@ -606,7 +609,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #b45309, #d97706);
+            background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet));
             color: white;
             font-family: var(--font-heading);
             font-weight: 600;
@@ -621,13 +624,13 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.25s ease;
-            box-shadow: 0 4px 15px rgba(180, 83, 9, 0.15);
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);
             margin-top: 10px;
         }
 
         .btn-primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(180, 83, 9, 0.25);
+            box-shadow: 0 6px 20px rgba(129, 140, 248, 0.45);
         }
 
         /* Config Sub-Tabs */
@@ -842,7 +845,7 @@
             height: 520px;
             border: 1px solid var(--border-gold);
             border-radius: 12px;
-            background: white;
+            background: var(--bg-glass);
             overflow: hidden;
             margin-top: 12px;
         }
@@ -854,7 +857,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: #fafaf9;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .chat-message {
@@ -869,19 +872,19 @@
 
         .chat-message.ai {
             align-self: flex-start;
-            background: white;
-            border: 1px solid rgba(180, 83, 9, 0.15);
+            background: var(--bg-darker);
+            border: 1px solid var(--border-glass);
             color: var(--text-primary);
             border-bottom-left-radius: 2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .chat-message.user {
             align-self: flex-end;
-            background: var(--accent-gold);
+            background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet));
             color: white;
             border-bottom-right-radius: 2px;
-            box-shadow: 0 2px 8px rgba(180, 83, 9, 0.15);
+            box-shadow: 0 4px 12px rgba(129, 140, 248, 0.25);
         }
 
         .chat-message-meta {
@@ -893,14 +896,14 @@
         }
 
         .chat-message.user .chat-message-meta {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.75);
         }
 
         .chat-input-bar {
             display: flex;
             padding: 10px;
-            background: white;
-            border-top: 1px solid rgba(180, 83, 9, 0.15);
+            background: var(--bg-darker);
+            border-top: 1px solid var(--border-glass);
             gap: 8px;
             align-items: center;
         }
@@ -908,7 +911,9 @@
         .chat-input {
             flex: 1;
             padding: 10px 14px;
-            border: 1px solid rgba(180, 83, 9, 0.2);
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            color: var(--text-primary);
             border-radius: 8px;
             font-size: 13.5px;
             outline: none;
@@ -922,7 +927,7 @@
 
         .chat-send-btn {
             background: var(--accent-gold);
-            color: white;
+            color: #06020f;
             border: none;
             width: 38px;
             height: 38px;
@@ -935,7 +940,7 @@
         }
 
         .chat-send-btn:hover {
-            background: #d97706;
+            background: #ffe082;
         }
 
         .chat-send-btn:disabled {
@@ -1043,7 +1048,7 @@
         <!-- App Header with Left logo and Center top bar tabs and Right language select -->
         <header>
             <div class="logo-section">
-                <i class="fa-solid fa-dharmachakra"></i>
+                <img src="/assets/oolaichuvadi_icon.png" alt="Oolaichuvadi">
                 <div class="logo-title">
                     <h1 id="lbl-title">Vedic Astrology</h1>
                     <p id="lbl-subtitle">Vedic Astronomical Panchangam & AI Portal</p>
@@ -1076,8 +1081,8 @@
 
         <!-- Divine Mantra Banner -->
         <div class="mantra-banner">
-            <div class="mantra-sanskrit">वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ। निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥</div>
-            <div class="mantra-english">"Salutations to the supreme Lord Ganesha, of grand brilliance like a million suns. May he make all my endeavors free of obstacles, always."</div>
+            <div class="mantra-sanskrit">नमः सूर्याय चन्द्राय मङ्गलाय बुधाय च । गुरुशुक्रशनिभ्यश्च राहवे केतवे नमः ॥</div>
+            <div class="mantra-english">"Salutations to the Sun, the Moon, Mars, and Mercury. Salutations to Jupiter, Venus, Saturn, Rahu, and Ketu. Salutations to the cosmic forces."</div>
         </div>
 
         <!-- ------------------ PAGE 1: HOME (PANCHANGAM CALENDAR VIEW) ------------------ -->
@@ -1177,6 +1182,108 @@
                         <div style="font-size: 9.5px; color: var(--text-secondary); margin-bottom: 10px;" id="lbl-desc-gochara">Today's sidereal transit planetary map in South Indian chart style.</div>
                         <div class="gochara-chart-container" id="gochara-svg-rendered">
                             <!-- SVG elements loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Regional Panchangam & Cultural Wisdom Panel -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-book-open-reader"></i> 
+                        <span>Panchangam Wisdom & Astrological Timings</span>
+                    </div>
+                    <!-- Selection of Panchangam Type -->
+                    <div style="display: flex; gap: 6px; align-items: center; font-size: 11px;">
+                        <span style="color: var(--text-secondary); font-weight: bold;">System:</span>
+                        <select id="panch-system-select" onchange="togglePanchangamSystem()" style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 6px; padding: 4px 10px; font-family: var(--font-heading); font-size: 11px; font-weight: bold; color: var(--accent-gold); outline: none; cursor: pointer; transition: all 0.2s ease;">
+                            <option value="sauramana">Sauramana (Solar System - e.g., Tamil, Malayalam)</option>
+                            <option value="chandramana">Chandramana (Luni-Solar System - e.g., Telugu, Kannada, North Indian)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+                    The Vedic Calendar is divided into two primary regional calculators: 
+                    <strong>Sauramana</strong> (reckoned by the Sun's transit through sidereal zodiac signs) and 
+                    <strong>Chandramana</strong> (reckoned by the astronomical alignment of synodic lunar cycles). 
+                    Each cultural zone calculates festivals, good/bad times, and astrological coordinates accordingly.
+                </div>
+
+                <!-- Subpage sub-grids for Panchangam metrics -->
+                <div class="panchangam-advanced-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- Left Column: Dynamic Astronomical calculations, Muhurthams & Good Times -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Good/Bad Times in a day -->
+                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
+                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-clock"></i> Daily Kaalams & Auspicious Timings
+                            </div>
+                            <div class="panchangam-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #dc2626;">Rahu Kalam (Inauspicious)</span>
+                                    <span class="panch-value" id="panch-rahu-kalam" style="font-size: 11px; font-weight: bold; color: #dc2626;">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #b45309;">Yamagandam (Inauspicious)</span>
+                                    <span class="panch-value" id="panch-yamagandam" style="font-size: 11px; font-weight: bold; color: #b45309;">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral)</span>
+                                    <span class="panch-value" id="panch-gulika-kalam" style="font-size: 11px; font-weight: bold; color: #2563eb;">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious)</span>
+                                    <span class="panch-value" id="panch-abhijit" style="font-size: 11px; font-weight: bold; color: #16a34a;">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Muhurtham, Netram & Jeevan -->
+                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
+                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-shield-halved"></i> Muhurtham, Netram & Jeevan Strength
+                            </div>
+                            <div class="panchangam-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px;">Netram (Eye of the Day)</span>
+                                    <span class="panch-value" id="panch-netram" style="font-size: 11px; font-weight: bold;">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0;">
+                                    <span class="panch-label" style="font-size: 9.5px;">Jeevan (Life of the Day)</span>
+                                    <span class="panch-value" id="panch-jeevan" style="font-size: 11px; font-weight: bold;">--</span>
+                                </div>
+                                <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
+                                    <span class="panch-label" style="font-size: 9.5px;">Auspicious Muhurtham Timings (Good Hours)</span>
+                                    <span class="panch-value" id="panch-muhurtham-desc" style="font-size: 11px; font-weight: normal; color: var(--text-secondary); white-space: normal; line-height: 1.4;">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Regional Calculations, Festivals, Horas -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Horas -->
+                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
+                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-hourglass-half"></i> Hourly Planetary Horas (Transit Strengths)
+                            </div>
+                            <div style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
+                            <div id="panch-horas-list" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 115px; overflow-y: auto; padding-right: 4px;">
+                                <!-- Horas populated dynamically -->
+                                <span style="font-size: 11px; color: var(--text-muted);">Please select a date to calculate Horas...</span>
+                            </div>
+                        </div>
+
+                        <!-- Active Festivals & Cultural Observances -->
+                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
+                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-gopuram"></i> Auspicious Festivals & Observances
+                            </div>
+                            <div id="panch-festivals-list" style="font-size: 11px; color: var(--text-primary); line-height: 1.5; white-space: normal;">
+                                --
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1371,7 +1478,7 @@
                         <div class="chat-message ai" id="initial-welcome-bubble">
                             <span class="chat-message-meta">Vedic Astrology AI</span>
                             <div class="ai-predict-display">
-                                वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।<br>
+                                नमः सूर्याय चन्द्राय मङ्गलाय बुधाय च । गुरुशुक्रशनिभ्यश्च राहवे केतवे नमः ॥<br>
                                 <p style="margin-top: 6px;">Welcome, seeker of light! Please draft your birth chart in the <strong>Jyothisyam</strong> subpage. Once loaded, I will read your sidereal alignments, extract planetary truths from classical RAG scriptures, and answer all your questions in this cosmic chat portal.</p>
                             </div>
                         </div>
@@ -1984,6 +2091,16 @@ function translateTamilYear(yearStr) {
             const navLbl = document.getElementById('lbl-navamsha-chart-title');
             if (navLbl) navLbl.innerText = dict.lbl_navamsha_chart || "Navamsha Chart (D9)";
             
+            // Adopt default panchangam system based on language selection
+            const systemSelect = document.getElementById('panch-system-select');
+            if (systemSelect) {
+                if (langCode === 'ta' || langCode === 'ml' || langCode === 'en') {
+                    systemSelect.value = 'sauramana';
+                } else {
+                    systemSelect.value = 'chandramana';
+                }
+            }
+
             // Re-fetch daily panchangam and monthly calendar to apply localization changes
             await fetchDailyPanchangam(selectedPanchangamDate);
             renderMonthlyCalendar();
@@ -2035,11 +2152,87 @@ function translateTamilYear(yearStr) {
             }
         }
 
+        function togglePanchangamSystem() {
+            updatePanchangamUIDisplay();
+        }
+
+        function getRegionalFestivals(panchangam, placements, system) {
+            const sunRasi = placements["Sun"].rasi_name;
+            const sunDeg = placements["Sun"].degree;
+            const tithi = panchangam.tithi;
+            const lunarMonth = panchangam.tamil_month;
+            
+            let festivals = [];
+            
+            if (system === 'sauramana') {
+                if (sunRasi === "Mesha" && Math.floor(sunDeg) <= 3) {
+                    festivals.push("Tamil New Year (Puthandu) / Mesha Sankranti / Vishu");
+                }
+                if (sunRasi === "Makara" && Math.floor(sunDeg) <= 3) {
+                    festivals.push("Makara Sankranti / Pongal / Uttarayana Commencement");
+                }
+                if (sunRasi === "Karka" && Math.floor(sunDeg) <= 3) {
+                    festivals.push("Karka Sankranti / Aadi Pandigai / Dakshinayana Commencement");
+                }
+                if (sunRasi === "Simha") {
+                    festivals.push("Aadi Perukku (River Adoration Festival)");
+                }
+                if (sunRasi === "Vrischika" && tithi.includes("Pournami")) {
+                    festivals.push("Karthigai Deepam (Festival of Lights)");
+                }
+                if (festivals.length === 0) {
+                    festivals.push("Regular Solar Day - No major Sauramana festivals. Excellent for planetary Sauramana rituals.");
+                }
+            } else {
+                let tithiNum = 1;
+                if (tithi.includes("Tithi")) {
+                    tithiNum = parseInt(tithi.match(/Tithi (\d+)/)[1]);
+                }
+                const isSukla = tithi.includes("Sukla");
+                const isPournami = tithi.includes("Pournami");
+                const isAmavasya = tithi.includes("Amavasya");
+                
+                if (lunarMonth === "Chaitra") {
+                    if (isSukla && tithiNum === 1) festivals.push("Ugadi / Gudi Padwa (Telugu & Kannada New Year)");
+                    if (isSukla && tithiNum === 9) festivals.push("Sri Rama Navami");
+                }
+                if (lunarMonth === "Vaisakha" && isSukla && tithiNum === 3) {
+                    festivals.push("Akshaya Tritiya (Auspicious day for abundance)");
+                }
+                if (lunarMonth === "Ashadha" && isPournami) {
+                    festivals.push("Guru Purnima / Vyasa Purnima");
+                }
+                if (lunarMonth === "Sravana") {
+                    if (!isSukla && tithiNum === 8) festivals.push("Sri Krishna Janmashtami");
+                    if (isSukla && tithiNum === 15) festivals.push("Raksha Bandhan / Avani Avittam");
+                }
+                if (lunarMonth === "Bhadrapada") {
+                    if (isSukla && tithiNum === 4) festivals.push("Ganesh Chaturthi / Vinayaka Chavithi");
+                }
+                if (lunarMonth === "Asvina") {
+                    if (isSukla && tithiNum === 1) festivals.push("Sharad Navratri Commencement");
+                    if (isSukla && tithiNum === 9) festivals.push("Mahanavami / Ayudha Puja");
+                    if (isSukla && tithiNum === 10) festivals.push("Vijayadashami / Dussehra");
+                }
+                if (lunarMonth === "Kartika") {
+                    if (isAmavasya) festivals.push("Deepavali / Diwali (Festival of Lights)");
+                }
+                if (lunarMonth === "Phalguna" && !isSukla && tithiNum === 14) {
+                    festivals.push("Maha Shivaratri (The Great Night of Lord Shiva)");
+                }
+                if (festivals.length === 0) {
+                    festivals.push("Regular Lunar Day - Good for lunar sadhana and personal shanti prayers.");
+                }
+            }
+            return festivals;
+        }
+
         function updatePanchangamUIDisplay() {
             if (!dailyPanchangamData) return;
 
-            // Formats English Date display
-            const dt = new Date(selectedPanchangamDate);
+            // Formats English Date display (constructed in local time to avoid timezone offset shifts)
+            const parts = selectedPanchangamDate.split('-');
+            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
             const opt = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const gregDateStr = dt.toLocaleDateString(currentLang === 'en' ? 'en-US' : currentLang, opt);
             document.getElementById('gregorian-date-str').innerText = gregDateStr;
@@ -2062,9 +2255,119 @@ function translateTamilYear(yearStr) {
             const kPrefix = isTa ? "கலி-" : "Kali ";
             document.getElementById('panch-kali-year').innerText = dailyPanchangamData.panchangam.kali_yuga_year ? (kPrefix + dailyPanchangamData.panchangam.kali_yuga_year) : "--";
 
-
             // Draw Gochara South Indian Chart (SVG)
             drawSouthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
+
+            // --- Advanced calculations ---
+            const sunriseStr = dailyPanchangamData.panchangam.sunrise || "06:00";
+            const sunsetStr = dailyPanchangamData.panchangam.sunset || "18:00";
+            const [srH, srM] = sunriseStr.split(':').map(Number);
+            const [ssH, ssM] = sunsetStr.split(':').map(Number);
+            const sunriseDec = srH + srM / 60;
+            const sunsetDec = ssH + ssM / 60;
+            const dayDuration = sunsetDec - sunriseDec;
+            const part = dayDuration / 8;
+
+            const dayOfWeekIdx = dt.getDay(); 
+
+            // Rahu/Yama/Gulika Parts (0 = Sunday, 1 = Monday, ...)
+            const rahuParts = [8, 2, 7, 5, 6, 4, 3];
+            const yamaParts = [5, 4, 3, 2, 1, 7, 6];
+            const gulikaParts = [7, 6, 5, 4, 3, 2, 1];
+
+            const rahuPart = rahuParts[dayOfWeekIdx];
+            const yamaPart = yamaParts[dayOfWeekIdx];
+            const gulikaPart = gulikaParts[dayOfWeekIdx];
+
+            function formatRange(startDec, endDec) {
+                const startH = Math.floor(startDec);
+                const startM = Math.round((startDec % 1) * 60);
+                const endH = Math.floor(endDec);
+                const endM = Math.round((endDec % 1) * 60);
+                return `${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')} - ${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+            }
+
+            const rahuStart = sunriseDec + (rahuPart - 1) * part;
+            const rahuEnd = sunriseDec + rahuPart * part;
+            document.getElementById('panch-rahu-kalam').innerText = formatRange(rahuStart, rahuEnd);
+
+            const yamaStart = sunriseDec + (yamaPart - 1) * part;
+            const yamaEnd = sunriseDec + yamaPart * part;
+            document.getElementById('panch-yamagandam').innerText = formatRange(yamaStart, yamaEnd);
+
+            const gulikaStart = sunriseDec + (gulikaPart - 1) * part;
+            const gulikaEnd = sunriseDec + gulikaPart * part;
+            document.getElementById('panch-gulika-kalam').innerText = formatRange(gulikaStart, gulikaEnd);
+
+            // Abhijit Muhurtha
+            const noon = (sunriseDec + sunsetDec) / 2;
+            const abhijitStart = noon - (dayDuration / 30);
+            const abhijitEnd = noon + (dayDuration / 30);
+            document.getElementById('panch-abhijit').innerText = formatRange(abhijitStart, abhijitEnd);
+
+            // Netram & Jeevan
+            const naksName = dailyPanchangamData.panchangam.nakshatra;
+            const NAKSHATRAS_LST = [
+                "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha",
+                "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+                "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+            ];
+            let naksIdx = 0;
+            for(let i=0; i<27; i++) {
+                if(naksName.toLowerCase().includes(NAKSHATRAS_LST[i].toLowerCase())) {
+                    naksIdx = i;
+                    break;
+                }
+            }
+
+            const netraMap = [1.0, 1.5, 1.0, 0.5, 1.5, 1.0, 2.0, 1.0, 0.5, 1.0, 1.5, 1.0, 0.5, 1.5, 1.0, 2.0, 1.0, 0.5, 1.0, 1.5, 1.0, 0.5, 1.5, 1.0, 2.0, 1.0, 0.5];
+            const jeevanMap = [1.0, 0.5, 1.0, 0.0, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0, 0.5, 1.0, 0.0, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0, 0.5, 1.0, 0.0, 1.0, 0.5, 1.0, 1.0, 0.0];
+            const netraVal = netraMap[naksIdx];
+            const jeevanVal = jeevanMap[naksIdx];
+            document.getElementById('panch-netram').innerText = `${netraVal} (${netraVal >= 1.5 ? 'Highly Auspicious' : netraVal >= 1.0 ? 'Auspicious' : 'Average'})`;
+            document.getElementById('panch-jeevan').innerText = `${jevanVal} (${jeevanVal >= 1.0 ? 'Highly Auspicious' : jeevanVal >= 0.5 ? 'Auspicious' : 'Inauspicious'})`;
+
+            // Calculate Horas starting from Sunrise
+            const DAY_LORDS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
+            const HORA_PLANETS = ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"];
+            const startLord = DAY_LORDS[dayOfWeekIdx];
+            const startLordIdx = HORA_PLANETS.indexOf(startLord);
+            
+            let horasHtml = "";
+            let auspiciousHoursList = [];
+            
+            for (let h = 0; h < 24; h++) {
+                const lord = HORA_PLANETS[(startLordIdx + h) % 7];
+                const hStart = sunriseDec + h;
+                const hEnd = hStart + 1;
+                
+                const displayStart = hStart % 24;
+                const displayEnd = hEnd % 24;
+                const timeRangeStr = formatRange(displayStart, displayEnd);
+                
+                const isAuspicious = ["Jupiter", "Venus", "Mercury", "Moon"].includes(lord);
+                const pillColor = isAuspicious ? "background: rgba(22, 163, 74, 0.15); border: 1px solid rgba(22, 163, 74, 0.4); color: #16a34a;" : "background: rgba(15, 23, 42, 0.04); border: 1px solid var(--border-gold);";
+                horasHtml += `<span style="font-size: 9.5px; padding: 4px 8px; border-radius: 6px; font-weight: bold; ${pillColor}">${h + 1} Hr: ${lord} (${timeRangeStr})</span>`;
+                
+                if (isAuspicious && h < 18) {
+                    auspiciousHoursList.push(`${lord} Hora (${timeRangeStr})`);
+                }
+            }
+            document.getElementById('panch-horas-list').innerHTML = horasHtml;
+            document.getElementById('panch-muhurtham-desc').innerText = auspiciousHoursList.slice(0, 5).join(" | ");
+
+            // Festivals logic based on selected system
+            const sysSelect = document.getElementById('panch-system-select');
+            const system = sysSelect ? sysSelect.value : 'sauramana';
+            
+            const festivals = getRegionalFestivals(dailyPanchangamData.panchangam, dailyPanchangamData.placements, system);
+            
+            let festHtml = "";
+            festivals.forEach(f => {
+                const bulletColor = f.includes("No major") ? "#64748b" : "var(--accent-gold)";
+                festHtml += `<div style="margin-bottom: 6px; display: flex; align-items: start; gap: 6px;"><span style="color: ${bulletColor}; font-weight: bold;">•</span><span>${f}</span></div>`;
+            });
+            document.getElementById('panch-festivals-list').innerHTML = festHtml;
         }
 
         function changePanchangamDate() {
@@ -2244,12 +2547,12 @@ function translateTamilYear(yearStr) {
             let svgContent = `<svg viewBox="0 0 240 240" class="gochara-svg" xmlns="http://www.w3.org/2000/svg">`;
             
             // Outer golden boundary
-            svgContent += `<rect x="0" y="0" width="240" height="240" fill="#fafaf9" stroke="var(--accent-gold)" stroke-width="2"/>`;
+            svgContent += `<rect x="0" y="0" width="240" height="240" fill="var(--bg-darker)" stroke="var(--accent-gold)" stroke-width="2"/>`;
             
             // Grid lines
             for (let i = 1; i <= 3; i++) {
-                svgContent += `<line x1="${i*60}" y1="0" x2="${i*60}" y2="240" stroke="rgba(180,83,9,0.12)" stroke-width="1"/>`;
-                svgContent += `<line x1="0" y1="${i*60}" x2="240" y2="${i*60}" stroke="rgba(180,83,9,0.12)" stroke-width="1"/>`;
+                svgContent += `<line x1="${i*60}" y1="0" x2="${i*60}" y2="240" stroke="var(--border-glass)" stroke-width="1"/>`;
+                svgContent += `<line x1="0" y1="${i*60}" x2="240" y2="${i*60}" stroke="var(--border-glass)" stroke-width="1"/>`;
             }
             
             // Center dark panel
@@ -2265,7 +2568,7 @@ function translateTamilYear(yearStr) {
             };
             const centerTitle = dChartTitles[chartType] || (chartType === 'gochara' ? 'SIDEREAL' : 'RASI (D1)');
             const centerSub = dChartSubs[chartType] || (chartType === 'gochara' ? 'TRANSITS' : 'D1 KUNDALI');
-            svgContent += `<rect x="60" y="60" width="120" height="120" fill="#fffbeb" stroke="var(--border-gold)" stroke-width="1"/>`;
+            svgContent += `<rect x="60" y="60" width="120" height="120" fill="var(--bg-glass)" stroke="var(--border-gold)" stroke-width="1"/>`;
             svgContent += `<text x="120" y="115" font-family="'Space Grotesk', sans-serif" font-weight="bold" font-size="10" fill="var(--accent-gold)" text-anchor="middle">${centerTitle}</text>`;
             svgContent += `<text x="120" y="130" font-family="'Space Grotesk', sans-serif" font-weight="bold" font-size="8" fill="var(--text-muted)" text-anchor="middle">${centerSub}</text>`;
             // Traditional South Indian Rasi order indices mapped to layout coordinates
@@ -2350,17 +2653,17 @@ function translateTamilYear(yearStr) {
             let svgContent = `<svg viewBox="0 0 240 240" class="gochara-svg" xmlns="http://www.w3.org/2000/svg">`;
             
             // Background and golden border
-            svgContent += `<rect x="0" y="0" width="240" height="240" fill="#fafaf9" stroke="var(--accent-gold)" stroke-width="2"/>`;
+            svgContent += `<rect x="0" y="0" width="240" height="240" fill="var(--bg-darker)" stroke="var(--accent-gold)" stroke-width="2"/>`;
             
             // Draw internal diagonals
-            svgContent += `<line x1="0" y1="0" x2="240" y2="240" stroke="rgba(180,83,9,0.2)" stroke-width="1"/>`;
-            svgContent += `<line x1="0" y1="240" x2="240" y2="0" stroke="rgba(180,83,9,0.2)" stroke-width="1"/>`;
+            svgContent += `<line x1="0" y1="0" x2="240" y2="240" stroke="var(--border-glass)" stroke-width="1"/>`;
+            svgContent += `<line x1="0" y1="240" x2="240" y2="0" stroke="var(--border-glass)" stroke-width="1"/>`;
             
             // Draw inner diamond connecting midpoints
-            svgContent += `<line x1="120" y1="0" x2="240" y2="120" stroke="rgba(180,83,9,0.2)" stroke-width="1"/>`;
-            svgContent += `<line x1="240" y1="120" x2="120" y2="240" stroke="rgba(180,83,9,0.2)" stroke-width="1"/>`;
-            svgContent += `<line x1="120" y1="240" x2="0" y2="120" stroke="rgba(180,83,9,0.2)" stroke-width="1"/>`;
-            svgContent += `<line x1="0" y1="120" x2="120" y2="0" stroke="rgba(180,83,9,0.2)" stroke-width="1"/>`;
+            svgContent += `<line x1="120" y1="0" x2="240" y2="120" stroke="var(--border-glass)" stroke-width="1"/>`;
+            svgContent += `<line x1="240" y1="120" x2="120" y2="240" stroke="var(--border-glass)" stroke-width="1"/>`;
+            svgContent += `<line x1="120" y1="240" x2="0" y2="120" stroke="var(--border-glass)" stroke-width="1"/>`;
+            svgContent += `<line x1="0" y1="120" x2="120" y2="0" stroke="var(--border-glass)" stroke-width="1"/>`;
             
             // Locate house center coordinates and map houses (1st to 12th)
             const houseCenters = {
@@ -2496,8 +2799,8 @@ function translateTamilYear(yearStr) {
                 `;
                 summaryPanel.style.display = 'block';
                 
-                // Preload Ganesha AI chat invocation welcome bubble specifically for this native!
-                preloadGaneshaWelcomeMessage(name, pob, dob, tob);
+                // Preload Cosmic AI chat welcome bubble specifically for this native!
+                preloadCosmicWelcomeMessage(name, pob, dob, tob);
 
             } catch (err) {
                 console.error("Calculation failed:", err);
@@ -2515,6 +2818,7 @@ function translateTamilYear(yearStr) {
             kn: ["ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"],
             hi: ["रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार"]
         };
+
 
         // Renders placements table and graphics with regional language translations!
         function renderBirthReportOutputs() {
@@ -2899,28 +3203,28 @@ function translateTamilYear(yearStr) {
             }
         }
 
-        // ------------------ PAGE 3: GANESHA AI predictions chat engine ------------------
+        // ------------------ PAGE 3: COSMIC ASTROLOGY AI predictions chat engine ------------------
         let isChatResponding = false;
 
-        function preloadGaneshaWelcomeMessage(name, pob, dob, tob) {
+        function preloadCosmicWelcomeMessage(name, pob, dob, tob) {
             const chatMessages = document.getElementById('chat-messages-container');
             
             const mantras = {
-                en: "Vakratunda Mahakaya Suryakoti Samaprabha | Nirvighnam Kuru Me Deva Sarvakaryeshu Sarvada ||",
-                ta: "வக்ரதுண்ட மஹாகாய சூர்யகோடி ஸமப்ரப। நிர்விக்னம் குரு மே தேவ ஸர்வ கார்யேஷு ஸர்வதா॥",
-                te: "వక్రతుండ మహాకాయ సూర్యకోటి సమప్రభ। నిర్విఘ్నం కురు మే దేవ సర్వకార్యేషు సర్వదా॥",
-                ml: "വക്രതുണ്ഡ മഹാകായ സൂര്യകോടി സമപ്രഭ। നിർവിഘ്നം കുരു മേ ദേവ സർവകാര്യേഷു സർവദാ॥",
-                kn: "ವಕ್ರತುಂಡ ಮಹಾಕಾಯ ಸೂರ್ಯಕೋಟಿ ಸಮಪ್ರಭ। ನಿರ್ವಿಘ್ನಂ ಕುರು ಮೇ ದೇವ ಸರ್ವಕಾರ್ಯೇಷು ಸರ್ವದಾ॥",
-                hi: "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ। निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥"
+                en: "Namah Suryaya Chandraya Mangalaya Budhaya Cha | Guru Shukra Shanibhyashcha Rahave Ketave Namah ||",
+                ta: "நம: ஸூர்யாய சந்த்ராய மங்களாய புதாய ச। குரு சுக்ர சனிப்யஸ்ச ராஹவே கேதவே நம:॥",
+                te: "నమః సూర్యాయ చంద్రాయ మంగళాయ బుధాయ చ। గురుశుక్రశనిభ్యశ్చ రాహవే కేతవే నమః॥",
+                ml: "നമഃ സൂര്യായ ചന്ദ്രായ മംഗളായ ബുധായ ച। ഗുരുശുക്രശനിഭ്യശ്ച രാഹവേ കേതവേ നമഃ॥",
+                kn: "ನಮಃ ಸೂರ್ಯಾಯ ಚಂದ್ರಾಯ ಮಂಗಳಾಯ ಬುಧಾಯ ಚ। ಗುರುಶುಕ್ರಶನಿಭ್ಯಶ್ಚ ರಾಹವೇ ಕೇತವೇ ನಮಃ॥",
+                hi: "नमः सूर्याय चन्द्राय मङ्गलाय बुधाय च। गुरुशुक्रशनिभ्यश्च राहवे केतवे नमः॥"
             };
 
             const metaTitles = {
-                en: "Vedic Astrology AI • Divine Invocation",
-                ta: "வேத ஜோதிட AI • மங்கள துவக்கம்",
-                te: "వైదిక జ్యోతిష్య AI • మంగళ ఆరంభం",
-                ml: "വൈദിക ജ്യോതിഷ AI • മംഗളാരംഭം",
-                kn: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ AI • ಮಂಗಳ ಪ್ರಾರ್ಥನೆ",
-                hi: "वैदिक ज्योतिष AI • मंगलाचरण"
+                en: "Vedic Astrology AI • Cosmic Invocation",
+                ta: "வேத ஜோதிட AI • பிரபஞ்ச ஆசி",
+                te: "వైదిక జ్యోతిష్య AI • బ్రహ్మాండ ఆశీస్సు",
+                ml: "വൈദിക ജ്യോതിഷ AI • പ്രപഞ്ചാനുഗ്രഹം",
+                kn: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ AI • ಬ್ರಹ್ಮಾಂಡ ಆಶೀರ್ವಾದ",
+                hi: "वैदिक ज्योतिष AI • ब्रह्मांडीय मंगलाचरण"
             };
 
             const naksLocal = translateNakshatra(calculatedChartData.panchangam.nakshatra);
