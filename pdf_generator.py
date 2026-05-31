@@ -370,22 +370,29 @@ def translate_year(year_str, lang):
     ml_translations = ["പ്രഭവ", "വിഭവ", "ശുക്ല", "പ്രമോദൂത", "പ്രജോത്പത്തി", "അംഗീരസ", "ശ്രീമുഖ", "ഭവ", "യുവ", "ധാതു", "ഈശ്വര", "ബഹുധാന്യ", "പ്രമാദി", "വിക്രമ", "വൃഷ", "ചിത്രഭാനു", "സ്വഭാനു", "താരണ", "പാർത്ഥിവ", "വ്യയ", "സർവ്വജിത്ത്", "സർവ്വധാരി", "വിരോധി", "വികൃതി", "ഖര", "നനന്ദന", "വിജയ", "ജയ", "മന്മഥ", "ദുർമുഖി", "ഹേവിളമ്പി", "വിളമ്പി", "വികാരി", "ശാർവ്വരി", "പ്ലവ", "ശുഭകൃത്", "ശോഭകൃത്", "ക്രോധീ", "വിശ്വാവസു", "പരാഭവ", "പ്ലവംഗ", "കീലക", "സൗമ്യ", "സാധാരണ", "വിരോധികൃത്", "പരിധാവി", "പ്രമാദീച", "ആനന്ദം", "രാക്ഷസൻ", "നള", "പിംഗള", "കാലയുക്തി", "സിദ്ധാർത്ഥി", "രൗദ്രി", "ദുർമ്മതി", "ദുന്ദുഭി", "രുധിരോദ്ഗാരി", "രക്താക്ഷി", "ക്രോധന", "അക്ഷയം"]
     kn_translations = ["ಪ್ರಭವ", "ವಿಭವ", "ಶುಕ್ಲ", "ಪ್ರಮೋದೂತ", "ಪ್ರಜೋತ್ಪತ್ತಿ", "ಅಂಗೀರಸ", "ಶ್ರೀಮುಖ", "ಭವ", "ಯುವ", "ಧಾತೃ", "ಈಶ್ವರ", "ಬಹುಧಾನ್ಯ", "ಪ್ರಮಾದಿ", "ವಿಕ್ರಮ", "ವೃಷ", "ಚಿತ್ರಭಾನು", "ಸ್ವಭಾನು", "ತಾರಣ", "ಪಾರ್ಥಿವ", "ವ್ಯಯ", "ಸರ್ವಜಿತ್ತು", "ಸರ್ವಧಾರಿ", "ವಿರೋಧಿ", "ವಿಕೃತಿ", "ಖರ", "ನಂದನ", "ವಿಜಯ", "ಜಯ", "ಮನ್ಮಥ", "ದುರ್ಮುಖಿ", "ಹೇವಿಳಂಬಿ", "ವಿಳಂಬಿ", "ವಿಕಾರಿ", "ಶಾರ್ವರಿ", "ಪ್ಲವ", "ಶುಭಕೃತು", "ಶೋಭಕೃತು", "ಕ್ರೋಧಿ", "ವಿಶ್ವಾವಸು", "ಪರಾಭವ", "ಪ್ಲವಂಗ", "ಕೀಲಕ", "ಸೌಮ್ಯ", "ಸಾಧಾರಣ", "ವಿರೋಧಿಕೃತು", "ಪರೀಧಾವಿ", "ಪ್ರಮಾದೀಚ", "ಆನಂದ", "ರಾಕ್ಷಸ", "ನಲ", "ಪಿಂಗಳ", "ಕಾಳಯುಕ್ತಿ", "ಸಿದ್ಧಾರ್ಥಿ", "ರೌದ್ರಿ", "ದುರ್ಮತಿ", "ದುಂದುಭಿ", "ರುಧಿರೋದ್ಗಾರಿ", "ರಕ್ತಾಕ್ಷಿ", "ಕ್ರೋಧನ", "ಅಕ್ಷಯ"]
     
+    # Match the LONGEST year name found, not the first: several samvatsara names
+    # are substrings of others (e.g. "bhava" inside "parabhava"), and a
+    # first-match would translate only the inner fragment.
     lower = localized_year.lower()
+    best_idx, best_len = -1, 0
     for i, name in enumerate(en_years):
-        if name in lower:
-            trans_list = {
-                "ta": ta_translations,
-                "te": te_translations,
-                "hi": hi_translations,
-                "ml": ml_translations,
-                "kn": kn_translations
-            }.get(lang)
-            if trans_list:
-                trans = trans_list[i]
-                import re
-                localized_year = re.sub(name, trans, localized_year, flags=re.IGNORECASE)
-                break
-                
+        if name in lower and len(name) > best_len:
+            best_idx, best_len = i, len(name)
+
+    if best_idx != -1:
+        trans_list = {
+            "ta": ta_translations,
+            "te": te_translations,
+            "hi": hi_translations,
+            "ml": ml_translations,
+            "kn": kn_translations
+        }.get(lang)
+        if trans_list:
+            import re
+            localized_year = re.sub(
+                en_years[best_idx], trans_list[best_idx], localized_year, flags=re.IGNORECASE
+            )
+
     return localized_year
 
 LABEL_LOCALIZATION = {
