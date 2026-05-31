@@ -1102,7 +1102,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     c.setFont(FONT_REGULAR, 7)
     c.setFillColor(HexColor("#94A3B8"))
     c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 13, "Page 1 of 2")
+    c.drawRightString(576, 13, "Page 1 of 3")
     
     # Start Page 2
     c.showPage()
@@ -1280,7 +1280,192 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     c.setFont(FONT_REGULAR, 7)
     c.setFillColor(HexColor("#94A3B8"))
     c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 13, "Page 2 of 2")
+    c.drawRightString(576, 13, "Page 2 of 3")
+    
+    # ------------------ PAGE 3 ------------------
+    c.showPage()
+    draw_page_border_decorations(c, 3, lang)
+    
+    # 1. Page Header Card
+    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
+    c.setStrokeColor(HexColor("#7A1C0B")) # Burgundy
+    c.setLineWidth(1.25)
+    c.rect(36, 710, 540, 50, fill=True, stroke=True)
+    
+    c.setStrokeColor(HexColor("#C5A059"))
+    c.setLineWidth(0.5)
+    c.rect(38.5, 712.5, 535, 45, fill=False, stroke=True)
+    
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 13)
+    p3_title = "SHATBALAM & ASHTAKAVARGA POWER ANALYSIS" if lang != "ta" else "கிரகங்களின் ஷட்பலம் மற்றும் அஷ்டகவர்க்க பல கணித விவரங்கள்"
+    c.drawCentredString(306, 740, p3_title)
+    
+    c.setFillColor(HexColor("#2D3748")) # Charcoal subtitle
+    c.setFont(FONT_REGULAR, 7.5)
+    p3_subtitle = "Detailed scriptural 6-fold planetary strength & sign benefic point distributions" if lang != "ta" else "கிரகங்களின் ஆறு வழி பலங்கள் மற்றும் 12 ராசிகளின் சுப அஷ்டகவர்க்க பரல்கள்"
+    c.drawCentredString(306, 724, p3_subtitle)
+    
+    # Draw Shatbalam Table
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9.5)
+    shatbalam_title = "1. SHATBALAM (PLANETARY STRENGTH POINTS)" if lang != "ta" else "1. கிரகங்களின் ஷட்பல விபரங்கள் (ஆறு வழி பலன்கள்)"
+    c.drawString(36, 685, shatbalam_title)
+    
+    # Shatbalam Table Headers
+    c.setFillColor(HexColor("#F1F5F9")) # Light grey header row
+    c.setStrokeColor(HexColor("#C5A059"))
+    c.setLineWidth(0.75)
+    c.rect(36, 660, 540, 18, fill=True, stroke=True)
+    
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 7)
+    headers = ["Planet", "Sthana (Pos)", "Dig (Dir)", "Kala (Temp)", "Cheshta (Mot)", "Naisargika", "Drik (Aspect)", "Total pt", "Min req", "Strength %"] if lang != "ta" else ["கிரகம்", "ஸ்தான பலம்", "திக் பலம்", "கால பலம்", "சேஷ்ட பலம்", "நைசர்கிக பலம்", "திருக் பலம்", "மொத்த பலம்", "தேவை", "பலம் %"]
+    col_x = [42, 105, 155, 205, 260, 315, 375, 435, 485, 535]
+    for i, h in enumerate(headers):
+        c.drawString(col_x[i], 666, h)
+        
+    # Draw Shatbalam rows
+    sh_y = 642
+    planets_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    c.setFont(FONT_REGULAR, 7)
+    c.setFillColor(HexColor("#2D3748"))
+    
+    shadbala_data = chart_data.get("shadbala", {})
+    
+    for p in planets_order:
+        p_data = shadbala_data.get(p, {})
+        if not p_data:
+            continue
+            
+        # Draw background alternating row
+        c.setStrokeColor(HexColor("#E2E8F0"))
+        c.setLineWidth(0.5)
+        c.line(36, sh_y - 3, 576, sh_y - 3)
+        
+        # Translate planet name
+        p_name = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(p, p).upper()
+        c.setFont(FONT_BOLD, 7)
+        c.setFillColor(HexColor("#7A1C0B"))
+        c.drawString(col_x[0], sh_y, p_name)
+        
+        c.setFont(FONT_REGULAR, 7)
+        c.setFillColor(HexColor("#2D3748"))
+        c.drawString(col_x[1], sh_y, str(p_data.get("sthana_bala", 0.0)))
+        c.drawString(col_x[2], sh_y, str(p_data.get("dig_bala", 0.0)))
+        c.drawString(col_x[3], sh_y, str(p_data.get("kala_bala", 0.0)))
+        c.drawString(col_x[4], sh_y, str(p_data.get("cheshta_bala", 0.0)))
+        c.drawString(col_x[5], sh_y, str(p_data.get("naisargika_bala", 0.0)))
+        c.drawString(col_x[6], sh_y, str(p_data.get("drik_bala", 0.0)))
+        
+        c.setFont(FONT_BOLD, 7)
+        c.drawString(col_x[7], sh_y, str(p_data.get("total_points", 0.0)))
+        c.setFont(FONT_REGULAR, 7)
+        c.drawString(col_x[8], sh_y, str(p_data.get("required_points", 0.0)))
+        
+        # Percent with color code
+        pct = p_data.get("percentage_strength", 0.0)
+        if pct >= 100.0:
+            c.setFillColor(HexColor("#16A34A")) # Strong green
+        elif pct >= 85.0:
+            c.setFillColor(HexColor("#D97706")) # Average yellow/gold
+        else:
+            c.setFillColor(HexColor("#DC2626")) # Weak red
+        c.setFont(FONT_BOLD, 7)
+        c.drawString(col_x[9], sh_y, f"{pct}%")
+        
+        sh_y -= 16.5
+        
+    # Draw Ashtakavarga Section
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 9.5)
+    ashtakavarga_title = "2. SARVASHTAKAVARGA (SAV) HOUSE STRENGTH POINTS" if lang != "ta" else "2. சர்வாஷ்டகவர்க்க பரல்கள் (ராசி வாரியான சுப புள்ளிகள்)"
+    c.drawString(36, 500, ashtakavarga_title)
+    
+    # SAV grid layout inside cards (similar to the UI)
+    sav_data = chart_data.get("ashtakavarga", {}).get("sav", [])
+    if sav_data:
+        c.setFont(FONT_REGULAR, 6.5)
+        c.setFillColor(HexColor("#475569"))
+        sav_desc = "Standard house strength: Exceeding 28 points represents high prosperity, 20 to 28 is average, below 20 is weak." if lang != "ta" else "ராசியில் 28 புள்ளிகளுக்கு மேல் இருப்பது அதிக சுப பலம், 20 முதல் 28 வரை நடுத்தரம், 20க்கு கீழ் பலவீனம்."
+        c.drawString(36, 487, sav_desc)
+        
+        sign_names_local = {
+            "en": ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"],
+            "ta": ["மேஷம்", "ரிஷபம்", "மிதுனம்", "கடகம்", "சிம்மம்", "கன்னி", "துலாம்", "விருச்சிகம்", "தனுசு", "மகரம்", "கும்பம்", "மீனம்"],
+            "te": ["మేషం", "వృషభం", "మిథునం", "కర్కాటకం", "సింహం", "కన్య", "తుల", "వృశ్చికం", "ధనుస్సు", "మకరం", "కుంభం", "మీనం"],
+            "ml": ["മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം", "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ധനു", "മകരം", "കുംഭം", "മീനം"],
+            "kn": ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕಾಟಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನುಸ್ಸು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"],
+            "hi": ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"]
+        }
+        p3_signs = sign_names_local.get(lang, sign_names_local["en"])
+        
+        # Draw 12 cards in a beautiful 4x3 grid
+        card_w = 110
+        card_h = 36
+        spacer_x = 24
+        spacer_y = 12
+        
+        grid_y = 425
+        for idx in range(12):
+            row = idx // 4 # 0, 1, 2
+            col = idx % 4 # 0, 1, 2, 3
+            
+            card_x = 42 + col * (card_w + spacer_x)
+            card_cur_y = grid_y - row * (card_h + spacer_y)
+            
+            points = sav_data[idx]
+            
+            # Select background based on strength
+            if points > 28:
+                c.setFillColor(HexColor("#ECFDF5")) # Green
+                c.setStrokeColor(HexColor("#10B981"))
+            elif points < 20:
+                c.setFillColor(HexColor("#FEF2F2")) # Red
+                c.setStrokeColor(HexColor("#EF4444"))
+            else:
+                c.setFillColor(HexColor("#FFFBEB")) # Gold
+                c.setStrokeColor(HexColor("#F59E0B"))
+                
+            c.setLineWidth(0.75)
+            c.roundRect(card_x, card_cur_y, card_w, card_h, 4, fill=True, stroke=True)
+            
+            # Text
+            c.setFillColor(HexColor("#334155"))
+            c.setFont(FONT_BOLD, 6.5)
+            c.drawCentredString(card_x + card_w/2, card_cur_y + 24, p3_signs[idx].upper())
+            
+            c.setFillColor(HexColor("#0F172A"))
+            c.setFont(FONT_BOLD, 13)
+            c.drawCentredString(card_x + card_w/2, card_cur_y + 6, str(points))
+
+    # Add a beautiful cosmic RAG analysis quote card
+    c.setStrokeColor(HexColor("#C5A059")) # Antique Gold
+    c.setLineWidth(0.75)
+    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
+    c.rect(36, 175, 540, 60, fill=True, stroke=True)
+
+    # Inner gold border
+    c.setStrokeColor(HexColor("#E5DCC6"))
+    c.setLineWidth(0.4)
+    c.rect(39, 178, 534, 54, fill=False, stroke=True)
+
+    c.setFillColor(HexColor("#7A1C0B"))
+    c.setFont(FONT_BOLD, 8)
+    quote_title = "COSMIC INTERPRETATION MATRIX" if lang != "ta" else "பிரபஞ்ச விதிகளின் பலன் கணித விளக்கம்"
+    c.drawString(48, 218, quote_title)
+
+    c.setFillColor(HexColor("#2D3748"))
+    c.setFont(FONT_REGULAR, 7)
+    quote_desc = "Planetary strengths (Shadbala) indicate transit power. Signs with high Ashtakavarga scores (>28 SAV) serve as highly auspicious energetic triggers." if lang != "ta" else "ஷட்பல வலிமையானது கிரகங்களின் வினையாற்றும் திறனை குறிக்கும். அதிக அஷ்டகவர்க்க சுப புள்ளிகள் (>28) உள்ள ராசிகள் நற்பலன்களை வாரி வழங்கும்."
+    c.drawString(48, 204, quote_desc)
+    c.drawString(48, 192, "Utilize periods of strong planetary transits through powerful signs to initiate business, education, or holy pilgrimages." if lang != "ta" else "வலிமையான கிரகங்கள் சுப புள்ளிகள் கொண்ட ராசிகளில் சஞ்சரிக்கும் காலத்தில் புதிய முயற்சிகளை துவங்க சுப பலன்கள் கைகூடும்.")
+
+    # Footer on Page 3 (Outside the borders)
+    c.setFont(FONT_REGULAR, 7)
+    c.setFillColor(HexColor("#94A3B8"))
+    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
+    c.drawRightString(576, 13, "Page 3 of 3")
     
     # Save Canvas Document
     c.save()
