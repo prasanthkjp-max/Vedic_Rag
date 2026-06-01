@@ -23,41 +23,50 @@ def safe_register_font(name, path):
         print(f"Error registering font {name} from {path}: {e}")
         return False
 
-# Register FreeSans
-safe_register_font('FreeSans', '/usr/share/fonts/truetype/freefont/FreeSans.ttf')
-safe_register_font('FreeSansBold', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf')
+# Register NotoSans
+safe_register_font('NotoSans', '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf')
+safe_register_font('NotoSansBold', '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf')
 
-PRIMARY_REGULAR = 'FreeSans' if 'FreeSans' in REGISTERED_FONTS else 'Helvetica'
-PRIMARY_BOLD = 'FreeSansBold' if 'FreeSansBold' in REGISTERED_FONTS else 'Helvetica-Bold'
+PRIMARY_REGULAR = 'NotoSans' if 'NotoSans' in REGISTERED_FONTS else 'Helvetica'
+PRIMARY_BOLD = 'NotoSansBold' if 'NotoSansBold' in REGISTERED_FONTS else 'Helvetica-Bold'
 
-# Register Lohit Indic script fonts individually so one failure does not impact others
-safe_register_font('Lohit-Telugu', '/usr/share/fonts/truetype/lohit-telugu/Lohit-Telugu.ttf')
-safe_register_font('Lohit-Tamil', '/usr/share/fonts/truetype/lohit-tamil/Lohit-Tamil.ttf')
-safe_register_font('Lohit-Devanagari', '/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf')
-safe_register_font('Lohit-Kannada', '/usr/share/fonts/truetype/lohit-kannada/Lohit-Kannada.ttf')
-safe_register_font('Lohit-Malayalam', '/usr/share/fonts/truetype/lohit-malayalam/Lohit-Malayalam.ttf')
+# Register Noto Indic script fonts individually
+safe_register_font('Noto-Telugu', '/usr/share/fonts/truetype/noto/NotoSansTelugu-Regular.ttf')
+safe_register_font('Noto-Telugu-Bold', '/usr/share/fonts/truetype/noto/NotoSansTelugu-Bold.ttf')
+
+safe_register_font('Noto-Tamil', '/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf')
+safe_register_font('Noto-Tamil-Bold', '/usr/share/fonts/truetype/noto/NotoSansTamil-Bold.ttf')
+
+safe_register_font('Noto-Devanagari', '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf')
+safe_register_font('Noto-Devanagari-Bold', '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf')
+
+safe_register_font('Noto-Kannada', '/usr/share/fonts/truetype/noto/NotoSansKannada-Regular.ttf')
+safe_register_font('Noto-Kannada-Bold', '/usr/share/fonts/truetype/noto/NotoSansKannada-Bold.ttf')
+
+safe_register_font('Noto-Malayalam', '/usr/share/fonts/truetype/noto/NotoSansMalayalam-Regular.ttf')
+safe_register_font('Noto-Malayalam-Bold', '/usr/share/fonts/truetype/noto/NotoSansMalayalam-Bold.ttf')
 
 def resolve_fonts(lang):
     """Dynamically select registered regular and bold fonts based on language preference."""
     font_map = {
-        "te": "Lohit-Telugu",
-        "ta": "Lohit-Tamil",
-        "hi": "Lohit-Devanagari",
-        "kn": "Lohit-Kannada",
-        "ml": "Lohit-Malayalam",
-        "en": "FreeSans"
+        "te": "Noto-Telugu",
+        "ta": "Noto-Tamil",
+        "hi": "Noto-Devanagari",
+        "kn": "Noto-Kannada",
+        "ml": "Noto-Malayalam",
+        "en": "NotoSans"
     }
     font_bold_map = {
-        "te": "Lohit-Telugu",
-        "ta": "Lohit-Tamil",
-        "hi": "Lohit-Devanagari",
-        "kn": "Lohit-Kannada",
-        "ml": "Lohit-Malayalam",
-        "en": "FreeSansBold"
+        "te": "Noto-Telugu-Bold",
+        "ta": "Noto-Tamil-Bold",
+        "hi": "Noto-Devanagari-Bold",
+        "kn": "Noto-Kannada-Bold",
+        "ml": "Noto-Malayalam-Bold",
+        "en": "NotoSansBold"
     }
     
-    selected_reg = font_map.get(lang, "FreeSans")
-    selected_bold = font_bold_map.get(lang, "FreeSansBold")
+    selected_reg = font_map.get(lang, "NotoSans")
+    selected_bold = font_bold_map.get(lang, "NotoSansBold")
     
     reg_font = selected_reg if selected_reg in REGISTERED_FONTS else PRIMARY_REGULAR
     bold_font = selected_bold if selected_bold in REGISTERED_FONTS else PRIMARY_BOLD
@@ -733,6 +742,75 @@ def draw_page_border_decorations(c, page_num, lang):
     c.rect(17.5, 769.5, 5, 5, fill=True, stroke=False)
     c.rect(589.5, 769.5, 5, 5, fill=True, stroke=False)
 
+def clean_and_translate_place(place_name, lang):
+    if not place_name:
+        return ""
+    # Extract main location (before first comma)
+    main_place = place_name.split(",")[0].strip()
+    
+    # City mapping dictionary covering major Indian cities (unicode escapes to prevent transport bugs)
+    city_map = {
+        "chennai": {
+            "ta": "\u0b9a\u0bc6\u0ba9\u0bcd\u0ba9\u0bc8",
+            "te": "\u0c1a\u0c46\u0c28\u0c4d\u0c28\u0c48",
+            "kn": "\u0c9a\u0c46\u0ca8\u0bcd\u0ca8\u0c48",
+            "ml": "\u0d1a\u0d46\u0d28\u0d4d\u0d28\u0d48",
+            "hi": "\u091a\u0947\u0928\u094d\u0928\u0908"
+        },
+        "madras": {
+            "ta": "\u0b9a\u0bc6\u0ba9\u0bcd\u0ba9\u0bc8",
+            "te": "\u0c1a\u0c46\u0c28\u0c4d\u0c28\u0c48",
+            "kn": "\u0c9a\u0c46\u0ca8\u0bcd\u0ca8\u0c48",
+            "ml": "\u0d1a\u0d46\u0d28\u0d4d\u0d28\u0d48",
+            "hi": "\u091a\u0947\u0928\u094d\u0928\u0908"
+        },
+        "bengaluru": {
+            "ta": "\u0baa\u0bc6\u0b99\u0bcd\u0b95\u0bb3\u0bc2\u0bb0ு",
+            "te": "\u0c2c\u0c46\u0c02\u0c17\u0c33\u0c41\u0c30\u0c41",
+            "kn": "\u0cac\u0cc6\u0c82\u0c97\u0cb3\u0cc2\u0cb0\u0cc1",
+            "ml": "\u0d2c\u0d19\u0d4d\u0d17\u0d33\u0d42രു",
+            "hi": "\u092c\u0947\u0902\u0917\u0932\u0941\u0930ु"
+        },
+        "bangalore": {
+            "ta": "\u0baa\u0bc6\u0b99\u0bcd\u0b95\u0bb3\u0bc2\u0bb0ு",
+            "te": "\u0c2c\u0c46\u0c02\u0c17\u0c33\u0c41\u0c30\u0c41",
+            "kn": "\u0cac\u0cc6\u0c82\u0c97\u0cb3\u0cc2\u0cb0\u0cc1",
+            "ml": "\u0d2c\u0d19\u0d4d\u0d17\u0d33\u0d42രു",
+            "hi": "\u092c\u0947\u0902\u0917\u0932\u0941\u0930ु"
+        },
+        "coimbatore": {
+            "ta": "\u0b95\u0bcb\u0baf\u0bae\u0bcd\u0baa\u0bc1\u0ba4\u0bcd\u0ba4ூ\u0bb0்",
+            "te": "\u0c15\u0c4b\u0c2f\u0c02\u0c2c\u0c24\u0c4dత\u0c4d\u0c42రు",
+            "kn": "\u0c95\u0c4b\u0c2f\u0c02\u0c2cత్త\u0c42రు",
+            "ml": "\u0d15ോയമ്ഫത്തൂർ",
+            "hi": "\u0915\u094b\u092f\u0902\u092c\u091f\u0942\u0930"
+        },
+        "madurai": {
+            "ta": "\u0bae\u0ba4\u0bc1ர\u0bc8",
+            "te": "\u0c2e\u0c26\u0c41ర\u0c48",
+            "kn": "\u0cae\u0ca7\u0cc1ರ\u0cc8",
+            "ml": "\u0d2e\u0d25ുര",
+            "hi": "\u092e\u0926\u0941\u0930\u0948"
+        },
+        "hyderabad": {
+            "ta": "\u0b90தரா\u0baaாத்",
+            "te": "\u0c39\u0c48\u0c26\u0c30\u0c3e\u0c2c\u0c3eద\u0c41",
+            "kn": "\u0cb9\u0cc8\u0ca6ರ\u0cbe\u0c2c\u0c3eದ\u0ccd",
+            "ml": "\u0d39\u0d48\u0d26\u0d30\u0d3e\u0d2cാദ\u0d4d",
+            "hi": "\u0939\u0948\u0926\u0930\u093e\u092c\u093eद"
+        }
+    }
+    
+    key = main_place.lower()
+    if key in city_map and lang in city_map[key]:
+        regional_name = city_map[key][lang]
+        if lang == "en":
+            return main_place
+        else:
+            return f"{regional_name} ({main_place})"
+            
+    return main_place
+
 def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path="/home/prasanth/vedic_rag/birth_chart_report.pdf", lang="en"):
     """
     Generate a 2-page highly elegant, scholarly Vedic Astrology Report PDF in selected languages containing
@@ -750,11 +828,11 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     INDIC_RE = re.compile(r'([\u0900-\u097f\u0b80-\u0bff\u0c00-\u0c7f\u0c80-\u0cff\u0d00-\u0d7f]+)')
 
     def split_and_resolve_fonts(text, current_font):
-        is_regional = any(reg in current_font for reg in ["Lohit-", "Telugu", "Tamil", "Devanagari", "Kannada", "Malayalam"])
+        is_regional = any(reg in current_font for reg in ["Noto-", "Telugu", "Tamil", "Devanagari", "Kannada", "Malayalam"])
         if not is_regional:
             return [(text, current_font)]
             
-        fallback_font = "FreeSansBold" if (current_font == FONT_BOLD or "Bold" in current_font) else "FreeSans"
+        fallback_font = PRIMARY_BOLD if (current_font == FONT_BOLD or "Bold" in current_font) else PRIMARY_REGULAR
         
         parts = INDIC_RE.split(text)
         resolved = []
@@ -887,39 +965,29 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     mantra_text = INVOCATION_SHLOKA_LOCAL.get(lang, INVOCATION_SHLOKA_LOCAL['en'])
     c.drawCentredString(306, 722, mantra_text)
     
-    # 3. Premium Background Frame & Title - Sleek ivory background with double border
-    c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
-    c.setStrokeColor(HexColor("#7A1C0B")) # Burgundy
-    c.setLineWidth(1.25)
-    c.rect(36, 662, 540, 50, fill=True, stroke=True)
-    
-    # Elegant light gold thin inner border for double border effect
-    c.setStrokeColor(HexColor("#C5A059"))
-    c.setLineWidth(0.5)
-    c.rect(38.5, 664.5, 535, 45, fill=False, stroke=True)
-    
+    # 3. Clean and Modern Centered Title & Subtitle (No bulky container box for a clean, open aesthetic)
     c.setFillColor(HexColor("#7A1C0B"))
     c.setFont(FONT_BOLD, 13)
-    c.drawCentredString(306, 692, labels["title"])
+    c.drawCentredString(306, 694, labels["title"])
     
     c.setFillColor(HexColor("#2D3748")) # Charcoal subtitle
     c.setFont(FONT_REGULAR, 7.5)
-    c.drawCentredString(306, 676, labels["subtitle"])
+    c.drawCentredString(306, 680, labels["subtitle"])
     
-    # 4. Two beautiful cards side-by-side for birth & panchangam details (y = 478 to 650, height = 172)
+    # 4. Two beautiful cards side-by-side for birth & panchangam details (y = 466 to 656, height = 190)
     c.setStrokeColor(HexColor("#C5A059")) # Muted Antique Gold
     c.setLineWidth(0.75)
     c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
     
-    # Left Box (Birth Details)
-    c.rect(36, 478, 260, 172, fill=True, stroke=True)
+    # Left Box (Birth Details) - Expanded to height 190 for better breathing room
+    c.rect(36, 466, 260, 190, fill=True, stroke=True)
     c.setFillColor(HexColor("#7A1C0B")) # Crimson
     c.setFont(FONT_BOLD, 9)
-    c.drawString(46, 634, labels["birth_details"])
+    c.drawString(46, 640, labels["birth_details"])
     c.setStrokeColor(HexColor("#E5DCC6")) # Thin separator line
-    c.line(46, 628, 286, 628)
+    c.line(46, 634, 286, 634)
     
-    # Left Box Data Fill (10 fields with 14.5 spacing)
+    # Left Box Data Fill (10 fields with 13.5 spacing)
     c.setFont(FONT_REGULAR, 7.5)
     c.setFillColor(HexColor("#2D3748"))
     
@@ -927,21 +995,24 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     day_local = DAYS_OF_WEEK_LOCAL.get(lang, DAYS_OF_WEEK_LOCAL["en"])[day_idx]
     
     gender_label = {
-        "en": "Gender", "ta": "பாலினம் / Gender", "te": "లింగము / Gender",
-        "ml": "லிംഗം / Gender", "kn": "ಲಿಂಗ / Gender", "hi": "लिंग / Gender"
+        "en": "Gender", "ta": "\u0baa\u0bbe\u0bb2\u0bbf\u0ba9\u0bae\u0bcd / Gender", "te": "\u0c32\u0c3f\u0c02\u0c17\u0c2e\u0c41 / Gender",
+        "ml": "\u0d32\u0d3f\u0d19\u0d4d\u0d17\u0d02 / Gender", "kn": "\u0cb2\u0cbf\u0c99\u0ccd / Gender", "hi": "\u0932\u093f\u0902\u0917 / Gender"
     }.get(lang, "Gender")
     
     gender_local = {
-        "en": "Male", "ta": "ஆண் / Male", "te": "పురుషుడు / Male",
-        "ml": "పురుഷൻ / Male", "kn": "ಪುರುಷ / Male", "hi": "पुरुष / Male"
+        "en": "Male", "ta": "\u0b85\u0ba3\u0bcd / Male", "te": "\u0c2a\u0c41\u0c30\u0c41\u0c37\u0c41\u0c21\u0c41 / Male",
+        "ml": "\u0d2a\u0d41\u0d30\u0d41\u0d37\u0d28\u0d4d / Male", "kn": "\u0c2a\u0c41\u0c30\u0c41\u0c37 / Male", "hi": "\u092a\u0941\u0930\u0941\u0937 / Male"
     }.get(lang, "Male")
     
     offset_label = {
-        "en": "Standard Time Offset", "ta": "பொதுநேர திருத்தம்", "te": "ప్రామాణిక కాల వ్యత్యాసం",
-        "ml": "പ്രാദേശിക സമയ വ്യത്യാസം", "kn": "ಪ್ರಮಾಣಿತ ಸಮಯದ ವ್ಯತ್ಯಾಸ", "hi": "मानक समय अंतर"
+        "en": "Standard Time Offset", "ta": "\u0baa\u0bca\u0ba4\u0bc1\u0ba8\u0bc5\u0bb0 \u0ba4\u0bbf\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4ம\u0bcd", "te": "\u0c2a\u0c4d\u0c30\u0c3e\u0c2e\u0c3e\u0c23\u0c3f\u0c15 \u0c15\u0c3e\u0c32 \u0c35\u0c4d\u0c2f\u0c24\u0c4d\u0c2f\u0c3e\u0c38\u0c02",
+        "ml": "\u0d2a\u0d4d\u0d30\u0d3e\u0d26\u0d47\u0d36\u0d3f\u0d15 \u0d38\u0d2e\u0d2f \u0d35\u0d4d\u0d2f\u0d24\u0d4d\u0d2f\u0d3e\u0d38\u0d02", "kn": "\u0caa\u0ccd\u0cb0\u0cae\u0cbe\u0ca3\u0cbf\u0ca4 \u0cb8\u0cae\u0caf\u0ca6 \u0cb5\u0ccd\u0caf\u0ca4\u0ccd\u0caf\u0cbe\u0cb8", "hi": "\u092e\u093e\u0928\u0915 \u0938\u092e\u092f \u0905\u0902\u0924\u0930"
     }.get(lang, "Standard Time Offset")
     
     lmt_label = labels.get("lmt", "LMT")
+    
+    # Extract main place name and translate it dynamically to regional language including the native name
+    translated_place = clean_and_translate_place(place_name, lang)
     
     birth_fields = [
         (labels["name"], client_name),
@@ -949,30 +1020,30 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         (labels["tob"], chart_data['metadata']['datetime'].split(" ")[1]),
         (gender_label, gender_local),
         (labels["day_of_week"], day_local),
-        (labels["place"], place_name),
-        (labels["coords"], f"{chart_data['metadata']['latitude']}°N, {chart_data['metadata']['longitude']}°E"),
+        (labels["place"], translated_place),
+        (labels["coords"], f"{chart_data['metadata']['latitude']}\u00b0N, {chart_data['metadata']['longitude']}\u00b0E"),
         (lmt_label, chart_data['panchangam']['lmt']),
         (offset_label, f"GMT {chart_data['metadata']['timezone']}"),
         (labels["ayanamsa"], f"{chart_data['metadata']['ayanamsa_name']} ({chart_data['metadata']['ayanamsa_dms']})")
     ]
     
-    ly = 614
+    ly = 618
     for field_label, field_val in birth_fields:
         c.drawString(46, ly, f"{field_label}:")
         c.drawString(140, ly, str(field_val))
-        ly -= 14.5
+        ly -= 13.5
         
-    # Right Box (Panchangam Details)
+    # Right Box (Panchangam Details) - Expanded to height 190 to fully encase all 11 fields inside the card border
     c.setStrokeColor(HexColor("#C5A059"))
     c.setFillColor(HexColor("#FDFBF7"))
-    c.rect(316, 478, 260, 172, fill=True, stroke=True)
+    c.rect(316, 466, 260, 190, fill=True, stroke=True)
     c.setFillColor(HexColor("#7A1C0B"))
     c.setFont(FONT_BOLD, 9)
-    c.drawString(326, 634, labels["panchangam"])
+    c.drawString(326, 640, labels["panchangam"])
     c.setStrokeColor(HexColor("#E5DCC6"))
-    c.line(326, 628, 566, 628)
+    c.line(326, 634, 566, 634)
     
-    # Right Box Data Fill (11 fields with 14.5 spacing)
+    # Right Box Data Fill (11 fields with 13.5 spacing)
     c.setFont(FONT_REGULAR, 7.5)
     c.setFillColor(HexColor("#2D3748"))
     
@@ -983,7 +1054,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     month_local = translate_month(chart_data['panchangam']['tamil_date'], lang)
     
     kali_prefix = {
-        "en": "Kali ", "ta": "கலி-", "te": "కలి-", "ml": "கലി-", "kn": "ಕಲಿ-", "hi": "कलि-"
+        "en": "Kali ", "ta": "\u0b95\u0bb2\u0bbf-", "te": "\u0c15\u0c32\u0c3f-", "ml": "\u0d15\u0d32\u0d3f-", "kn": "\u0c95\u0c32\u0c3f-", "hi": "\u0915\u0932\u093f-"
     }.get(lang, "Kali ")
     
     panch_fields = [
@@ -1000,11 +1071,11 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         (labels["udayadhi"], chart_data['panchangam']['udayadhi_nazhikai'])
     ]
     
-    ry = 614
+    ry = 618
     for field_label, field_val in panch_fields:
         c.drawString(326, ry, f"{field_label}:")
         c.drawString(428, ry, str(field_val))
-        ry -= 14.5
+        ry -= 13.5
         
     # 5. Draw Kundali Charts Side-by-Side (D1 Rasi & D9 Navamsha) at y = 222 to 442
     chart_y = 222
