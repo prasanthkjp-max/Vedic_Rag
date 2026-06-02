@@ -1943,6 +1943,11 @@
 
         const localization = {
             en: {
+                lbl_calculating_alignments: "Calculating Alignments...",
+                lbl_unauthorized_alert: "Unauthorized: Please configure a valid API Key using the button in the top bar.",
+                lbl_calculation_failed: "Calculation failed",
+                lbl_male_name_placeholder: "Male Name",
+                lbl_female_name_placeholder: "Female Name",
                 lbl_full_name: "Full Name",
                 lbl_birth_date: "Birth Date",
                 lbl_birth_time: "Birth Time",
@@ -2014,6 +2019,11 @@
                 jeevan_label: "Jeevan (Life of the Day)"
             },
             ta: {
+                lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
+                lbl_unauthorized_alert: "அங்கீகரிக்கப்படவில்லை: மேலே உள்ள பொத்தானைப் பயன்படுத்தி சரியான API விசையை உள்ளிடவும்.",
+                lbl_calculation_failed: "கணக்கீடு தோல்வியடைந்தது",
+                lbl_male_name_placeholder: "ஆண் பெயர்",
+                lbl_female_name_placeholder: "பெண் பெயர்",
                 lbl_full_name: "முழு பெயர்",
                 lbl_birth_date: "பிறந்த தேதி",
                 lbl_birth_time: "பிறந்த நேரம்",
@@ -2085,6 +2095,11 @@
                 jeevan_label: "ஜீவன் (நாள் உயிர்)"
             },
             te: {
+                lbl_calculating_alignments: "పొంతన లెక్కిస్తోంది...",
+                lbl_unauthorized_alert: "అనధికారికం: దయచేసి ఎగువ బార్‌లోని బటన్ ఉపయోగించి సరైన API కీని కాన్ఫిగర్ చేయండి.",
+                lbl_calculation_failed: "గణన విఫలమైంది",
+                lbl_male_name_placeholder: "వరుడి పేరు",
+                lbl_female_name_placeholder: "వధువు పేరు",
                 lbl_full_name: "పూర్తి పేరు",
                 lbl_birth_date: "పుట్టిన తేదీ",
                 lbl_birth_time: "పుట్టిన సమయం",
@@ -2156,6 +2171,11 @@
                 jeevan_label: "జీవం (రోజు ప్రాణం)"
             },
             ml: {
+                lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
+                lbl_unauthorized_alert: "അനധികൃതമാണ്: മുകളിലെ ബാറിലെ ബട്ടൺ ഉപയോഗിച്ച് ദയവായി ഒരു സാധുവായ API കീ നൽകുക.",
+                lbl_calculation_failed: "കണക്കുകൂട്ടൽ പരാജയപ്പെട്ടു",
+                lbl_male_name_placeholder: "വരന്റെ പേര്",
+                lbl_female_name_placeholder: "വധുവിന്റെ പേര്",
                 lbl_full_name: "പൂർണ്ണ നാമം",
                 lbl_birth_date: "ജനന തീയതി",
                 lbl_birth_time: "ജനന സമയം",
@@ -2227,6 +2247,11 @@
                 jeevan_label: "ജീവൻ (ദിവസത്തെ ജീവൻ)"
             },
             kn: {
+                lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ...",
+                lbl_unauthorized_alert: "ಅನಧಿಕೃತ: ದಯವಿಟ್ಟು ಮೇಲಿನ ಪಟ್ಟಿಯಲ್ಲಿರುವ ಬಟನ್ ಬಳಸಿ ಮಾನ್ಯವಾದ API ಕೀಲಿಯನ್ನು ಕಾನ್ಫಿಗರ್ ಮಾಡಿ.",
+                lbl_calculation_failed: "ಲೆಕ್ಕಾಚಾರ ವಿಫಲವಾಗಿದೆ",
+                lbl_male_name_placeholder: "ವರನ ಹೆಸರು",
+                lbl_female_name_placeholder: "ವಧುವಿನ ಹೆಸರು",
                 lbl_full_name: "ಪೂರ್ಣ ಹೆಸರು",
                 lbl_birth_date: "ಹುಟ್ಟಿದ ದಿನಾಂಕ",
                 lbl_birth_time: "ಹುಟ್ಟಿದ ಸಮಯ",
@@ -2298,6 +2323,11 @@
                 jeevan_label: "ಜೀವ (ದಿನದ ಪ್ರಾಣ)"
             },
             hi: {
+                lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
+                lbl_unauthorized_alert: "अनधिकृत: कृपया शीर्ष बार में बटन का उपयोग करके एक वैध API कुंजी दर्ज करें।",
+                lbl_calculation_failed: "गणना विफल रही",
+                lbl_male_name_placeholder: "वर का नाम",
+                lbl_female_name_placeholder: "वधू का नाम",
                 lbl_full_name: "पूरा नाम",
                 lbl_birth_date: "जन्म तिथि",
                 lbl_birth_time: "जन्म समय",
@@ -2836,6 +2866,22 @@
             
             const systemSelect = document.getElementById('panch-system-select');
             
+            const dChartSelect = document.getElementById('d-chart-select');
+            if (dChartSelect) {
+                const dChartTranslations = {
+                    en: { d9: "Navamsha (D9)", d2: "Hora (D2)", d3: "Drekkana (D3)", d4: "Chaturthamsa (D4)", d7: "Saptamsha (D7)", d10: "Dasamsha (D10)", d12: "Dwadasamsha (D12)", d1: "Rasi (D1)" },
+                    ta: { d9: "நவாம்சம் (D9)", d2: "ஹோரை (D2)", d3: "திரேக்காணம் (D3)", d4: "சதுர்த்தாம்சம் (D4)", d7: "சப்தாம்சம் (D7)", d10: "தசாம்சம் (D10)", d12: "துவாதசாம்சம் (D12)", d1: "ராசி (D1)" },
+                    te: { d9: "నవాంశ (D9)", d2: "హోర (D2)", d3: "ద్రేక్కాణ (D3)", d4: "చతుర్థాంశ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "దశాంశ (D10)", d12: "ద్వాదశాంశ (D12)", d1: "రాశి (D1)" },
+                    ml: { d9: "നവാംശം (D9)", d2: "ഹോര (D2)", d3: "ദ്രേക്കാണം (D3)", d4: "ചതുർത്ഥാംശം (D4)", d7: "സപ്തമാംശം (D7)", d10: "ദശാംശം (D10)", d12: "ദ്വാദശാംശം (D12)", d1: "രാശി (D1)" },
+                    kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d1: "ರಾಶಿ (D1)" },
+                    hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d1: "राशि (D1)" }
+                };
+                const trans = dChartTranslations[langCode] || dChartTranslations.en;
+                Array.from(dChartSelect.options).forEach(opt => {
+                    opt.text = trans[opt.value] || opt.text;
+                });
+            }
+            
             // Set button name in UI
             const langNames = {en: "English", ta: "Tamil (தமிழ்)", te: "Telugu (తెలుగు)", ml: "Malayalam (മലയാളം)", kn: "Kannada (ಕನ್ನಡ)", hi: "Hindi (हिन्दी)"};
             document.getElementById('current-lang-name').innerText = langNames[langCode];
@@ -2853,6 +2899,15 @@
             if (marriageTitle) marriageTitle.innerText = dict.lbl_marriage_title || "Marriage Compatibility & Harmony";
             const malePartnerTitle = document.getElementById('lbl-male-partner-title');
             if (malePartnerTitle) malePartnerTitle.innerText = dict.lbl_male_partner_title || "Male Partner Details";
+
+            if (!calculatedMaleChartData) {
+                const linkMale = document.getElementById('link-male-name');
+                if (linkMale) linkMale.innerText = dict.lbl_male_name_placeholder || "Male Name";
+            }
+            if (!calculatedFemaleChartData) {
+                const linkFemale = document.getElementById('link-female-name');
+                if (linkFemale) linkFemale.innerText = dict.lbl_female_name_placeholder || "Female Name";
+            }
             const femalePartnerTitle = document.getElementById('lbl-female-partner-title');
             if (femalePartnerTitle) femalePartnerTitle.innerText = dict.lbl_female_partner_title || "Female Partner Details";
             const marriageAiReading = document.getElementById('lbl-marriage-ai-reading');
@@ -3131,6 +3186,22 @@
 
             // Fill Panchangam details
             const systemSelect = document.getElementById('panch-system-select');
+            
+            const dChartSelect = document.getElementById('d-chart-select');
+            if (dChartSelect) {
+                const dChartTranslations = {
+                    en: { d9: "Navamsha (D9)", d2: "Hora (D2)", d3: "Drekkana (D3)", d4: "Chaturthamsa (D4)", d7: "Saptamsha (D7)", d10: "Dasamsha (D10)", d12: "Dwadasamsha (D12)", d1: "Rasi (D1)" },
+                    ta: { d9: "நவாம்சம் (D9)", d2: "ஹோரை (D2)", d3: "திரேக்காணம் (D3)", d4: "சதுர்த்தாம்சம் (D4)", d7: "சப்தாம்சம் (D7)", d10: "தசாம்சம் (D10)", d12: "துவாதசாம்சம் (D12)", d1: "ராசி (D1)" },
+                    te: { d9: "నవాంశ (D9)", d2: "హోర (D2)", d3: "ద్రేక్కాణ (D3)", d4: "చతుర్థాంశ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "దశాంశ (D10)", d12: "ద్వాదశాంశ (D12)", d1: "రాశి (D1)" },
+                    ml: { d9: "നവാംശം (D9)", d2: "ഹോര (D2)", d3: "ദ്രേക്കാണം (D3)", d4: "ചതുർത്ഥാംശം (D4)", d7: "സപ്തമാംശം (D7)", d10: "ദശാംശം (D10)", d12: "ദ്വാദശാംശം (D12)", d1: "രാശി (D1)" },
+                    kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d1: "ರಾಶಿ (D1)" },
+                    hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d1: "राशि (D1)" }
+                };
+                const trans = dChartTranslations[langCode] || dChartTranslations.en;
+                Array.from(dChartSelect.options).forEach(opt => {
+                    opt.text = trans[opt.value] || opt.text;
+                });
+            }
             const activeSys = systemSelect ? systemSelect.value : 'sauramana';
             updateDynamicPanchangamLabels(currentLang, activeSys);
 
@@ -3967,7 +4038,16 @@
             const navLbl = document.getElementById('lbl-navamsha-chart-title');
             if (navLbl && dChartSelect) {
                 const optText = dChartSelect.options[dChartSelect.selectedIndex].text;
-                navLbl.innerText = `${optText} Chart`;
+                            const chartSuffix = {
+                en: "Chart",
+                ta: "சக்கரம்",
+                te: "చక్రం",
+                ml: "ചക്രം",
+                kn: "ಚಕ್ರ",
+                hi: "कुंडली"
+            };
+                const suffix = chartSuffix[currentLang] || "Chart";
+                navLbl.innerText = `${optText} ${suffix}`;
             }
             
             if (style === 'north') {
@@ -4698,9 +4778,10 @@
         async function generateMarriageCompatibility() {
             const btn = document.getElementById('btn-generate-marriage');
             const resultsDiv = document.getElementById('marriage-results-block');
+            const dict = localization[currentLang] || localization.en;
             
             btn.disabled = true;
-            btn.innerText = "Calculating Alignments...";
+            btn.innerText = dict.lbl_calculating_alignments || "Calculating Alignments...";
             resultsDiv.style.display = 'none';
             
             const maleReq = {
@@ -4748,9 +4829,9 @@
                 });
                 
                 if (response.status === 401) {
-                    alert("Unauthorized: Please configure a valid API Key using the button in the top bar.");
+                    alert(dict.lbl_unauthorized_alert || "Unauthorized: Please configure a valid API Key using the button in the top bar.");
                     btn.disabled = false;
-                    btn.innerText = "Calculate Compatibility";
+                    btn.innerText = dict.lbl_btn_calculate || "Calculate Compatibility";
                     return;
                 }
                 
@@ -4805,14 +4886,15 @@
                 
                 resultsDiv.style.display = 'block';
                 btn.disabled = false;
-                btn.innerText = "Calculate Compatibility";
+                btn.innerText = dict.lbl_btn_calculate || "Calculate Compatibility";
                 
                 // Auto trigger the AI prediction block on calculation!
                 generateMarriageAICompatibility();
             } catch (err) {
-                alert(`Calculation failed: ${err.message}`);
+                const dict = localization[currentLang] || localization.en;
+                alert(`${dict.lbl_calculation_failed || "Calculation failed"}: ${err.message}`);
                 btn.disabled = false;
-                btn.innerText = "Calculate Compatibility";
+                btn.innerText = dict.lbl_btn_calculate || "Calculate Compatibility";
             }
         }
 
@@ -4885,6 +4967,7 @@
             }
             
             const chatBox = document.getElementById('marriage-ai-output');
+            const dict = localization[currentLang] || localization.en;
             const loadingMsg = dict.lbl_marriage_ai_loading || "Consulting relationship scripture RAG database and streaming Ganesha reading...";
             chatBox.innerHTML = `<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> ${loadingMsg}</div>`;
             
@@ -5043,8 +5126,17 @@
                     // Update right chart label dynamically
                     const navLbl = document.getElementById('lbl-navamsha-chart-title');
                     const optText = e.target.options[e.target.selectedIndex].text;
+                                const chartSuffix = {
+                en: "Chart",
+                ta: "சக்கரம்",
+                te: "చక్రం",
+                ml: "ചക്രം",
+                kn: "ಚಕ್ರ",
+                hi: "कुंडली"
+            };
+                    const suffix = chartSuffix[currentLang] || "Chart";
                     if (navLbl) {
-                        navLbl.innerText = `${optText} Chart`;
+                        navLbl.innerText = `${optText} ${suffix}`;
                     }
                     
                     if (style === 'north') {
