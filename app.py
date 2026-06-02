@@ -640,14 +640,21 @@ A precise computational analysis of their charts and Nakshatra compatibility is 
 {rag_context}
 ---------------------------------------------
 
-Using the classical rules from the retrieved texts, write an exceptionally insightful, accurate marriage compatibility analysis in beautiful Markdown.
-Structure it as:
+Using the classical rules from the retrieved texts, write an exceptionally insightful, accurate marriage compatibility analysis in beautiful Markdown. You MUST address the following requirements in detail:
+1. **Individual Character & Personality Analysis**: Analyze both {male_name}'s and {female_name}'s characteristics based on their respective Ascendants (Lagnas), Moon Signs (Rasis), and Nakshatras. Explain how their individual temperaments will interact.
+2. **Co-habitation & Domestic Life (Living under the same shelter)**: Provide a clear picture of their day-to-day compatibility when living under the same roof. Discuss how their planetary alignments influence household harmony, shared domestic space, and resolution of conflicts.
+3. **Dasa Compatibility & Timing of Marriage**: Analyze the running Vimshottari Dasas and Bhuktis for both natives. Determine if their active planetary periods align harmoniously for marital union, and predict *when* they are astrologically primed to marry or experience relationship stability/milestones.
+4. **Detailed Koota Calculation Analysis**: Go through the matching calculation points (Dina, Gana, Rajju, Vedha, Rasi, Rasiyadhipathi) and explain the astrological reasoning behind each match or mismatch according to classical books.
+5. **Astro-Compatibility Score & Minimum Threshold Instructions**: Provide a final compatibility rating/score based on your holistic analysis (representing it both out of 6 points and as a percentage). State clearly the minimum threshold score required (typically 50% or 3 out of 6 points) for a decent, sustainable, and smooth life run together, and where this couple stands in relation to it.
+
+Structure your analysis as follows:
 1. **Divine Invocation** — a short Sanskrit invocation and blessing for relationship harmony (e.g. invocation of Shiva-Shakti or Lakshmi-Narayana).
-2. **Mental & Temperament Harmony (Gana & Dina)** — analyze the mental compatibility, temperaments, and lifestyle sync.
-3. **Physical & Sexual Compatibility (Yoni)** — comment on mutual physical attraction and health compatibility.
-4. **Prosperity & Progeny (Rasi & Lords)** — comment on long-term family harmony, children, and material growth.
-5. **Critical Afflictions (Rajju & Vedha Dosha check)** — explain whether any severe doshas are formed and their consequences (if any).
-6. **Net Astrological Verdict & Guidance** — provide a compassionate, honest, and actionable overall verdict, along with matching remedies (Pariharas) for planetary peace.
+2. **Natives' Individual Characteristics** — detailed personality profiling of both partners.
+3. **Koota Agreement & Matching Calculations** — explaining each of the Porutham points and calculation results.
+4. **Co-habitation & Domestic Life Under the Same Roof** — how they will live together.
+5. **Dasa Alignments & Timing of Marriage** — timing of marriage and running dasa compatibility.
+6. **Overall Compatibility Score, Minimum Threshold, & Final Verdict** — include clear instructions on the minimum score needed for a decent run and your final spiritual recommendation.
+7. **Remedies (Pariharas)** — practical remedies for any discrepancies or doshas.
 
 Be authoritative, compassionate, and precise. Start directly with the invocation:
 """

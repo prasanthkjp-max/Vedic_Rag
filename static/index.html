@@ -1641,7 +1641,7 @@
         <div class="single-page-content" id="page-marriage" style="display:none;">
             <div class="card">
                 <div class="card-title">
-                    <i class="fa-solid fa-heart-crack"></i> <span id="lbl-marriage-title">Marriage Compatibility & Harmony</span>
+                    <i class="fa-solid fa-heart" style="color: #ED64A6;"></i> <span id="lbl-marriage-title">Marriage Compatibility & Harmony</span>
                 </div>
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 20px;">
                     Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.
@@ -1679,9 +1679,10 @@
                                 <input type="number" step="0.0001" id="in-m-lat" value="13.0800">
                             </div>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group" style="position: relative;">
                             <label>Place of Birth</label>
-                            <input type="text" id="in-m-pob" value="Chennai">
+                            <input type="text" id="in-m-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('male')">
+                            <div id="m-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
                     </div>
 
@@ -1714,9 +1715,10 @@
                                 <input type="number" step="0.0001" id="in-f-lat" value="13.0800">
                             </div>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group" style="position: relative;">
                             <label>Place of Birth</label>
-                            <input type="text" id="in-f-pob" value="Chennai">
+                            <input type="text" id="in-f-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('female')">
+                            <div id="f-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
                     </div>
 
@@ -4363,6 +4365,278 @@
                 "'": '&#039;'
             };
             return string.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // --- Marriage Compatibility & Custom RAG Functions ---
+        let calculatedMaleChartData = null;
+        let calculatedFemaleChartData = null;
+        let calculatedCompatibility = null;
+
+        function loadIndividualChart(gender) {
+            const chartData = gender === 'male' ? calculatedMaleChartData : calculatedFemaleChartData;
+            if (!chartData) return;
+            
+            calculatedChartData = chartData;
+            const prefix = gender === 'male' ? 'm-' : 'f-';
+            document.getElementById('in-name').value = document.getElementById(`in-${prefix}name`).value;
+            
+            const dob = document.getElementById(`in-${prefix}dob`).value;
+            if (dob) {
+                const parts = dob.split('-');
+                document.getElementById('in-year').value = parseInt(parts[0]);
+                document.getElementById('in-month').value = parseInt(parts[1]);
+                document.getElementById('in-day').value = parseInt(parts[2]);
+            }
+            
+            const tob = document.getElementById(`in-${prefix}tob`).value;
+            if (tob) {
+                const parts = tob.split(':');
+                document.getElementById('in-hour').value = parseInt(parts[0]);
+                document.getElementById('in-minute').value = parseInt(parts[1]);
+            }
+            
+            document.getElementById('in-lon').value = document.getElementById(`in-${prefix}lon`).value;
+            document.getElementById('in-lat').value = document.getElementById(`in-${prefix}lat`).value;
+            document.getElementById('in-pob').value = document.getElementById(`in-${prefix}pob`).value;
+            document.getElementById('in-gender').value = gender;
+            
+            renderBirthReportOutputs();
+            navigateToPage('jyothisyam');
+        }
+
+        async function generateMarriageCompatibility() {
+            const btn = document.getElementById('btn-generate-marriage');
+            const resultsDiv = document.getElementById('marriage-results-block');
+            
+            btn.disabled = true;
+            btn.innerText = "Calculating Alignments...";
+            resultsDiv.style.display = 'none';
+            
+            const maleReq = {
+                name: document.getElementById('in-m-name').value,
+                year: parseInt(document.getElementById('in-m-dob').value.split('-')[0]),
+                month: parseInt(document.getElementById('in-m-dob').value.split('-')[1]),
+                day: parseInt(document.getElementById('in-m-dob').value.split('-')[2]),
+                hour: parseInt(document.getElementById('in-m-tob').value.split(':')[0]),
+                minute: parseInt(document.getElementById('in-m-tob').value.split(':')[1]),
+                longitude: parseFloat(document.getElementById('in-m-lon').value),
+                latitude: parseFloat(document.getElementById('in-m-lat').value),
+                place_name: document.getElementById('in-m-pob').value,
+                gender: "male",
+                ayanamsa: document.getElementById('in-marriage-ayanamsa').value,
+                system: document.getElementById('in-marriage-system').value,
+                timing: document.getElementById('in-marriage-timing').value,
+                visual_style: document.getElementById('in-marriage-style').value
+            };
+            
+            const femaleReq = {
+                name: document.getElementById('in-f-name').value,
+                year: parseInt(document.getElementById('in-f-dob').value.split('-')[0]),
+                month: parseInt(document.getElementById('in-f-dob').value.split('-')[1]),
+                day: parseInt(document.getElementById('in-f-dob').value.split('-')[2]),
+                hour: parseInt(document.getElementById('in-f-tob').value.split(':')[0]),
+                minute: parseInt(document.getElementById('in-f-tob').value.split(':')[1]),
+                longitude: parseFloat(document.getElementById('in-f-lon').value),
+                latitude: parseFloat(document.getElementById('in-f-lat').value),
+                place_name: document.getElementById('in-f-pob').value,
+                gender: "female",
+                ayanamsa: document.getElementById('in-marriage-ayanamsa').value,
+                system: document.getElementById('in-marriage-system').value,
+                timing: document.getElementById('in-marriage-timing').value,
+                visual_style: document.getElementById('in-marriage-style').value
+            };
+            
+            try {
+                const response = await fetch('/api/calculate-marriage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': localStorage.getItem('vedic_api_key') || ''
+                    },
+                    body: JSON.stringify({ male: maleReq, female: femaleReq })
+                });
+                
+                if (response.status === 401) {
+                    alert("Unauthorized: Please configure a valid API Key using the button in the top bar.");
+                    btn.disabled = false;
+                    btn.innerText = "Calculate Compatibility";
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                
+                const data = await response.json();
+                calculatedMaleChartData = data.male_chart;
+                calculatedFemaleChartData = data.female_chart;
+                calculatedCompatibility = data.compatibility;
+                
+                document.getElementById('lbl-marriage-percentage').innerText = `${calculatedCompatibility.percentage}%`;
+                
+                let detailsHtml = "";
+                for (const [key, val] of Object.entries(calculatedCompatibility.details)) {
+                    const icon = val.match ? '<span style="color:#48BB78; font-weight:bold; margin-right:8px;">✔ Match</span>' : '<span style="color:#F56565; font-weight:bold; margin-right:8px;">✘ Mismatch</span>';
+                    detailsHtml += `<div style="padding: 10px; border-bottom: 1px solid rgba(226,232,240,0.1); display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight: 500;">${val.label}</span>
+                        <span>${icon}</span>
+                    </div>`;
+                }
+                document.getElementById('marriage-details-list').innerHTML = detailsHtml;
+                
+                document.getElementById('marriage-male-chart-container').innerHTML = "";
+                document.getElementById('marriage-female-chart-container').innerHTML = "";
+                
+                const style = document.getElementById('in-marriage-style').value;
+                if (style === 'north') {
+                    drawNorthIndianChartSVG('marriage-male-chart-container', data.male_chart.placements, 'd1');
+                    drawNorthIndianChartSVG('marriage-female-chart-container', data.female_chart.placements, 'd1');
+                } else {
+                    drawSouthIndianChartSVG('marriage-male-chart-container', data.male_chart.placements, 'd1');
+                    drawSouthIndianChartSVG('marriage-female-chart-container', data.female_chart.placements, 'd1');
+                }
+                
+                document.getElementById('link-male-name').innerText = maleReq.name;
+                document.getElementById('link-female-name').innerText = femaleReq.name;
+                
+                // Reset AI output field
+                document.getElementById('marriage-ai-output').innerHTML = `
+                    <p style="color: var(--text-secondary); text-align: center; margin-top: 80px;">
+                        <i class="fa-solid fa-yin-yang" style="font-size: 24px; color: var(--accent-gold); display: block; margin-bottom: 8px;"></i>
+                        Click the button above to request a personalized marriage prediction from Vedic RAG AI.
+                    </p>
+                `;
+                
+                resultsDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = "Calculate Compatibility";
+            } catch (err) {
+                alert(`Calculation failed: ${err.message}`);
+                btn.disabled = false;
+                btn.innerText = "Calculate Compatibility";
+            }
+        }
+
+        async function generateMarriageAICompatibility() {
+            if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
+                alert("Please calculate the compatibility report first.");
+                return;
+            }
+            
+            const chatBox = document.getElementById('marriage-ai-output');
+            chatBox.innerHTML = '<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> Consulting relationship scripture RAG database and streaming Ganesha reading...</div>';
+            
+            const payload = {
+                male_chart: calculatedMaleChartData,
+                female_chart: calculatedFemaleChartData,
+                compatibility: calculatedCompatibility,
+                male_name: document.getElementById('in-m-name').value,
+                female_name: document.getElementById('in-f-name').value,
+                male_place: document.getElementById('in-m-pob').value,
+                female_place: document.getElementById('in-f-pob').value,
+                model: document.getElementById('in-marriage-model').value
+            };
+            
+            try {
+                const response = await fetch('/api/ai-predict-marriage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': localStorage.getItem('vedic_api_key') || ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.status === 401) {
+                    chatBox.innerHTML = `<span style="color:#F56565;">*Unauthorized: Invalid or missing API key. Configure it in the top bar.*</span>`;
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                
+                chatBox.innerHTML = "";
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let resultText = "";
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    resultText += chunk;
+                    
+                    // Simple Markdown-to-HTML parser for streaming predictions
+                    let htmlContent = resultText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/\n/g, '<br>');
+                    
+                    chatBox.innerHTML = `<div style="white-space: pre-wrap;">${htmlContent}</div>`;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch (err) {
+                chatBox.innerHTML = `<span style="color:#F56565;">*Prediction Streaming Error: ${err.message}*</span>`;
+            }
+        }
+
+        let marriageTimeout = null;
+
+        function debounceLookupPlaceMarriage(gender) {
+            clearTimeout(marriageTimeout);
+            marriageTimeout = setTimeout(() => lookupPlaceMarriage(gender), 400);
+        }
+
+        async function lookupPlaceMarriage(gender) {
+            const prefix = gender === 'male' ? 'm-' : 'f-';
+            const query = document.getElementById(`in-${prefix}pob`).value.trim();
+            const suggestionsDiv = document.getElementById(`${prefix}pob-suggestions`);
+            
+            if (query.length < 3) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'AntigravityAstrologyPortal/1.0'
+                    }
+                });
+                
+                if (!response.ok) return;
+                
+                const results = await response.json();
+                
+                if (results.length === 0) {
+                    suggestionsDiv.innerHTML = '<div class="suggestion-item" style="color: var(--text-muted); cursor: default;">No locations found</div>';
+                    suggestionsDiv.style.display = 'block';
+                    return;
+                }
+                
+                suggestionsDiv.innerHTML = '';
+                results.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerText = item.display_name;
+                    div.onclick = function() {
+                        document.getElementById(`in-${prefix}pob`).value = item.display_name;
+                        document.getElementById(`in-${prefix}lat`).value = parseFloat(item.lat).toFixed(4);
+                        document.getElementById(`in-${prefix}lon`).value = parseFloat(item.lon).toFixed(4);
+                        suggestionsDiv.style.display = 'none';
+                    };
+                    suggestionsDiv.appendChild(div);
+                });
+                
+                suggestionsDiv.style.display = 'block';
+                
+            } catch (err) {
+                console.error("Geocoding lookup error:", err);
+            }
         }
 
         // --- Initialize Page details on startup ---
