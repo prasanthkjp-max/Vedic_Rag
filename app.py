@@ -689,7 +689,10 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 
 @app.get("/")
 def read_root():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    return FileResponse(
+        os.path.join(STATIC_DIR, "index.html"),
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
+    )
 
 # Mount static files folder
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
