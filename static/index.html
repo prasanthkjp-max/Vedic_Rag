@@ -3210,7 +3210,7 @@
                     kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d1: "ರಾಶಿ (D1)" },
                     hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d1: "राशि (D1)" }
                 };
-                const trans = dChartTranslations[langCode] || dChartTranslations.en;
+                const trans = dChartTranslations[currentLang] || dChartTranslations.en;
                 Array.from(dChartSelect.options).forEach(opt => {
                     opt.text = trans[opt.value] || opt.text;
                 });
