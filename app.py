@@ -369,6 +369,7 @@ class BirthChartRequest(BaseModel):
     longitude: float
     latitude: float
     place_name: str
+    gender: str = "male"
     ayanamsa: str = "Lahiri"
     system: str = "Parashara"
     timing: str = "Vimshottari"
@@ -418,7 +419,7 @@ def calculate_chart(req: BirthChartRequest):
     try:
         chart = get_astrological_chart(
             req.year, req.month, req.day, req.hour, req.minute,
-            req.longitude, req.latitude, req.ayanamsa
+            req.longitude, req.latitude, req.ayanamsa, gender=req.gender
         )
         return chart
     except Exception as e:

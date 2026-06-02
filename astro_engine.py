@@ -1062,7 +1062,7 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         
     return shadbala_result
 
-def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None):
+def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male"):
     """
     Master function to calculate the complete Sidereal astrological chart
     with Thirukanitha panchangam planet coordinates and 100-year Dasas.
@@ -1351,6 +1351,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "datetime": f"{year}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}",
             "longitude": longitude,
             "latitude": latitude,
+            "gender": gender,
             "ayanamsa_name": ayanamsa_name,
             "ayanamsa_degrees": round(ayanamsa, 4),
             "ayanamsa_dms": ayanamsa_dms,

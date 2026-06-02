@@ -1467,6 +1467,13 @@
                         <input type="number" step="0.0001" id="in-lat" value="13.0827">
                     </div>
                     <div class="input-group">
+                        <label id="lbl-gender">Gender</label>
+                        <select id="in-gender">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
                         <label id="lbl-chart-style">Visual Chart Style</label>
                         <select id="in-style">
                             <option value="south">South Indian Chart Style (Rasi Grid)</option>
@@ -1759,6 +1766,7 @@
                 pob: "Place of Birth Name",
                 lon: "Longitude (Degrees East)",
                 lat: "Latitude (Degrees North)",
+                gender: "Gender",
                 chart_style: "Visual Chart Style",
                 btn_generate: "Draft Birth Chart Report",
                 ai_p1: "You must first draft your birth chart report in the Jyothisyam page to load birth coordinates into Vedic Astrology AI's workspace.",
@@ -1807,6 +1815,7 @@
                 pob: "பிறந்த ஊர் பெயர்",
                 lon: "தீர்க்கரேகை (கிழக்கு)",
                 lat: "அட்சரேகை (வடக்கு)",
+                gender: "பாலினம்",
                 chart_style: "ஜாதக வரைபட முறை",
                 btn_generate: "ஜாதக கணிதத்தை உருவாக்கு",
                 ai_p1: "வேத ஜோதிட AI பலன்களைப் பெற முதலில் ஜாதக கணிதத்தை ஜோதிடம் தாவலில் உருவாக்கவும்.",
@@ -1855,6 +1864,7 @@
                 pob: "పుట్టిన స్థలం",
                 lon: "రేఖాంశం (తూర్పు)",
                 lat: "అక్షాంశం (ఉత్తరం)",
+                gender: "లింగము",
                 chart_style: "జాతక చక్ర శైలి",
                 btn_generate: "జాతక గణితాన్ని సృష్టించు",
                 ai_p1: "వైదిక జ్యోతిష్య AI ఫలాలను పొందడానికి మొదట జన్మ కుండలి గణితాన్ని జ్యోతిష్యం ట్యాబ్‌లో సృష్టించండి.",
@@ -1903,6 +1913,7 @@
                 pob: "ജനന സ്ഥലം",
                 lon: "രേഖാംശം (കിഴക്ക്)",
                 lat: "അക്ഷാംശം (വടക്ക്)",
+                gender: "ലിംഗം",
                 chart_style: "ജാതക ചക്ര ശൈലി",
                 btn_generate: "ജാതക ഗണിതം രൂപീകരിക്കുക",
                 ai_p1: "വൈദിക ജ്യോതിഷ AI ഫലങ്ങൾക്കായി ആദ്യം ജന്മ ജാതക ഗണിതം ജ്യോതിഷം ടാബിൽ രൂപീകരിക്കുക.",
@@ -1951,7 +1962,8 @@
                 pob: "ಹುಟ್ಟಿದ ಸ್ಥಳ",
                 lon: "ರೇಖಾಂಶ (ಪೂರ್ವ)",
                 lat: "ಅಕ್ಷಾಂಶ (ಉತ್ತರ)",
-                chart_style: "ಜಾತಕ ಚಕ್ರ ಶೈಲಿ",
+                gender: "ಲಿಂಗ",
+                chart_style: "ಜಾತಕ ಚಕ್ರ ಶൈಲಿ",
                 btn_generate: "ಜಾತಕ ಗಣಿತವನ್ನು ರಚಿಸಿ",
                 ai_p1: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ AI ಫಲಗಳನ್ನು ಪಡೆಯಲು ಮೊದಲು ಜನ್ಮ ಜಾತಕ ಗಣಿತವನ್ನು ಜ್ಯೋತಿಷ್ಯ ಟ್ಯಾಬ್‌ನಲ್ಲಿ ರಚಿಸಿ.",
                 th_planet: "ಗ್ರಹ",
@@ -1999,6 +2011,7 @@
                 pob: "जन्म स्थान",
                 lon: "रेखांश (पूर्व)",
                 lat: "अक्षांश (उत्तर)",
+                gender: "लिंग",
                 chart_style: "कुंडली शैली",
                 btn_generate: "कुंडली रिपोर्ट तैयार करें",
                 ai_p1: "वैदिक ज्योतिष AI फल के लिए पहले जन्म कुंडली गणित को ज्योतिष टैब में तैयार करें।",
@@ -2548,6 +2561,18 @@
             document.getElementById('lbl-pob').innerText = dict.pob;
             document.getElementById('lbl-lon').innerText = dict.lon;
             document.getElementById('lbl-lat').innerText = dict.lat;
+            document.getElementById('lbl-gender').innerText = dict.gender || "Gender";
+            const genderSelect = document.getElementById('in-gender');
+            if (genderSelect) {
+                const maleTranslations = {
+                    en: 'Male', ta: 'ஆண்', te: 'పురుషుడు', ml: 'പുരുഷൻ', kn: 'ಪುರುಷ', hi: 'पुरुष'
+                };
+                const femaleTranslations = {
+                    en: 'Female', ta: 'பெண்', te: 'స్త్రీ', ml: 'സ്ത്രീ', kn: 'ಸ್ತ್ರೀ', hi: 'स्त्री'
+                };
+                genderSelect.options[0].text = maleTranslations[langCode] || 'Male';
+                genderSelect.options[1].text = femaleTranslations[langCode] || 'Female';
+            }
             document.getElementById('lbl-chart-style').innerText = dict.chart_style;
             document.getElementById('lbl-btn-generate').innerText = dict.btn_generate;
             document.getElementById('lbl-ai-p1').innerText = dict.ai_p1;
@@ -3279,6 +3304,7 @@
             const lon = parseFloat(document.getElementById('in-lon').value);
             const lat = parseFloat(document.getElementById('in-lat').value);
             const style = document.getElementById('in-style').value;
+            const gender = document.getElementById('in-gender').value;
             
             const ayanamsa = document.getElementById('in-ayanamsa').value;
             const system = document.getElementById('in-system').value;
@@ -3302,6 +3328,7 @@
                 longitude: lon,
                 latitude: lat,
                 place_name: pob,
+                gender: gender,
                 ayanamsa: activeSubTab === 'advanced' ? ayanamsa : 'Lahiri',
                 system: activeSubTab === 'advanced' ? system : 'Parashara',
                 timing: activeSubTab === 'advanced' ? timing : 'Vimshottari',
@@ -3370,7 +3397,15 @@
                 // Determine day of week in selected language
                 const dayIdx = Math.floor(calculatedChartData.metadata.julian_date + 1.5) % 7;
                 const localizedDay = weekdayLabelsFull[currentLang][dayIdx];
-                const genderTranslations = {
+                const genderVal = (calculatedChartData.metadata.gender || 'male').toLowerCase();
+                const genderTranslations = genderVal === 'female' ? {
+                    en: 'Female',
+                    ta: 'பெண் / Female',
+                    te: 'స్త్రీ / Female',
+                    ml: 'സ്ത്രീ / Female',
+                    kn: 'ಸ್ತ್ರೀ / Female',
+                    hi: 'स्त्री / Female'
+                } : {
                     en: 'Male',
                     ta: 'ஆண் / Male',
                     te: 'పురుషుడు / Male',
@@ -3378,7 +3413,7 @@
                     kn: 'ಪುರುಷ / Male',
                     hi: 'पुरुष / Male'
                 };
-                const localizedGender = genderTranslations[currentLang] || 'Male';
+                const localizedGender = genderTranslations[currentLang] || (genderVal === 'female' ? 'Female' : 'Male');
                 
                 const tithiLocal = translateTithi(calculatedChartData.panchangam.tithi);
                 const naksLocal = translateNakshatra(calculatedChartData.panchangam.nakshatra);

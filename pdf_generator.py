@@ -1000,10 +1000,17 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         "ml": "\u0d32\u0d3f\u0d19\u0d4d\u0d17\u0d02 / Gender", "kn": "\u0cb2\u0cbf\u0c99\u0ccd / Gender", "hi": "\u0932\u093f\u0902\u0917 / Gender"
     }.get(lang, "Gender")
     
-    gender_local = {
-        "en": "Male", "ta": "\u0b85\u0ba3\u0bcd / Male", "te": "\u0c2a\u0c41\u0c30\u0c41\u0c37\u0c41\u0c21\u0c41 / Male",
-        "ml": "\u0d2a\u0d41\u0d30\u0d41\u0d37\u0d28\u0d4d / Male", "kn": "\u0c2a\u0c41\u0c30\u0c41\u0c37 / Male", "hi": "\u092a\u0941\u0930\u0941\u0937 / Male"
-    }.get(lang, "Male")
+    gender_val = chart_data['metadata'].get('gender', 'male').lower()
+    if gender_val == "female":
+        gender_local = {
+            "en": "Female", "ta": "\u0baa\u0bc6\u0ba3\u0bcd / Female", "te": "\u0c38\u0c4d\u0c24\u0c4d\u0c30\u0c40 / Female",
+            "ml": "\u0d38\u0d4d\u0d24\u0d4d\u0d30\u0d40 / Female", "kn": "\u0c38\u0c4d\u0c24\u0c4d\u0c30\u0c40 / Female", "hi": "\u0938\u094d\u0924\u094d\u0930\u0940 / Female"
+        }.get(lang, "Female")
+    else:
+        gender_local = {
+            "en": "Male", "ta": "\u0b85\u0ba3\u0bcd / Male", "te": "\u0c2a\u0c41\u0c30\u0c41\u0c37\u0c41\u0c21\u0c41 / Male",
+            "ml": "\u0d2a\u0d41\u0d30\u0d41\u0d37\u0d28\u0d4d / Male", "kn": "\u0c2a\u0c41\u0c30\u0c41\u0c37 / Male", "hi": "\u092a\u0941\u0930\u0941\u0937 / Male"
+        }.get(lang, "Male")
     
     offset_label = {
         "en": "Standard Time Offset", "ta": "\u0baa\u0bca\u0ba4\u0bc1\u0ba8\u0bc5\u0bb0 \u0ba4\u0bbf\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4ம\u0bcd", "te": "\u0c2a\u0c4d\u0c30\u0c3e\u0c2e\u0c3e\u0c23\u0c3f\u0c15 \u0c15\u0c3e\u0c32 \u0c35\u0c4d\u0c2f\u0c24\u0c4d\u0c2f\u0c3e\u0c38\u0c02",

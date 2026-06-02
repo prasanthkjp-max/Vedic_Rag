@@ -315,6 +315,8 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
 
     # ---- Render human-readable analysis text ----
     lines = []
+    gender = chart.get("metadata", {}).get("gender", "male")
+    lines.append(f"GENDER: {gender.capitalize()}")
     lagna_p = placements["Lagna"]
     lines.append(f"LAGNA (Ascendant): {lagna_p['rasi_name']} at {lagna_p['degree']:.2f}°, "
                  f"Navamsha {lagna_p['navamsha_rasi_name']}. Lagna lord is {SIGN_LORDS[lagna_idx]}.")
