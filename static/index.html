@@ -1766,11 +1766,11 @@
                 <!-- Results Block -->
                 <div id="marriage-results-block" style="display: none; border-top: 1px solid rgba(226, 232, 240, 0.1); padding-top: 25px;">
                     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; text-align: center;">
-                        <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 15px; margin-bottom: 8px;">Compatibility Matching Result</h4>
+                        <h4 id="lbl-marriage-result-header" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 15px; margin-bottom: 8px;">Compatibility Matching Result</h4>
                         <div id="lbl-marriage-percentage" style="font-size: 42px; font-weight: 800; font-family: var(--font-heading); color: #48BB78; text-shadow: 0 0 10px rgba(72,187,120,0.2);">
                             0%
                         </div>
-                        <p style="font-size: 11px; color: var(--text-secondary); max-width: 500px; margin-top: 8px;">
+                        <p id="lbl-marriage-desc" style="font-size: 11px; color: var(--text-secondary); max-width: 500px; margin-top: 8px;">
                             Calculated across 6 primary Koota Poruthams according to sidereal Thirukanitha placements. Click a partner's name below to load their detailed single chart report.
                         </p>
                     </div>
@@ -1920,21 +1920,34 @@
         // Drop-in replacement for fetch() that targets our own API. Adds the
         // key header and, on a 401, clears the stored key, prompts once and
         // retries so a wrong/rotated key is easy to recover from.
+        let promptPromise = null;
         async function apiFetch(url, options = {}, _retried = false) {
             const opts = { ...options, headers: { ...(options.headers || {}) } };
             const key = getApiKey();
             if (key) opts.headers['X-API-Key'] = key;
             const response = await fetch(url, opts);
             if (response.status === 401 && !_retried) {
-                localStorage.removeItem('vedic_api_key');
-                if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
-                const keyPrompt = (window.prompt('API key was missing or invalid. Please enter the Vedic Portal API key (printed in the server console / .api_key file):') || '').trim();
-                if (keyPrompt) {
-                    localStorage.setItem('vedic_api_key', keyPrompt);
-                    if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
-                    
+                if (!promptPromise) {
+                    promptPromise = (async () => {
+                        localStorage.removeItem('vedic_api_key');
+                        if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
+                        const keyPrompt = (window.prompt('API key was missing or invalid. Please enter the Vedic Portal API key (printed in the server console / .api_key file):') || '').trim();
+                        if (keyPrompt) {
+                            localStorage.setItem('vedic_api_key', keyPrompt);
+                            if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
+                            return keyPrompt;
+                        }
+                        return null;
+                    })();
+                    promptPromise.finally(() => {
+                        setTimeout(() => { promptPromise = null; }, 100);
+                    });
+                }
+                
+                const newKey = await promptPromise;
+                if (newKey) {
                     const retryOpts = { ...options, headers: { ...(options.headers || {}) } };
-                    retryOpts.headers['X-API-Key'] = keyPrompt;
+                    retryOpts.headers['X-API-Key'] = newKey;
                     return fetch(url, retryOpts);
                 }
             }
@@ -4855,11 +4868,11 @@
                     kn: { match: "✔ ಹೊಂದಾಣಿಕೆ ಇದೆ", mismatch: "✘ ಹೊಂದಾಣಿಕೆ ಇಲ್ಲ" },
                     hi: { match: "✔ मिलान उत्तम", mismatch: "✘ मिलान नहीं" }
                 };
-                const dict = labelsDict[currentLang] || labelsDict.en;
+                const matchLabels = labelsDict[currentLang] || labelsDict.en;
                 
                 for (const [key, val] of Object.entries(calculatedCompatibility.details)) {
                     const textLabel = translateMarriageDetail(key, val, currentLang);
-                    const matchText = val.match ? dict.match : dict.mismatch;
+                    const matchText = val.match ? matchLabels.match : matchLabels.mismatch;
                     const matchColor = val.match ? "#48BB78" : "#F56565";
                     
                     detailsHtml += `<tr>

@@ -777,6 +777,9 @@ def get_timezone_offset(longitude, latitude):
     if 2.0 <= longitude <= 20.0 and 35.0 <= latitude <= 60.0:
         return 1.0
         
+    # Fallback to standard timezone rounding (nearest 30-minute interval) based on longitude
+    return round(longitude / 15.0 * 2) / 2
+        
 ASHTAKAVARGA_RULES = {
     "Sun": {
         "Sun": [1, 2, 4, 7, 8, 9, 10, 11],
