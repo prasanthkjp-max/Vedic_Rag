@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from io import BytesIO
 from search_engine import VedicSearchEngine
-from astro_engine import get_astrological_chart, get_regional_panchangam
+from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility
 from pdf_generator import generate_pdf_report
 from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
 from datetime import date
@@ -115,6 +115,28 @@ def build_prediction_context(chart, extra_queries=None):
     rag_context, _ = retrieve_rag_context(search_engine, queries)
 
     return analysis["analysis_text"], rag_context
+
+
+def build_marriage_prediction_context(male_chart, female_chart, compatibility):
+    """
+    Formulate targeted RAG queries specifically for marriage compatibility,
+    retrieving passages from the specialized marriage RAG index.
+    """
+    male_naks = male_chart["panchangam"]["nakshatra"]
+    female_naks = female_chart["panchangam"]["nakshatra"]
+    male_rasi = male_chart["placements"]["Moon"]["rasi_name"]
+    female_rasi = female_chart["placements"]["Moon"]["rasi_name"]
+    
+    queries = [
+        f"marriage compatibility between female nakshatra {female_naks} and male nakshatra {male_naks}",
+        f"Koota agreement rules for {female_naks} and {male_naks} vivaha compatibility",
+        f"Rajju agreement and Vedha affliction in marriage matching for {female_naks} and {male_naks}",
+        f"relationship harmony of {female_rasi} sign and {male_rasi} sign"
+    ]
+    
+    rag_context, _ = retrieve_rag_context(search_engine, queries, category="marriage")
+    return rag_context
+
 
 
 class QueryRequest(BaseModel):
@@ -388,6 +410,23 @@ class AIPredictRequest(BaseModel):
     place_name: str
     model: str = DEFAULT_LLM_MODEL
 
+
+class MarriageChartRequest(BaseModel):
+    male: BirthChartRequest
+    female: BirthChartRequest
+
+
+class AIMarriagePredictRequest(BaseModel):
+    male_chart: dict
+    female_chart: dict
+    compatibility: dict
+    male_name: str
+    female_name: str
+    male_place: str
+    female_place: str
+    model: str = DEFAULT_LLM_MODEL
+
+
 @app.get("/api/panchangam")
 def get_daily_panchangam(date_str: str = None, lang: str = "en"):
     """
@@ -424,6 +463,30 @@ def calculate_chart(req: BirthChartRequest):
         return chart
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/calculate-marriage")
+def calculate_marriage(req: MarriageChartRequest):
+    """Calculate and compare charts for male and female natives for marriage compatibility"""
+    try:
+        male_chart = get_astrological_chart(
+            req.male.year, req.male.month, req.male.day, req.male.hour, req.male.minute,
+            req.male.longitude, req.male.latitude, req.male.ayanamsa, gender=req.male.gender
+        )
+        female_chart = get_astrological_chart(
+            req.female.year, req.female.month, req.female.day, req.female.hour, req.female.minute,
+            req.female.longitude, req.female.latitude, req.female.ayanamsa, gender=req.female.gender
+        )
+        compatibility = calculate_marriage_compatibility(male_chart, female_chart)
+        
+        return {
+            "male_chart": male_chart,
+            "female_chart": female_chart,
+            "compatibility": compatibility
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/download-pdf")
 def download_pdf(req: PdfDownloadRequest):
@@ -519,6 +582,100 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
             yield f"\n\n*Error streaming from local AI backend: {e}*"
             
     return StreamingResponse(prediction_stream_generator(), media_type="text/event-stream")
+
+
+@app.post("/api/ai-predict-marriage")
+def ai_predict_marriage(req: AIMarriagePredictRequest):
+    """Stream real-time Lord Ganesha Jyotishyam marriage prediction using targeted marriage RAG database"""
+    male_chart = req.male_chart
+    female_chart = req.female_chart
+    comp = req.compatibility
+    male_name = req.male_name
+    female_name = req.female_name
+    male_place = req.male_place
+    female_place = req.female_place
+    model_name = req.model
+
+    # Build targeted marriage RAG context
+    rag_context = build_marriage_prediction_context(male_chart, female_chart, comp)
+
+    # Render a clean text-based comparison of both charts for prompt grounding
+    m_plac = male_chart["placements"]
+    f_plac = female_chart["placements"]
+    
+    m_lagna = m_plac["Lagna"]
+    f_lagna = f_plac["Lagna"]
+    m_moon = m_plac["Moon"]
+    f_moon = f_plac["Moon"]
+    
+    analysis_text = f"""
+--- NATIVE DETAILS ---
+Male Native: {male_name} born at {male_chart['metadata']['datetime']} in {male_place}
+Female Native: {female_name} born at {female_chart['metadata']['datetime']} in {female_place}
+
+--- MALE CHART SUMMARY ---
+Lagna: {m_lagna['rasi_name']} ({m_lagna['degree']:.2f}°)
+Moon Sign: {m_moon['rasi_name']} ({m_moon['degree']:.2f}°)
+Moon Nakshatra: {male_chart['panchangam']['nakshatra']}
+
+--- FEMALE CHART SUMMARY ---
+Lagna: {f_lagna['rasi_name']} ({f_lagna['degree']:.2f}°)
+Moon Sign: {f_moon['rasi_name']} ({f_moon['degree']:.2f}°)
+Moon Nakshatra: {female_chart['panchangam']['nakshatra']}
+
+--- VEDIC KOOTA AGREEMENT DETAILS (Score: {comp['score']}/{comp['max_score']} - {comp['percentage']}%) ---
+"""
+    for key, detail in comp["details"].items():
+        analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']})\n"
+
+    prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and relationship matchmaker.
+You provide deep, accurate, and authoritative marriage compatibility (Vivaha Melapaka/Porutham) predictions for {male_name} and {female_name}, utilizing high-precision Thirukanitha sidereal coordinates and classical Vedic scriptures.
+
+A precise computational analysis of their charts and Nakshatra compatibility is given below. You MUST reason from it — considering the Nakshatra matching points, potential afflictions (like Rajju Dosha or Vedha), Rasi harmony, and friendship of lords.
+
+--- COMPUTED COMPATIBILITY ANALYSIS ---
+{analysis_text}
+
+--- CLASSICAL MARRIAGE TEXT REFERENCES (retrieved from specialized marriage matching chapters) ---
+{rag_context}
+---------------------------------------------
+
+Using the classical rules from the retrieved texts, write an exceptionally insightful, accurate marriage compatibility analysis in beautiful Markdown.
+Structure it as:
+1. **Divine Invocation** — a short Sanskrit invocation and blessing for relationship harmony (e.g. invocation of Shiva-Shakti or Lakshmi-Narayana).
+2. **Mental & Temperament Harmony (Gana & Dina)** — analyze the mental compatibility, temperaments, and lifestyle sync.
+3. **Physical & Sexual Compatibility (Yoni)** — comment on mutual physical attraction and health compatibility.
+4. **Prosperity & Progeny (Rasi & Lords)** — comment on long-term family harmony, children, and material growth.
+5. **Critical Afflictions (Rajju & Vedha Dosha check)** — explain whether any severe doshas are formed and their consequences (if any).
+6. **Net Astrological Verdict & Guidance** — provide a compassionate, honest, and actionable overall verdict, along with matching remedies (Pariharas) for planetary peace.
+
+Be authoritative, compassionate, and precise. Start directly with the invocation:
+"""
+
+    def marriage_prediction_stream_generator():
+        url = OLLAMA_GENERATE_URL
+        data = {
+            "model": model_name,
+            "prompt": prompt,
+            "stream": True
+        }
+        req_api = urllib.request.Request(
+            url, 
+            data=json.dumps(data).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req_api, timeout=LLM_STREAM_TIMEOUT) as response:
+                for line in response:
+                    if line:
+                        chunk = json.loads(line.decode("utf-8"))
+                        text_chunk = chunk.get("response", "")
+                        yield text_chunk
+        except Exception as e:
+            yield f"\n\n*Error streaming marriage prediction: {e}*"
+            
+    return StreamingResponse(marriage_prediction_stream_generator(), media_type="text/event-stream")
+
 
 class AIChatRequest(BaseModel):
     chart_data: dict

@@ -1382,6 +1382,122 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         "ashtakavarga": ashtakavarga,
         "shadbala": shadbala
     }
+def calculate_marriage_compatibility(male_chart, female_chart):
+    """
+    Computes Vedic Nakshatra compatibility (Porutham / Koota agreement)
+    between a Male native and a Female native based on Moon Nakshatra & Rasi.
+    """
+    male_naks = male_chart["panchangam"]["nakshatra"]
+    female_naks = female_chart["panchangam"]["nakshatra"]
+    
+    try:
+        male_idx = NAKSHATRAS.index(male_naks)
+    except ValueError:
+        male_idx = 0
+    try:
+        female_idx = NAKSHATRAS.index(female_naks)
+    except ValueError:
+        female_idx = 0
+        
+    # Dina Porutham
+    diff = (male_idx - female_idx) % 27 + 1
+    dina_match = diff in {2, 4, 6, 8, 9, 11, 13, 15, 17, 18, 20, 22, 24, 26, 27}
+    dina_score = 1.0 if dina_match else 0.0
+    
+    # Gana Porutham
+    deva = {0, 4, 6, 7, 12, 14, 16, 21, 26}
+    manushya = {1, 3, 5, 10, 11, 19, 20, 24, 25}
+    
+    def get_gana(idx):
+        if idx in deva: return "Deva"
+        if idx in manushya: return "Manushya"
+        return "Rakshasa"
+        
+    m_gana = get_gana(male_idx)
+    f_gana = get_gana(female_idx)
+    
+    if f_gana == "Deva":
+        gana_score = 1.0 if m_gana in {"Deva", "Manushya"} else 0.0
+    elif f_gana == "Manushya":
+        gana_score = 1.0 if m_gana in {"Deva", "Manushya"} else 0.0
+    else: # Rakshasa
+        gana_score = 1.0 if m_gana == "Rakshasa" else 0.0
+        
+    # Rajju Porutham (Must not be the same)
+    def get_rajju(idx):
+        if idx in {0, 8, 9, 17, 18, 26}: return "Feet"
+        if idx in {1, 7, 10, 16, 19, 25}: return "Thighs"
+        if idx in {2, 6, 11, 15, 20, 24}: return "Navel"
+        if idx in {3, 5, 12, 14, 21, 23}: return "Neck"
+        return "Head"
+        
+    m_rajju = get_rajju(male_idx)
+    f_rajju = get_rajju(female_idx)
+    rajju_match = m_rajju != f_rajju
+    rajju_score = 1.0 if rajju_match else 0.0
+    
+    # Vedha Porutham (Must not be in vedha pair)
+    vedha_pairs = {
+        (0, 17), (1, 16), (2, 15), (3, 14), (5, 21), (6, 20), (7, 19), (8, 18), (9, 26),
+        (10, 25), (11, 24), (12, 23), (4, 13), (13, 22), (4, 22)
+    }
+    pair = (min(male_idx, female_idx), max(male_idx, female_idx))
+    vedha_match = pair not in vedha_pairs
+    vedha_score = 1.0 if vedha_match else 0.0
+    
+    # Rasi Porutham
+    m_rasi_name = male_chart["placements"].get("Moon", {}).get("rasi_name", "")
+    f_rasi_name = female_chart["placements"].get("Moon", {}).get("rasi_name", "")
+    
+    def get_rasi_idx(name):
+        for i, r in enumerate(RASIS):
+            if name.split()[0].lower() in r.lower():
+                return i
+        return 0
+        
+    m_rasi_idx = get_rasi_idx(m_rasi_name)
+    f_rasi_idx = get_rasi_idx(f_rasi_name)
+    
+    rasi_diff = (m_rasi_idx - f_rasi_idx) % 12 + 1
+    rasi_match = rasi_diff in {1, 7, 9, 10, 11, 12}
+    rasi_score = 1.0 if rasi_match else 0.0
+    
+    # Rasiyadhipathi Porutham (Friendship of Lords)
+    def get_lord(idx):
+        if idx in {0, 7}: return "Mars"
+        if idx in {1, 6}: return "Venus"
+        if idx in {2, 5}: return "Mercury"
+        if idx == 3: return "Moon"
+        if idx == 4: return "Sun"
+        if idx in {8, 11}: return "Jupiter"
+        return "Saturn"
+        
+    m_lord = get_lord(m_rasi_idx)
+    f_lord = get_lord(f_rasi_idx)
+    
+    # Simple group friendship
+    grp1 = {"Sun", "Moon", "Mars", "Jupiter"}
+    grp2 = {"Mercury", "Venus", "Saturn"}
+    lord_match = (m_lord in grp1 and f_lord in grp1) or (m_lord in grp2 and f_lord in grp2)
+    lord_score = 1.0 if lord_match else 0.0
+    
+    total_score = dina_score + gana_score + rajju_score + vedha_score + rasi_score + lord_score
+    percentage = round((total_score / 6.0) * 100, 1)
+    
+    return {
+        "score": total_score,
+        "max_score": 6.0,
+        "percentage": percentage,
+        "details": {
+            "dina": {"match": dina_match, "score": dina_score, "label": "Dina (Health/Longevity)"},
+            "gana": {"match": gana_score > 0, "score": gana_score, "label": f"Gana (Mental Temperament) [Male: {m_gana}, Female: {f_gana}]"},
+            "rajju": {"match": rajju_match, "score": rajju_score, "label": f"Rajju (Longevity of Husband) [Male: {m_rajju}, Female: {f_rajju}]"},
+            "vedha": {"match": vedha_match, "score": vedha_score, "label": "Vedha (No Affliction/Obstacles)"},
+            "rasi": {"match": rasi_match, "score": rasi_score, "label": "Rasi (Zodiac Harmony)"},
+            "lord": {"match": lord_match, "score": lord_score, "label": f"Rasiyadhipathi (Lords Friendship) [Male Lord: {m_lord}, Female Lord: {f_lord}]"}
+        }
+    }
+
 
 if __name__ == "__main__":
     # Diagnostic test for current date transits (May 30, 2026 at Chennai 80.27E, 13.08N)

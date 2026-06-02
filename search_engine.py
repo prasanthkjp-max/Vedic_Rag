@@ -151,10 +151,19 @@ class VedicSearchEngine:
 
                         # Ensure embedding has the expected dimensions
                         if len(embedding) == EMBEDDING_DIM:
+                            text_lower = (raw_text or "").lower()
+                            is_marriage = any(kw in text_lower for kw in [
+                                "marriage", "spouse", "husband", "wife", "marital",
+                                "vivaha", "koota", "porutham", "compatibility",
+                                "agreement", "congenial", "7th house", "seventh house",
+                                "7th bhava", "seventh bhava", "7th lord", "seventh lord",
+                                "navamsha", "navamsa"
+                            ])
                             page_map.append({
                                 "book_id": book_id,
                                 "page_num": page_num,
                                 "raw_text": raw_text,
+                                "is_marriage": is_marriage,
                                 "book_title": books[book_id]["title"] if book_id in books else "Unknown Book"
                             })
                             emb_list.append(embedding)
@@ -187,15 +196,15 @@ class VedicSearchEngine:
         """Reload the search index to include newly ingested pages"""
         self.load_index()
 
-    def dense_search(self, query_text, top_k=10):
+    def dense_search(self, query_text, top_k=10, category=None):
         """Perform semantic cosine similarity search (embeds the query first)."""
         # Get query embedding. None / wrong-dim means the embedding service
         # failed; return nothing so hybrid_search falls back to sparse instead
         # of fabricating zero-score "matches".
         query_vector = self.get_ollama_embedding(query_text)
-        return self.dense_search_with_vector(query_vector, top_k=top_k)
+        return self.dense_search_with_vector(query_vector, top_k=top_k, category=category)
 
-    def dense_search_with_vector(self, query_vector, top_k=10):
+    def dense_search_with_vector(self, query_vector, top_k=10, category=None):
         """Cosine-similarity search from a precomputed query embedding."""
         if self.embeddings is None or len(self.page_map) == 0:
             return []
@@ -210,12 +219,19 @@ class VedicSearchEngine:
         # Calculate dot product (cosine similarity of normalized vectors)
         similarities = np.dot(self.embeddings, query_np)
 
+        if category == "marriage":
+            for idx, page in enumerate(self.page_map):
+                if not page.get("is_marriage"):
+                    similarities[idx] = -1.0
+
         # Get top-K indices
         top_indices = np.argsort(similarities)[::-1][:top_k]
 
         results = []
         for idx in top_indices:
             score = float(similarities[idx])
+            if category == "marriage" and not self.page_map[idx].get("is_marriage"):
+                continue
             page_info = self.page_map[idx].copy()
             page_info["score"] = score
             page_info["type"] = "dense"
@@ -223,15 +239,10 @@ class VedicSearchEngine:
 
         return results
 
-    def sparse_search(self, query_text, top_k=10):
+    def sparse_search(self, query_text, top_k=10, category=None):
         """
         BM25-ranked keyword search via the FTS5 index (pages_fts).
-
-        Each query word (>=3 chars) is wrapped as an FTS5 phrase literal and
-        OR-combined, preserving the previous "any keyword matches" semantics
-        while letting SQLite rank by relevance. Wrapping in double quotes also
-        neutralises FTS5 query operators in user input. Returns None-free dicts
-        shaped like the rest of the engine's results.
+        Supports category-based filtering for faster, contextual subsets.
         """
         # \w (unicode) keeps Indic OCR terms; dedupe preserves first-seen order.
         words = re.findall(r"\w{3,}", query_text.lower())
@@ -243,17 +254,30 @@ class VedicSearchEngine:
         try:
             conn = connect_db(self.db_path)
             cursor = conn.cursor()
-            # bm25() returns a cost (lower = more relevant), so ORDER BY ascending.
-            cursor.execute(
-                """
+            
+            sql = """
                 SELECT p.book_id, p.page_num, p.raw_text, bm25(pages_fts) AS rank
                 FROM pages_fts JOIN pages p ON p.id = pages_fts.rowid
                 WHERE pages_fts MATCH ?
+            """
+            params = [match_expr]
+            
+            if category == "marriage":
+                sql += """
+                    AND (p.raw_text LIKE '%marriage%' OR p.raw_text LIKE '%wife%' OR p.raw_text LIKE '%husband%' 
+                         OR p.raw_text LIKE '%spouse%' OR p.raw_text LIKE '%koota%' OR p.raw_text LIKE '%vivaha%' 
+                         OR p.raw_text LIKE '%7th house%' OR p.raw_text LIKE '%seventh house%' OR p.raw_text LIKE '%7th lord%' 
+                         OR p.raw_text LIKE '%seventh lord%' OR p.raw_text LIKE '%navamsha%' OR p.raw_text LIKE '%navamsa%' 
+                         OR p.raw_text LIKE '%compatibility%' OR p.raw_text LIKE '%agreement%')
+                """
+                
+            sql += """
                 ORDER BY rank
                 LIMIT ?
-                """,
-                (match_expr, top_k),
-            )
+            """
+            params.append(top_k)
+            
+            cursor.execute(sql, tuple(params))
             rows = cursor.fetchall()
         except Exception as e:
             print(f"Sparse (FTS) search failed: {e}")
@@ -276,13 +300,13 @@ class VedicSearchEngine:
             })
         return results
 
-    def hybrid_search(self, query_text, top_k=5):
+    def hybrid_search(self, query_text, top_k=5, category=None):
         """
         Combine Dense (Semantic) and Sparse (Keyword) search results 
-        using Reciprocal Rank Fusion (RRF)
+        using Reciprocal Rank Fusion (RRF) with optional category filtering
         """
-        dense_results = self.dense_search(query_text, top_k=30)
-        sparse_results = self.sparse_search(query_text, top_k=30)
+        dense_results = self.dense_search(query_text, top_k=30, category=category)
+        sparse_results = self.sparse_search(query_text, top_k=30, category=category)
         
         if not dense_results and not sparse_results:
             return []

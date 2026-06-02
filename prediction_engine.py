@@ -486,7 +486,7 @@ def build_rag_queries(chart, analysis, max_queries=8):
     return out
 
 
-def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, snippet_chars=900):
+def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, snippet_chars=900, category=None):
     """
     Run each query through the hybrid search engine, dedupe by (book, page),
     and return a formatted context string of the top unique passages.
@@ -510,8 +510,8 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
         results = []
         try:
             if vec:
-                results.extend(search_engine.dense_search_with_vector(vec, top_k=per_query))
-            results.extend(search_engine.sparse_search(q, top_k=per_query))
+                results.extend(search_engine.dense_search_with_vector(vec, top_k=per_query, category=category))
+            results.extend(search_engine.sparse_search(q, top_k=per_query, category=category))
         except Exception:
             continue
         # Dedupe within a single query's combined results, keeping best rank
