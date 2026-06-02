@@ -5,7 +5,7 @@ import urllib.request
 import time
 import sys
 
-DB_PATH = "/home/prasanth/vedic_rag/vedic_astrology_rag.db"
+DB_PATH = "/home/prasanth/Vedic_Rag/vedic_astrology_rag.db"
 EMBEDDING_MODEL = "nomic-embed-text"
 OLLAMA_URL = "http://localhost:11434/api/embeddings"
 

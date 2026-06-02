@@ -811,7 +811,7 @@ def clean_and_translate_place(place_name, lang):
             
     return main_place
 
-def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path="/home/prasanth/vedic_rag/birth_chart_report.pdf", lang="en"):
+def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path="/home/prasanth/Vedic_Rag/birth_chart_report.pdf", lang="en"):
     """
     Generate a 2-page highly elegant, scholarly Vedic Astrology Report PDF in selected languages containing
     both Rasi D1 & Navamsha D9 charts side-by-side, Pillaiyar Suzhi & Lord Ganesha Invocation,
@@ -950,7 +950,8 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     draw_page_border_decorations(c, 1, lang)
     
     # 1. Lord Ganesha Icon (Top Center, elegant)
-    ganesha_img_path = "/home/prasanth/vedic_rag/static/assets/lord_vinayaka.png"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    ganesha_img_path = os.path.join(base_dir, "static", "assets", "lord_vinayaka.png")
     if os.path.exists(ganesha_img_path):
         # Center at x = 306 (width=28, height=28) -> x = 292
         c.drawImage(ganesha_img_path, 292, 742, width=28, height=28, mask='auto')

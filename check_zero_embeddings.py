@@ -1,7 +1,7 @@
 import sqlite3
 import struct
 
-DB_PATH = "/home/prasanth/vedic_rag/vedic_astrology_rag.db"
+DB_PATH = "/home/prasanth/Vedic_Rag/vedic_astrology_rag.db"
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()

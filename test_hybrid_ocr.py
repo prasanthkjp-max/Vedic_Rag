@@ -70,7 +70,7 @@ if __name__ == "__main__":
     img = render_page_to_image(pdf_path, 14, dpi=300)
     
     # Save temp image for inspection
-    temp_img_path = "/home/prasanth/vedic_rag/temp_page_14.png"
+    temp_img_path = "/home/prasanth/Vedic_Rag/temp_page_14.png"
     img.save(temp_img_path)
     print(f"Saved temp page image to {temp_img_path}")
     
@@ -90,9 +90,9 @@ if __name__ == "__main__":
     print("--- AI-CLEANED OCR TEXT END ---\n")
     
     # Save both for comparison
-    with open("/home/prasanth/vedic_rag/sample_comparison.txt", "w", encoding="utf-8") as f:
+    with open("/home/prasanth/Vedic_Rag/sample_comparison.txt", "w", encoding="utf-8") as f:
         f.write("=== RAW OCR ===\n")
         f.write(raw_ocr)
         f.write("\n\n=== AI CLEANED ===\n")
         f.write(cleaned_ocr)
-    print("Saved comparison to /home/prasanth/vedic_rag/sample_comparison.txt")
+    print("Saved comparison to /home/prasanth/Vedic_Rag/sample_comparison.txt")
