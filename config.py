@@ -29,7 +29,7 @@ OLLAMA_GENERATE_URL = f"{OLLAMA_HOST}/api/generate"
 # --- Models ---
 EMBEDDING_MODEL = os.environ.get("VEDIC_EMBED_MODEL", "nomic-embed-text")
 EMBEDDING_DIM = int(os.environ.get("VEDIC_EMBED_DIM", "768"))
-DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", "gemma4:31b-cloud")
+DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", "deepseek-v4-pro:cloud")
 
 # --- Timeouts (seconds) ---
 # Embedding calls are quick; LLM generation streams can run for minutes,

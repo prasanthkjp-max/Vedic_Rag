@@ -316,7 +316,7 @@ def query_rag(request: QueryRequest):
     Retrieves relevant pages and streams the AI-generated astrological answer.
     """
     query_text = request.query
-    model_name = request.model
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     
     # Reload engine to get latest pages
     search_engine.reload()
@@ -424,6 +424,7 @@ class AIMarriagePredictRequest(BaseModel):
     female_name: str
     male_place: str
     female_place: str
+    lang: str = "en"
     model: str = DEFAULT_LLM_MODEL
 
 
@@ -525,7 +526,7 @@ def ai_predict(req: AIPredictRequest):
     chart = req.chart_data
     client = req.client_name
     place = req.place_name
-    model_name = req.model
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
 
     # Derive full interpretive analysis (houses, conjunctions, aspects, current
     # dasa/bhukti, gochara, yogas) and retrieve grounding passages from the RAG.
@@ -594,7 +595,17 @@ def ai_predict_marriage(req: AIMarriagePredictRequest):
     female_name = req.female_name
     male_place = req.male_place
     female_place = req.female_place
-    model_name = req.model
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+
+    lang_map = {
+        "en": "English",
+        "ta": "Tamil (தமிழ்)",
+        "te": "Telugu (తెలుగు)",
+        "ml": "Malayalam (മലയാളം)",
+        "kn": "Kannada (ಕನ್ನಡ)",
+        "hi": "Hindi (हिन्दी)"
+    }
+    target_lang = lang_map.get(req.lang, "English")
 
     # Build targeted marriage RAG context
     rag_context = build_marriage_prediction_context(male_chart, female_chart, comp)
@@ -640,6 +651,8 @@ A precise computational analysis of their charts and Nakshatra compatibility is 
 {rag_context}
 ---------------------------------------------
 
+CRITICAL REQUIREMENT: You MUST write the entire response, including headings, labels, sections, and descriptions, in the following language: {target_lang}. Use professional, grammatically correct, and astrologically appropriate phrasing in {target_lang}. Do not include English text unless it represents a standard untranslatable planet or coordinate abbreviation.
+
 Using the classical rules from the retrieved texts, write an exceptionally insightful, accurate marriage compatibility analysis in beautiful Markdown. You MUST address the following requirements in detail:
 1. **Individual Character & Personality Analysis**: Analyze both {male_name}'s and {female_name}'s characteristics based on their respective Ascendants (Lagnas), Moon Signs (Rasis), and Nakshatras. Explain how their individual temperaments will interact.
 2. **Co-habitation & Domestic Life (Living under the same shelter)**: Provide a clear picture of their day-to-day compatibility when living under the same roof. Discuss how their planetary alignments influence household harmony, shared domestic space, and resolution of conflicts.
@@ -648,13 +661,14 @@ Using the classical rules from the retrieved texts, write an exceptionally insig
 5. **Astro-Compatibility Score & Minimum Threshold Instructions**: Provide a final compatibility rating/score based on your holistic analysis (representing it both out of 6 points and as a percentage). State clearly the minimum threshold score required (typically 50% or 3 out of 6 points) for a decent, sustainable, and smooth life run together, and where this couple stands in relation to it.
 
 Structure your analysis as follows:
-1. **Divine Invocation** — a short Sanskrit invocation and blessing for relationship harmony (e.g. invocation of Shiva-Shakti or Lakshmi-Narayana).
-2. **Natives' Individual Characteristics** — detailed personality profiling of both partners.
-3. **Koota Agreement & Matching Calculations** — explaining each of the Porutham points and calculation results.
-4. **Co-habitation & Domestic Life Under the Same Roof** — how they will live together.
-5. **Dasa Alignments & Timing of Marriage** — timing of marriage and running dasa compatibility.
-6. **Overall Compatibility Score, Minimum Threshold, & Final Verdict** — include clear instructions on the minimum score needed for a decent run and your final spiritual recommendation.
-7. **Remedies (Pariharas)** — practical remedies for any discrepancies or doshas.
+1. **Divine Invocation** (in {target_lang}) — a short Sanskrit invocation and blessing for relationship harmony.
+2. **Natives' Individual Characteristics** (in {target_lang}) — detailed personality profiling of both partners.
+3. **Koota Agreement & Matching Calculations** (in {target_lang}) — explaining each of the Porutham points and calculation results.
+4. **Co-habitation & Domestic Life Under the Same Roof** (in {target_lang}) — how they will live together.
+5. **Dasa Alignments & Timing of Marriage** (in {target_lang}) — timing of marriage and running dasa compatibility.
+6. **Overall Compatibility Score, Minimum Threshold, & Final Verdict** (in {target_lang}) — include clear instructions on the minimum score needed for a decent run and your final spiritual recommendation.
+7. **Remedies (Pariharas)** (in {target_lang}) — practical remedies for any discrepancies or doshas.
+8. **Frequently Asked Questions (FAQ)** (in {target_lang}) — You MUST add exactly 4 highly personalized, relevant FAQs regarding this couple's bonding, covering their prosperity, children, wealth, and societal status based on their specific chart placements and transits. Format each question on its own line starting exactly with the characters "Q: " (do not translate or modify the "Q: " prefix) followed by the question text. Format each answer on the next line starting exactly with the characters "A: " (do not translate or modify the "A: " prefix) followed by the answer text.
 
 Be authoritative, compassionate, and precise. Start directly with the invocation:
 """
@@ -761,7 +775,7 @@ def ai_predict_chat(req: AIChatRequest):
     client = req.client_name
     place = req.place_name
     query_text = req.query
-    model_name = req.model
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
 
     # Derive full interpretive analysis and retrieve grounding passages. The
     # user's own question is added as the first RAG query so the most relevant

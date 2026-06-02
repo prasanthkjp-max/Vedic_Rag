@@ -1656,31 +1656,31 @@
                             <i class="fa-solid fa-mars"></i> <span id="lbl-male-partner-title">Male Partner Details</span>
                         </h4>
                         <div class="input-group">
-                            <label>Full Name</label>
+                            <label id="lbl-m-name-txt">Full Name</label>
                             <input type="text" id="in-m-name" value="Lord Shiva">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label>Birth Date</label>
+                                <label id="lbl-m-dob-txt">Birth Date</label>
                                 <input type="date" id="in-m-dob" value="1995-05-15">
                             </div>
                             <div class="input-group">
-                                <label>Birth Time</label>
+                                <label id="lbl-m-tob-txt">Birth Time</label>
                                 <input type="time" id="in-m-tob" value="10:30">
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label>Longitude (Degrees East)</label>
+                                <label id="lbl-m-lon-txt">Longitude (Degrees East)</label>
                                 <input type="number" step="0.0001" id="in-m-lon" value="80.2700">
                             </div>
                             <div class="input-group">
-                                <label>Latitude (Degrees North)</label>
+                                <label id="lbl-m-lat-txt">Latitude (Degrees North)</label>
                                 <input type="number" step="0.0001" id="in-m-lat" value="13.0800">
                             </div>
                         </div>
                         <div class="input-group" style="position: relative;">
-                            <label>Place of Birth</label>
+                            <label id="lbl-m-pob-txt">Place of Birth</label>
                             <input type="text" id="in-m-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('male')">
                             <div id="m-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
@@ -1692,31 +1692,31 @@
                             <i class="fa-solid fa-venus"></i> <span id="lbl-female-partner-title">Female Partner Details</span>
                         </h4>
                         <div class="input-group">
-                            <label>Full Name</label>
+                            <label id="lbl-f-name-txt">Full Name</label>
                             <input type="text" id="in-f-name" value="Goddess Parvati">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label>Birth Date</label>
+                                <label id="lbl-f-dob-txt">Birth Date</label>
                                 <input type="date" id="in-f-dob" value="1996-08-20">
                             </div>
                             <div class="input-group">
-                                <label>Birth Time</label>
+                                <label id="lbl-f-tob-txt">Birth Time</label>
                                 <input type="time" id="in-f-tob" value="14:15">
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label>Longitude (Degrees East)</label>
+                                <label id="lbl-f-lon-txt">Longitude (Degrees East)</label>
                                 <input type="number" step="0.0001" id="in-f-lon" value="80.2700">
                             </div>
                             <div class="input-group">
-                                <label>Latitude (Degrees North)</label>
+                                <label id="lbl-f-lat-txt">Latitude (Degrees North)</label>
                                 <input type="number" step="0.0001" id="in-f-lat" value="13.0800">
                             </div>
                         </div>
                         <div class="input-group" style="position: relative;">
-                            <label>Place of Birth</label>
+                            <label id="lbl-f-pob-txt">Place of Birth</label>
                             <input type="text" id="in-f-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('female')">
                             <div id="f-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
@@ -1727,7 +1727,7 @@
                 <!-- Shared Settings & Button -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; border-top: 1px solid rgba(226, 232, 240, 0.1); padding-top: 20px;">
                     <div class="input-group">
-                        <label>Ayanamsa System</label>
+                        <label id="lbl-m-ayan-txt">Ayanamsa System</label>
                         <select id="in-marriage-ayanamsa">
                             <option value="Lahiri">Lahiri (Chitra Paksha)</option>
                             <option value="Raman">Raman</option>
@@ -1737,19 +1737,19 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Calculation System</label>
+                        <label id="lbl-m-sys-txt">Calculation System</label>
                         <select id="in-marriage-system">
                             <option value="Parashara">Parashara (Classic)</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Dasa Timing Scale</label>
+                        <label id="lbl-m-time-txt">Dasa Timing Scale</label>
                         <select id="in-marriage-timing">
                             <option value="Vimshottari">Vimshottari (120 Years)</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Visual Chart Style</label>
+                        <label id="lbl-m-style-txt">Visual Chart Style</label>
                         <select id="in-marriage-style">
                             <option value="south">South Indian Style</option>
                             <option value="north">North Indian Style</option>
@@ -1798,36 +1798,34 @@
                     <!-- Compatibility Agreement List -->
                     <div class="table-container" style="margin-bottom: 30px;">
                         <h4 style="font-family: var(--font-heading); margin-bottom: 12px; color: var(--accent-gold); font-size: 13px;">
-                            <i class="fa-solid fa-list-check"></i> Koota Porutham Agreement Report
+                            <i class="fa-solid fa-list-check"></i> <span id="lbl-marriage-report-header">Koota Porutham Agreement Report</span>
                         </h4>
-                        <div id="marriage-details-list" style="color: #CBD5E0;">
-                            <!-- Rendered dynamically -->
+                        <div class="astro-table-container">
+                            <table class="astro-table">
+                                <thead>
+                                    <tr>
+                                        <th id="th-marriage-agreement" style="font-size: 12.5px; font-weight: 700; padding: 12px 14px;">Agreement Rule (Porutham)</th>
+                                        <th id="th-marriage-status" style="text-align: right; padding-right: 22px; font-size: 12.5px; font-weight: 700; padding: 12px 14px;">Match Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="marriage-details-list-body">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
                     <!-- AI Predictions Section -->
                     <div style="border-top: 1px solid rgba(226, 232, 240, 0.1); padding-top: 25px;">
                         <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-brain"></i> Ganesha Astro-AI Relationship Matching Reading
+                            <i class="fa-solid fa-brain"></i> <span id="lbl-marriage-ai-reading">Ganesha Astro-AI Relationship Matching Reading</span>
                         </h4>
-                        
-                        <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
-                            <div class="input-group" style="margin: 0; width: 220px;">
-                                <select id="in-marriage-model" style="padding: 8px; background: #2d3748; color: white; border: 1px solid #4a5568; border-radius: 4px;">
-                                    <option value="deepseek-r1:8b">DeepSeek R1 (8B)</option>
-                                    <option value="gemma4:31b-cloud">Gemma 4 (31B Cloud)</option>
-                                </select>
-                            </div>
-                            <button class="calculate-btn" onclick="generateMarriageAICompatibility()" style="padding: 10px 20px; font-size: 12px; margin: 0; background: var(--btn-bg); border-radius: 4px; border: none; cursor: pointer;">
-                                Ask Ganesha for Relationship Prediction
-                            </button>
-                        </div>
 
                         <!-- Chat stream container -->
-                        <div class="ai-stream-card" id="marriage-ai-output" style="min-height: 200px; max-height: 500px; overflow-y: auto; background: rgba(10, 15, 30, 0.7); border: 1px dashed rgba(226,232,240,0.15); border-radius: 8px; padding: 15px; font-size: 12px; line-height: 1.6; color: #E2E8F0;">
-                            <p style="color: var(--text-secondary); text-align: center; margin-top: 80px;">
+                        <div class="ai-stream-card" id="marriage-ai-output" style="min-height: 200px; max-height: 600px; overflow-y: auto; background: var(--bg-darker); border: 1px dashed var(--border-gold); border-radius: 8px; padding: 20px; font-size: 13px; line-height: 1.7; color: var(--text-primary);">
+                            <p id="lbl-marriage-ai-welcome" style="color: var(--text-secondary); text-align: center; margin-top: 80px;">
                                 <i class="fa-solid fa-yin-yang" style="font-size: 24px; color: var(--accent-gold); display: block; margin-bottom: 8px;"></i>
-                                Click the button above to request a personalized marriage prediction from Vedic RAG AI.
+                                Fill the details and click Calculate Compatibility to get the matching report and Ganesha prediction.
                             </p>
                         </div>
                     </div>
@@ -1945,6 +1943,23 @@
 
         const localization = {
             en: {
+                lbl_full_name: "Full Name",
+                lbl_birth_date: "Birth Date",
+                lbl_birth_time: "Birth Time",
+                lbl_longitude: "Longitude (Degrees East)",
+                lbl_latitude: "Latitude (Degrees North)",
+                lbl_place_of_birth: "Place of Birth",
+                lbl_ayanamsa_system: "Ayanamsa System",
+                lbl_calculation_system: "Calculation System",
+                lbl_dasa_timing_scale: "Dasa Timing Scale",
+                lbl_btn_calculate: "Calculate Compatibility",
+                lbl_compatibility_result: "Compatibility Matching Result",
+                lbl_koota_report: "Koota Porutham Agreement Report",
+                lbl_marriage_desc: "Calculated across 6 primary Koota Poruthams according to sidereal Thirukanitha placements. Click a partner's name below to load their detailed single chart report.",
+                lbl_marriage_ai_welcome: "Fill the details and click Calculate Compatibility to get the matching report and Ganesha prediction.",
+                th_marriage_agreement: "Agreement Rule (Porutham)",
+                th_marriage_status: "Match Status",
+                lbl_marriage_ai_loading: "Consulting relationship scripture RAG database and streaming Ganesha reading...",
                 title: "Vedic Astrology",
                 subtitle: "Vedic Astronomical Panchangam & AI Portal",
                 lbl_home_calendar: "Astronomical Panchangam Calendar",
@@ -1955,6 +1970,7 @@
                 lbl_marriage_title: "Marriage Compatibility & Harmony",
                 lbl_male_partner_title: "Male Partner Details",
                 lbl_female_partner_title: "Female Partner Details",
+                lbl_marriage_ai_reading: "Ganesha Astro-AI Relationship Matching Reading",
                 title_gochara: "Gochara Transits",
                 desc_gochara: "Today's sidereal transit planetary map in South Indian chart style.",
                 tamil_year: "Tamil Year",
@@ -1998,6 +2014,23 @@
                 jeevan_label: "Jeevan (Life of the Day)"
             },
             ta: {
+                lbl_full_name: "முழு பெயர்",
+                lbl_birth_date: "பிறந்த தேதி",
+                lbl_birth_time: "பிறந்த நேரம்",
+                lbl_longitude: "தீர்க்கரேகை (கிழக்கு)",
+                lbl_latitude: "அட்சரேகை (வடக்கு)",
+                lbl_place_of_birth: "பிறந்த ஊர்",
+                lbl_ayanamsa_system: "அயனாம்ச முறை",
+                lbl_calculation_system: "கணித முறை",
+                lbl_dasa_timing_scale: "தசா கால அளவுகோல்",
+                lbl_btn_calculate: "பொருத்தம் காண்க",
+                lbl_compatibility_result: "திருமண பொருத்தம் முடிவு",
+                lbl_koota_report: "கூட்ட பொருத்தம் உடன்பாடு அறிக்கை",
+                lbl_marriage_desc: "சித்திர பக்ஷ திருக்கணித கிரக நிலைகளின் அடிப்படையில் 6 முக்கிய பொருத்தங்கள் கணக்கிடப்பட்டுள்ளன. தனி நபர் விரிவான ஜாதகத்தைப் பார்க்க மணமகன்/மணமகள் பெயரை அழுத்தவும்.",
+                lbl_marriage_ai_welcome: "விவரங்களை உள்ளிட்டு, பொருத்தம் மற்றும் பிள்ளையார் ஜோதிட AI பலன்களைப் பெற 'பொருத்தம் காண்க' பொத்தானை அழுத்தவும்.",
+                th_marriage_agreement: "பொருத்தம்",
+                th_marriage_status: "முடிவு",
+                lbl_marriage_ai_loading: "உறவுகள் பற்றிய ஜோதிட RAG தரவுத்தளத்தை ஆய்வு செய்து பிள்ளையார் பலன்களைப் பெறுகிறது...",
                 title: "வைதிக ஜோதிடம்",
                 subtitle: "வைதிக வானியல் பஞ்சாங்கம் & AI போர்டல்",
                 lbl_home_calendar: "வானியல் பஞ்சாங்க காலண்டர்",
@@ -2011,6 +2044,7 @@
                 lbl_marriage_title: "திருமண பொருத்தம் & இணக்கம்",
                 lbl_male_partner_title: "வரன் விவரங்கள் (ஆண்)",
                 lbl_female_partner_title: "வது விவரங்கள் (பெண்)",
+                lbl_marriage_ai_reading: "பிள்ளையார் ஜோதிட AI திருமண பொருத்தம்",
                 tamil_month: "தமிழ் தேதி",
                 tithi: "திதி",
                 naks: "நட்சத்திரம்",
@@ -2051,6 +2085,23 @@
                 jeevan_label: "ஜீவன் (நாள் உயிர்)"
             },
             te: {
+                lbl_full_name: "పూర్తి పేరు",
+                lbl_birth_date: "పుట్టిన తేదీ",
+                lbl_birth_time: "పుట్టిన సమయం",
+                lbl_longitude: "రేఖాంశం (తూర్పు)",
+                lbl_latitude: "అక్షాంశం (ఉత్తరం)",
+                lbl_place_of_birth: "పుట్టిన స్థలం",
+                lbl_ayanamsa_system: "అయనాంశ పద్ధతి",
+                lbl_calculation_system: "గణన పద్ధతి",
+                lbl_dasa_timing_scale: "దశా కాల ప్రమాణం",
+                lbl_btn_calculate: "పొంతన లెక్కింపు",
+                lbl_compatibility_result: "వివాహ పొంతన ఫలితం",
+                lbl_koota_report: "కూట పొంతనల నివేదిక",
+                lbl_marriage_desc: "తిరుకణిత సిద్ధాంత గ్రహ స్థితుల ఆధారంగా 6 ప్రధాన కూట పొంతనలు లెక్కించబడ్డాయి. భాగస్వామి పూర్తి జాతకం చూడటానికి వారి పేరుపై క్లిక్ చేయండి.",
+                lbl_marriage_ai_welcome: "వివరాలను పూరించి, పొంతన నివేదిక మరియు గణేశ జ్యోతిష్య AI ఫలాలను పొందడానికి 'పొంతన లెక్కింపు' బటన్‌పై క్లిక్ చేయండి.",
+                th_marriage_agreement: "పొంతన నియమం",
+                th_marriage_status: "ఫలితం",
+                lbl_marriage_ai_loading: "సంబంధాల శాస్త్ర RAG డేటాబేస్ నుండి పరిశీలించి గణేశ వివాహ ఫలాలను సేకరిస్తోంది...",
                 title: "వైదిక జ్యోతిష్యం",
                 subtitle: "వైదిక ఖగోళ పంచాంగం & AI పోర్టల్",
                 lbl_home_calendar: "ఖగోళ పంచాంగ క్యాలెండర్",
@@ -2061,6 +2112,7 @@
                 lbl_marriage_title: "వివాహ పొంతన & వైవాహిక బంధం",
                 lbl_male_partner_title: "వరుడి వివరాలు (పురుషుడు)",
                 lbl_female_partner_title: "వధువు వివరాలు (స్త్రీ)",
+                lbl_marriage_ai_reading: "గణేశ జ్యోతిష్య AI వైవాహిక పొంతన ఫలాలు",
                 title_gochara: "నేటి గోచార గ్రహాలు",
                 desc_gochara: "నేటి ఖగోళ గ్రహ స్థితులు దక్షిణ భారత జాతక పద్ధతిలో.",
                 tamil_year: "తమిళ సంవత్సరం",
@@ -2104,6 +2156,23 @@
                 jeevan_label: "జీవం (రోజు ప్రాణం)"
             },
             ml: {
+                lbl_full_name: "പൂർണ്ണ നാമം",
+                lbl_birth_date: "ജനന തീയതി",
+                lbl_birth_time: "ജനന സമയം",
+                lbl_longitude: "രേഖാംശം (കിഴക്ക്)",
+                lbl_latitude: "അക്ഷാംശം (വടക്ക്)",
+                lbl_place_of_birth: "ജനന സ്ഥലം",
+                lbl_ayanamsa_system: "അയനാംശ സമ്പ്രദായം",
+                lbl_calculation_system: "ഗണിത സമ്പ്രദായം",
+                lbl_dasa_timing_scale: "ദശാ കാല അളവ്",
+                lbl_btn_calculate: "പൊരുത്തം നോക്കുക",
+                lbl_compatibility_result: "വിവാഹ പൊരുത്ത ഫലം",
+                lbl_koota_report: "കൂട്ട പൊരുത്ത ഉഭയസമ്മത റിപ്പോർട്ട്",
+                lbl_marriage_desc: "തിരുക്കണിത ഗ്രഹ നിലകളുടെ അടിസ്ഥാനത്തിൽ 6 പ്രധാന പൊരുത്തങ്ങൾ കണക്കാക്കിയിരിക്കുന്നു. പങ്കാളിയുടെ വിശദമായ ജാതകം കാണുന്നതിന് അവരുടെ പേരിൽ ക്ലിക്ക് ചെയ്യുക.",
+                lbl_marriage_ai_welcome: "വിവരങ്ങൾ നൽകി പൊരുത്ത റിപ്പോർട്ടും ഗണേശ ജ്യോതിഷ AI പ്രവചനവും ലഭിക്കാൻ 'പൊരുത്തം നോക്കുക' ബട്ടൺ അമർത്തുക.",
+                th_marriage_agreement: "പൊരുത്ത നിയമം",
+                th_marriage_status: "ഫലം",
+                lbl_marriage_ai_loading: "ബന്ധങ്ങളെക്കുറിച്ചുള്ള ജ്യോതിഷ RAG ഡാറ്റാബേസ് പരിശോധിച്ച് ഗണേശ പ്രവചനം രേഖപ്പെടുത്തുന്നു...",
                 title: "വൈദിക ജ്യോതിഷം",
                 subtitle: "വൈദിക ജ്യോതിശാസ്ത്ര പഞ്ചാംഗം & AI പോർട്ടൽ",
                 lbl_home_calendar: "ജ്യോതിശാസ്ത്ര പഞ്ചാംഗ കലണ്ടർ",
@@ -2114,6 +2183,7 @@
                 lbl_marriage_title: "വിവാഹ പൊരുത്തവും കുടുംബ ഐക്യവും",
                 lbl_male_partner_title: "വരന്റെ വിവരങ്ങൾ (പുരുഷൻ)",
                 lbl_female_partner_title: "വധുവിന്റെ വിവരങ്ങൾ (സ്ത്രീ)",
+                lbl_marriage_ai_reading: "ഗണേശ ജ്യോതിഷ AI വൈവാഹിക പൊരുത്ത ഫലങ്ങൾ",
                 title_gochara: "ഇന്നത്തെ ഗോചാര ഗ്രഹങ്ങൾ",
                 desc_gochara: "ഇന്നത്തെ ഗ്രഹ നിലകൾ ദക്ഷിണേന്ത്യൻ ജാതക ശൈലിയിൽ.",
                 tamil_year: "തമിഴ് വർഷം",
@@ -2157,6 +2227,23 @@
                 jeevan_label: "ജീവൻ (ദിവസത്തെ ജീവൻ)"
             },
             kn: {
+                lbl_full_name: "ಪೂರ್ಣ ಹೆಸರು",
+                lbl_birth_date: "ಹುಟ್ಟಿದ ದಿನಾಂಕ",
+                lbl_birth_time: "ಹುಟ್ಟಿದ ಸಮಯ",
+                lbl_longitude: "ರೇಖಾಂಶ (ಪೂರ್ವ)",
+                lbl_latitude: "ಅಕ್ಷಾಂಶ (ಉತ್ತರ)",
+                lbl_place_of_birth: "ಹುಟ್ಟಿದ ಸ್ಥಳ",
+                lbl_ayanamsa_system: "ಅಯನಾಂಶ ಪದ್ಧತಿ",
+                lbl_calculation_system: "ಗಣಿತ ಪದ್ಧತಿ",
+                lbl_dasa_timing_scale: "ದಶಾ ಕಾಲ ಪ್ರಮಾಣ",
+                lbl_btn_calculate: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಾಚಾರ",
+                lbl_compatibility_result: "ವಿವಾಹ ಹೊಂದಾಣಿಕೆ ಫಲಿತಾಂಶ",
+                lbl_koota_report: "ಕೂಟ ಹೊಂದಾಣಿಕೆ ಒಪ್ಪಂದದ ವರದಿ",
+                lbl_marriage_desc: "ತಿರುಕಣಿತ ಗ್ರಹ ಸ್ಥಿತಿಗಳ ಆಧಾರದ ಮೇಲೆ 6 ಪ್ರಮುಖ ಕೂಟ ಹೊಂದಾಣಿಕೆಗಳನ್ನು ಲೆಕ್ಕಹಾಕಲಾಗಿದೆ. ಪಾಲುದಾರರ ವಿವರವಾದ ಜಾತಕ ವರದಿ ನೋಡಲು ಹೆಸರಿನ ಮೇಲೆ ಕ್ಲಿಕ್ ಮಾಡಿ.",
+                lbl_marriage_ai_welcome: "ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ ಮತ್ತು ಹೊಂದಾಣಿಕೆ ವರದಿ ಹಾಗೂ ಗಣೇಶ ಜ್ಯೋತಿಷ್ಯ AI ಫಲಗಳನ್ನು ಪಡೆಯಲು 'ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಾಚಾರ' ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ.",
+                th_marriage_agreement: "ಹೊಂದಾಣಿಕೆ ನಿಯಮ",
+                th_marriage_status: "ಫಲಿತಾಂಶ",
+                lbl_marriage_ai_loading: "ಸಂಬಂಧಗಳ ಶಾಸ್ತ್ರ RAG ಡೇಟಾಬೇಸ್‌ನಿಂದ ಪರಿಶೀಲಿಸಿ ಗಣೇಶ ವಿವಾಹ ಫಲಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...",
                 title: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ",
                 subtitle: "ವೈದಿಕ ಖಗೋಳ ಪಂಚಾಂಗ & AI ಪೋರ್ಟಲ್",
                 lbl_home_calendar: "ಖಗೋಳ ಪಂಚಾಂಗ ಕ್ಯಾಲೆಂಡರ್",
@@ -2167,6 +2254,7 @@
                 lbl_marriage_title: "ವಿವಾಹ ಹೊಂದಾಣಿಕೆ ಮತ್ತು ದಾಂಪತ್ಯ ಸುಖ",
                 lbl_male_partner_title: "ವರನ ವಿವರಗಳು (ಪುರುಷ)",
                 lbl_female_partner_title: "ವಧುವಿನ ವಿವರಗಳು (ಸ್ತ್ರೀ)",
+                lbl_marriage_ai_reading: "ಗಣೇಶ ಜ್ಯೋತಿಷ್ಯ AI ವೈವಾಹಿಕ ಹೊಂದಾಣಿಕೆ ಫಲಗಳು",
                 title_gochara: "ಇಂದಿನ ಗೋಚಾರ ಗ್ರಹಗಳು",
                 desc_gochara: "ಇಂದಿನ ಗ್ರಹ ಸ್ಥಿತಿಗಳು ದಕ್ಷಿಣ ಭಾರತದ ಜಾತಕ ಶೈಲಿಯಲ್ಲಿ.",
                 tamil_year: "ತಮಿಳು ವರ್ಷ",
@@ -2210,6 +2298,23 @@
                 jeevan_label: "ಜೀವ (ದಿನದ ಪ್ರಾಣ)"
             },
             hi: {
+                lbl_full_name: "पूरा नाम",
+                lbl_birth_date: "जन्म तिथि",
+                lbl_birth_time: "जन्म समय",
+                lbl_longitude: "रेखांश (पूर्व)",
+                lbl_latitude: "अक्षांश (उत्तर)",
+                lbl_place_of_birth: "जन्म स्थान",
+                lbl_ayanamsa_system: "अयनांश पद्धति",
+                lbl_calculation_system: "गणना पद्धति",
+                lbl_dasa_timing_scale: "दशा काल गणना",
+                lbl_btn_calculate: "कुण्डली मिलान करें",
+                lbl_compatibility_result: "मिलान का परिणाम",
+                lbl_koota_report: "अष्टकूट/कूटा मिलान रिपोर्ट",
+                lbl_marriage_desc: "तुलनात्मक विश्लेषण सिद्ध सूर्य सिद्धांत और सिडरेल तिरुकनिथा गणना के आधार पर किया गया है। जेंडर-विशिष्ट पूर्ण कुंडली देखने के लिए नाम पर क्लिक करें।",
+                lbl_marriage_ai_welcome: "विवरण दर्ज करें और 'कुण्डली मिलान करें' बटन पर क्लिक करके मिलान रिपोर्ट एवं गणेश ज्योतिष AI फलादेश प्राप्त करें।",
+                th_marriage_agreement: "मिलान नियम",
+                th_marriage_status: "स्थिति",
+                lbl_marriage_ai_loading: "सम्बन्धों के शास्त्र RAG डेटाबेस से संदर्भ प्राप्त कर गणेश फलादेश तैयार किया जा रहा है...",
                 title: "वैदिक ज्योतिष",
                 subtitle: "वैदिक खगोलीय पंचांग एवं AI पोर्टल",
                 lbl_home_calendar: "खगोलीय पंचांग कैलेंडर",
@@ -2220,6 +2325,7 @@
                 lbl_marriage_title: "कुण्डली मिलान एवं वैवाहिक सुख",
                 lbl_male_partner_title: "वर का विवरण (वर)",
                 lbl_female_partner_title: "वधू का विवरण (वधू)",
+                lbl_marriage_ai_reading: "गणेश ज्योतिष AI कुंडली मिलान फल",
                 title_gochara: "आज के गोचर ग्रह",
                 desc_gochara: "आज की खगोलीय ग्रह स्थिति दक्षिण भारतीय कुंडली शैली में।",
                 tamil_year: "तमिल वर्ष",
@@ -2749,6 +2855,51 @@
             if (malePartnerTitle) malePartnerTitle.innerText = dict.lbl_male_partner_title || "Male Partner Details";
             const femalePartnerTitle = document.getElementById('lbl-female-partner-title');
             if (femalePartnerTitle) femalePartnerTitle.innerText = dict.lbl_female_partner_title || "Female Partner Details";
+            const marriageAiReading = document.getElementById('lbl-marriage-ai-reading');
+            if (marriageAiReading) marriageAiReading.innerText = dict.lbl_marriage_ai_reading || "Ganesha Astro-AI Relationship Matching Reading";
+
+            // Translate marriage tab labels dynamically
+            const mLabels = {
+                "lbl-m-name-txt": dict.lbl_full_name || "Full Name",
+                "lbl-m-dob-txt": dict.lbl_birth_date || "Birth Date",
+                "lbl-m-tob-txt": dict.lbl_birth_time || "Birth Time",
+                "lbl-m-lon-txt": dict.lbl_longitude || "Longitude (Degrees East)",
+                "lbl-m-lat-txt": dict.lbl_latitude || "Latitude (Degrees North)",
+                "lbl-m-pob-txt": dict.lbl_place_of_birth || "Place of Birth",
+                "lbl-f-name-txt": dict.lbl_full_name || "Full Name",
+                "lbl-f-dob-txt": dict.lbl_birth_date || "Birth Date",
+                "lbl-f-tob-txt": dict.lbl_birth_time || "Birth Time",
+                "lbl-f-lon-txt": dict.lbl_longitude || "Longitude (Degrees East)",
+                "lbl-f-lat-txt": dict.lbl_latitude || "Latitude (Degrees North)",
+                "lbl-f-pob-txt": dict.lbl_place_of_birth || "Place of Birth",
+                "lbl-m-ayan-txt": dict.lbl_ayanamsa_system || "Ayanamsa System",
+                "lbl-m-sys-txt": dict.lbl_calculation_system || "Calculation System",
+                "lbl-m-time-txt": dict.lbl_dasa_timing_scale || "Dasa Timing Scale",
+                "lbl-m-style-txt": dict.lbl_chart_style || "Visual Chart Style",
+                "lbl-marriage-result-header": dict.lbl_compatibility_result || "Compatibility Matching Result",
+                "lbl-marriage-desc": dict.lbl_marriage_desc || "Calculated across...",
+                "lbl-marriage-report-header": dict.lbl_koota_report || "Koota Porutham Agreement Report",
+                "th-marriage-agreement": dict.th_marriage_agreement || "Agreement Rule (Porutham)",
+                "th-marriage-status": dict.th_marriage_status || "Match Status"
+            };
+
+            for (const [id, val] of Object.entries(mLabels)) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            }
+
+            const btnGenMarriage = document.getElementById('btn-generate-marriage');
+            if (btnGenMarriage && btnGenMarriage.innerText !== "Calculating Alignments...") {
+                btnGenMarriage.innerText = dict.lbl_btn_calculate || "Calculate Compatibility";
+            }
+
+            const aiWelcome = document.getElementById('lbl-marriage-ai-welcome');
+            if (aiWelcome) {
+                aiWelcome.innerHTML = `
+                    <i class="fa-solid fa-yin-yang" style="font-size: 24px; color: var(--accent-gold); display: block; margin-bottom: 8px;"></i>
+                    ${dict.lbl_marriage_ai_welcome || "Fill the details and click Calculate Compatibility to get the matching report and Ganesha prediction."}
+                `;
+            }
             document.getElementById('lbl-title-panch').innerText = dict.title_panch;
             document.getElementById('lbl-title-gochara').innerText = dict.title_gochara;
             document.getElementById('lbl-desc-gochara').innerText = dict.desc_gochara;
@@ -4275,7 +4426,7 @@
                         client_name: name,
                         place_name: pob,
                         query: messageText,
-                        model: 'gemma4:31b-cloud'
+                        model: 'deepseek-v4-pro:cloud'
                     })
                 });
 
@@ -4371,6 +4522,146 @@
         let calculatedMaleChartData = null;
         let calculatedFemaleChartData = null;
         let calculatedCompatibility = null;
+
+                function translateMarriageDetail(key, val, lang) {
+            const labels = {
+                en: {
+                    dina: "Dina (Health/Longevity)",
+                    gana: "Gana (Mental Temperament)",
+                    rajju: "Rajju (Longevity of Husband)",
+                    vedha: "Vedha (No Affliction/Obstacles)",
+                    rasi: "Rasi (Zodiac Harmony)",
+                    lord: "Rasiyadhipathi (Lords Friendship)",
+                    match: "✔ Match",
+                    mismatch: "✘ Mismatch"
+                },
+                ta: {
+                    dina: "தினப் பொருத்தம் (ஆரோக்கியம்/ஆயுள்)",
+                    gana: "கணப் பொருத்தம் (மனக்குணம்)",
+                    rajju: "ரஜ்ஜுப் பொருத்தம் (மாங்கல்ய பலம்)",
+                    vedha: "வேதைப் பொருத்தம் (தோஷமின்மை)",
+                    rasi: "ராசிப் பொருத்தம் (குடும்ப இணக்கம்)",
+                    lord: "ராசியதிபதி பொருத்தம் (கிரக நட்பு)",
+                    match: "✔ பொருத்தம் உண்டு",
+                    mismatch: "✘ பொருத்தம் இல்லை"
+                },
+                te: {
+                    dina: "దిన పొంతన (ఆరోగ్యం/ఆయుష్షు)",
+                    gana: "గణ పొంతన (మానసిక గుణం)",
+                    rajju: "రజ్జు పొంతన (మాంగల్య బలం)",
+                    vedha: "వేధ పొంతన (దోష నివారణ)",
+                    rasi: "రాశి పొంతన (కుటుంబ సామరస్యం)",
+                    lord: "రాశ్యాధిపతి పొంతన (గ్రహ మైత్రి)",
+                    match: "✔ పొంతన ఉన్నది",
+                    mismatch: "✘ పొంతన లేదు"
+                },
+                ml: {
+                    dina: "ദിന പൊരുത്തം (ആരോഗ്യം/ആയുസ്സ്)",
+                    gana: "ഗണ പൊരുത്തം (മനക്കുണം)",
+                    rajju: "രജ്ജു പൊരുത്തം (മാംഗല്യ ബലം)",
+                    vedha: "വേധ പൊരുത്തം (ദോഷമില്ലായ്മ)",
+                    rasi: "രാശി പൊരുത്തം (കുടുംബ ഐക്യം)",
+                    lord: "രാശ്യാധിപതി പൊരുത്തം (ഗ്രഹ മൈത്രി)",
+                    match: "✔ പൊരുത്തമുണ്ട്",
+                    mismatch: "✘ പൊരുത്തമില്ല"
+                },
+                kn: {
+                    dina: "ದಿನ ಹೊಂದಾಣಿಕೆ (ಆರೋಗ್ಯ/ಆಯುಷ್ಯ)",
+                    gana: "ಗಣ ಹೊಂದಾಣಿಕೆ (ಗುಣ ಸ್ವಭಾವ)",
+                    rajju: "ರಜ್ಜು ಹೊಂದಾಣಿಕೆ (ಮಾಂಗಲ್ಯ ಬಲ)",
+                    vedha: "ವೇಧ ಹೊಂದಾಣಿಕೆ (ದೋಷ ನಿವಾರಣೆ)",
+                    rasi: "ರಾಶಿ ಹೊಂದಾಣಿಕೆ (ಕುಟುಂಬ ಸಾಮರಸ್ಯ)",
+                    lord: "ರಾಶ್ಯಾಧಿಪತಿ ಹೊಂದಾಣಿಕೆ (ಗ್ರಹ ಮೈತ್ರಿ)",
+                    match: "✔ ಹೊಂದಾಣಿಕೆ ಇದೆ",
+                    mismatch: "✘ ಹೊಂದಾಣಿಕೆ ಇಲ್ಲ"
+                },
+                hi: {
+                    dina: "दिन मिलान (स्वास्थ्य और दीर्घायु)",
+                    gana: "गण मिलान (मानसिक स्वभाव)",
+                    rajju: "रज्जु मिलान (पति की दीर्घायु)",
+                    vedha: "वेध मिलान (बाधाओं का अभाव)",
+                    rasi: "राशि मिलान (पारिवारिक सद्भाव)",
+                    lord: "राश्याधिपति मिलान (ग्रह मैत्री)",
+                    match: "✔ मिलान उत्तम",
+                    mismatch: "✘ मिलान नहीं"
+                }
+            };
+
+            const terms = {
+                en: { Deva: "Deva", Manushya: "Manushya", Rakshasa: "Rakshasa", Feet: "Feet", Thighs: "Thighs", Navel: "Navel", Neck: "Neck", Head: "Head" },
+                ta: { Deva: "தேவ கணம்", Manushya: "மனுஷ கணம்", Rakshasa: "ராட்சஸ கணம்", Feet: "பாத ரஜ்ஜு", Thighs: "தொடை ரஜ்ஜு", Navel: "தொப்புள் ரஜ்ஜு", Neck: "கழுத்து ரஜ்ஜு", Head: "சிரசு ரஜ்ஜு" },
+                te: { Deva: "దేవ గణము", Manushya: "మనుష్య గణము", Rakshasa: "రాక్షస గణము", Feet: "పాద రజ్జు", Thighs: "ఊరు (తొడ) రజ్జు", Navel: "నాభి (బొడ్డు) రజ్జు", Neck: "కంఠ (మెడ) రజ్జు", Head: "శిరస్సు రజ్జు" },
+                ml: { Deva: "ദേവ ഗണം", Manushya: "മനുഷ്യ ഗണം", Rakshasa: "രാക്ഷസ ഗണം", Feet: "പാദ രജ്ജു", Thighs: "ഊരു രജ്ജു", Navel: "നാഭി രജ്ജു", Neck: "കണ്ഠ രജ്ജു", Head: "ശിരസ്സ് രജ്ജു" },
+                kn: { Deva: "ದೇವ ಗಣ", Manushya: "ಮನುಷ್ಯ ಗಣ", Rakshasa: "ರಾಕ್ಷಸ ಗಣ", Feet: "ಪಾದ ರಜ್ಜು", Thighs: "ಊರು ರಜ್ಜು", Navel: "ನಾಭಿ ರಜ್ಜು", Neck: "ಕಂಠ ರಜ್ಜು", Head: "ಶಿರಸ್ಸು ರಜ್ಜು" },
+                hi: { Deva: "देव गण", Manushya: "मनुष्य गण", Rakshasa: "राक्षस गण", Feet: "पाद रज्जु", Thighs: "ऊरु (जांघ) रज्जु", Navel: "नाभि (नाभि) रज्जु", Neck: "कंठ (गला) रज्जु", Head: "शिर (सिर) रज्जु" }
+            };
+
+            const planets = {
+                en: { Sun: "Sun", Moon: "Moon", Mars: "Mars", Mercury: "Mercury", Jupiter: "Jupiter", Venus: "Venus", Saturn: "Saturn" },
+                ta: { Sun: "சூரியன்", Moon: "சந்திரன்", Mars: "செவ்வாய்", Mercury: "புதன்", Jupiter: "குரு", Venus: "சுக்கிரன்", Saturn: "சனி" },
+                te: { Sun: "సూర్యుడు", Moon: "చంద్రుడు", Mars: "కుజుడు", Mercury: "బుధుడు", Jupiter: "గురుడు", Venus: "शुక్రుడు", Saturn: "శని" },
+                ml: { Sun: "സൂര്യൻ", Moon: "ചന്ദ്രൻ", Mars: "ചൊവ്വ", Mercury: "ബുധൻ", Jupiter: "വ്യാഴം", Venus: "ശുക്രൻ", Saturn: "ശനി" },
+                kn: { Sun: "ಸೂರ್ಯ", Moon: "ಚಂದ್ರ", Mars: "ಮಂಗಳ", Mercury: "ಬುಧ", Jupiter: "ಗುರು", Venus: "ಶುಕ್ರ", Saturn: "ಶನಿ" },
+                hi: { Sun: "सूर्य", Moon: "चन्द्र", Mars: "मंगल", Mercury: "बुध", Jupiter: "बृहस्पति", Venus: "शुक्र", Saturn: "शनि" }
+            };
+
+            const dict = labels[lang] || labels.en;
+            const termDict = terms[lang] || terms.en;
+            const planetDict = planets[lang] || planets.en;
+            const baseLabel = dict[key] || val.label;
+
+            if (key === 'gana' && val.label.includes('[')) {
+                const mGana = val.label.split('Male: ')[1].split(',')[0];
+                const fGana = val.label.split('Female: ')[1].split(']')[0];
+                const tMale = termDict[mGana] || mGana;
+                const tFemale = termDict[fGana] || fGana;
+                
+                const format = {
+                    en: `Gana (Mental Temperament) [Male: ${tMale}, Female: ${tFemale}]`,
+                    ta: `கணப் பொருத்தம் [ஆண்: ${tMale}, பெண்: ${tFemale}]`,
+                    te: `గణ పొంతన [వరుడు: ${tMale}, వధువు: ${tFemale}]`,
+                    ml: `ഗണ പൊരുത്തം [ആൺ: ${tMale}, പെൺ: ${tFemale}]`,
+                    kn: `ಗಣ ಹೊಂದಾಣಿಕೆ [ವರ: ${tMale}, ವಧು: ${tFemale}]`,
+                    hi: `गण मिलान [वर: ${tMale}, वधू: ${tFemale}]`
+                };
+                return format[lang] || format.en;
+            }
+
+            if (key === 'rajju' && val.label.includes('[')) {
+                const mRajju = val.label.split('Male: ')[1].split(',')[0];
+                const fRajju = val.label.split('Female: ')[1].split(']')[0];
+                const tMale = termDict[mRajju] || mRajju;
+                const tFemale = termDict[fRajju] || fRajju;
+                
+                const format = {
+                    en: `Rajju (Longevity of Husband) [Male: ${tMale}, Female: ${tFemale}]`,
+                    ta: `ரஜ்ஜுப் பொருத்தம் [ஆண்: ${tMale}, பெண்: ${tFemale}]`,
+                    te: `రజ్జు పొంతన [వరుడు: ${tMale}, వధువు: ${tFemale}]`,
+                    ml: `രജ്ജು പൊരുത്തം [ആൺ: ${tMale}, പെൺ: ${tFemale}]`,
+                    kn: `ರಜ್ಜು ಹೊಂದಾಣಿಕೆ [ವರ: ${tMale}, ವಧು: ${tFemale}]`,
+                    hi: `रज्जु मिलान [वर: ${tMale}, वधू: ${tFemale}]`
+                };
+                return format[lang] || format.en;
+            }
+
+            if (key === 'lord' && val.label.includes('[')) {
+                const mLord = val.label.split('Male Lord: ')[1].split(',')[0];
+                const fLord = val.label.split('Female Lord: ')[1].split(']')[0];
+                const tMaleLord = planetDict[mLord] || mLord;
+                const tFemaleLord = planetDict[fLord] || fLord;
+                const format = {
+                    en: `Rasiyadhipathi (Lords Friendship) [Male Lord: ${tMaleLord}, Female Lord: ${tFemaleLord}]`,
+                    ta: `ராசியதிபதி பொருத்தம் [ஆண் அதிபதி: ${tMaleLord}, பெண் அதிபதி: ${tFemaleLord}]`,
+                    te: `రాశ్యాధిపతి పొంతన [వరుడి అధిపతి: ${tMaleLord}, వధువు అధిపతి: ${tFemaleLord}]`,
+                    ml: `രാശ്യാധിപതി പൊരുത്തം [ആൺ അധിപൻ: ${tMaleLord}, പെൺ അധിപൻ: ${tFemaleLord}]`,
+                    kn: `ರಾಶ್ಯಾಧಿಪತಿ ಹೊಂದಾಣಿಕೆ [ವರನ ಅಧಿಪತಿ: ${tMaleLord}, ವಧುವಿನ ಅಧಿಪತಿ: ${tFemaleLord}]`,
+                    hi: `राश्याधिपति मिलान [वर स्वामी: ${tMaleLord}, वधू स्वामी: ${tFemaleLord}]`
+                };
+                return format[lang] || format.en;
+            }
+
+            return baseLabel;
+        }
 
         function loadIndividualChart(gender) {
             const chartData = gender === 'male' ? calculatedMaleChartData : calculatedFemaleChartData;
@@ -4475,14 +4766,27 @@
                 document.getElementById('lbl-marriage-percentage').innerText = `${calculatedCompatibility.percentage}%`;
                 
                 let detailsHtml = "";
+                const labelsDict = {
+                    en: { match: "✔ Match", mismatch: "✘ Mismatch" },
+                    ta: { match: "✔ பொருத்தம் உண்டு", mismatch: "✘ பொருத்தம் இல்லை" },
+                    te: { match: "✔ పొంతన ఉన్నది", mismatch: "✘ పొంతన లేదు" },
+                    ml: { match: "✔ പൊരുത്തമുണ്ട്", mismatch: "✘ പൊരുത്തമില്ല" },
+                    kn: { match: "✔ ಹೊಂದಾಣಿಕೆ ಇದೆ", mismatch: "✘ ಹೊಂದಾಣಿಕೆ ಇಲ್ಲ" },
+                    hi: { match: "✔ मिलान उत्तम", mismatch: "✘ मिलान नहीं" }
+                };
+                const dict = labelsDict[currentLang] || labelsDict.en;
+                
                 for (const [key, val] of Object.entries(calculatedCompatibility.details)) {
-                    const icon = val.match ? '<span style="color:#48BB78; font-weight:bold; margin-right:8px;">✔ Match</span>' : '<span style="color:#F56565; font-weight:bold; margin-right:8px;">✘ Mismatch</span>';
-                    detailsHtml += `<div style="padding: 10px; border-bottom: 1px solid rgba(226,232,240,0.1); display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight: 500;">${val.label}</span>
-                        <span>${icon}</span>
-                    </div>`;
+                    const textLabel = translateMarriageDetail(key, val, currentLang);
+                    const matchText = val.match ? dict.match : dict.mismatch;
+                    const matchColor = val.match ? "#48BB78" : "#F56565";
+                    
+                    detailsHtml += `<tr>
+                        <td style="font-weight: 500; font-size: 12.5px; padding: 12px 14px; color: var(--text-primary);">${textLabel}</td>
+                        <td style="color:${matchColor}; font-weight:bold; text-align:right; font-size: 12.5px; padding: 12px 22px;">${matchText}</td>
+                    </tr>`;
                 }
-                document.getElementById('marriage-details-list').innerHTML = detailsHtml;
+                document.getElementById('marriage-details-list-body').innerHTML = detailsHtml;
                 
                 document.getElementById('marriage-male-chart-container').innerHTML = "";
                 document.getElementById('marriage-female-chart-container').innerHTML = "";
@@ -4499,22 +4803,79 @@
                 document.getElementById('link-male-name').innerText = maleReq.name;
                 document.getElementById('link-female-name').innerText = femaleReq.name;
                 
-                // Reset AI output field
-                document.getElementById('marriage-ai-output').innerHTML = `
-                    <p style="color: var(--text-secondary); text-align: center; margin-top: 80px;">
-                        <i class="fa-solid fa-yin-yang" style="font-size: 24px; color: var(--accent-gold); display: block; margin-bottom: 8px;"></i>
-                        Click the button above to request a personalized marriage prediction from Vedic RAG AI.
-                    </p>
-                `;
-                
                 resultsDiv.style.display = 'block';
                 btn.disabled = false;
                 btn.innerText = "Calculate Compatibility";
+                
+                // Auto trigger the AI prediction block on calculation!
+                generateMarriageAICompatibility();
             } catch (err) {
                 alert(`Calculation failed: ${err.message}`);
                 btn.disabled = false;
                 btn.innerText = "Calculate Compatibility";
             }
+        }
+
+        function toggleFaqPanel(idx) {
+            const panel = document.getElementById(`faq-panel-${idx}`);
+            const icon = document.getElementById(`faq-icon-${idx}`);
+            if (panel.style.maxHeight && panel.style.maxHeight !== '0px') {
+                panel.style.maxHeight = '0px';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                panel.style.maxHeight = panel.scrollHeight + 'px';
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function renderFAQAccordion(text) {
+            // Find all Q: and A: blocks verbatim, supporting optional asterisks and carriage returns
+            const faqRegex = /(?:\*\*|)\s*Q\s*:\s*(.*?)\r?\n+(?:\*\*|)\s*A\s*:\s*(.*?)(?=\r?\n+(?:\*\*|)\s*Q\s*:|\r?\n*###|\r?\n*$)/gs;
+            const faqs = [];
+            let match;
+            while ((match = faqRegex.exec(text)) !== null) {
+                // Clean markdown from question and answer
+                let qText = match[1].replace(/\*\*$/, '').trim();
+                let aText = match[2].trim();
+                faqs.push({
+                    question: qText,
+                    answer: aText
+                });
+            }
+            
+            if (faqs.length === 0) return "";
+            
+            // Build dynamic headers based on selected language
+            const headers = {
+                en: "Frequently Asked Questions (FAQ)",
+                ta: "அடிக்கடி கேட்கப்படும் கேள்விகள் (FAQ)",
+                te: "తరచుగా అడిగే ప్రశ్నలు (FAQ)",
+                ml: "പതിവായി ചോദിക്കുന്ന ചോദ്യങ്ങൾ (FAQ)",
+                kn: "ಪದೇ ಪದೇ ಕೇಳಲಾಗುವ ಪ್ರಶ್ನೆಗಳು (FAQ)",
+                hi: "अक्सर पूछे जाने वाले प्रश्न (FAQ)"
+            };
+            const activeHeader = headers[currentLang] || headers.en;
+            
+            let accordionHtml = `<div class="faq-accordion-section" style="margin-top: 30px; border-top: 1px solid var(--border-gold); padding-top: 20px;">
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13.5px; margin-bottom: 15px;">
+                    <i class="fa-solid fa-circle-question"></i> ${activeHeader}
+                </h4>`;
+            
+            faqs.forEach((faq, idx) => {
+                accordionHtml += `
+                <div class="faq-item" style="border: 1px solid var(--border-glass); border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: var(--bg-glass-hover);">
+                    <button class="faq-question-btn" onclick="toggleFaqPanel(${idx})" style="width:100%; text-align:left; background: rgba(180, 83, 9, 0.04); border:none; padding:14px 16px; color: var(--text-primary); font-weight:600; font-size:13px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family: var(--font-heading);">
+                        <span>${escapeHtml(faq.question)}</span>
+                        <i id="faq-icon-${idx}" class="fa-solid fa-chevron-down" style="font-size: 11px; transition: transform 0.2s; color: var(--accent-gold);"></i>
+                    </button>
+                    <div id="faq-panel-${idx}" class="faq-answer-panel" style="max-height:0; overflow:hidden; transition: max-height 0.2s ease-out; padding: 0 16px; background: transparent; font-size:12.5px; line-height:1.6; color: var(--text-secondary);">
+                        <div style="padding: 12px 0; white-space: pre-wrap;">${escapeHtml(faq.answer)}</div>
+                    </div>
+                </div>`;
+            });
+            
+            accordionHtml += `</div>`;
+            return accordionHtml;
         }
 
         async function generateMarriageAICompatibility() {
@@ -4524,7 +4885,8 @@
             }
             
             const chatBox = document.getElementById('marriage-ai-output');
-            chatBox.innerHTML = '<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> Consulting relationship scripture RAG database and streaming Ganesha reading...</div>';
+            const loadingMsg = dict.lbl_marriage_ai_loading || "Consulting relationship scripture RAG database and streaming Ganesha reading...";
+            chatBox.innerHTML = `<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> ${loadingMsg}</div>`;
             
             const payload = {
                 male_chart: calculatedMaleChartData,
@@ -4534,7 +4896,7 @@
                 female_name: document.getElementById('in-f-name').value,
                 male_place: document.getElementById('in-m-pob').value,
                 female_place: document.getElementById('in-f-pob').value,
-                model: document.getElementById('in-marriage-model').value
+                lang: currentLang
             };
             
             try {
@@ -4568,13 +4930,30 @@
                     const chunk = decoder.decode(value, { stream: true });
                     resultText += chunk;
                     
-                    // Simple Markdown-to-HTML parser for streaming predictions
-                    let htmlContent = resultText
+                    // Parse out FAQ block from streaming text to build interactive elements
+                    let cleanText = resultText;
+                    const faqStartIndex = resultText.indexOf("Q: ");
+                    if (faqStartIndex !== -1) {
+                        cleanText = resultText.substring(0, faqStartIndex).trim();
+                        // Strip trailing titles like '### FAQ' or '### Frequently Asked Questions'
+                        cleanText = cleanText.replace(/###\s*(Frequently Asked Questions|FAQ|அடிக்கடி கேட்கப்படும் கேள்விகள்|తరచుగా అడిగే ప్రశ్నలు|പതിവായി ചോദിക്കുന്ന ചോദ്യങ്ങൾ|ಪದೇ ಪದೇ ಕೇಳಲಾಗುವ ಪ್ರಶ್ನೆಗಳು|अक्सर पूछे जाने वाले प्रश्न).*$/i, "").trim();
+                    }
+                    
+                    // Render the markdown analysis text
+                    let htmlContent = cleanText
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
                         .replace(/\n/g, '<br>');
+                        
+                    let finalHtml = `<div style="white-space: pre-wrap;">${htmlContent}</div>`;
                     
-                    chatBox.innerHTML = `<div style="white-space: pre-wrap;">${htmlContent}</div>`;
+                    // Render the accordion for FAQs if streaming has reached the questions section
+                    const faqAccordion = renderFAQAccordion(resultText);
+                    if (faqAccordion) {
+                        finalHtml += faqAccordion;
+                    }
+                    
+                    chatBox.innerHTML = finalHtml;
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
             } catch (err) {
@@ -4638,7 +5017,6 @@
                 console.error("Geocoding lookup error:", err);
             }
         }
-
         // --- Initialize Page details on startup ---
         window.onload = function() {
             if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
