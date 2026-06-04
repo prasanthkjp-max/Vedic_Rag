@@ -15,49 +15,49 @@
     
     <style>
         /* ================================================================
-           VEDIC ASTROLOGY PORTAL — COSMIC DIVINE THEME
-           Deep Space Indigo · Divine Gold · Sacred Violet
-           Moving planets · OM watermark · Readable data
+           VEDIC ASTROLOGY PORTAL — COSMIC DIVINE SUN-ORANGE THEME
+           Light Sun Orange · Divine Gold · Saffron & Rust Highlights
+           Moving planets · OM watermark · High Contrast Readable data
         ================================================================ */
 
         :root {
-            /* ── Cosmic Blues ── */
-            --bg-void:   #010610;
-            --bg-deep:   #020b1c;
-            --bg-glass:  rgba(6, 18, 52, 0.72);
-            --bg-card:   rgba(4, 14, 44, 0.92);
-            --bg-darker: rgba(2, 9, 30, 0.95);
-            --bg-input:  rgba(3, 11, 36, 0.90);
+            /* ── Solar Light Cosmic Backgrounds ── */
+            --bg-void:   #fffbf5; /* Warm sun-cream canvas */
+            --bg-deep:   #fff8eb; /* Soft sun-gold deep canvas */
+            --bg-glass:  rgba(255, 251, 238, 0.88); /* Light warm glass */
+            --bg-card:   rgba(255, 255, 255, 0.95); /* Clean white card */
+            --bg-darker: rgba(254, 243, 199, 0.35); /* Warm golden tint card */
+            --bg-input:  #ffffff; /* Solid white input */
 
-            /* ── Divine Accents ── */
-            --accent-cosmic:  #3b82f6;
-            --accent-azure:   #60a5fa;
-            --accent-sky:     #93c5fd;
-            --accent-gold:    #f59e0b;
-            --accent-bright:  #fbbf24;
-            --accent-saffron: #fb923c;
-            --accent-violet:  #a78bfa;
+            /* ── Golden & Saffron Accents ── */
+            --accent-cosmic:  #ea580c; /* Rich solar orange */
+            --accent-azure:   #d97706; /* Golden amber */
+            --accent-sky:     #f97316; /* Sunburst orange */
+            --accent-gold:    #b45309; /* Deep gold */
+            --accent-bright:  #eab308; /* Bright gold */
+            --accent-saffron: #f97316; /* Saffron */
+            --accent-violet:  #7c3aed; /* Keep violet for transits/dasas but warm it */
             --accent-purple:  #8b5cf6;
-            --accent-teal:    #2dd4bf;
-            --accent-ruby:    #f43f5e;
+            --accent-teal:    #0f766e;
+            --accent-ruby:    #be123c;
 
             /* ── Glow layers ── */
-            --glow-blue:   rgba(59, 130, 246, 0.30);
-            --glow-gold:   rgba(245, 158, 11, 0.30);
-            --glow-violet: rgba(139, 92, 246, 0.25);
+            --glow-blue:   rgba(234, 88, 12, 0.25);
+            --glow-gold:   rgba(217, 119, 6, 0.35);
+            --glow-violet: rgba(139, 92, 246, 0.15);
 
-            /* ── Text hierarchy ── */
-            --text-primary:   #e2f0ff;
-            --text-secondary: #8db4d4;
-            --text-muted:     #3b5878;
-            --text-gold:      #fbbf24;
-            --text-label:     #5f96c0;
+            /* ── Text hierarchy (high contrast dark brown/rust on light orange) ── */
+            --text-primary:   #431407; /* Deepest warm rust-brown (contrast checked!) */
+            --text-secondary: #7c2d12; /* Warm dark orange-brown */
+            --text-muted:     #9a3412; /* Rust accent */
+            --text-gold:      #b45309; /* Deep gold for title/highlights */
+            --text-label:     #9a3412; /* Clear labels */
 
-            /* ── Borders ── */
-            --border-blue:   rgba(59, 130, 246, 0.26);
-            --border-gold:   rgba(245, 158, 11, 0.36);
-            --border-glass:  rgba(96, 165, 250, 0.13);
-            --border-violet: rgba(167, 139, 250, 0.20);
+            /* ── Aesthetic Golden Borders ── */
+            --border-blue:   rgba(234, 88, 12, 0.28);
+            --border-gold:   rgba(217, 119, 6, 0.45);
+            --border-glass:  rgba(245, 158, 11, 0.25);
+            --border-violet: rgba(139, 92, 246, 0.25);
 
             /* ── Fonts ── */
             --font-sans:    'Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil',
@@ -94,18 +94,18 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: #010610; }
-        ::-webkit-scrollbar-thumb { background: rgba(59,130,246,.32); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(96,165,250,.55); }
+        ::-webkit-scrollbar-track { background: #fffbf2; }
+        ::-webkit-scrollbar-thumb { background: rgba(217, 119, 6, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(234, 88, 12, 0.6); }
 
         /* ════════════════════════════════════════
            KEYFRAME ANIMATIONS
         ════════════════════════════════════════ */
         @keyframes twinkle-a {
-            0%, 100% { opacity: .08; } 50% { opacity: .72; }
+            0%, 100% { opacity: .15; } 50% { opacity: .85; }
         }
         @keyframes twinkle-b {
-            0%, 100% { opacity: .18; } 60% { opacity: 1; }
+            0%, 100% { opacity: .25; } 60% { opacity: 1; }
         }
         /* Circular orbit — rotate(θ) translateX(r) rotate(-θ) keeps planet upright */
         @keyframes orbit-blue {
@@ -121,12 +121,12 @@
             to   { transform: rotate(560deg) translateX(78px) rotate(-560deg); }
         }
         @keyframes om-breathe {
-            0%, 100% { opacity: .016; } 50% { opacity: .046; }
+            0%, 100% { opacity: .018; } 50% { opacity: .052; }
         }
         @keyframes mantra-glow {
-            0%, 100% { text-shadow: 0 0 14px rgba(245,158,11,.55); }
-            50%       { text-shadow: 0 0 34px rgba(251,191,36,.95),
-                                     0 0 68px rgba(245,158,11,.45); }
+            0%, 100% { text-shadow: 0 0 14px rgba(234,88,12,.35); }
+            50%       { text-shadow: 0 0 34px rgba(217,119,6,.65),
+                                     0 0 68px rgba(234,88,12,.25); }
         }
         @keyframes dharma-spin {
             from { transform: translateY(-50%) rotate(0deg); }
@@ -150,7 +150,7 @@
         }
 
         /* ════════════════════════════════════════
-           BODY — DEEP SPACE BLUE-INDIGO
+           BODY — LIGHT COSMIC SOLAR THEME
         ════════════════════════════════════════ */
         body {
             margin: 0; padding: 0;
@@ -159,81 +159,81 @@
             line-height: 1.6;
             background-color: var(--bg-void);
             background-image:
-                /* Purple nebula — top-right */
-                radial-gradient(ellipse 1100px 650px at 94% 3%,   rgba(110,35,255,.20)  0%, transparent 62%),
-                /* Blue nebula — bottom-left */
-                radial-gradient(ellipse 900px 520px  at 3%  97%,  rgba(15,75,220,.18)   0%, transparent 58%),
-                /* Indigo veil — center */
-                radial-gradient(ellipse 600px 350px  at 52% 50%,  rgba(25,50,140,.09)   0%, transparent 65%),
-                /* Deep blue canopy — top */
-                radial-gradient(ellipse 1600px 900px at 50% 0%,   rgba(8,22,78,.62)     0%, transparent 72%),
-                /* Base gradient */
-                linear-gradient(192deg, #040f28 0%, #010610 42%, #020b1c 100%);
+                /* Orange solar flare nebula — top-right */
+                radial-gradient(ellipse 1100px 650px at 94% 3%, rgba(251,146,60,0.15) 0%, transparent 65%),
+                /* Soft gold nebula — bottom-left */
+                radial-gradient(ellipse 900px 520px at 3% 97%, rgba(253,224,71,0.18) 0%, transparent 60%),
+                /* Warm cosmic glow — center */
+                radial-gradient(ellipse 600px 350px at 52% 50%, rgba(251,146,60,0.08) 0%, transparent 70%),
+                /* Sun canopy — top */
+                radial-gradient(ellipse 1600px 900px at 50% 0%, rgba(254,215,170,0.40) 0%, transparent 80%),
+                /* Base warm cream/saffron background */
+                linear-gradient(192deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%);
             color: var(--text-primary);
             overflow-x: hidden;
             min-height: 100vh;
         }
 
-        /* Star field — layer 1: silver-white stars */
+        /* Star field — layer 1: gold-amber stars */
         body::before {
             content: '';
             position: fixed; inset: 0;
             pointer-events: none; z-index: 0;
             background-image:
-                radial-gradient(1px 1px at  4%  7%,  rgba(220,235,255,.80) 0%, transparent 100%),
-                radial-gradient(1px 1px at 11% 23%,  rgba(180,210,255,.62) 0%, transparent 100%),
-                radial-gradient(2px 2px at 18%  2%,  rgba(255,255,255,.85) 0%, transparent 100%),
-                radial-gradient(1px 1px at 25% 67%,  rgba(148,195,255,.58) 0%, transparent 100%),
-                radial-gradient(1px 1px at 32% 45%,  rgba(200,225,255,.68) 0%, transparent 100%),
-                radial-gradient(2px 2px at 39% 83%,  rgba(255,255,255,.72) 0%, transparent 100%),
-                radial-gradient(1px 1px at 45% 16%,  rgba(190,218,255,.62) 0%, transparent 100%),
-                radial-gradient(1px 1px at 51% 90%,  rgba(170,205,255,.52) 0%, transparent 100%),
-                radial-gradient(2px 2px at 57%  5%,  rgba(255,255,255,.88) 0%, transparent 100%),
-                radial-gradient(1px 1px at 63% 37%,  rgba(210,232,255,.68) 0%, transparent 100%),
-                radial-gradient(1px 1px at 70% 73%,  rgba(180,212,255,.56) 0%, transparent 100%),
-                radial-gradient(2px 2px at 77% 12%,  rgba(255,255,255,.78) 0%, transparent 100%),
-                radial-gradient(1px 1px at 84% 54%,  rgba(220,238,255,.62) 0%, transparent 100%),
-                radial-gradient(1px 1px at 90% 28%,  rgba(200,222,255,.72) 0%, transparent 100%),
-                radial-gradient(2px 2px at 96% 70%,  rgba(255,255,255,.82) 0%, transparent 100%),
-                radial-gradient(1px 1px at  8% 42%,  rgba(160,202,255,.58) 0%, transparent 100%),
-                radial-gradient(1px 1px at 15% 80%,  rgba(190,218,255,.62) 0%, transparent 100%),
-                radial-gradient(1px 1px at 22% 58%,  rgba(170,208,255,.52) 0%, transparent 100%),
-                radial-gradient(2px 2px at 29% 11%,  rgba(255,255,255,.78) 0%, transparent 100%),
-                radial-gradient(1px 1px at 48% 62%,  rgba(200,226,255,.62) 0%, transparent 100%),
-                radial-gradient(1px 1px at 58% 89%,  rgba(148,198,255,.56) 0%, transparent 100%),
-                radial-gradient(1px 1px at 68% 25%,  rgba(210,232,255,.68) 0%, transparent 100%),
-                radial-gradient(2px 2px at 74% 48%,  rgba(255,255,255,.72) 0%, transparent 100%),
-                radial-gradient(1px 1px at 82% 76%,  rgba(180,212,255,.56) 0%, transparent 100%),
-                radial-gradient(1px 1px at 93% 43%,  rgba(220,238,255,.62) 0%, transparent 100%);
+                radial-gradient(1.5px 1.5px at  4%  7%,  rgba(217,119,6,.50) 0%, transparent 100%),
+                radial-gradient(1px 1px at 11% 23%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(2px 2px at 18%  2%,  rgba(245,158,11,.60) 0%, transparent 100%),
+                radial-gradient(1px 1px at 25% 67%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px 1px at 32% 45%,  rgba(234,88,12,.48) 0%, transparent 100%),
+                radial-gradient(2px 2px at 39% 83%,  rgba(245,158,11,.50) 0%, transparent 100%),
+                radial-gradient(1px 1px at 45% 16%,  rgba(217,119,6,.40) 0%, transparent 100%),
+                radial-gradient(1px 1px at 51% 90%,  rgba(234,88,12,.35) 0%, transparent 100%),
+                radial-gradient(2px 2px at 57%  5%,  rgba(245,158,11,.65) 0%, transparent 100%),
+                radial-gradient(1px 1px at 63% 37%,  rgba(217,119,6,.48) 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 73%,  rgba(234,88,12,.38) 0%, transparent 100%),
+                radial-gradient(2px 2px at 77% 12%,  rgba(245,158,11,.55) 0%, transparent 100%),
+                radial-gradient(1px 1px at 84% 54%,  rgba(217,119,6,.40) 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 28%,  rgba(234,88,12,.48) 0%, transparent 100%),
+                radial-gradient(2px 2px at 96% 70%,  rgba(245,158,11,.58) 0%, transparent 100%),
+                radial-gradient(1px 1px at  8% 42%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px 1px at 15% 80%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(1px 1px at 22% 58%,  rgba(217,119,6,.35) 0%, transparent 100%),
+                radial-gradient(2px 2px at 29% 11%,  rgba(245,158,11,.55) 0%, transparent 100%),
+                radial-gradient(1px 1px at 48% 62%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(1px 1px at 58% 89%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px 1px at 68% 25%,  rgba(234,88,12,.48) 0%, transparent 100%),
+                radial-gradient(2px 2px at 74% 48%,  rgba(245,158,11,.50) 0%, transparent 100%),
+                radial-gradient(1px 1px at 82% 76%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px 1px at 93% 43%,  rgba(234,88,12,.40) 0%, transparent 100%);
             animation: twinkle-a 4.5s ease-in-out infinite;
         }
 
-        /* Star field — layer 2: blue-violet accent stars */
+        /* Star field — layer 2: warm saffron stars */
         body::after {
             content: '';
             position: fixed; inset: 0;
             pointer-events: none; z-index: 0;
             background-image:
-                radial-gradient(1.5px 1.5px at  9%  4%,  rgba(148,164,255,.72) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 17% 39%,  rgba(196,182,253,.58) 0%, transparent 100%),
-                radial-gradient(2px   2px   at 26% 73%,  rgba(255,255,255,.78) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 35% 19%,  rgba(147,198,253,.62) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 44% 86%,  rgba(167,140,250,.52) 0%, transparent 100%),
-                radial-gradient(2px   2px   at 52% 32%,  rgba(255,255,255,.82) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 61% 58%,  rgba(148,164,255,.68) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 70%  8%,  rgba(196,182,253,.58) 0%, transparent 100%),
-                radial-gradient(2px   2px   at 78% 65%,  rgba(255,255,255,.72) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 86% 46%,  rgba(147,198,253,.62) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 92% 85%,  rgba(167,140,250,.52) 0%, transparent 100%),
-                radial-gradient(1.5px 1.5px at  3% 57%,  rgba(148,164,255,.68) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 12% 93%,  rgba(196,182,253,.58) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 21% 27%,  rgba(147,198,253,.62) 0%, transparent 100%),
-                radial-gradient(2px   2px   at 34% 50%,  rgba(255,255,255,.78) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 55% 75%,  rgba(167,140,250,.58) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 65% 14%,  rgba(148,164,255,.62) 0%, transparent 100%),
-                radial-gradient(2px   2px   at 80% 35%,  rgba(255,255,255,.72) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 88% 68%,  rgba(196,182,253,.58) 0%, transparent 100%),
-                radial-gradient(1px   1px   at 97% 20%,  rgba(147,198,253,.68) 0%, transparent 100%);
+                radial-gradient(1.5px 1.5px at  9%  4%,  rgba(234,88,12,.48) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 17% 39%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(2px   2px   at 26% 73%,  rgba(245,158,11,.50) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 35% 19%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 44% 86%,  rgba(217,119,6,.35) 0%, transparent 100%),
+                radial-gradient(2px   2px   at 52% 32%,  rgba(245,158,11,.55) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 61% 58%,  rgba(234,88,12,.42) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 70%  8%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(2px   2px   at 78% 65%,  rgba(245,158,11,.50) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 86% 46%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 92% 85%,  rgba(217,119,6,.35) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at  3% 57%,  rgba(234,88,12,.42) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 12% 93%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 21% 27%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(2px   2px   at 34% 50%,  rgba(245,158,11,.50) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 55% 75%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 65% 14%,  rgba(234,88,12,.40) 0%, transparent 100%),
+                radial-gradient(2px   2px   at 80% 35%,  rgba(245,158,11,.50) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 88% 68%,  rgba(217,119,6,.38) 0%, transparent 100%),
+                radial-gradient(1px   1px   at 97% 20%,  rgba(234,88,12,.42) 0%, transparent 100%);
             animation: twinkle-b 6.2s ease-in-out infinite alternate;
         }
 
@@ -253,7 +253,7 @@
             font-family: var(--font-serif);
             font-size: 700px;
             line-height: 1;
-            color: rgba(96, 165, 250, 0.022);
+            color: rgba(245, 158, 11, 0.035); /* Warm light gold OM watermark */
             top: 46%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -261,6 +261,25 @@
             z-index: 0;
             user-select: none;
             animation: om-breathe 12s ease-in-out infinite;
+        }
+
+        /* Floating background image of Lord Surya chariot in the bottom-right */
+        .app-container::after {
+            content: '';
+            position: fixed;
+            bottom: -30px;
+            right: -20px;
+            width: 480px;
+            height: 480px;
+            background-image: url('/assets/lord_surya_chariot.png');
+            background-repeat: no-repeat;
+            background-position: bottom right;
+            background-size: contain;
+            opacity: 0.11; /* Subtle presence */
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            mix-blend-mode: multiply; /* Blend nicely into warm sun background */
         }
 
         /* ════════════════════════════════════════
@@ -275,11 +294,11 @@
             justify-content: space-between;
             padding: 0 24px;
             height: 64px;
-            background: rgba(1, 6, 20, 0.94);
-            border-bottom: 1px solid rgba(59, 130, 246, 0.20);
+            background: rgba(255, 252, 245, 0.96);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.30);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
-            box-shadow: 0 2px 30px rgba(0,0,0,.65), 0 0 1px rgba(59,130,246,.12);
+            box-shadow: 0 2px 30px rgba(217, 119, 6, 0.08), 0 0 1px rgba(217, 119, 6, 0.12);
         }
 
         /* Blue planet orbiting the logo — inner orbit r=32 */
@@ -288,8 +307,8 @@
             position: fixed;
             width: 9px; height: 9px;
             border-radius: 50%;
-            background: radial-gradient(circle at 38% 35%, #bfdbfe, #1d4ed8);
-            box-shadow: 0 0 6px #60a5fa, 0 0 18px rgba(96,165,250,.80);
+            background: radial-gradient(circle at 38% 35%, #fde68a, #d97706);
+            box-shadow: 0 0 6px #f59e0b, 0 0 18px rgba(234,88,12,.50);
             top: 27px;   /* orbit center y: header vertical mid */
             left: 48px;  /* orbit center x: over logo */
             pointer-events: none;
@@ -303,8 +322,8 @@
             position: fixed;
             width: 7px; height: 7px;
             border-radius: 50%;
-            background: radial-gradient(circle at 38% 35%, #fde68a, #b45309);
-            box-shadow: 0 0 6px #f59e0b, 0 0 15px rgba(245,158,11,.70);
+            background: radial-gradient(circle at 38% 35%, #fef3c7, #b45309);
+            box-shadow: 0 0 6px #f59e0b, 0 0 15px rgba(217,119,6,.60);
             top: 27px;
             left: 48px;
             pointer-events: none;
@@ -326,7 +345,7 @@
             position: absolute;
             width: 68px; height: 68px;
             border-radius: 50%;
-            border: 1px dashed rgba(96, 165, 250, 0.22);
+            border: 1px dashed rgba(217, 119, 6, 0.25);
             top: 50%; left: 24px;
             transform: translate(-50%, -50%);
             pointer-events: none;
@@ -338,7 +357,7 @@
             position: absolute;
             width: 108px; height: 108px;
             border-radius: 50%;
-            border: 1px dashed rgba(245, 158, 11, 0.14);
+            border: 1px dashed rgba(234, 88, 12, 0.18);
             top: 50%; left: 24px;
             transform: translate(-50%, -50%);
             pointer-events: none;
@@ -347,7 +366,7 @@
         .logo-section img {
             width: 46px; height: 46px;
             border-radius: 10px;
-            filter: drop-shadow(0 0 8px rgba(96,165,250,.55));
+            filter: drop-shadow(0 0 8px rgba(217, 119, 6, 0.35));
             position: relative;
             z-index: 2;
         }
@@ -361,7 +380,7 @@
             font-family: var(--font-heading);
             font-size: 19px;
             font-weight: 700;
-            background: linear-gradient(135deg, #93c5fd 0%, #fbbf24 55%, #a78bfa 100%);
+            background: linear-gradient(135deg, #f97316 0%, #d97706 50%, #ea580c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -373,7 +392,7 @@
             font-size: 9px;
             letter-spacing: 2.2px;
             text-transform: uppercase;
-            color: var(--text-label);
+            color: var(--text-muted);
             margin-top: 1px;
         }
 
@@ -400,16 +419,19 @@
         }
 
         .nav-tab:hover {
-            background: rgba(59,130,246,.11);
-            color: var(--accent-sky);
-            border-color: rgba(59,130,246,.22);
+            background: rgba(245, 158, 11, 0.12);
+            color: #ea580c;
+            border-color: rgba(217, 119, 6, 0.6);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+            text-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
         }
 
         .nav-tab.active {
-            background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(139,92,246,.20));
-            color: #fff;
-            border-color: rgba(96,165,250,.42);
-            box-shadow: 0 0 14px rgba(59,130,246,.22), inset 0 1px 0 rgba(255,255,255,.07);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.18));
+            color: #ea580c;
+            border-color: rgba(217, 119, 6, 0.8);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            font-weight: 700;
         }
 
         /* ── Header controls (API key + lang selector) ── */
@@ -426,10 +448,10 @@
             align-items: center;
             gap: 7px;
             padding: 7px 13px;
-            background: rgba(59,130,246,.09);
-            border: 1px solid rgba(59,130,246,.22);
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(217, 119, 6, 0.3);
             border-radius: 8px;
-            color: var(--accent-sky);
+            color: var(--text-secondary);
             font-size: 13px;
             cursor: pointer;
             transition: all .2s ease;
@@ -438,22 +460,23 @@
         }
 
         .lang-select-btn:hover {
-            background: rgba(59,130,246,.18);
-            border-color: rgba(96,165,250,.40);
+            background: rgba(245, 158, 11, 0.18);
+            border-color: rgba(217, 119, 6, 0.6);
+            color: #ea580c;
         }
 
         .lang-dropdown {
             position: absolute;
             top: calc(100% + 8px);
             right: 0;
-            background: rgba(3, 10, 34, 0.98);
-            border: 1px solid rgba(59,130,246,.26);
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(217, 119, 6, 0.35);
             border-radius: 12px;
             padding: 6px;
             min-width: 165px;
             backdrop-filter: blur(24px);
             z-index: 500;
-            box-shadow: 0 10px 40px rgba(0,0,0,.70);
+            box-shadow: 0 10px 40px rgba(217, 119, 6, 0.12);
             display: none;
         }
 
@@ -475,13 +498,13 @@
         }
 
         .lang-option:hover {
-            background: rgba(59,130,246,.14);
-            color: var(--text-primary);
+            background: rgba(245, 158, 11, 0.12);
+            color: #ea580c;
         }
 
         .lang-option.active {
-            background: rgba(59,130,246,.20);
-            color: var(--accent-sky);
+            background: rgba(245, 158, 11, 0.2);
+            color: #ea580c;
         }
 
         /* ════════════════════════════════════════
@@ -492,11 +515,11 @@
             text-align: center;
             padding: 13px 62px;
             background: linear-gradient(135deg,
-                rgba(4, 14, 44, 0.90) 0%,
-                rgba(8, 22, 60, 0.85) 50%,
-                rgba(5, 16, 48, 0.90) 100%);
-            border-bottom: 1px solid rgba(245,158,11,.20);
-            box-shadow: 0 2px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(245,158,11,.08);
+                rgba(255, 251, 235, 0.95) 0%,
+                rgba(254, 243, 199, 0.90) 50%,
+                rgba(255, 251, 235, 0.95) 100%);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.25);
+            box-shadow: 0 2px 20px rgba(217, 119, 6, 0.05), inset 0 1px 0 rgba(217, 119, 6, 0.12);
         }
 
         .mantra-banner::before {
@@ -505,7 +528,7 @@
             left: 20px; top: 50%;
             transform: translateY(-50%);
             font-size: 22px;
-            color: rgba(245,158,11,.55);
+            color: rgba(217, 119, 6, 0.55);
             animation: dharma-spin 12s linear infinite;
         }
 
@@ -515,16 +538,17 @@
             right: 20px; top: 50%;
             transform: translateY(-50%);
             font-size: 22px;
-            color: rgba(245,158,11,.55);
+            color: rgba(217, 119, 6, 0.55);
             animation: dharma-spin-r 12s linear infinite;
         }
 
         .mantra-sanskrit {
             font-family: var(--font-serif);
             font-size: 15.5px;
-            color: var(--accent-bright);
+            color: #ea580c;
             animation: mantra-glow 4s ease-in-out infinite;
             letter-spacing: .8px;
+            font-weight: 700;
         }
 
         .mantra-english {
@@ -537,10 +561,16 @@
         }
 
         /* ════════════════════════════════════════
-           MAIN CONTENT AREA
+           MAIN CONTENT AREA & CENTERING
         ════════════════════════════════════════ */
-        /* JS uses .active class + inline style.display to toggle pages */
-        .single-page-content { display: none; }
+        /* Center and resize layouts - UI is no longer stretched across viewport */
+        .single-page-content {
+            display: none;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            width: 100%;
+        }
         .single-page-content.active { display: block; animation: fade-in-up .35s ease; }
 
         main {
@@ -552,37 +582,37 @@
         /* ── Dashboard grids ── */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
             margin-bottom: 20px;
         }
 
         .span-2 { grid-column: span 2; }
 
         /* ════════════════════════════════════════
-           CARDS — readable glass panels
+           CARDS — readable glass panels with golden borders
         ════════════════════════════════════════ */
         .card {
             position: relative;
             background: var(--bg-card);
-            border: 1px solid var(--border-glass);
+            border: 1px solid var(--border-gold);
             border-radius: 18px;
             padding: 22px 24px;
             backdrop-filter: blur(22px);
             -webkit-backdrop-filter: blur(22px);
             box-shadow:
-                0 8px 40px rgba(0,0,0,.55),
-                0 0 0 1px rgba(96,165,250,.035),
-                inset 0 1px 0 rgba(255,255,255,.04);
+                0 8px 40px rgba(217, 119, 6, 0.05),
+                0 0 0 1px rgba(217, 119, 6, 0.035),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
             overflow: hidden;
             transition: border-color .25s, box-shadow .25s;
         }
 
         .card:hover {
-            border-color: rgba(59,130,246,.28);
+            border-color: rgba(217, 119, 6, 0.65);
             box-shadow:
-                0 12px 52px rgba(0,0,0,.60),
-                0 0 28px rgba(59,130,246,.07);
+                0 12px 52px rgba(217, 119, 6, 0.08),
+                0 0 28px rgba(245, 158, 11, 0.15);
         }
 
         /* Shimmer top-edge sweep */
@@ -590,10 +620,10 @@
             content: '';
             position: absolute;
             top: 0; left: -100%;
-            width: 55%; height: 1px;
+            width: 55%; height: 1.5px;
             background: linear-gradient(90deg,
-                transparent, rgba(96,165,250,.65),
-                rgba(245,158,11,.30), transparent);
+                transparent, rgba(245, 158, 11, 0.7),
+                rgba(234, 88, 12, 0.5), transparent);
             animation: card-shimmer 7s ease-in-out infinite;
             pointer-events: none;
         }
@@ -610,20 +640,32 @@
             gap: 8px;
             letter-spacing: .3px;
             padding-bottom: 10px;
-            border-bottom: 1px solid rgba(59,130,246,.12);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.18);
         }
 
         .card-title i, .card-title .icon {
-            color: var(--accent-azure);
+            color: var(--accent-saffron);
             font-size: 14px;
             flex-shrink: 0;
+        }
+
+        /* Interactive Rollover effects on fonts, headers, titles */
+        h1, h2, h3, h4, h5, h6, .card-title, .date-display {
+            transition: all 0.25s ease;
+        }
+
+        h1:hover, h2:hover, h3:hover, h4:hover, h5:hover, h6:hover,
+        .card:hover .card-title,
+        .date-display:hover {
+            color: #f97316 !important;
+            text-shadow: 0 0 8px rgba(245, 158, 11, 0.65);
         }
 
         /* ════════════════════════════════════════
            PANCHANGAM — daily data display
         ════════════════════════════════════════ */
         .panchangam-widget {
-            /* base widget — most instances use inline overrides */
+            /* base widget */
         }
 
         /* Date display headline */
@@ -631,7 +673,7 @@
             font-family: var(--font-heading);
             font-size: 15px;
             font-weight: 700;
-            color: var(--accent-bright);
+            color: var(--accent-cosmic);
             margin-bottom: 12px;
             letter-spacing: .3px;
         }
@@ -646,14 +688,14 @@
         }
 
         .calendar-icon {
-            color: var(--text-label);
+            color: var(--text-muted);
             font-size: 14px;
             cursor: pointer;
         }
 
         .calendar-input {
             background: var(--bg-input) !important;
-            border: 1px solid rgba(59,130,246,.18) !important;
+            border: 1px solid rgba(217, 119, 6, 0.25) !important;
             border-radius: 7px;
             color: var(--text-primary) !important;
             padding: 5px 10px;
@@ -667,12 +709,12 @@
             font-family: var(--font-heading);
             font-size: 14px;
             font-weight: 700;
-            color: var(--accent-bright);
+            color: var(--accent-cosmic);
             margin-bottom: 14px;
             letter-spacing: .3px;
         }
 
-        /* Panchangam grid — actual class used in HTML */
+        /* Panchangam grid */
         .panchangam-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -680,30 +722,30 @@
         }
 
         .panch-item {
-            background: rgba(3, 11, 36, 0.72);
-            border: 1px solid rgba(59,130,246,.13);
+            background: rgba(255, 253, 246, 0.85);
+            border: 1px solid rgba(217, 119, 6, 0.22);
             border-radius: 10px;
             padding: 11px 14px;
             transition: border-color .2s, background .2s;
         }
 
         .panch-item:hover {
-            border-color: rgba(96,165,250,.28);
-            background: rgba(5, 18, 52, 0.80);
+            border-color: rgba(234, 88, 12, 0.45);
+            background: rgba(255, 255, 255, 0.95);
         }
 
-        /* Panch label: tiny uppercase blue-grey */
+        /* Panch label */
         .panch-label {
             display: block;
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1.3px;
-            color: var(--text-label);
+            color: var(--text-secondary);
             margin-bottom: 5px;
         }
 
-        /* Panch value: bright white, easy to read */
+        /* Panch value */
         .panch-value {
             display: block;
             font-size: 14px;
@@ -713,27 +755,27 @@
         }
 
         .panch-item.highlight {
-            border-color: rgba(245,158,11,.25);
-            background: rgba(18, 12, 3, 0.75);
+            border-color: rgba(217, 119, 6, 0.35);
+            background: rgba(254, 243, 199, 0.50);
         }
         .panch-item.highlight .panch-value { color: var(--text-gold); }
 
         /* System selector row */
         .system-label {
             font-size: 12px;
-            color: var(--text-label);
+            color: var(--text-secondary);
             font-weight: 500;
             margin-right: 8px;
         }
 
         /* ════════════════════════════════════════
-           CALENDAR
+           CALENDAR — VISIBLE CELLS AND GOLDEN BORDERS
         ════════════════════════════════════════ */
         .calendar-container {
-            background: rgba(2, 8, 26, 0.72);
+            background: var(--bg-glass);
             border-radius: 12px;
             padding: 14px;
-            border: 1px solid rgba(59,130,246,.12);
+            border: 1px solid var(--border-gold);
         }
 
         .calendar-header {
@@ -752,9 +794,9 @@
         }
 
         .calendar-nav-btn {
-            background: rgba(59,130,246,.10);
-            border: 1px solid rgba(59,130,246,.20);
-            color: var(--accent-azure);
+            background: rgba(245, 158, 11, 0.10);
+            border: 1px solid rgba(217, 119, 6, 0.25);
+            color: var(--text-secondary);
             border-radius: 7px;
             width: 28px; height: 28px;
             cursor: pointer;
@@ -764,78 +806,108 @@
         }
 
         .calendar-nav-btn:hover {
-            background: rgba(59,130,246,.22);
-            border-color: rgba(96,165,250,.42);
+            background: rgba(234, 88, 12, 0.20);
+            border-color: rgba(217, 119, 6, 0.60);
+            color: #ea580c;
         }
 
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
+            gap: 4px;
         }
 
         .calendar-day-header {
             text-align: center;
             font-size: 10px;
             font-weight: 700;
-            color: var(--text-label);
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
             padding: 6px 2px 8px;
         }
 
+        /* High Visibility Calendar Cells */
         .calendar-cell {
-            min-height: 50px;
-            padding: 4px 5px;
-            border-radius: 7px;
-            background: rgba(3, 11, 36, 0.52);
-            border: 1px solid transparent;
-            transition: all .2s;
+            min-height: 58px;
+            padding: 6px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(217, 119, 6, 0.25);
+            transition: all 0.22s ease;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .calendar-cell:hover {
-            background: rgba(59,130,246,.11);
-            border-color: rgba(59,130,246,.20);
+            background: rgba(254, 215, 170, 0.40);
+            border-color: rgba(217, 119, 6, 0.65);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+        }
+
+        .calendar-cell.active {
+            background: rgba(254, 215, 170, 0.60) !important;
+            border-color: #ea580c !important;
+            box-shadow: 0 0 14px rgba(234, 88, 12, 0.40), inset 0 0 4px rgba(245, 158, 11, 0.20) !important;
         }
 
         .calendar-cell.today {
-            background: rgba(59,130,246,.18);
-            border-color: rgba(96,165,250,.45);
-            box-shadow: 0 0 12px rgba(59,130,246,.18);
+            background: rgba(254, 243, 199, 0.70);
+            border-color: #d97706;
+            box-shadow: 0 0 12px rgba(217, 119, 6, 0.25);
         }
 
-        .calendar-cell.today .cal-date { color: var(--accent-sky); font-weight: 700; }
+        .calendar-cell.today .cell-day-num {
+            color: #ea580c;
+            font-weight: 700;
+        }
 
-        .calendar-cell.auspicious { border-color: rgba(245,158,11,.28); }
-        .calendar-cell.inauspicious { border-color: rgba(244,63,94,.18); }
+        .calendar-cell.auspicious { border-color: rgba(234, 88, 12, 0.45); }
+        .calendar-cell.inauspicious { border-color: rgba(220, 38, 38, 0.28); }
 
-        .cal-date {
-            font-size: 12px;
+        .cell-day-num {
+            font-size: 13px;
             font-weight: 600;
             color: var(--text-primary);
-            line-height: 1; margin-bottom: 2px;
+            line-height: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .cal-nakshatra {
-            font-size: 9px; color: var(--text-label);
-            line-height: 1.2; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
+        .cell-naks {
+            font-size: 9px;
+            color: var(--text-secondary);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 4px;
         }
 
-        .cal-event {
-            font-size: 9px; padding: 1px 3px;
-            border-radius: 3px; margin-top: 2px; line-height: 1.3;
+        .cell-speciality {
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-top: 4px;
+            line-height: 1.3;
+            background: rgba(234, 88, 12, 0.12);
+            color: #c2410c;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 1px solid rgba(234, 88, 12, 0.18);
         }
-        .cal-event.auspicious  { background: rgba(245,158,11,.16); color: #fde68a; }
-        .cal-event.inauspicious{ background: rgba(244,63,94,.14);  color: #fda4af; }
 
         /* ════════════════════════════════════════
            GOCHARA TRANSITS
         ════════════════════════════════════════ */
         .transit-map {
-            background: rgba(2, 8, 26, 0.68);
-            border: 1px solid rgba(59,130,246,.12);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-gold);
             border-radius: 12px;
             padding: 12px;
             min-height: 180px;
@@ -856,13 +928,13 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1.3px;
-            color: var(--text-label);
+            color: var(--text-secondary);
         }
 
         .input-group input,
         .input-group select {
             background: var(--bg-input) !important;
-            border: 1px solid rgba(59,130,246,.18) !important;
+            border: 1px solid rgba(217, 119, 6, 0.25) !important;
             border-radius: 9px;
             padding: 10px 14px;
             font-size: 14px;
@@ -875,14 +947,14 @@
 
         .input-group input:focus,
         .input-group select:focus {
-            border-color: rgba(96,165,250,.55) !important;
-            box-shadow: 0 0 0 3px rgba(59,130,246,.11) !important;
+            border-color: #ea580c !important;
+            box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12) !important;
         }
 
-        .input-group input::placeholder { color: var(--text-muted); }
+        .input-group input::placeholder { color: #9a3412; opacity: 0.5; }
 
-        /* Force dark on all selects everywhere */
-        select { color-scheme: dark; }
+        /* Force light theme on controls */
+        select { color-scheme: light; }
 
         .card select, .card input[type="text"],
         .card input[type="date"], .card input[type="time"],
@@ -891,7 +963,7 @@
         #page-home select {
             background: var(--bg-input) !important;
             color: var(--text-primary) !important;
-            border-color: rgba(59,130,246,.18) !important;
+            border-color: rgba(217, 119, 6, 0.25) !important;
         }
 
         .form-grid {
@@ -904,7 +976,7 @@
         .form-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
 
         /* ════════════════════════════════════════
-           BUTTONS
+           BUTTONS — Saffron gradients & golden rollover highlights
         ════════════════════════════════════════ */
         .btn-primary {
             display: inline-flex;
@@ -912,9 +984,8 @@
             justify-content: center;
             gap: 8px;
             padding: 11px 26px;
-            background: linear-gradient(135deg,
-                rgba(59,130,246,.78), rgba(139,92,246,.82));
-            border: 1px solid rgba(96,165,250,.40);
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border: 1px solid rgba(217, 119, 6, 0.40);
             border-radius: 10px;
             color: #fff;
             font-family: var(--font-heading);
@@ -923,13 +994,14 @@
             cursor: pointer;
             letter-spacing: .4px;
             transition: all .25s ease;
-            box-shadow: 0 4px 18px rgba(59,130,246,.22);
+            box-shadow: 0 4px 18px rgba(234, 88, 12, 0.25);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            box-shadow: 0 6px 28px rgba(59,130,246,.38);
+            background: linear-gradient(135deg, #ea580c, #c2410c);
+            box-shadow: 0 6px 28px rgba(234, 88, 12, 0.45);
             transform: translateY(-1px);
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
         }
 
         .btn-primary:active { transform: translateY(0); }
@@ -940,11 +1012,10 @@
             width: 260px;
             margin: 22px auto 0;
             padding: 13px 0;
-            background: linear-gradient(135deg,
-                rgba(245,158,11,.88), rgba(251,191,36,.94));
-            border: 1px solid rgba(245,158,11,.50);
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            border: 1px solid rgba(217, 119, 6, 0.50);
             border-radius: 12px;
-            color: #07040a;
+            color: #431407;
             font-family: var(--font-heading);
             font-size: 15px;
             font-weight: 700;
@@ -952,13 +1023,15 @@
             letter-spacing: .5px;
             text-align: center;
             transition: all .25s;
-            box-shadow: 0 4px 22px rgba(245,158,11,.28);
+            box-shadow: 0 4px 22px rgba(217, 119, 6, 0.25);
         }
 
         .calculate-btn:hover {
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
-            box-shadow: 0 6px 32px rgba(245,158,11,.48);
+            background: linear-gradient(135deg, #ea580c, #fbbf24);
+            box-shadow: 0 6px 32px rgba(234, 88, 12, 0.45);
+            color: #fff;
             transform: translateY(-1px);
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
         }
 
         /* ════════════════════════════════════════
@@ -969,9 +1042,9 @@
             gap: 3px;
             margin-bottom: 18px;
             padding: 3px;
-            background: rgba(2, 8, 26, 0.62);
+            background: rgba(217, 119, 6, 0.08);
             border-radius: 10px;
-            border: 1px solid rgba(59,130,246,.11);
+            border: 1px solid rgba(217, 119, 6, 0.18);
         }
 
         .sub-tab-btn {
@@ -989,14 +1062,15 @@
         }
 
         .sub-tab-btn:hover {
-            background: rgba(59,130,246,.10);
-            color: var(--text-primary);
+            background: rgba(245, 158, 11, 0.10);
+            color: #ea580c;
         }
 
         .sub-tab-btn.active {
-            background: rgba(59,130,246,.20);
-            color: var(--accent-sky);
-            box-shadow: 0 0 10px rgba(59,130,246,.14);
+            background: rgba(245, 158, 11, 0.22);
+            color: #ea580c;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.18);
+            border: 1px solid rgba(217, 119, 6, 0.25);
         }
 
         .sub-tab-content { display: none; }
@@ -1012,33 +1086,33 @@
         }
 
         thead th {
-            background: rgba(4, 16, 50, 0.85);
+            background: rgba(254, 243, 199, 0.60);
             color: var(--text-gold);
             font-weight: 700;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 1.1px;
             padding: 10px 14px;
-            border-bottom: 1px solid rgba(59,130,246,.22);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.30);
             text-align: left;
         }
 
         tbody td {
             padding: 9px 14px;
             color: var(--text-primary);
-            border-bottom: 1px solid rgba(59,130,246,.07);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.12);
             vertical-align: top;
         }
 
         tbody tr:nth-child(even) td {
-            background: rgba(59,130,246,.04);
+            background: rgba(245, 158, 11, 0.03);
         }
 
         tbody tr:hover td {
-            background: rgba(59,130,246,.08);
+            background: rgba(245, 158, 11, 0.07);
         }
 
-        .table-label { color: var(--text-label); font-size: 12px; }
+        .table-label { color: var(--text-secondary); font-size: 12px; }
         .table-value { color: var(--text-primary); font-weight: 500; }
 
         /* South-Indian chart grid */
@@ -1046,8 +1120,8 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 2px;
-            background: rgba(59,130,246,.08);
-            border: 1px solid rgba(59,130,246,.18);
+            background: rgba(217, 119, 6, 0.20);
+            border: 1px solid rgba(217, 119, 6, 0.35);
             border-radius: 8px;
             overflow: hidden;
             max-width: 320px;
@@ -1055,15 +1129,15 @@
         }
 
         .chart-cell {
-            background: rgba(3, 11, 36, 0.82);
+            background: rgba(255, 255, 255, 0.90);
             min-height: 58px;
             padding: 5px;
             font-size: 10px;
             color: var(--text-secondary);
         }
 
-        .chart-cell.center-void { background: rgba(1, 6, 20, 0.90); }
-        .planet-symbol { font-size: 10px; color: var(--accent-sky); font-weight: 600; }
+        .chart-cell.center-void { background: rgba(254, 243, 199, 0.40); }
+        .planet-symbol { font-size: 10px; color: var(--accent-cosmic); font-weight: 600; }
 
         /* Section heading within charts */
         .chart-section-title {
@@ -1073,7 +1147,7 @@
             color: var(--accent-azure);
             margin-bottom: 10px;
             padding-bottom: 5px;
-            border-bottom: 1px solid rgba(59,130,246,.16);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.20);
         }
 
         /* ════════════════════════════════════════
@@ -1085,16 +1159,16 @@
             font-family: var(--font-heading);
             font-size: 13px;
             font-weight: 600;
-            color: var(--accent-violet);
+            color: var(--text-gold);
             padding: 8px 14px;
-            background: rgba(139,92,246,.10);
+            background: rgba(245, 158, 11, 0.12);
             border-radius: 8px 8px 0 0;
-            border: 1px solid rgba(139,92,246,.20);
+            border: 1px solid rgba(217, 119, 6, 0.25);
         }
 
         .antaram-row {
-            background: rgba(2, 8, 26, 0.55);
-            border-left: 2px solid rgba(167,139,250,.30);
+            background: rgba(255, 255, 255, 0.80);
+            border-left: 2.5px solid rgba(245, 158, 11, 0.40);
             padding: 5px 12px;
             margin: 2px 0;
             border-radius: 0 6px 6px 0;
@@ -1103,13 +1177,13 @@
         }
 
         .antaram-active {
-            background: rgba(139,92,246,.14);
-            border-left-color: var(--accent-violet);
+            background: rgba(254, 215, 170, 0.45);
+            border-left-color: #ea580c;
             color: var(--text-primary);
         }
 
         /* ════════════════════════════════════════
-           AI CHAT INTERFACE
+           AI CHAT INTERFACE & BUG FIXES
         ════════════════════════════════════════ */
         .chat-container {
             display: flex;
@@ -1122,8 +1196,8 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            background: rgba(1, 6, 22, 0.72);
-            border: 1px solid rgba(59,130,246,.11);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(217, 119, 6, 0.25);
             border-radius: 12px;
             margin-bottom: 14px;
             display: flex;
@@ -1131,7 +1205,8 @@
             gap: 14px;
         }
 
-        .message {
+        /* Correct selector matching the DOM dynamically built by JS */
+        .chat-message {
             max-width: 82%;
             padding: 12px 16px;
             border-radius: 12px;
@@ -1140,99 +1215,114 @@
             animation: fade-in-up .3s ease;
         }
 
-        .message.ai {
-            background: rgba(4, 16, 50, 0.88);
-            border: 1px solid rgba(59,130,246,.18);
+        .chat-message.ai {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(217, 119, 6, 0.28);
             align-self: flex-start;
             border-radius: 4px 12px 12px 12px;
             color: var(--text-primary);
         }
 
-        .message.user {
-            background: rgba(59,130,246,.16);
-            border: 1px solid rgba(96,165,250,.22);
+        .chat-message.user {
+            background: rgba(254, 215, 170, 0.45);
+            border: 1px solid rgba(234, 88, 12, 0.25);
             align-self: flex-end;
             border-radius: 12px 4px 12px 12px;
             color: var(--text-primary);
         }
 
-        .message-label {
+        .chat-message-meta {
+            display: block;
             font-size: 10px; font-weight: 700;
             text-transform: uppercase; letter-spacing: 1.5px;
-            color: var(--text-label); margin-bottom: 6px;
+            color: var(--text-secondary); margin-bottom: 6px;
         }
-        .message.ai .message-label   { color: var(--accent-azure); }
-        .message.user .message-label { color: var(--accent-sky); }
+        .chat-message.ai .chat-message-meta   { color: var(--accent-azure); }
+        .chat-message.user .chat-message-meta { color: var(--accent-sky); }
 
-        .chat-input-area {
-            display: flex; gap: 10px; align-items: flex-end;
+        .chat-input-bar {
+            display: flex; gap: 10px; align-items: center;
+            margin-top: 14px;
         }
 
-        .chat-input-area textarea {
+        .chat-input {
             flex: 1;
             background: var(--bg-input) !important;
-            border: 1px solid rgba(59,130,246,.20) !important;
+            border: 1px solid rgba(217, 119, 6, 0.28) !important;
             border-radius: 10px;
             color: var(--text-primary) !important;
             padding: 12px 16px;
             font-size: 14px;
             font-family: var(--font-sans);
-            resize: none;
-            min-height: 48px; max-height: 150px;
             outline: none;
             transition: border-color .2s;
         }
 
-        .chat-input-area textarea:focus {
-            border-color: rgba(96,165,250,.48) !important;
-            box-shadow: 0 0 0 3px rgba(59,130,246,.09) !important;
+        .chat-input:focus {
+            border-color: #ea580c !important;
+            box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12) !important;
         }
 
-        .chat-input-area textarea::placeholder { color: var(--text-muted); }
+        .chat-input::placeholder { color: #9a3412; opacity: 0.55; }
 
         .chat-send-btn {
             padding: 12px 22px;
-            background: linear-gradient(135deg,
-                rgba(59,130,246,.82), rgba(139,92,246,.88));
-            border: 1px solid rgba(96,165,250,.38);
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border: 1px solid rgba(217, 119, 6, 0.40);
             border-radius: 10px;
             color: #fff;
             font-weight: 600;
             cursor: pointer;
             font-size: 14px;
             transition: all .2s;
+            box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25);
         }
 
         .chat-send-btn:hover {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            box-shadow: 0 4px 18px rgba(59,130,246,.32);
+            background: linear-gradient(135deg, #ea580c, #c2410c);
+            box-shadow: 0 4px 18px rgba(234, 88, 12, 0.40);
+        }
+
+        /* ── Summary panels inside Chat tab ── */
+        .ai-birth-summary-panel {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(254, 243, 199, 0.45) !important;
+            border: 1px solid rgba(217, 119, 6, 0.30) !important;
+            color: var(--text-primary);
         }
 
         /* ════════════════════════════════════════
            SHADBALA / ASHTAKAVARGA
         ════════════════════════════════════════ */
-        .shadbala-table thead th { color: var(--accent-violet); }
+        .shadbala-table thead th { color: var(--accent-azure); }
 
         .shadbala-bar {
             height: 4px; border-radius: 2px;
-            background: rgba(59,130,246,.12); margin-top: 3px; overflow: hidden;
+            background: rgba(217, 119, 6, 0.12); margin-top: 3px; overflow: hidden;
         }
         .shadbala-fill {
             height: 100%; border-radius: 2px;
-            background: linear-gradient(90deg, #3b82f6, #a78bfa);
+            background: linear-gradient(90deg, #ea580c, #eab308);
         }
 
         .ashtaka-grid {
             display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
         }
         .ashtaka-cell {
-            background: rgba(3,11,36,.68);
-            border: 1px solid rgba(59,130,246,.10);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(217, 119, 6, 0.20);
             border-radius: 5px; text-align: center;
             padding: 6px 4px; font-size: 12px;
         }
-        .ashtaka-cell.high { border-color: rgba(245,158,11,.28); color: var(--text-gold); }
-        .ashtaka-cell.low  { border-color: rgba(244,63,94,.18);  color: #fda4af; }
+        .ashtaka-cell.high { border-color: rgba(217, 119, 6, 0.45); color: var(--text-gold); font-weight: bold; }
+        .ashtaka-cell.low  { border-color: rgba(220, 38, 38, 0.28);  color: #be123c; }
 
         /* ════════════════════════════════════════
            DAILY KAALAMS
@@ -1244,8 +1334,8 @@
         }
 
         .kaalams-item {
-            background: rgba(3,11,36,.62);
-            border: 1px solid rgba(59,130,246,.11);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(217, 119, 6, 0.20);
             border-radius: 10px;
             padding: 11px 14px;
         }
@@ -1253,7 +1343,7 @@
         .kaalams-name {
             font-size: 10px; font-weight: 700;
             text-transform: uppercase; letter-spacing: 1.1px;
-            color: var(--text-label); margin-bottom: 4px;
+            color: var(--text-secondary); margin-bottom: 4px;
         }
 
         .kaalams-time {
@@ -1261,7 +1351,7 @@
             color: var(--text-primary);
         }
 
-        .kaalams-item.inauspicious .kaalams-time { color: #fca5a5; }
+        .kaalams-item.inauspicious .kaalams-time { color: #b91c1c; }
         .kaalams-item.auspicious   .kaalams-time { color: var(--text-gold); }
 
         /* ════════════════════════════════════════
@@ -1274,8 +1364,8 @@
         }
 
         .hora-cell {
-            background: rgba(3,11,36,.60);
-            border: 1px solid rgba(59,130,246,.09);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(217, 119, 6, 0.18);
             border-radius: 8px;
             padding: 8px 10px;
             font-size: 12px;
@@ -1283,16 +1373,16 @@
         }
 
         .hora-time {
-            font-size: 10px; color: var(--text-label); margin-bottom: 2px;
+            font-size: 10px; color: var(--text-secondary); margin-bottom: 2px;
         }
         .hora-planet { font-weight: 600; color: var(--text-primary); }
 
         .hora-cell.current {
-            background: rgba(59,130,246,.17);
-            border-color: rgba(96,165,250,.38);
-            box-shadow: 0 0 10px rgba(59,130,246,.14);
+            background: rgba(254, 215, 170, 0.45);
+            border-color: #ea580c;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
         }
-        .hora-cell.current .hora-planet { color: var(--accent-sky); }
+        .hora-cell.current .hora-planet { color: var(--accent-cosmic); }
 
         /* ════════════════════════════════════════
            FESTIVALS & EVENTS
@@ -1300,11 +1390,14 @@
         .festival-item {
             display: flex; align-items: flex-start; gap: 10px;
             padding: 9px 12px;
-            background: rgba(3,11,36,.55);
+            background: rgba(255, 255, 255, 0.85);
             border-radius: 8px;
-            border-left: 3px solid rgba(245,158,11,.38);
+            border-left: 3px solid rgba(217, 119, 6, 0.50);
             font-size: 13px; color: var(--text-primary);
             margin-bottom: 6px;
+            border-top: 1px solid rgba(217, 119, 6, 0.15);
+            border-right: 1px solid rgba(217, 119, 6, 0.15);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.15);
         }
         .festival-date { font-size: 10px; color: var(--text-gold); font-weight: 700; white-space: nowrap; }
 
@@ -1314,7 +1407,7 @@
         .compat-score { text-align: center; padding: 18px; }
         .compat-score .score-number {
             font-size: 54px; font-weight: 800;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            background: linear-gradient(135deg, #fbbf24, #ea580c);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text; line-height: 1;
@@ -1324,21 +1417,24 @@
         /* ════════════════════════════════════════
            MODALS
         ════════════════════════════════════════ */
+        /* ════════════════════════════════════════
+           MODALS — Warm theme
+        ================================================================ */
         .modal-overlay {
             position: fixed; inset: 0;
-            background: rgba(0,0,0,.78);
+            background: rgba(67, 20, 7, 0.45);
             backdrop-filter: blur(5px);
             z-index: 900;
             display: flex; align-items: center; justify-content: center;
         }
 
         .modal-box {
-            background: rgba(3, 11, 38, 0.98);
-            border: 1px solid rgba(59,130,246,.28);
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(217, 119, 6, 0.35);
             border-radius: 20px;
             padding: 30px 32px;
             width: 420px; max-width: 90vw;
-            box-shadow: 0 24px 64px rgba(0,0,0,.75);
+            box-shadow: 0 24px 64px rgba(67, 20, 7, 0.15);
         }
 
         .modal-title {
@@ -1353,29 +1449,49 @@
         .loading-spinner {
             display: inline-block;
             width: 20px; height: 20px;
-            border: 2px solid rgba(59,130,246,.2);
-            border-top-color: var(--accent-azure);
+            border: 2px solid rgba(217, 119, 6, 0.2);
+            border-top-color: var(--accent-cosmic);
             border-radius: 50%;
             animation: spin .8s linear infinite;
         }
 
         .error-banner {
-            background: rgba(244,63,94,.10);
-            border: 1px solid rgba(244,63,94,.26);
+            background: rgba(220,38,38,.08);
+            border: 1px solid rgba(220,38,38,.25);
             border-radius: 10px;
             padding: 12px 16px;
-            color: #fca5a5;
+            color: #be123c;
             font-size: 13px;
             display: flex; align-items: center; gap: 10px;
         }
-        .error-banner i { color: #f43f5e; font-size: 16px; }
+        .error-banner i { color: #be123c; font-size: 16px; }
 
         /* ════════════════════════════════════════
-           MARRIAGE — INLINE GRID OVERRIDE
+           MARRIAGE — INLINE GRID OVERRIDE (Warm)
         ════════════════════════════════════════ */
         #page-marriage > .card > div[style*="grid"] > div {
-            background: rgba(3,11,36,.72) !important;
-            border-color: rgba(59,130,246,.14) !important;
+            background: rgba(255, 255, 255, 0.80) !important;
+            border-color: rgba(217, 119, 6, 0.25) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Lord Surya Hero Card styling */
+        .surya-hero-card {
+            transition: all 0.3s ease;
+        }
+        @media (max-width: 768px) {
+            .surya-hero-card {
+                flex-direction: column !important;
+                height: auto !important;
+            }
+            .surya-hero-card > div:first-child {
+                padding: 16px !important;
+            }
+            .surya-hero-card > div:last-child {
+                width: 100% !important;
+                height: 150px !important;
+                clip-path: none !important;
+            }
         }
 
         /* ════════════════════════════════════════
@@ -1392,7 +1508,7 @@
             #lbl-title { font-size: 16px; }
             .nav-top-bar { gap: 2px; }
             .nav-tab { padding: 6px 10px; font-size: 12px; }
-            main { padding: 12px; }
+            .single-page-content { padding: 12px; }
             .card { padding: 16px 18px; }
             .panch-grid { grid-template-columns: repeat(2, 1fr); }
             .horas-grid { grid-template-columns: repeat(3, 1fr); }
@@ -1451,6 +1567,21 @@
 
         <!-- ------------------ PAGE 1: HOME (PANCHANGAM CALENDAR VIEW) ------------------ -->
         <div class="single-page-content active" id="page-home">
+            
+            <!-- Lord Surya Chariot Hero Section -->
+            <div class="card surya-hero-card" style="margin-bottom: 20px; padding: 0; overflow: hidden; height: 180px; display: flex; align-items: center; background: linear-gradient(135deg, rgba(254, 215, 170, 0.9), rgba(251, 146, 60, 0.85)); border: 1px solid var(--border-gold);">
+                <div style="padding: 24px 30px; flex: 1; z-index: 2;">
+                    <div id="lbl-surya-hero-title" style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: #7c2d12; margin-bottom: 6px; text-shadow: 0 1px 2px rgba(255,255,255,0.6);">भगवान सूर्य — Lord Surya Bhagavan</div>
+                    <div id="lbl-surya-hero-subtitle" style="font-size: 13px; font-weight: 500; color: #431407; max-width: 650px; line-height: 1.5;">
+                        The divine orchestrator of the cosmos, charging his celestial chariot drawn by seven white horses, representing the seven rays of light and days of the week.
+                    </div>
+                </div>
+                <div style="width: 320px; height: 100%; position: relative; flex-shrink: 0; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%);">
+                    <img src="/assets/lord_surya_chariot.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Lord Surya Bhagavan">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(251, 146, 60, 0.9) 0%, transparent 40%);"></div>
+                </div>
+            </div>
+
             <div class="dashboard-grid">
                 
                 <!-- Left Side: Interactive Panchangam Calendar Grid -->
@@ -1905,8 +2036,8 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px;">
                     
                     <!-- Male Native Details -->
-                    <div style="background: rgba(26, 32, 44, 0.4); border: 1px solid rgba(226, 232, 240, 0.1); border-radius: 8px; padding: 15px;">
-                        <h4 style="color: #4299E1; font-family: var(--font-heading); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <div style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 8px; padding: 15px;">
+                        <h4 style="color: #c2410c; font-family: var(--font-heading); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-mars"></i> <span id="lbl-male-partner-title">Male Partner Details</span>
                         </h4>
                         <div class="input-group">
@@ -1941,8 +2072,8 @@
                     </div>
 
                     <!-- Female Native Details -->
-                    <div style="background: rgba(26, 32, 44, 0.4); border: 1px solid rgba(226, 232, 240, 0.1); border-radius: 8px; padding: 15px;">
-                        <h4 style="color: #ED64A6; font-family: var(--font-heading); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <div style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 8px; padding: 15px;">
+                        <h4 style="color: #be123c; font-family: var(--font-heading); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-venus"></i> <span id="lbl-female-partner-title">Female Partner Details</span>
                         </h4>
                         <div class="input-group">
@@ -1979,7 +2110,7 @@
                 </div>
 
                 <!-- Shared Settings & Button -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; border-top: 1px solid rgba(226, 232, 240, 0.1); padding-top: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; border-top: 1px solid var(--border-gold); padding-top: 20px;">
                     <div class="input-group">
                         <label id="lbl-m-ayan-txt">Ayanamsa System</label>
                         <select id="in-marriage-ayanamsa">
@@ -2018,7 +2149,7 @@
                 </div>
 
                 <!-- Results Block -->
-                <div id="marriage-results-block" style="display: none; border-top: 1px solid rgba(226, 232, 240, 0.1); padding-top: 25px;">
+                <div id="marriage-results-block" style="display: none; border-top: 1px solid var(--border-gold); padding-top: 25px;">
                     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; text-align: center;">
                         <h4 id="lbl-marriage-result-header" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 15px; margin-bottom: 8px;">Compatibility Matching Result</h4>
                         <div id="lbl-marriage-percentage" style="font-size: 42px; font-weight: 800; font-family: var(--font-heading); color: #48BB78; text-shadow: 0 0 10px rgba(72,187,120,0.2);">
@@ -2033,7 +2164,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div style="display: flex; flex-direction: column; align-items: center;">
                             <h4 style="margin-bottom: 10px;">
-                                <a href="javascript:void(0)" id="link-male-name" onclick="loadIndividualChart('male')" style="color: #4299E1; font-weight: bold; text-decoration: underline; font-size: 14px;">Male Name</a>
+                                <a href="javascript:void(0)" id="link-male-name" onclick="loadIndividualChart('male')" style="color: #c2410c; font-weight: bold; text-decoration: underline; font-size: 14px;">Male Name</a>
                             </h4>
                             <div class="rasi-chart-wrapper" id="marriage-male-chart-container" style="max-width: 320px; width: 100%;">
                                 <!-- Rendered dynamically -->
@@ -2041,7 +2172,7 @@
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: center;">
                             <h4 style="margin-bottom: 10px;">
-                                <a href="javascript:void(0)" id="link-female-name" onclick="loadIndividualChart('female')" style="color: #ED64A6; font-weight: bold; text-decoration: underline; font-size: 14px;">Female Name</a>
+                                <a href="javascript:void(0)" id="link-female-name" onclick="loadIndividualChart('female')" style="color: #be123c; font-weight: bold; text-decoration: underline; font-size: 14px;">Female Name</a>
                             </h4>
                             <div class="rasi-chart-wrapper" id="marriage-female-chart-container" style="max-width: 320px; width: 100%;">
                                 <!-- Rendered dynamically -->
@@ -2070,7 +2201,7 @@
                     </div>
 
                     <!-- AI Predictions Section -->
-                    <div style="border-top: 1px solid rgba(226, 232, 240, 0.1); padding-top: 25px;">
+                    <div style="border-top: 1px solid var(--border-gold); padding-top: 25px;">
                         <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-brain"></i> <span id="lbl-marriage-ai-reading">Ganesha Astro-AI Relationship Matching Reading</span>
                         </h4>
@@ -2094,13 +2225,13 @@
                 </div>
 
                 <!-- Tip banner (shown when no birth chart loaded) -->
-                <div class="ai-birth-summary-panel" id="lbl-ai-p1" style="background: rgba(79,70,229,0.05); border-color: rgba(79,70,229,0.2);">
+                <div class="ai-birth-summary-panel" id="lbl-ai-p1">
                     <i class="fa-solid fa-lightbulb" style="color: var(--accent-indigo); margin-right: 6px;"></i>
                     Ask any Vedic astrology question freely! Tip: calculate your birth chart in the <strong>Jyothisyam</strong> tab first for personalized chart-aware predictions.
                 </div>
 
                 <!-- Loaded birth details summary -->
-                <div class="ai-birth-summary-panel" id="ai-birth-loaded-summary" style="display: none; background: rgba(180,83,9,0.06); border-color: var(--border-gold);">
+                <div class="ai-birth-summary-panel" id="ai-birth-loaded-summary" style="display: none;">
                     <!-- Populated dynamically -->
                 </div>
 
@@ -3333,6 +3464,33 @@
             document.getElementById('lbl-title').innerText = dict.title;
             document.getElementById('lbl-subtitle').innerText = dict.subtitle;
             document.getElementById('lbl-home-calendar').innerText = dict.lbl_home_calendar;
+
+            // Translate Surya Dev Hero card
+            const suryaTitle = document.getElementById('lbl-surya-hero-title');
+            if (suryaTitle) {
+                const titleMap = {
+                    en: "भगवान सूर्य — Lord Surya Bhagavan",
+                    ta: "சூரிய பகவான் — Lord Surya Bhagavan",
+                    te: "సూర్య భగవానుడు — Lord Surya Bhagavan",
+                    ml: "സൂര്യ ഭഗവാൻ — Lord Surya Bhagavan",
+                    kn: "ಸೂರ್ಯ ಭಗವಾನ್ — Lord Surya Bhagavan",
+                    hi: "भगवान सूर्य — Lord Surya Bhagavan"
+                };
+                suryaTitle.innerText = titleMap[langCode] || titleMap.en;
+            }
+            const suryaSubtitle = document.getElementById('lbl-surya-hero-subtitle');
+            if (suryaSubtitle) {
+                const subMap = {
+                    en: "The divine orchestrator of the cosmos, charging his celestial chariot drawn by seven white horses, representing the seven rays of light and days of the week.",
+                    ta: "பிரபஞ்சத்தின் உந்துசக்தியான சூரிய பகவான், தனது ஏழு குதிரைகள் பூட்டிய தங்க ரதத்தில் பிரபஞ்ச ஒளியை வாரி வழங்குகிறார்.",
+                    te: "విశ్వానికి వెలుగులు పంచే సూర్య భగవానుడు ఏడు గుర్రాల రథంపై ప్రయాణిస్తూ కాలచక్రాన్ని నడిపిస్తున్నాడు.",
+                    ml: "പ്രപഞ്ചത്തിന്റെ ചാലകശക്തിയായ സൂര്യഭഗവാൻ തന്റെ ഏഴ് വെള്ളക്കുതിരകൾ വലിക്കുന്ന സ്വർണ്ണരഥത്തിൽ സഞ്ചരിക്കുന്നു.",
+                    kn: "ವಿಶ್ವಕ್ಕೆ ಬೆಳಕನ್ನು ನೀಡುವ ಸೂರ್ಯ ಭಗವಾನನು ಏಳು ಕುದುರೆಗಳ ರಥದ ಮೇಲೆ ಸಂಚರಿಸುತ್ತಿದ್ದಾನೆ.",
+                    hi: "सृष्टि के प्रकाश और ऊर्जा के दिव्य स्रोत, भगवान सूर्य अपने सात श्वेत अश्वों के रथ पर सवार होकर ब्रह्मांड का संचालन करते हैं।"
+                };
+                suryaSubtitle.innerText = subMap[langCode] || subMap.en;
+            }
+
             document.getElementById('lbl-jyothisyam-title').innerText = dict.lbl_jyothisyam_title;
             document.getElementById('lbl-ai-title').innerText = dict.lbl_ai_title;
             document.getElementById('nav-btn-home').innerText = dict.nav_btn_home || "Home (Panchangam)";
