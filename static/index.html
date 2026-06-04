@@ -121,7 +121,7 @@
             to   { transform: rotate(560deg) translateX(78px) rotate(-560deg); }
         }
         @keyframes om-breathe {
-            0%, 100% { opacity: .018; } 50% { opacity: .052; }
+            0%, 100% { opacity: .07; } 50% { opacity: .17; }
         }
         @keyframes mantra-glow {
             0%, 100% { text-shadow: 0 0 14px rgba(234,88,12,.35); }
@@ -251,9 +251,9 @@
             content: 'ॐ';
             position: fixed;
             font-family: var(--font-serif);
-            font-size: 700px;
+            font-size: 950px;
             line-height: 1;
-            color: rgba(217, 119, 6, 0.05); /* Faded golden OM watermark */
+            color: #d97706; /* Solid golden color (opacity controlled by keyframes) */
             top: 46%;
             left: 50%;
             transform: translate(-50%, -50%);
