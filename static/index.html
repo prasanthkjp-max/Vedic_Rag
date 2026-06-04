@@ -6649,7 +6649,22 @@
             startNavagrahaTimer();
         }
         // --- Initialize Page details on startup ---
-        window.onload = function() {
+        window.onload = async function() {
+            // Attempt to auto-fetch local API key if not set
+            if (!localStorage.getItem('vedic_api_key')) {
+                try {
+                    const res = await fetch('/api/local-key');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.api_key) {
+                            localStorage.setItem('vedic_api_key', data.api_key);
+                        }
+                    }
+                } catch (e) {
+                    console.log("Not local or error fetching auto-key:", e);
+                }
+            }
+
             if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
             // Load current date daily panchangam and render calendar
