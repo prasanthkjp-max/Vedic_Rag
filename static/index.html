@@ -253,7 +253,7 @@
             font-family: var(--font-serif);
             font-size: 700px;
             line-height: 1;
-            color: rgba(245, 158, 11, 0.035); /* Warm light gold OM watermark */
+            color: rgba(217, 119, 6, 0.05); /* Faded golden OM watermark */
             top: 46%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -261,25 +261,6 @@
             z-index: 0;
             user-select: none;
             animation: om-breathe 12s ease-in-out infinite;
-        }
-
-        /* Floating background image of Lord Surya chariot in the bottom-right */
-        .app-container::after {
-            content: '';
-            position: fixed;
-            bottom: -30px;
-            right: -20px;
-            width: 480px;
-            height: 480px;
-            background-image: url('/assets/lord_surya_chariot.png');
-            background-repeat: no-repeat;
-            background-position: bottom right;
-            background-size: contain;
-            opacity: 0.11; /* Subtle presence */
-            pointer-events: none;
-            z-index: 0;
-            user-select: none;
-            mix-blend-mode: multiply; /* Blend nicely into warm sun background */
         }
 
         /* ════════════════════════════════════════
