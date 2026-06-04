@@ -1078,6 +1078,159 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         
     return shadbala_result
 
+def format_jd_to_local_time(jd, jd_sunrise, timezone_offset=5.5):
+    hour_ut = ((jd + 0.5) % 1.0) * 24.0
+    hour_local = hour_ut + timezone_offset
+    
+    is_next_day = (jd - jd_sunrise >= 1.0) or (hour_local >= 24.0)
+    
+    hour_local = hour_local % 24.0
+    h = math.floor(hour_local)
+    m = math.floor((hour_local - h) * 60)
+    
+    ampm = "AM"
+    if h >= 12:
+        ampm = "PM"
+        if h > 12: h -= 12
+    elif h == 0:
+        h = 12
+        
+    next_day_suffix = " (Next Day)" if is_next_day else ""
+    return f"{h:02d}:{m:02d} {ampm}{next_day_suffix}"
+
+def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
+    steps = 56
+    dt = 0.5 / 24.0
+    
+    def get_indices_at_jd(jd):
+        ayan = swe.get_ayanamsa(jd)
+        res_sun, _ = swe.calc_ut(jd, swe.SUN)
+        res_moon, _ = swe.calc_ut(jd, swe.MOON)
+        sun_l = (res_sun[0] - ayan) % 360.0
+        moon_l = (res_moon[0] - ayan) % 360.0
+        diff = (moon_l - sun_l) % 360.0
+        
+        tithi_num = math.floor(diff / 12.0)
+        naks_num = math.floor(moon_l / (360.0 / 27.0)) % 27
+        yog_num = math.floor((sun_l + moon_l) / (360.0 / 27.0)) % 27
+        
+        kar_num = math.floor(diff / 6.0) % 60
+        return tithi_num, naks_num, yog_num, kar_num
+
+    last_t, last_n, last_y, last_k = get_indices_at_jd(jd_sunrise)
+    
+    tithi_end_time = "Full Night"
+    tithi_next_idx = (last_t + 1) % 30
+    
+    nakshatra_end_time = "Full Night"
+    nakshatra_next_idx = (last_n + 1) % 27
+    
+    yogam_end_time = "Full Night"
+    yogam_next_idx = (last_y + 1) % 27
+    
+    karanam_end_time = "Full Night"
+    karanam_next_idx = (last_k + 1) % 60
+    
+    found_t, found_n, found_y, found_k = False, False, False, False
+    
+    for step in range(1, steps + 1):
+        jd_curr = jd_sunrise + step * dt
+        curr_t, curr_n, curr_y, curr_k = get_indices_at_jd(jd_curr)
+        
+        if not found_t and curr_t != last_t:
+            low = jd_sunrise + (step - 1) * dt
+            high = jd_curr
+            for _ in range(10):
+                mid = (low + high) / 2
+                m_t, _, _, _ = get_indices_at_jd(mid)
+                if m_t == last_t:
+                    low = mid
+                else:
+                    high = mid
+            tithi_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            tithi_next_idx = curr_t
+            found_t = True
+            
+        if not found_n and curr_n != last_n:
+            low = jd_sunrise + (step - 1) * dt
+            high = jd_curr
+            for _ in range(10):
+                mid = (low + high) / 2
+                _, m_n, _, _ = get_indices_at_jd(mid)
+                if m_n == last_n:
+                    low = mid
+                else:
+                    high = mid
+            nakshatra_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            nakshatra_next_idx = curr_n
+            found_n = True
+            
+        if not found_y and curr_y != last_y:
+            low = jd_sunrise + (step - 1) * dt
+            high = jd_curr
+            for _ in range(10):
+                mid = (low + high) / 2
+                _, _, m_y, _ = get_indices_at_jd(mid)
+                if m_y == last_y:
+                    low = mid
+                else:
+                    high = mid
+            yogam_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            yogam_next_idx = curr_y
+            found_y = True
+            
+        if not found_k and curr_k != last_k:
+            low = jd_sunrise + (step - 1) * dt
+            high = jd_curr
+            for _ in range(10):
+                mid = (low + high) / 2
+                _, _, _, m_k = get_indices_at_jd(mid)
+                if m_k == last_k:
+                    low = mid
+                else:
+                    high = mid
+            karanam_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            karanam_next_idx = curr_k
+            found_k = True
+            
+    return {
+        "tithi_end_time": tithi_end_time,
+        "tithi_next_idx": int(tithi_next_idx),
+        "nakshatra_end_time": nakshatra_end_time,
+        "nakshatra_next_idx": int(nakshatra_next_idx),
+        "yogam_end_time": yogam_end_time,
+        "yogam_next_idx": int(yogam_next_idx),
+        "karanam_end_time": karanam_end_time,
+        "karanam_next_idx": int(karanam_next_idx)
+    }
+
+def calculate_precise_rise_set(jd_sunrise, longitude, latitude, timezone_offset=5.5):
+    geopos = (longitude, latitude, 0.0)
+    
+    # 1. Sunrise and Sunset
+    try:
+        _, res_rise = swe.rise_trans(jd_sunrise, swe.SUN, 1, geopos, 1013.25, 15.0)
+        _, res_set = swe.rise_trans(jd_sunrise, swe.SUN, 2, geopos, 1013.25, 15.0)
+        sr = format_jd_to_local_time(res_rise[0], jd_sunrise, timezone_offset).replace(" (Next Day)", "")
+        ss = format_jd_to_local_time(res_set[0], jd_sunrise, timezone_offset).replace(" (Next Day)", "")
+    except Exception:
+        sr, ss = "--:--", "--:--"
+        
+    # 2. Moonrise and Moonset
+    try:
+        _, m_rise = swe.rise_trans(jd_sunrise, swe.MOON, 1, geopos, 1013.25, 15.0)
+        mr = format_jd_to_local_time(m_rise[0], jd_sunrise, timezone_offset)
+    except Exception:
+        mr = "--:--"
+        
+    try:
+        _, m_set = swe.rise_trans(jd_sunrise, swe.MOON, 2, geopos, 1013.25, 15.0)
+        ms = format_jd_to_local_time(m_set[0], jd_sunrise, timezone_offset)
+    except Exception:
+        ms = "--:--"
+        
+    return sr, ss, mr, ms
+
 def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male"):
     """
     Master function to calculate the complete Sidereal astrological chart
@@ -1302,14 +1455,29 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     dasa_table = calculate_vimshottari_dasa(JD, sidereal_positions["Moon"], birth_naks_idx)
     
     # --- Additional astronomical calculations for birth details ---
-    # Calculate sunrise/sunset
-    sunrise_hours, sunset_hours = calculate_sunrise_sunset(year, month, day, longitude, latitude, timezone_offset)
+    # Calculate sunrise/sunset, moonrise/moonset precisely using Swiss Ephemeris
+    # Use JD (Julian date of 5:30 AM local or birth time) as base
+    sunrise_str, sunset_str, moonrise_str, moonset_str = calculate_precise_rise_set(JD, longitude, latitude, timezone_offset)
     
-    # Format clock times
-    sunrise_min = math.floor((sunrise_hours % 1) * 60)
-    sunset_min = math.floor((sunset_hours % 1) * 60)
-    sunrise_str = f"{math.floor(sunrise_hours):02d}:{sunrise_min:02d}"
-    sunset_str = f"{math.floor(sunset_hours):02d}:{sunset_min:02d}"
+    # Parse back sunrise_hours and sunset_hours for Nazhikai and daytime calculations
+    try:
+        sr_h, sr_m = map(int, sunrise_str.split(" ")[0].split(":"))
+        if "PM" in sunrise_str and sr_h != 12: sr_h += 12
+        elif "AM" in sunrise_str and sr_h == 12: sr_h = 0
+        sunrise_hours = sr_h + sr_m / 60.0
+    except Exception:
+        sunrise_hours = 6.0
+        
+    try:
+        ss_h, ss_m = map(int, sunset_str.split(" ")[0].split(":"))
+        if "PM" in sunset_str and ss_h != 12: ss_h += 12
+        elif "AM" in sunset_str and ss_h == 12: ss_h = 0
+        sunset_hours = ss_h + ss_m / 60.0
+    except Exception:
+        sunset_hours = 18.0
+        
+    # Calculate Tithi, Nakshatra, Yoga, Karana transitions
+    transitions = calculate_panchangam_transitions(JD, timezone_offset)
     
     # Calculate day duration (Ahas)
     day_duration_hours = sunset_hours - sunrise_hours
@@ -1385,6 +1553,16 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "karanam": karanam,
             "sunrise": sunrise_str,
             "sunset": sunset_str,
+            "moonrise": moonrise_str,
+            "moonset": moonset_str,
+            "tithi_end_time": transitions["tithi_end_time"],
+            "tithi_next_idx": transitions["tithi_next_idx"],
+            "nakshatra_end_time": transitions["nakshatra_end_time"],
+            "nakshatra_next_idx": transitions["nakshatra_next_idx"],
+            "yogam_end_time": transitions["yogam_end_time"],
+            "yogam_next_idx": transitions["yogam_next_idx"],
+            "karanam_end_time": transitions["karanam_end_time"],
+            "karanam_next_idx": transitions["karanam_next_idx"],
             "ahas": ahas_str,
             "udayadhi_nazhikai": udayadhi_nazhikai_str,
             "lmt": lmt_str,
