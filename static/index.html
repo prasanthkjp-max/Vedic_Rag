@@ -4301,10 +4301,24 @@
             // --- Advanced calculations ---
             const sunriseStr = dailyPanchangamData.panchangam.sunrise || "06:00";
             const sunsetStr = dailyPanchangamData.panchangam.sunset || "18:00";
-            const [srH, srM] = sunriseStr.split(':').map(Number);
-            const [ssH, ssM] = sunsetStr.split(':').map(Number);
-            const sunriseDec = srH + srM / 60;
-            const sunsetDec = ssH + ssM / 60;
+            
+            function parseTimeDec(timeStr) {
+                if (!timeStr) return 0;
+                const clean = timeStr.trim().toUpperCase();
+                const isPM = clean.includes("PM");
+                const isAM = clean.includes("AM");
+                const cleanTime = clean.replace("AM", "").replace("PM", "").trim();
+                const [hStr, mStr] = cleanTime.split(":");
+                let h = parseInt(hStr, 10);
+                const m = parseInt(mStr, 10) || 0;
+                if (isNaN(h)) return 0;
+                if (isPM && h < 12) h += 12;
+                if (isAM && h === 12) h = 0;
+                return h + m / 60;
+            }
+
+            const sunriseDec = parseTimeDec(sunriseStr);
+            const sunsetDec = parseTimeDec(sunsetStr);
             const dayDuration = sunsetDec - sunriseDec;
             const part = dayDuration / 8;
 
@@ -4407,11 +4421,6 @@
 
             // Netram & Jeevan
             const naksName = dailyPanchangamData.panchangam.nakshatra;
-            const NAKSHATRAS_LST = [
-                "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha",
-                "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
-                "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
-            ];
             let naksIdx = 0;
             for(let i=0; i<27; i++) {
                 if(naksName.toLowerCase().includes(NAKSHATRAS_LST[i].toLowerCase())) {
