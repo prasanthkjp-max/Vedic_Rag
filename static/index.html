@@ -1456,22 +1456,90 @@
             color: var(--text-primary) !important;
         }
 
-        /* Lord Surya Hero Card styling */
-        .surya-hero-card {
+        /* Navagraha Carousel Hero Section styling */
+        .navagraha-carousel-card {
             transition: all 0.3s ease;
         }
+        .carousel-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(124, 45, 18, 0.12);
+            border: 1px solid rgba(124, 45, 18, 0.25);
+            color: #7c2d12;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+        .carousel-nav-btn:hover {
+            background: rgba(124, 45, 18, 0.9);
+            color: #ffedd5;
+            border-color: #7c2d12;
+            box-shadow: 0 0 8px rgba(124, 45, 18, 0.5);
+        }
+        .carousel-nav-btn.prev {
+            left: 10px;
+        }
+        .carousel-nav-btn.next {
+            right: 10px;
+        }
+        .carousel-dots .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(124, 45, 18, 0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .carousel-dots .dot.active {
+            background: #7c2d12;
+            transform: scale(1.3);
+            box-shadow: 0 0 4px rgba(124, 45, 18, 0.6);
+        }
+        .carousel-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+        }
         @media (max-width: 768px) {
-            .surya-hero-card {
+            .navagraha-carousel-card {
                 flex-direction: column !important;
                 height: auto !important;
+                position: relative;
             }
-            .surya-hero-card > div:first-child {
-                padding: 16px !important;
+            .carousel-content-wrapper {
+                flex-direction: column-reverse !important;
+                height: auto !important;
             }
-            .surya-hero-card > div:last-child {
+            .carousel-content-wrapper > div:first-child {
+                padding: 24px 20px 24px 20px !important;
+            }
+            .carousel-content-wrapper > .carousel-image-container {
                 width: 100% !important;
-                height: 150px !important;
+                height: 170px !important;
                 clip-path: none !important;
+            }
+            .carousel-nav-btn {
+                background: rgba(254, 215, 170, 0.9);
+                border: 1px solid var(--border-gold);
+            }
+            .carousel-nav-btn.prev {
+                left: 6px;
+            }
+            .carousel-nav-btn.next {
+                right: 6px;
+            }
+            .carousel-dots {
+                bottom: 8px !important;
+                left: 50% !important;
+                transform: translateX(-50%);
             }
         }
 
@@ -1549,17 +1617,47 @@
         <!-- ------------------ PAGE 1: HOME (PANCHANGAM CALENDAR VIEW) ------------------ -->
         <div class="single-page-content active" id="page-home">
             
-            <!-- Lord Surya Chariot Hero Section -->
-            <div class="card surya-hero-card" style="margin-bottom: 20px; padding: 0; overflow: hidden; height: 180px; display: flex; align-items: center; background: linear-gradient(135deg, rgba(254, 215, 170, 0.9), rgba(251, 146, 60, 0.85)); border: 1px solid var(--border-gold);">
-                <div style="padding: 24px 30px; flex: 1; z-index: 2;">
-                    <div id="lbl-surya-hero-title" style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: #7c2d12; margin-bottom: 6px; text-shadow: 0 1px 2px rgba(255,255,255,0.6);">भगवान सूर्य — Lord Surya Bhagavan</div>
-                    <div id="lbl-surya-hero-subtitle" style="font-size: 13px; font-weight: 500; color: #431407; max-width: 650px; line-height: 1.5;">
-                        The divine orchestrator of the cosmos, charging his celestial chariot drawn by seven white horses, representing the seven rays of light and days of the week.
+            <!-- Navagraha Carousel Hero Section -->
+            <div class="card navagraha-carousel-card" style="margin-bottom: 20px; padding: 0; overflow: hidden; height: 190px; display: flex; align-items: center; background: linear-gradient(135deg, rgba(254, 215, 170, 0.95), rgba(251, 146, 60, 0.9)); border: 1px solid var(--border-gold); position: relative;">
+                
+                <!-- Left navigation arrow -->
+                <button class="carousel-nav-btn prev" onclick="prevNavagrahaSlide()" aria-label="Previous Slide">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                
+                <!-- Main Content Area -->
+                <div class="carousel-content-wrapper" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: space-between;">
+                    <div style="padding: 20px 40px 20px 50px; flex: 1; z-index: 2; display: flex; flex-direction: column; justify-content: center;">
+                        <div id="lbl-navagraha-title" style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #7c2d12; margin-bottom: 4px; text-shadow: 0 1px 2px rgba(255,255,255,0.6);">
+                            <!-- Title will be dynamically populated -->
+                        </div>
+                        <div id="lbl-navagraha-importance" style="font-size: 13px; font-weight: 600; color: #431407; line-height: 1.4; margin-bottom: 8px;">
+                            <!-- Importance description -->
+                        </div>
+                        <div class="navagraha-mantra-box" style="border-left: 3px solid #b45309; padding-left: 10px;">
+                            <div id="lbl-navagraha-mantra-sanskrit" class="mantra-sanskrit" style="font-size: 14px; font-weight: bold; color: #7c2d12; line-height: 1.3; margin-bottom: 2px;">
+                                <!-- Sanskrit Mantra -->
+                            </div>
+                            <div id="lbl-navagraha-mantra-english" style="font-size: 11px; font-style: italic; color: #78350f; line-height: 1.3;">
+                                <!-- English Mantra -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-image-container" style="width: 320px; height: 100%; position: relative; flex-shrink: 0; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%);">
+                        <img id="img-navagraha" src="/assets/lord_surya_chariot.png" style="width: 100%; height: 100%; object-fit: cover; object-position: center top;" alt="Navagraha Deity">
+                        <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(251, 146, 60, 0.9) 0%, transparent 40%);"></div>
                     </div>
                 </div>
-                <div style="width: 320px; height: 100%; position: relative; flex-shrink: 0; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%);">
-                    <img src="/assets/lord_surya_chariot.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Lord Surya Bhagavan">
-                    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(251, 146, 60, 0.9) 0%, transparent 40%);"></div>
+
+                <!-- Right navigation arrow -->
+                <button class="carousel-nav-btn next" onclick="nextNavagrahaSlide()" aria-label="Next Slide">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <!-- Dots indicator -->
+                <div class="carousel-dots" style="position: absolute; bottom: 8px; left: 50px; display: flex; gap: 6px; z-index: 3;">
+                    <!-- Dynamically populated dots -->
                 </div>
             </div>
 
@@ -3446,30 +3544,9 @@
             document.getElementById('lbl-subtitle').innerText = dict.subtitle;
             document.getElementById('lbl-home-calendar').innerText = dict.lbl_home_calendar;
 
-            // Translate Surya Dev Hero card
-            const suryaTitle = document.getElementById('lbl-surya-hero-title');
-            if (suryaTitle) {
-                const titleMap = {
-                    en: "भगवान सूर्य — Lord Surya Bhagavan",
-                    ta: "சூரிய பகவான் — Lord Surya Bhagavan",
-                    te: "సూర్య భగవానుడు — Lord Surya Bhagavan",
-                    ml: "സൂര്യ ഭഗവാൻ — Lord Surya Bhagavan",
-                    kn: "ಸೂರ್ಯ ಭಗವಾನ್ — Lord Surya Bhagavan",
-                    hi: "भगवान सूर्य — Lord Surya Bhagavan"
-                };
-                suryaTitle.innerText = titleMap[langCode] || titleMap.en;
-            }
-            const suryaSubtitle = document.getElementById('lbl-surya-hero-subtitle');
-            if (suryaSubtitle) {
-                const subMap = {
-                    en: "The divine orchestrator of the cosmos, charging his celestial chariot drawn by seven white horses, representing the seven rays of light and days of the week.",
-                    ta: "பிரபஞ்சத்தின் உந்துசக்தியான சூரிய பகவான், தனது ஏழு குதிரைகள் பூட்டிய தங்க ரதத்தில் பிரபஞ்ச ஒளியை வாரி வழங்குகிறார்.",
-                    te: "విశ్వానికి వెలుగులు పంచే సూర్య భగవానుడు ఏడు గుర్రాల రథంపై ప్రయాణిస్తూ కాలచక్రాన్ని నడిపిస్తున్నాడు.",
-                    ml: "പ്രപഞ്ചത്തിന്റെ ചാലകശക്തിയായ സൂര്യഭഗവാൻ തന്റെ ഏഴ് വെള്ളക്കുതിരകൾ വലിക്കുന്ന സ്വർണ്ണരഥത്തിൽ സഞ്ചരിക്കുന്നു.",
-                    kn: "ವಿಶ್ವಕ್ಕೆ ಬೆಳಕನ್ನು ನೀಡುವ ಸೂರ್ಯ ಭಗವಾನನು ಏಳು ಕುದುರೆಗಳ ರಥದ ಮೇಲೆ ಸಂಚರಿಸುತ್ತಿದ್ದಾನೆ.",
-                    hi: "सृष्टि के प्रकाश और ऊर्जा के दिव्य स्रोत, भगवान सूर्य अपने सात श्वेत अश्वों के रथ पर सवार होकर ब्रह्मांड का संचालन करते हैं।"
-                };
-                suryaSubtitle.innerText = subMap[langCode] || subMap.en;
+            // Update active Navagraha slide to match newly selected language
+            if (typeof renderNavagrahaSlide === 'function') {
+                renderNavagrahaSlide();
             }
 
             document.getElementById('lbl-jyothisyam-title').innerText = dict.lbl_jyothisyam_title;
@@ -5794,9 +5871,289 @@
                 console.error("Geocoding lookup error:", err);
             }
         }
+
+        // --- Navagraha Carousel Data and Logics ---
+        const navagrahaData = [
+            {
+                id: "surya",
+                image: "/assets/lord_surya_chariot.png",
+                name: {
+                    en: "भगवान सूर्य — Lord Surya",
+                    ta: "சூரிய பகவான் — Lord Surya",
+                    te: "సూర్య భగవానుడు — Lord Surya",
+                    ml: "സൂര്യ ഭഗവാൻ — Lord Surya",
+                    kn: "ಸೂರ್ಯ ಭಗವಾನ್ — Lord Surya",
+                    hi: "भगवान सूर्य — Lord Surya"
+                },
+                importance: {
+                    en: "The source of light, energy, and life. Governs the soul, leadership, vitality, willpower, and fatherly figure.",
+                    ta: "ஒளி, ஆற்றல் மற்றும் வாழ்வின் ஆதாரம். ஆன்மா, தலைமைப்பண்பு, ஆரோக்கியம் மற்றும் தந்தையை ஆளுகிறார்.",
+                    te: "కాంతి, శక్తి మరియు జీవనానికి ఆధారం. ఆత్మశక్తి, నాయకత్వ లక్షణాలు, ఆరోగ్యం మరియు పితృత్వాన్ని సూచిస్తాడు.",
+                    ml: "പ്രകാശത്തിന്റെയും ഊർജ്ജത്തിന്റെയും ജീവന്റെയും ഉറവിടം. ആത്മാവ്, നേതൃത്വപാടവം, ആരോഗ്യം എന്നിവയെ സ്വാധീനിക്കുന്നു.",
+                    kn: "ಬೆಳಕು, ಶಕ್ತಿ ಮತ್ತು ಜೀವನದ ಮೂಲ. ಆತ್ಮಬಲ, ನಾಯಕತ್ವ ಗುಣ, आरोग्य ಮತ್ತು ಪಿತೃತ್ವವನ್ನು ಕರುಣಿಸುತ್ತಾನೆ.",
+                    hi: "प्रकाश, ऊर्जा और जीवन के दिव्य स्रोत। आत्मा, नेतृत्व, जीवन शक्ति, इच्छाशक्ति और पिता के कारक हैं।"
+                },
+                sanskritGayatri: "ॐ आदित्याय विद्महे दिवाकराय धीमहि तन्नो सूर्यः प्रचोदयात् ॥",
+                englishGayatri: "Om Aadityaaya Vidmahe Divaakaraaya Dheemahi, Tanno Sooryah Prachodayaat."
+            },
+            {
+                id: "chandra",
+                image: "/assets/lord_chandra.png",
+                name: {
+                    en: "भगवान चन्द्र — Lord Chandra",
+                    ta: "சந்திர பகவான் — Lord Chandra",
+                    te: "చంద్ర భగవానుడు — Lord Chandra",
+                    ml: "ചന്ദ്ര ഭഗവാൻ — Lord Chandra",
+                    kn: "ಚಂದ್ರ ಭಗವಾನ್ — Lord Chandra",
+                    hi: "भगवान चन्द्र — Lord Chandra"
+                },
+                importance: {
+                    en: "Governs the mind, emotions, mother, mental peace, imagination, and emotional stability.",
+                    ta: "மனம், உணர்ச்சிகள், தாய், மன அமைதி, கற்பனை மற்றும் உணர்ச்சி சமநிலையை ஆளுகிறார்.",
+                    te: "మనస్సు, భావోద్వేగాలు, తల్లి, మానసిక ప్రశాంతత మరియు ఊహాశక్తిని నియంత్రిస్తాడు.",
+                    ml: "മനസ്സ്, വികാരങ്ങൾ, മാതാവ്, സമാധാനം, ഭാവന, വൈകാരിക സ്ഥിരത എന്നിവയെ നിയന്ത്രിക്കുന്നു.",
+                    kn: "ಮನಸ್ಸು, ಭಾವನೆಗಳು, ತಾಯಿ, ಮಾನಸಿಕ ಶಾಂತಿ ಮತ್ತು ಕಲ್ಪನಾ ಶಕ್ತಿಯನ್ನು ನಿಯಂತ್ರಿಸುತ್ತಾನೆ.",
+                    hi: "मन, भावनाओं, माता, मानसिक शांति, कल्पना और भावनात्मक स्थिरता के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ क्षीरपुत्राय विद्महे अमृतत्त्वाय धीमहि तन्नो चन्द्रः प्रचोदयात् ॥",
+                englishGayatri: "Om Ksheeraputraaya Vidmahe Amritattvaaya Dheemahi, Tanno Chandrah Prachodayaat."
+            },
+            {
+                id: "mangala",
+                image: "/assets/lord_mangala.png",
+                name: {
+                    en: "भगवान मंगल — Lord Mangala",
+                    ta: "அங்காரக பகவான் — Lord Mangala",
+                    te: "మంగళ భగవానుడు — Lord Mangala",
+                    ml: "മംഗള ഭഗവാൻ — Lord Mangala",
+                    kn: "ಮಂಗಳ ಭಗವಾನ್ — Lord Mangala",
+                    hi: "भगवान मंगल — Lord Mangala"
+                },
+                importance: {
+                    en: "Governs courage, physical energy, strength, logic, action, real estate, and siblings.",
+                    ta: "துணிச்சல், உடல் ஆற்றல், வலிமை, தர்க்கம், செயல், ரியல் எஸ்டேட் மற்றும் உடன்பிறந்தவர்களை ஆளுகிறார்.",
+                    te: "ధైర్యం, శారీరక శక్తి, బలం, తర్కం, భూములు మరియు తోబుట్టువులను సూచిస్తాడు.",
+                    ml: "ധൈര്യം, ശാരീരിക ഊർജ്ജം, ശക്തി, യുക്തി, ഭൂമി, സഹോദരങ്ങൾ എന്നിവയെ സ്വാധീനിക്കുന്നു.",
+                    kn: "ಧೈರ್ಯ, ಶಾರೀರಿಕ ಶಕ್ತಿ, ಬಲ, ತರ್ಕ, ಭೂಮಿ ಮತ್ತು ಸಹೋದರರನ್ನು ನಿಯಂತ್ರಿಸುತ್ತಾನೆ.",
+                    hi: "साहस, शारीरिक ऊर्जा, शक्ति, तर्कशक्ति, कर्म, भूमि और भाई-बहनों के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ अङ्गारकाय विद्महे शक्तिहस्ताय धीमहि तन्नो भौमः प्रचोदयात् ॥",
+                englishGayatri: "Om Angaarakaaya Vidmahe Shaktihastaaya Dheemahi, Tanno Bhaumah Prachodayaat."
+            },
+            {
+                id: "budha",
+                image: "/assets/lord_budha.png",
+                name: {
+                    en: "भगवान बुध — Lord Budha",
+                    ta: "புத பகவான் — Lord Budha",
+                    te: "బుధ భగవానుడు — Lord Budha",
+                    ml: "ബുധ ഭഗവാൻ — Lord Budha",
+                    kn: "ಬುಧ ಭಗವಾನ್ — Lord Budha",
+                    hi: "भगवान बुध — Lord Budha"
+                },
+                importance: {
+                    en: "Governs intellect, communication, speech, commerce, mathematical abilities, and wit.",
+                    ta: "புத்தி கூர்மை, தகவல் தொடர்பு, பேச்சு, வணிகம், கணிதத் திறன் மற்றும் நகைச்சுவையை ஆளுகிறார்.",
+                    te: "బుద్ధి, సంభాషణ, వాక్చాతుర్యం, వ్యాపారం మరియు గణిత నైపుణ్యాలను సూచిస్తాడు.",
+                    ml: "ബുദ്ധി, ആശയവിനിമയം, സംസാരം, വ്യാപാരം, ഗണിതശാസ്ത്രപരമായ കഴിവുകൾ എന്നിവയെ നിയന്ത്രിക്കുന്നു.",
+                    kn: "ಬುದ್ಧಿವಂತಿಕೆ, ಸಂವಹನ, ವಾಕ್ಚಾತುರ್ಯ, ವ್ಯಾಪಾರ ಮತ್ತು ಗಣಿತದ ಸಾಮರ್ಥ್ಯವನ್ನು ಕರುಣಿಸುತ್ತಾನೆ.",
+                    hi: "बुद्धि, संचार, वाणी, व्यापार, गणितीय योग्यता और हाजिरजवाबी के कारक हैं।"
+                },
+                sanskritGayatri: "ॐ गजध्वजाय विद्महे शुकहस्ताय धीमहि तन्नो बुधः प्रचोदयात् ॥",
+                englishGayatri: "Om Gajadhwajaaya Vidmahe Shukahastaaya Dheemahi, Tanno Budhah Prachodayaat."
+            },
+            {
+                id: "guru",
+                image: "/assets/lord_guru.png",
+                name: {
+                    en: "भगवान गुरु — Lord Guru",
+                    ta: "குரு பகவான் — Lord Guru",
+                    te: "గురు భగవానుడు — Lord Guru",
+                    ml: "ഗുരു ഭഗവാൻ — Lord Guru",
+                    kn: "ಗುರು ಭಗವಾನ್ — Lord Guru",
+                    hi: "भगवान गुरु — Lord Guru"
+                },
+                importance: {
+                    en: "Governs wisdom, spirituality, wealth, education, growth, luck, and cosmic benevolence.",
+                    ta: "ஞானம், ஆன்மீகம், செல்வம், கல்வி, வளர்ச்சி, அதிர்ஷ்டம் மற்றும் பிரபஞ்ச அருளை ஆளுகிறார்.",
+                    te: "జ్ఞానం, ఆధ్యాత్మికత, సంపద, విద్య, అదృష్టం మరియు సద్బుద్ధిని ప్రసాదిస్తాడు.",
+                    ml: "ജ്ഞാനം, ആത്മീയത, സമ്പത്ത്, വിദ്യാഭ്യാസം, വളർച്ച, ഭാഗ്യം എന്നിവയെ സ്വാധീനിക്കുന്നു.",
+                    kn: "ಜ್ಞಾನ, ಆಧ್ಯಾತ್ಮಿಕತೆ, ಸಂಪತ್ತು, ಶಿಕ್ಷಣ, ಅದೃಷ್ಟ ಮತ್ತು ಯಶಸ್ಸನ್ನು ಕರುಣಿಸುತ್ತಾನೆ.",
+                    hi: "ज्ञान, आध्यात्मिकता, धन, शिक्षा, भाग्य और दिव्य कृपा के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ सुराचार्याय विद्महे दिव्यदेहाय धीमहि तन्नो गुरुः प्रचोदयात् ॥",
+                englishGayatri: "Om Suraachaaryaaya Vidmahe Divyadehaaya Dheemahi, Tanno Guruh Prachodayaat."
+            },
+            {
+                id: "shukra",
+                image: "/assets/lord_shukra.png",
+                name: {
+                    en: "भगवान शुक्र — Lord Shukra",
+                    ta: "சுக்கிர பகவான் — Lord Shukra",
+                    te: "శుక్ర భగవానుడు — Lord Shukra",
+                    ml: "ശുക്ര ഭഗവാൻ — Lord Shukra",
+                    kn: "ಶುಕ್ರ ಭಗವಾನ್ — Lord Shukra",
+                    hi: "भगवान शुक्र — Lord Shukra"
+                },
+                importance: {
+                    en: "Governs love, marriage, beauty, fine arts, luxuries, automobiles, and creative talents.",
+                    ta: "காதல், திருமணம், அழகு, நுண்கலைகள், ஆடம்பரம், வாகனங்கள் மற்றும் படைப்பாற்றலை ஆளுகிறார்.",
+                    te: "ప్రేమ, వివాహం, అందం, కళలు, విలాసాలు, వాహనాలు మరియు సృజనాత్మకతను సూచిస్తాడు.",
+                    ml: "സ്നേഹം, വിവാഹം, സൗന്ദര്യം, ലളിതകലകൾ, ആഡംബരങ്ങൾ, സർഗ്ഗാത്മകത എന്നിവയെ നിയന്ത്രിക്കുന്നു.",
+                    kn: "ಪ್ರೀತಿ, ವಿವಾಹ, ಸೌಂದರ್ಯ, ಕಲೆ, ಐಷಾರಾಮಿ ಮತ್ತು ಸೃಜನಶೀಲತೆಯನ್ನು ಕರುಣಿಸುತ್ತಾನೆ.",
+                    hi: "प्रेम, विवाह, सौंदर्य, ललित कलाएं, विलासिता और रचनात्मक प्रतिभा के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ भृगुपुत्राय विद्महे दिव्यदेहाय धीमहि तन्नो शुक्रः प्रचोदयात् ॥",
+                englishGayatri: "Om Bhriguputraaya Vidmahe Divyadehaaya Dheemahi, Tanno Shukrah Prachodayaat."
+            },
+            {
+                id: "shani",
+                image: "/assets/lord_shani.png",
+                name: {
+                    en: "भगवान शनि — Lord Shani",
+                    ta: "சனி பகவான் — Lord Shani",
+                    te: "శని భగవానుడు — Lord Shani",
+                    ml: "ശനി ഭഗവാൻ — Lord Shani",
+                    kn: "ಶನಿ ಭಗವಾನ್ — Lord Shani",
+                    hi: "भगवान शनि — Lord Shani"
+                },
+                importance: {
+                    en: "Governs karma, justice, discipline, patience, hard work, longevity, and structural order.",
+                    ta: "கர்மா, நீதி, ஒழுக்கம், பொறுமை, கடின உழைப்பு, ஆயுள் மற்றும் ஒழுங்குமுறையை ஆளுகிறார்.",
+                    te: "కర్మ, న్యాయం, క్రమశిక్షణ, సహనం, కష్టపడే తత్వం, దీర్ఘాయువు మరియు న్యాయాన్ని సూచిస్తాడు.",
+                    ml: "കർമ്മം, നീതി, അച്ചടക്കം, ക്ഷമ, കഠിനാധ്വാനം, ആയുസ്സ് എന്നിവയെ നിയന്ത്രിക്കുന്നു.",
+                    kn: "ಕರ್ಮ, ನ್ಯಾಯ, ಶಿಸ್ತು, ತಾಳ್ಮೆ, ಕಠಿಣ ಪರಿಶ್ರಮ ಮತ್ತು ಆಯುಷ್ಯವನ್ನು ಕರುಣಿಸುತ್ತಾನೆ.",
+                    hi: "कर्म, न्याय, अनुशासन, धैर्य, कठिन परिश्रम, दीर्घायु और व्यवस्था के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ शनैश्चराय विद्महे सूर्यपुत्राय धीमहि तन्नो मन्दः प्रचोदयात् ॥",
+                englishGayatri: "Om Shanaishcharaaya Vidmahe Sooryaputraaya Dheemahi, Tanno Mandah Prachodayaat."
+            },
+            {
+                id: "rahu",
+                image: "/assets/lord_rahu.png",
+                name: {
+                    en: "भगवान राहु — Lord Rahu",
+                    ta: "ராகு பகவான் — Lord Rahu",
+                    te: "రాహు భగవానుడు — Lord Rahu",
+                    ml: "രാహు ഭഗവാൻ — Lord Rahu",
+                    kn: "ರಾಹು ಭಗವಾನ್ — Lord Rahu",
+                    hi: "भगवान राहु — Lord Rahu"
+                },
+                importance: {
+                    en: "Governs worldly desires, ambition, innovation, foreign connections, and sudden events.",
+                    ta: "உலகியல் ஆசைகள், லட்சியம், புதுமை, வெளிநாட்டுத் தொடர்புகள் மற்றும் எதிர்பாராத நிகழ்வுகளை ஆளுகிறார்.",
+                    te: "లౌకిక కోరికలు, ప్రతిష్టాత్మక లక్ష్యాలు, విదేశీ ప్రయాణాలు మరియు ఆకస్మిక సంఘటనలను నియంత్రిస్తాడు.",
+                    ml: "ഭൗതിക ആഗ്രഹങ്ങൾ, അത്യാഗ്രഹം, വിദേശയാത്രകൾ, ആകസ്മിക സംഭവങ്ങൾ എന്നിവയെ സ്വാധീനിക്കുന്നു.",
+                    kn: "ಲೌಕಿಕ ಆಸೆಗಳು, ಮಹತ್ವಾಕಾಂಕ್ಷೆ, ವಿದೇಶಿ ಪ್ರಯಾಣ ಮತ್ತು ಆಕಸ್ಮಿಕ ಬದಲಾವಣೆಗಳನ್ನು ನಿಯಂತ್ರಿಸುತ್ತಾನೆ.",
+                    hi: "लौकिक इच्छाओं, महत्वाकांक्षा, नवाचार, विदेश यात्रा और अचानक होने वाली घटनाओं के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ नीलवर्णाय विद्महे सैंहिकेयाय धीमहि तन्नो राहुः प्रचोदयात् ॥",
+                englishGayatri: "Om Neelavarnaaya Vidmahe Sainhikeyaaya Dheemahi, Tanno Raahuh Prachodayaat."
+            },
+            {
+                id: "ketu",
+                image: "/assets/lord_ketu.png",
+                name: {
+                    en: "भगवान केतु — Lord Ketu",
+                    ta: "கேது பகவான் — Lord Ketu",
+                    te: "కేతు భగవానుడు — Lord Ketu",
+                    ml: "கேതു ഭഗവാൻ — Lord Ketu",
+                    kn: "ಕೇತು ಭಗವಾನ್ — Lord Ketu",
+                    hi: "भगवान केतु — Lord Ketu"
+                },
+                importance: {
+                    en: "Governs spiritual liberation (Moksha), detachment, wisdom, intuition, and mystical secrets.",
+                    ta: "ஞானம், முக்தி (மோட்சம்), பற்றற்ற நிலை, உள்ளுணர்வு மற்றும் ஆன்மீக ரகசியங்களை ஆளுகிறார்.",
+                    te: "మోక్షం, వైరాగ్యం, ఆధ్యాత్మిక జ్ఞానం, అంతర్దృష్టి మరియు గుప్త విద్యలను సూచిస్తాడు.",
+                    ml: "മോക്ഷം, വൈരാഗ്യം, ജьഞാനം, അവബോധം, ആത്മീയ രഹസ്യങ്ങൾ എന്നിവയെ നിയന്ത്രിക്കുന്നു.",
+                    kn: "ಮೋಕ್ಷ, ವೈರಾಗ್ಯ, ಆಧ್ಯಾತ್ಮಿಕ ಜ್ಞಾನ, ಅಂತರ್ದೃಷ್ಟಿ ಮತ್ತು ರಹಸ್ಯ ವಿದ್ಯೆಗಳನ್ನು ಕರುಣಿಸುತ್ತಾನೆ.",
+                    hi: "मोक्ष (आध्यात्मिक मुक्ति), वैराग्य, ज्ञान, अंतर्ज्ञान और रहस्यमयी विद्याओं के स्वामी हैं।"
+                },
+                sanskritGayatri: "ॐ चित्रवर्णाय विद्महे कपोतवाहनाय धीमहि तन्नो केतुः प्रचोदयात् ॥",
+                englishGayatri: "Om Chitravarnaaya Vidmahe Kapotavaahanaaya Dheemahi, Tanno Ketuh Prachodayaat."
+            }
+        ];
+
+        let currentNavagrahaIndex = 0;
+        let navagrahaInterval = null;
+
+        function renderNavagrahaSlide() {
+            const lang = currentLang || 'en';
+            const deity = navagrahaData[currentNavagrahaIndex];
+            
+            const titleEl = document.getElementById('lbl-navagraha-title');
+            const impEl = document.getElementById('lbl-navagraha-importance');
+            const sanskritEl = document.getElementById('lbl-navagraha-mantra-sanskrit');
+            const englishEl = document.getElementById('lbl-navagraha-mantra-english');
+            const imgEl = document.getElementById('img-navagraha');
+
+            if (titleEl) titleEl.innerText = deity.name[lang] || deity.name.en;
+            if (impEl) impEl.innerText = deity.importance[lang] || deity.importance.en;
+            if (sanskritEl) sanskritEl.innerText = deity.sanskritGayatri;
+            if (englishEl) englishEl.innerText = deity.englishGayatri;
+            
+            if (imgEl) {
+                imgEl.src = deity.image;
+                imgEl.alt = deity.name.en;
+            }
+
+            const dots = document.querySelectorAll('.carousel-dots .dot');
+            dots.forEach((dot, index) => {
+                if (index === currentNavagrahaIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        function nextNavagrahaSlide() {
+            currentNavagrahaIndex = (currentNavagrahaIndex + 1) % navagrahaData.length;
+            renderNavagrahaSlide();
+            resetNavagrahaTimer();
+        }
+
+        function prevNavagrahaSlide() {
+            currentNavagrahaIndex = (currentNavagrahaIndex - 1 + navagrahaData.length) % navagrahaData.length;
+            renderNavagrahaSlide();
+            resetNavagrahaTimer();
+        }
+
+        function selectNavagrahaSlide(index) {
+            currentNavagrahaIndex = index;
+            renderNavagrahaSlide();
+            resetNavagrahaTimer();
+        }
+
+        function startNavagrahaTimer() {
+            navagrahaInterval = setInterval(nextNavagrahaSlide, 8000);
+        }
+
+        function resetNavagrahaTimer() {
+            if (navagrahaInterval) {
+                clearInterval(navagrahaInterval);
+            }
+            startNavagrahaTimer();
+        }
+
+        function initNavagrahaCarousel() {
+            const dotsContainer = document.querySelector('.carousel-dots');
+            if (dotsContainer) {
+                dotsContainer.innerHTML = '';
+                navagrahaData.forEach((_, idx) => {
+                    const dot = document.createElement('div');
+                    dot.className = `dot${idx === 0 ? ' active' : ''}`;
+                    dot.onclick = () => selectNavagrahaSlide(idx);
+                    dotsContainer.appendChild(dot);
+                });
+            }
+            renderNavagrahaSlide();
+            startNavagrahaTimer();
+        }
         // --- Initialize Page details on startup ---
         window.onload = function() {
             if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
+            if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
             // Load current date daily panchangam and render calendar
             const today = new Date().toISOString().split('T')[0];
             selectedPanchangamDate = today;
