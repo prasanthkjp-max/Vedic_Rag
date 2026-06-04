@@ -1803,6 +1803,14 @@
                                     <span class="panch-value" id="panch-sunset">--</span>
                                 </div>
                                 <div class="panch-item">
+                                    <span class="panch-label" id="lbl-moonrise">Moonrise Time</span>
+                                    <span class="panch-value" id="panch-moonrise">--</span>
+                                </div>
+                                <div class="panch-item">
+                                    <span class="panch-label" id="lbl-moonset">Moonset Time</span>
+                                    <span class="panch-value" id="panch-moonset">--</span>
+                                </div>
+                                <div class="panch-item">
                                     <span class="panch-label" id="lbl-ahas">Day Duration (Ahas)</span>
                                     <span class="panch-value" id="panch-ahas">--</span>
                                 </div>
@@ -1869,6 +1877,10 @@
                             <li><span id="lbl-gulika-kalam-label" style="font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral):</span> <span id="panch-gulika-kalam" style="font-weight: bold; color: #2563eb;">--</span></li>
                             <li><span id="lbl-abhijit-label" style="font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious):</span> <span id="panch-abhijit" style="font-weight: bold; color: #16a34a;">--</span></li>
                             <li><span id="lbl-brahma-label" style="font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious):</span> <span id="panch-brahma-muhurtha" style="font-weight: bold; color: #d97706;">--</span></li>
+                            <li><span id="lbl-godhuli-label" style="font-weight: bold; color: #d97706;">Godhuli Muhurta (Auspicious):</span> <span id="panch-godhuli-muhurtha" style="font-weight: bold; color: #d97706;">--</span></li>
+                            <li><span id="lbl-nishita-label" style="font-weight: bold; color: #7c3aed;">Nishita Muhurta (Auspicious):</span> <span id="panch-nishita-muhurtha" style="font-weight: bold; color: #7c3aed;">--</span></li>
+                            <li><span id="lbl-vijaya-label" style="font-weight: bold; color: #16a34a;">Vijaya Muhurta (Auspicious):</span> <span id="panch-vijaya-muhurtha" style="font-weight: bold; color: #16a34a;">--</span></li>
+                            <li><span id="lbl-dur-muhurta-label" style="font-weight: bold; color: #dc2626;">Dur Muhurtam (Inauspicious):</span> <span id="panch-dur-muhurta" style="font-weight: bold; color: #dc2626;">--</span></li>
                         </ul>
                     </div>
 
@@ -2520,6 +2532,12 @@
                 lbl_navamsha_chart: "Navamsha Chart (D9)",
                 sunrise: "Sunrise Time",
                 sunset: "Sunset Time",
+                moonrise: "Moonrise Time",
+                moonset: "Moonset Time",
+                godhuli_muhurta_label: "Godhuli Muhurta (Auspicious)",
+                nishita_muhurta_label: "Nishita Muhurta (Auspicious)",
+                vijaya_muhurta_label: "Vijaya Muhurta (Auspicious)",
+                dur_muhurta_label: "Dur Muhurtam (Inauspicious)",
                 ahas: "Day Duration (Ahas)",
                 udayadhi: "Udayadhi Nazhikai",
                 kali_year: "Kali Yuga Year",
@@ -2625,6 +2643,12 @@
                 lbl_navamsha_chart: "நவாம்ச சக்கரம் (D9)",
                 sunrise: "சூரிய உதயம்",
                 sunset: "சூரிய அஸ்தமனம்",
+                moonrise: "சந்திர உதயம்",
+                moonset: "சந்திர அஸ்தமனம்",
+                godhuli_muhurta_label: "கோதூளி முகூர்த்தம் (சுபம்)",
+                nishita_muhurta_label: "நிசித முகூர்த்தம் (சுபம்)",
+                vijaya_muhurta_label: "விஜய முகூர்த்தம் (சுபம்)",
+                dur_muhurta_label: "துர்முகூர்த்தம் (அசுபம்)",
                 ahas: "பகலின் அளவு (அகஸ்)",
                 udayadhi: "உதயாதி நாழிகை",
                 kali_year: "கலி வருடம்",
@@ -2730,6 +2754,12 @@
                 lbl_navamsha_chart: "నవాంశ చక్రం (D9)",
                 sunrise: "సూర్యోదయం",
                 sunset: "సూర్యాస్తమయం",
+                moonrise: "చంద్రోదయం",
+                moonset: "చంద్రాస్తమయం",
+                godhuli_muhurta_label: "గోధూళి ముహూర్తం (శుభం)",
+                nishita_muhurta_label: "నిశిత ముహూర్తం (శుభం)",
+                vijaya_muhurta_label: "విజయ ముహూర్తం (శుభం)",
+                dur_muhurta_label: "దుర్ముహూర్తం (అశుభం)",
                 ahas: "పగటి ప్రమాణం (అహస్సు)",
                 udayadhi: "ఉదయాది ఘడియలు",
                 kali_year: "కలి యుగ వర్షం",
@@ -2835,6 +2865,12 @@
                 lbl_navamsha_chart: "നവാംശ ചക്രം (D9)",
                 sunrise: "സൂര്യോദയം",
                 sunset: "സൂര്യാസ്തമയം",
+                moonrise: "ചന്ദ്രോദയം",
+                moonset: "ചന്ദ്രാസ്തമയം",
+                godhuli_muhurta_label: "ഗോധൂളി മുഹൂർത്തം (ശുഭം)",
+                nishita_muhurta_label: "നിശിത മുഹൂർത്തം (ശുഭം)",
+                vijaya_muhurta_label: "വിജയ മുഹൂർത്തം (ശുഭം)",
+                dur_muhurta_label: "ദുർമുഹൂർത്തം (അശുഭം)",
                 ahas: "പകൽ ദൈർഘ്യം (അഹസ്സ്)",
                 udayadhi: "ഉദയാദി നാഴിക",
                 kali_year: "കലി വർഷം",
@@ -2940,6 +2976,12 @@
                 lbl_navamsha_chart: "ನವಾಂಶ ಚಕ್ರ (D9)",
                 sunrise: "ಸೂರ್ಯೋದಯ",
                 sunset: "ಸೂರ್ಯಾಸ್ತ",
+                moonrise: "ಚಂದ್ರೋದಯ",
+                moonset: "ಚಂದ್ರಾಸ್ತ",
+                godhuli_muhurta_label: "ಗೋಧೂಳಿ ಮುಹೂರ್ತ (ಶುಭ)",
+                nishita_muhurta_label: "ನಿಶಿತ ಮುಹೂರ್ತ (ಶುಭ)",
+                vijaya_muhurta_label: "ವಿಜಯ ಮುಹೂರ್ತ (ಶುಭ)",
+                dur_muhurta_label: "ದುರ್ಮುಹೂರ್ತ (ಅಶುಭ)",
                 ahas: "ಹಗಲಿನ ಅವಧಿ (ಅಹಸ್)",
                 udayadhi: "ಉದಯಾದಿ ಘಳಿಗೆ",
                 kali_year: "ಕಲಿ ವರ್ಷ",
@@ -3045,6 +3087,12 @@
                 lbl_navamsha_chart: "नवांश कुंडली (D9)",
                 sunrise: "सूर्योदय",
                 sunset: "सूर्यास्त",
+                moonrise: "चन्द्रोदय",
+                moonset: "चन्द्रास्त",
+                godhuli_muhurta_label: "गोधूलि मुहूर्त (शुभ)",
+                nishita_muhurta_label: "निशिता मुहूर्त (शुभ)",
+                vijaya_muhurta_label: "विजय मुहूर्त (शुभ)",
+                dur_muhurta_label: "दुर्मुहूर्त (अशुभ)",
                 ahas: "दिनमान (अहस)",
                 udayadhi: "उदयादि घटी",
                 kali_year: "कलि युग वर्ष",
@@ -3158,8 +3206,78 @@
             te: ["మేషం", "వృషభం", "మిథునం", "కర్కాటకం", "సింహం", "కన్య", "తులా", "వృశ్చికం", "ధనుస్సు", "మకరం", "కుంభం", "మీన"],
             hi: ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"],
             kn: ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕಾಟಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನುಸ್ಸು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"],
-            ml: ["മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം", "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ധനു", "മകരം", "കുംഭം", "മീനം"]
+            ml: ["മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം", "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ಧനു", "മകരം", "കുംഭം", "മീനം"]
         };
+
+        const NAKSHATRAS_LST = [
+            "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha",
+            "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+            "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+        ];
+
+        const YOGAMS_LST = [
+            "Vishkumbha", "Priti", "Ayushman", "Saubhagya", "Sobhana", "Atiganda", "Sukarma", "Dhriti", "Shula",
+            "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyan", "Parigha",
+            "Shiva", "Siddha", "Sadhya", "Subha", "Sukla", "Brahma", "Indra", "Vaidhriti"
+        ];
+
+        const fullDayTranslations = {
+            en: "Full Day",
+            ta: "நாள் முழுவதும்",
+            te: "రోజంతా",
+            ml: "ദിവസം മുഴുവൻ",
+            kn: "ದಿನವಿಡೀ",
+            hi: "पूरा दिन"
+        };
+
+        const transitionConnectors = {
+            en: { upto: "upto", then: "then" },
+            ta: { upto: "வரை", then: "பிறகு" },
+            te: { upto: "వరకు", then: "ఆపై" },
+            ml: { upto: "വരെ", then: "പിന്നീട്" },
+            kn: { upto: "ವರೆಗೆ", then: "ನन्तर" },
+            hi: { upto: "तक", then: "फिर" }
+        };
+
+        function buildTithiName(idx) {
+            const TITHI_NAMES_LST = [
+                "Prathama", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
+                "Shashti", "Saptami", "Ashtami", "Navami", "Dashami",
+                "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi"
+            ];
+            if (idx === 14) return "Pournami (Full Moon)";
+            if (idx === 29) return "Amavasya (New Moon)";
+            if (idx < 14) return `Sukla Paksha ${TITHI_NAMES_LST[idx]} (Tithi ${idx + 1})`;
+            const k_num = idx - 14;
+            return `Krishna Paksha ${TITHI_NAMES_LST[k_num]} (Tithi ${k_num + 1})`;
+        }
+
+        function getKaranamName(karNum) {
+            const KARANAS_LST = ["Kintughna", "Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti"];
+            if (karNum === 0) return "Kintughna";
+            if (karNum >= 57) {
+                const special = ["Shakuni", "Chatushpada", "Naga"];
+                return special[(karNum - 57) % 3];
+            }
+            return KARANAS_LST[(karNum - 1) % 7 + 1];
+        }
+
+        function formatTransitionText(currentVal, endTime, nextVal) {
+            if (!endTime) return currentVal;
+            if (endTime.toLowerCase().includes("full night") || endTime.toLowerCase().includes("full day")) {
+                const fullDayText = fullDayTranslations[currentLang] || "Full Day";
+                return `${currentVal} (${fullDayText})`;
+            }
+            if (currentVal === nextVal || !nextVal) {
+                return currentVal;
+            }
+            const conn = transitionConnectors[currentLang] || transitionConnectors.en;
+            if (currentLang === 'en') {
+                return `${currentVal} ${conn.upto} ${endTime}, ${conn.then} ${nextVal}`;
+            } else {
+                return `${currentVal} ${endTime} ${conn.upto}, ${conn.then} ${nextVal}`;
+            }
+        }
 
         // Real-time on-the-fly translations for astrological terms
         function translateTithi(tithiStr) {
@@ -3698,6 +3816,10 @@
             // Localize new labels
             document.getElementById('lbl-sunrise').innerText = dict.sunrise || "Sunrise Time";
             document.getElementById('lbl-sunset').innerText = dict.sunset || "Sunset Time";
+            const moonriseLabel = document.getElementById('lbl-moonrise');
+            if (moonriseLabel) moonriseLabel.innerText = dict.moonrise || "Moonrise Time";
+            const moonsetLabel = document.getElementById('lbl-moonset');
+            if (moonsetLabel) moonsetLabel.innerText = dict.moonset || "Moonset Time";
             document.getElementById('lbl-ahas').innerText = dict.ahas || "Day Duration (Ahas)";
             document.getElementById('lbl-udayadhi').innerText = dict.udayadhi || "Udayadhi Nazhikai";
             document.getElementById('lbl-kali-year').innerText = dict.kali_year || "Kali Yuga Year";
@@ -3709,15 +3831,23 @@
             const dailyKaalamsTitle = document.getElementById('lbl-daily-kaalams-title');
             if (dailyKaalamsTitle) dailyKaalamsTitle.innerText = dict.daily_kaalams_title || "Daily Kaalams & Auspicious Timings";
             const rahuKalamLabel = document.getElementById('lbl-rahu-kalam-label');
-            if (rahuKalamLabel) rahuKalamLabel.innerText = dict.rahu_kalam_label || "Rahu Kalam (Inauspicious)";
+            if (rahuKalamLabel) rahuKalamLabel.innerText = (dict.rahu_kalam_label || "Rahu Kalam (Inauspicious)") + ":";
             const yamagandamLabel = document.getElementById('lbl-yamagandam-label');
-            if (yamagandamLabel) yamagandamLabel.innerText = dict.yamagandam_label || "Yamagandam (Inauspicious)";
+            if (yamagandamLabel) yamagandamLabel.innerText = (dict.yamagandam_label || "Yamagandam (Inauspicious)") + ":";
             const gulikaKalamLabel = document.getElementById('lbl-gulika-kalam-label');
-            if (gulikaKalamLabel) gulikaKalamLabel.innerText = dict.gulika_kalam_label || "Gulika Kalam (Auspicious/Neutral)";
+            if (gulikaKalamLabel) gulikaKalamLabel.innerText = (dict.gulika_kalam_label || "Gulika Kalam (Auspicious/Neutral)") + ":";
             const abhijitLabel = document.getElementById('lbl-abhijit-label');
-            if (abhijitLabel) abhijitLabel.innerText = dict.abhijit_label || "Abhijit Muhurtha (Highly Auspicious)";
+            if (abhijitLabel) abhijitLabel.innerText = (dict.abhijit_label || "Abhijit Muhurtha (Highly Auspicious)") + ":";
             const brahmaLabel = document.getElementById('lbl-brahma-label');
-            if (brahmaLabel) brahmaLabel.innerText = dict.brahma_label || "Brahma Muhurtha (Predawn Auspicious)";
+            if (brahmaLabel) brahmaLabel.innerText = (dict.brahma_label || "Brahma Muhurtha (Predawn Auspicious)") + ":";
+            const godhuliLabel = document.getElementById('lbl-godhuli-label');
+            if (godhuliLabel) godhuliLabel.innerText = (dict.godhuli_muhurta_label || "Godhuli Muhurta (Auspicious)") + ":";
+            const nishitaLabel = document.getElementById('lbl-nishita-label');
+            if (nishitaLabel) nishitaLabel.innerText = (dict.nishita_muhurta_label || "Nishita Muhurta (Auspicious)") + ":";
+            const vijayaLabel = document.getElementById('lbl-vijaya-label');
+            if (vijayaLabel) vijayaLabel.innerText = (dict.vijaya_muhurta_label || "Vijaya Muhurta (Auspicious)") + ":";
+            const durMuhurtaLabel = document.getElementById('lbl-dur-muhurta-label');
+            if (durMuhurtaLabel) durMuhurtaLabel.innerText = (dict.dur_muhurta_label || "Dur Muhurtam (Inauspicious)") + ":";
             const strengthTitle = document.getElementById('lbl-strength-title');
             if (strengthTitle) strengthTitle.innerText = dict.strength_title || "Muhurtham, Netram & Jeevan Strength";
             const netramLabel = document.getElementById('lbl-netram-label');
@@ -4131,14 +4261,29 @@
 
             document.getElementById('panch-tamil-year').innerText = translateTamilYear(dailyPanchangamData.panchangam.tamil_year);
             document.getElementById('panch-tamil-month').innerText = translateTamilMonth(dailyPanchangamData.panchangam.tamil_date || dailyPanchangamData.panchangam.tamil_month);
-            document.getElementById('panch-tithi').innerText = translateTithi(dailyPanchangamData.panchangam.tithi);
-            document.getElementById('panch-naks').innerText = translateNakshatra(dailyPanchangamData.panchangam.nakshatra);
-            document.getElementById('panch-yogam').innerText = translateYogam(dailyPanchangamData.panchangam.yogam);
-            document.getElementById('panch-karanam').innerText = translateKaranam(dailyPanchangamData.panchangam.karanam);
+            // Translate current values
+            const currentTithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi);
+            const currentNaksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra);
+            const currentYogamTrans = translateYogam(dailyPanchangamData.panchangam.yogam);
+            const currentKaranamTrans = translateKaranam(dailyPanchangamData.panchangam.karanam);
+
+            // Construct next values
+            const nextTithiTrans = translateTithi(buildTithiName(dailyPanchangamData.panchangam.tithi_next_idx));
+            const nextNaksTrans = translateNakshatra(NAKSHATRAS_LST[dailyPanchangamData.panchangam.nakshatra_next_idx % 27]);
+            const nextYogamTrans = translateYogam(YOGAMS_LST[dailyPanchangamData.panchangam.yogam_next_idx % 27]);
+            const nextKaranamTrans = translateKaranam(getKaranamName(dailyPanchangamData.panchangam.karanam_next_idx % 60));
+
+            // Set final displayed texts with transitions
+            document.getElementById('panch-tithi').innerText = formatTransitionText(currentTithiTrans, dailyPanchangamData.panchangam.tithi_end_time, nextTithiTrans);
+            document.getElementById('panch-naks').innerText = formatTransitionText(currentNaksTrans, dailyPanchangamData.panchangam.nakshatra_end_time, nextNaksTrans);
+            document.getElementById('panch-yogam').innerText = formatTransitionText(currentYogamTrans, dailyPanchangamData.panchangam.yogam_end_time, nextYogamTrans);
+            document.getElementById('panch-karanam').innerText = formatTransitionText(currentKaranamTrans, dailyPanchangamData.panchangam.karanam_end_time, nextKaranamTrans);
             
             // Set new astronomical fields
             document.getElementById('panch-sunrise').innerText = dailyPanchangamData.panchangam.sunrise || "--";
             document.getElementById('panch-sunset').innerText = dailyPanchangamData.panchangam.sunset || "--";
+            document.getElementById('panch-moonrise').innerText = dailyPanchangamData.panchangam.moonrise || "--";
+            document.getElementById('panch-moonset').innerText = dailyPanchangamData.panchangam.moonset || "--";
             document.getElementById('panch-ahas').innerText = dailyPanchangamData.panchangam.ahas || "--";
             document.getElementById('panch-udayadhi').innerText = dailyPanchangamData.panchangam.udayadhi_nazhikai || "--";
             
@@ -4206,6 +4351,59 @@
             const wrappedBrahmaStart = brahmaStart < 0 ? brahmaStart + 24 : brahmaStart;
             const wrappedBrahmaEnd = brahmaEnd < 0 ? brahmaEnd + 24 : brahmaEnd;
             document.getElementById('panch-brahma-muhurtha').innerText = formatRange(wrappedBrahmaStart, wrappedBrahmaEnd);
+
+            // Godhuli Muhurta (Sunset +/- 24 mins)
+            const godhuliStart = sunsetDec - 0.4;
+            const godhuliEnd = sunsetDec + 0.4;
+            const wrappedGodhuliStart = godhuliStart < 0 ? godhuliStart + 24 : (godhuliStart >= 24 ? godhuliStart - 24 : godhuliStart);
+            const wrappedGodhuliEnd = godhuliEnd < 0 ? godhuliEnd + 24 : (godhuliEnd >= 24 ? godhuliEnd - 24 : godhuliEnd);
+            document.getElementById('panch-godhuli-muhurtha').innerText = formatRange(wrappedGodhuliStart, wrappedGodhuliEnd);
+
+            // Nishita Muhurtha (Night midpoint +/- 24 mins)
+            const nightDuration = (sunriseDec + 24) - sunsetDec;
+            const midnightDec = (sunsetDec + nightDuration / 2) % 24;
+            const nishitaStart = midnightDec - 0.4;
+            const nishitaEnd = midnightDec + 0.4;
+            const wrappedNishitaStart = nishitaStart < 0 ? nishitaStart + 24 : (nishitaStart >= 24 ? nishitaStart - 24 : nishitaStart);
+            const wrappedNishitaEnd = nishitaEnd < 0 ? nishitaEnd + 24 : (nishitaEnd >= 24 ? nishitaEnd - 24 : nishitaEnd);
+            document.getElementById('panch-nishita-muhurtha').innerText = formatRange(wrappedNishitaStart, wrappedNishitaEnd);
+
+            // Vijaya Muhurta (11th Muhurtha of the day: starts 10/15 of day duration, lasts 1/15)
+            const vijayaStart = sunriseDec + 10 * (dayDuration / 15);
+            const vijayaEnd = sunriseDec + 11 * (dayDuration / 15);
+            const wrappedVijayaStart = vijayaStart >= 24 ? vijayaStart - 24 : vijayaStart;
+            const wrappedVijayaEnd = vijayaEnd >= 24 ? vijayaEnd - 24 : vijayaEnd;
+            document.getElementById('panch-vijaya-muhurtha').innerText = formatRange(wrappedVijayaStart, wrappedVijayaEnd);
+
+            // Dur Muhurtam (weekday-specific segment timings)
+            let durRanges = [];
+            const harmonies = dayDuration / 15;
+            if (dayOfWeekIdx === 0) { // Sunday
+                durRanges.push([sunriseDec + 13 * harmonies, sunriseDec + 14 * harmonies]);
+            } else if (dayOfWeekIdx === 1) { // Monday
+                durRanges.push([sunriseDec + 8 * harmonies, sunriseDec + 9 * harmonies]);
+                durRanges.push([sunriseDec + 11 * harmonies, sunriseDec + 12 * harmonies]);
+            } else if (dayOfWeekIdx === 2) { // Tuesday
+                durRanges.push([sunriseDec + 3 * harmonies, sunriseDec + 4 * harmonies]);
+            } else if (dayOfWeekIdx === 3) { // Wednesday
+                durRanges.push([sunriseDec + 7 * harmonies, sunriseDec + 8 * harmonies]);
+            } else if (dayOfWeekIdx === 4) { // Thursday
+                durRanges.push([sunriseDec + 5 * harmonies, sunriseDec + 6 * harmonies]);
+                durRanges.push([sunriseDec + 11 * harmonies, sunriseDec + 12 * harmonies]);
+            } else if (dayOfWeekIdx === 5) { // Friday
+                durRanges.push([sunriseDec + 3 * harmonies, sunriseDec + 4 * harmonies]);
+                durRanges.push([sunriseDec + 8 * harmonies, sunriseDec + 9 * harmonies]);
+            } else if (dayOfWeekIdx === 6) { // Saturday
+                durRanges.push([sunriseDec + 0 * harmonies, sunriseDec + 2 * harmonies]);
+            }
+
+            const formattedDur = durRanges.map(r => {
+                const s = r[0] >= 24 ? r[0] - 24 : r[0];
+                const e = r[1] >= 24 ? r[1] - 24 : r[1];
+                return formatRange(s, e);
+            }).join(", ");
+            
+            document.getElementById('panch-dur-muhurta').innerText = formattedDur || "--";
 
             // Netram & Jeevan
             const naksName = dailyPanchangamData.panchangam.nakshatra;
@@ -4860,45 +5058,60 @@
                 };
                 const localizedGender = genderTranslations[currentLang] || (genderVal === 'female' ? 'Female' : 'Male');
                 
-                const tithiLocal = translateTithi(calculatedChartData.panchangam.tithi);
-                const naksLocal = translateNakshatra(calculatedChartData.panchangam.nakshatra);
-                const yogLocal = translateYogam(calculatedChartData.panchangam.yogam);
-                const karLocal = translateKaranam(calculatedChartData.panchangam.karanam);
+                const tithiLocal = formatTransitionText(
+                    translateTithi(calculatedChartData.panchangam.tithi),
+                    calculatedChartData.panchangam.tithi_end_time,
+                    translateTithi(buildTithiName(calculatedChartData.panchangam.tithi_next_idx))
+                );
+                const naksLocal = formatTransitionText(
+                    translateNakshatra(calculatedChartData.panchangam.nakshatra),
+                    calculatedChartData.panchangam.nakshatra_end_time,
+                    translateNakshatra(NAKSHATRAS_LST[calculatedChartData.panchangam.nakshatra_next_idx % 27])
+                );
+                const yogLocal = formatTransitionText(
+                    translateYogam(calculatedChartData.panchangam.yogam),
+                    calculatedChartData.panchangam.yogam_end_time,
+                    translateYogam(YOGAMS_LST[calculatedChartData.panchangam.yogam_next_idx % 27])
+                );
+                const karLocal = formatTransitionText(
+                    translateKaranam(calculatedChartData.panchangam.karanam),
+                    calculatedChartData.panchangam.karanam_end_time,
+                    translateKaranam(getKaranamName(calculatedChartData.panchangam.karanam_next_idx % 60))
+                );
                 
                 // Labels localized dynamically
                 const lbls = {
                     en: {
                         name: "Native Name", dob: "Birth Date", tob: "Birth Time", gender: "Gender", day: "Day of Week", LMT: "Local Mean Time (LMT)", offset: "Standard Time Offset", POB: "Birth Place", lat: "Latitude", lon: "Longitude",
                         t_year: "Tamil Year", t_date: "Tamil Date", kali: "Kali Yuga Year", tithi: "Tithi (Phases)", naks: "Nakshatram", yogam: "Yogam", karanam: "Karanam",
-                        sunrise: "Sunrise Time", sunset: "Sunset Time", ahas: "Day Duration (Ahas)", udayadhi: "Udayadhi Nazhikai", ayanamsa: "Ayanamsa"
+                        sunrise: "Sunrise Time", sunset: "Sunset Time", moonrise: "Moonrise Time", moonset: "Moonset Time", ahas: "Day Duration (Ahas)", udayadhi: "Udayadhi Nazhikai", ayanamsa: "Ayanamsa"
                     },
                     ta: {
                         name: "ஜாதகர் பெயர்", dob: "பிறந்த தேதி", tob: "பிறந்த நேரம்", gender: "பாலினம்", day: "பிறந்த கிழமை", LMT: "சுதேச மணி (LMT)", offset: "பொதுநேரம், திருத்தம்", POB: "பிறந்த ஊர்", lat: "அட்சாம்சம்", lon: "தீர்க்கரேகை",
                         t_year: "தமிழ் வருடம்", t_date: "தமிழ் தேதி", kali: "கலி வருடம்", tithi: "திதி", naks: "நட்சத்திரம்", yogam: "யோகம்", karanam: "கரணம்",
-                        sunrise: "சூரிய உதயம்", sunset: "சூரிய அஸ்தமனம்", ahas: "பகலின் அளவு (அகஸ்)", udayadhi: "உதயாதி நாழிகை", ayanamsa: "அயனாம்சம்"
+                        sunrise: "சூரிய உதயம்", sunset: "சூரிய அஸ்தமனம்", moonrise: "சந்திர உதயம்", moonset: "சந்திர அஸ்தமனம்", ahas: "பகலின் அளவு (அகஸ்)", udayadhi: "உதயாதி நாழிகை", ayanamsa: "அயனாம்சம்"
                     },
                     te: {
                         name: "జాతకుని పేరు", dob: "పుట్టిన తేదీ", tob: "పుట్టిన సమయం", gender: "లింగము", day: "పుట్టిన వారం", LMT: "స్థానిక సమయం (LMT)", offset: "ప్రామాణిక కాల వ్యత్యాసం", POB: "పుట్టిన స్థలం", lat: "అక్షాంశం", lon: "రేఖాంశం",
                         t_year: "సంవత్సరం", t_date: "తేదీ", kali: "కలి యుగ వర్షం", tithi: "తిథి", naks: "నక్షత్రం", yogam: "యోగం", karanam: "కరణం",
-                        sunrise: "సూర్యోదయం", sunset: "సూర్యాస్తమయం", ahas: "పగటి ప్రమాణం (అహస్సు)", udayadhi: "ఉదయాది ఘడియలు", ayanamsa: "అయనాంశం"
+                        sunrise: "సూర్యోదయం", sunset: "సూర్యాస్తమయం", moonrise: "చంద్రోదయం", moonset: "చంద్రాస్తమయం", ahas: "పగటి ప్రమాణం (అహస్సు)", udayadhi: "ఉదయాది ఘడియలు", ayanamsa: "అయనాంశం"
                     },
                     ml: {
-                        name: "ജാതകന്റെ പേര്", dob: "ജനന തീയതി", tob: "ജനന സമയം", gender: "ലിംഗം", day: "ജനന ദിവസം", LMT: "പ്രാദേശിക സമയം (LMT)", offset: "പ്രാദേശിക സമയ വ്യത്യാസം", POB: "ജനന സ്ഥലം", lat: "അക്ഷാംശം", lon: "രേഖാംശം",
+                        name: "ജാതകന്റെ പേര്", dob: "ജനന തീയതി", tob: "ജനന സമയം", gender: "ലിംഗം", day: "ജനന ദിവസം", LMT: "പ്രദേശിക സമയം (LMT)", offset: "പ്രദേശിക സമയ വ്യത്യാസം", POB: "ജനന സ്ഥലം", lat: "അക്ഷാംശം", lon: "രേഖാംശം",
                         t_year: "വർഷം", t_date: "തീയതി", kali: "കലി വർഷം", tithi: "തിഥി", naks: "നക്ഷത്രം", yogam: "യോഗം", karanam: "കരണം",
-                        sunrise: "സൂര്യോദയം", sunset: "സൂര്യാസ്തമയം", ahas: "പകൽ ദൈർഘ്യം (അഹസ്സ്)", udayadhi: "ഉദയാദി നാഴിക", ayanamsa: "അയനാംശം"
+                        sunrise: "സൂര്യോദയം", sunset: "സൂര്യാസ്തമയം", moonrise: "ചന്ദ്രോദയം", moonset: "ചന്ദ്രാസ്തമയം", ahas: "പകൽ ദൈർഘ്യം (അഹസ്സ്)", udayadhi: "ഉദയാദി നാഴിക", ayanamsa: "അയനാംശം"
                     },
                     kn: {
                         name: "ಜಾತಕನ ಹೆಸರು", dob: "ಹುಟ್ಟಿದ ದಿನಾಂಕ", tob: "ಹುಟ್ಟಿದ ಸಮಯ", gender: "ಲಿಂಗ", day: "ಹುಟ್ಟಿದ ವಾರ", LMT: "ಸ್ಥಳೀಯ ಸಮಯ (LMT)", offset: "ಪ್ರಮಾಣಿತ ಸಮಯದ ವ್ಯತ್ಯಾಸ", POB: "ಹುಟ್ಟಿದ ಸ್ಥಳ", lat: "ಅಕ್ಷಾಂಶ", lon: "ರೇಖಾಂಶ",
                         t_year: "ವರ್ಷ", t_date: "ದಿನಾಂಕ", kali: "ಕಲಿ ವರ್ಷ", tithi: "ತಿಥಿ", naks: "ನಕ್ಷತ್ರ", yogam: "ಯೋಗ", karanam: "ಕರಣ",
-                        sunrise: "ಸೂರ್ಯೋದಯ", sunset: "ಸೂರ್ಯಾಸ್ತ", ahas: "ಹಗಲಿನ ಅವಧಿ (ಅಹಸ್)", udayadhi: "ಉದಯಾದಿ ಘಳಿಗೆ", ayanamsa: "ಅಯನಾಂಶ"
+                        sunrise: "ಸೂರ್ಯೋದಯ", sunset: "ಸೂರ್ಯಾಸ್ತ", moonrise: "ಚಂದ್ರೋದಯ", moonset: "ಚಂದ್ರಾಸ್ತ", ahas: "ಹಗಲಿನ ಅವಧಿ (ಅಹಸ್)", udayadhi: "ಉದಯಾದಿ ಘಳಿಗೆ", ayanamsa: "ಅಯನಾಂಶ"
                     },
                     hi: {
                         name: "जातक का नाम", dob: "जन्म तिथि", tob: "जन्म समय", gender: "लिंग", day: "जन्म वार", LMT: "स्थानीय समय (LMT)", offset: "मानक समय अंतर", POB: "जन्म स्थान", lat: "अक्षांश", lon: "रेखांश",
                         t_year: "वर्ष", t_date: "तिथि/दिनांक", kali: "कलि युग वर्ष", tithi: "तिथि", naks: "नक्षत्र", yogam: "योग", karanam: "करण",
-                        sunrise: "सूर्योदय", sunset: "सूर्यास्त", ahas: "दिनमान (अहस)", udayadhi: "उदयादि घटी", ayanamsa: "अयनांश"
+                        sunrise: "सूर्योदय", sunset: "सूर्यास्त", moonrise: "चन्द्रोदय", moonset: "चन्द्रास्त", ahas: "दिनमान (अहस)", udayadhi: "उदयादि घटी", ayanamsa: "अयनांश"
                     }
                 };
-                
                 const activeLbl = lbls[currentLang] || lbls['en'];
                 const rawName = document.getElementById('in-name').value || "Name";
                 const rawPob = document.getElementById('in-pob').value || "Nellore";
@@ -5000,6 +5213,14 @@
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.sunset}</span>
                         <span class="panch-value">${calculatedChartData.panchangam.sunset}</span>
+                    </div>
+                    <div class="panch-item">
+                        <span class="panch-label">${activeLbl.moonrise}</span>
+                        <span class="panch-value">${calculatedChartData.panchangam.moonrise || "--"}</span>
+                    </div>
+                    <div class="panch-item">
+                        <span class="panch-label">${activeLbl.moonset}</span>
+                        <span class="panch-value">${calculatedChartData.panchangam.moonset || "--"}</span>
                     </div>
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.ahas}</span>
