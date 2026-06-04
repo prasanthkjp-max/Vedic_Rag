@@ -1573,6 +1573,68 @@
             .form-grid { grid-template-columns: 1fr; }
         }
 
+        /* Birth charts and Gochara transit SVG container sizes and styles to keep them compact and not stretched */
+        .charts-row-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .svg-chart-card-wrapper {
+            flex: 1;
+            min-width: 240px;
+            max-width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 4px 20px rgba(217, 119, 6, 0.05);
+            margin: 0 auto;
+        }
+
+        .svg-chart-card {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .svg-chart-card svg {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .gochara-chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .gochara-chart-container svg {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .gochara-svg {
+            width: 100%;
+            max-width: 220px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -1793,96 +1855,59 @@
                     Each cultural zone calculates festivals, good/bad times, and astrological coordinates accordingly.
                 </div>
 
-                <!-- Subpage sub-grids for Panchangam metrics -->
-                <div class="panchangam-advanced-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <!-- Left Column: Dynamic Astronomical calculations, Muhurthams & Good Times -->
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <!-- Good/Bad Times in a day -->
-                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
-                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title">Daily Kaalams & Auspicious Timings</span>
-                            </div>
-                            <div class="panchangam-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-rahu-kalam-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #dc2626;">Rahu Kalam (Inauspicious)</span>
-                                    <span class="panch-value" id="panch-rahu-kalam" style="font-size: 11px; font-weight: bold; color: #dc2626;">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-yamagandam-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #b45309;">Yamagandam (Inauspicious)</span>
-                                    <span class="panch-value" id="panch-yamagandam" style="font-size: 11px; font-weight: bold; color: #b45309;">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-gulika-kalam-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral)</span>
-                                    <span class="panch-value" id="panch-gulika-kalam" style="font-size: 11px; font-weight: bold; color: #2563eb;">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-abhijit-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious)</span>
-                                    <span class="panch-value" id="panch-abhijit" style="font-size: 11px; font-weight: bold; color: #16a34a;">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
-                                    <span id="lbl-brahma-label" class="panch-label" style="font-size: 9.5px; font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious)</span>
-                                    <span class="panch-value" id="panch-brahma-muhurtha" style="font-size: 11px; font-weight: bold; color: #d97706;">--</span>
-                                </div>
-                            </div>
+                <!-- Simplified List of Panchangam Elements & Timings -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    
+                    <!-- Daily Kaalams List -->
+                    <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
+                        <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title">Daily Kaalams & Auspicious Timings</span>
                         </div>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 11.5px; color: var(--text-primary); line-height: 1.7; list-style-type: square;">
+                            <li><span id="lbl-rahu-kalam-label" style="font-weight: bold; color: #dc2626;">Rahu Kalam (Inauspicious):</span> <span id="panch-rahu-kalam" style="font-weight: bold; color: #dc2626;">--</span></li>
+                            <li><span id="lbl-yamagandam-label" style="font-weight: bold; color: #b45309;">Yamagandam (Inauspicious):</span> <span id="panch-yamagandam" style="font-weight: bold; color: #b45309;">--</span></li>
+                            <li><span id="lbl-gulika-kalam-label" style="font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral):</span> <span id="panch-gulika-kalam" style="font-weight: bold; color: #2563eb;">--</span></li>
+                            <li><span id="lbl-abhijit-label" style="font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious):</span> <span id="panch-abhijit" style="font-weight: bold; color: #16a34a;">--</span></li>
+                            <li><span id="lbl-brahma-label" style="font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious):</span> <span id="panch-brahma-muhurtha" style="font-weight: bold; color: #d97706;">--</span></li>
+                        </ul>
+                    </div>
 
-                        <!-- Muhurtham, Netram & Jeevan -->
-                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
-                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved"></i> <span id="lbl-strength-title">Muhurtham, Netram & Jeevan Strength</span>
-                            </div>
-                            <div class="panchangam-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-netram-label" class="panch-label" style="font-size: 9.5px;">Netram (Eye of the Day)</span>
-                                    <span class="panch-value" id="panch-netram" style="font-size: 11px; font-weight: bold;">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-jeevan-label" class="panch-label" style="font-size: 9.5px;">Jeevan (Life of the Day)</span>
-                                    <span class="panch-value" id="panch-jeevan" style="font-size: 11px; font-weight: bold;">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-vedic-ritu" class="panch-label" style="font-size: 9.5px;">Vedic Ritu (Season)</span>
-                                    <span class="panch-value" id="panch-ritu" style="font-size: 11px; font-weight: bold; color: var(--accent-gold);">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0;">
-                                    <span id="lbl-ayana" class="panch-label" style="font-size: 9.5px;">Ayana (Solar Course)</span>
-                                    <span class="panch-value" id="panch-ayana" style="font-size: 11px; font-weight: bold; color: var(--accent-gold);">--</span>
-                                </div>
-                                <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
-                                    <span id="lbl-muhurtham-timings" class="panch-label" style="font-size: 9.5px;">Auspicious Muhurtham Timings (Good Hours)</span>
-                                    <span class="panch-value" id="panch-muhurtham-desc" style="font-size: 11px; font-weight: normal; color: var(--text-secondary); white-space: normal; line-height: 1.4;">--</span>
-                                </div>
-                            </div>
+                    <!-- Strength Metrics List -->
+                    <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
+                        <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-shield-halved"></i> <span id="lbl-strength-title">Muhurtham, Netram & Jeevan Strength</span>
+                        </div>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 11.5px; color: var(--text-primary); line-height: 1.7; list-style-type: square;">
+                            <li><span id="lbl-netram-label" style="font-weight: bold;">Netram (Eye of the Day):</span> <span id="panch-netram" style="font-weight: bold;">--</span></li>
+                            <li><span id="lbl-jeevan-label" style="font-weight: bold;">Jeevan (Life of the Day):</span> <span id="panch-jeevan" style="font-weight: bold;">--</span></li>
+                            <li><span id="lbl-vedic-ritu" style="font-weight: bold;">Vedic Ritu (Season):</span> <span id="panch-ritu" style="font-weight: bold; color: var(--accent-gold);">--</span></li>
+                            <li><span id="lbl-ayana" style="font-weight: bold;">Ayana (Solar Course):</span> <span id="panch-ayana" style="font-weight: bold; color: var(--accent-gold);">--</span></li>
+                            <li><span id="lbl-muhurtham-timings" style="font-weight: bold;">Auspicious Muhurtham Timings (Good Hours):</span> <span id="panch-muhurtham-desc" style="color: var(--text-secondary); white-space: normal;">--</span></li>
+                        </ul>
+                    </div>
+
+                    <!-- Horas (Only related to the current hour) -->
+                    <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
+                        <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-hourglass-half"></i> <span id="lbl-horas-title">Hourly Planetary Horas (Transit Strengths)</span>
+                        </div>
+                        <div id="panch-horas-list" style="font-size: 11.5px; color: var(--text-primary);">
+                            <span style="font-size: 11.5px; color: var(--text-muted);">Please select a date to calculate Horas...</span>
                         </div>
                     </div>
 
-                    <!-- Right Column: Regional Calculations, Festivals, Horas -->
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <!-- Horas -->
-                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
-                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-hourglass-half"></i> <span id="lbl-horas-title">Hourly Planetary Horas (Transit Strengths)</span>
-                            </div>
-                            <div id="lbl-horas-desc" style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
-                            <div id="panch-horas-list" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 115px; overflow-y: auto; padding-right: 4px;">
-                                <!-- Horas populated dynamically -->
-                                <span style="font-size: 11px; color: var(--text-muted);">Please select a date to calculate Horas...</span>
-                            </div>
+                    <!-- Auspicious Festivals List -->
+                    <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
+                        <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-gopuram"></i> <span id="lbl-festivals-title">Auspicious Festivals & Observances</span>
                         </div>
-
-                        <!-- Active Festivals & Cultural Observances -->
-                        <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
-                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-gopuram"></i> <span id="lbl-festivals-title">Auspicious Festivals & Observances</span>
-                            </div>
-                            <div id="panch-festivals-list" style="font-size: 11px; color: var(--text-primary); line-height: 1.5; white-space: normal;">
-                                --
-                            </div>
+                        <div id="panch-festivals-list" style="font-size: 11.5px; color: var(--text-primary); line-height: 1.5; white-space: normal; padding-left: 4px;">
+                            --
                         </div>
                     </div>
+
                 </div>
             </div>
-        </div>
 
         <!-- ------------------ PAGE 2: JYOTHISYAM (BIRTH DETAILS INPUTS) ------------------ -->
         <div class="single-page-content" id="page-jyothisyam">
@@ -3241,18 +3266,18 @@
 
         function translateSpeciality(specStr) {
             if (!specStr) return "";
-            if (currentLang === 'en') return specStr;
+            if (currentLang === 'en' && !specStr.includes("Sankranti")) return specStr;
             const translations = {
                 Pournami: { ta: "பௌர்ணமி", te: "పౌర్ణమి", hi: "पूर्णिमा", ml: "പൗർണ്ണമി", kn: "ಪೌರ್ಣಮಿ" },
                 Amavasya: { ta: "அமாவாசை", te: "అమావాస్య", hi: "अमावस्या", ml: "അമാവാസി", kn: "ಅಮಾವಾಸ್ಯೆ" },
                 Ekadashi: { ta: "ஏகாதசி", te: "ఏకాదశి", hi: "एकादशी", ml: "ഏകാദശി", kn: "ಏಕಾದಶಿ" },
-                Pradosham: { ta: "பிரதோஷம்", te: "ప్రదోషం", hi: "ప్రదोष", ml: "പ്രദോഷം", kn: "ಪ್ರದೋಷ" },
+                Pradosham: { ta: "பிரதோஷம்", te: "ప్రదోషం", hi: "प्रदोष", ml: "പ്രദോഷം", kn: "പ്രദോഷ" },
                 "Ganesha Chaturthi": { ta: "விநாயகர் சதுர்த்தி", te: "వినాయక చవితి", hi: "गणेश चतुर्थी", ml: "ഗണേശ ചതുർത്ഥി", kn: "ಗಣೇಶ ಚತುರ್ಥಿ" },
-                Ashtami: { ta: "அஷ்டமி", te: "அష్టమి", hi: "अष्टमी", ml: "അഷ്ടമി", kn: "ಅಷ್ಟಮಿ" },
-                Shivaratri: { ta: "சிவராத்திரி", te: "శివరాత్రి", hi: "शिवरात्रि", ml: "ശിവരാത്രി", kn: "శివరాత్రి" },
-                Sankranti: { ta: "சங்கராந்தி", te: "సంక్రాంతి", hi: "संक्रांति", ml: "സംക്രാന്തി", kn: "ಸಂಕ್ರಾಂತಿ" },
-                "Sukla Chaturthi": { ta: "சுக்ல சதுர்த்தி", te: "శుక్ల చవితి", hi: "शुक्ल चतुर्थी", ml: "ശുക്ല ചതുർത്ഥി", kn: "ಶುಕ್ಲ ಚತುರ್ಥಿ" },
-                "Sankatahara Chaturthi": { ta: "சங்கடஹர சதுர்த்தி", te: "సంకష్టహర చవితి", hi: "संकष्ट चतुर्थी", ml: "സങ്കടహര ചതുർത്ഥി", kn: "ಸಂಕಷ್ಟహర ಚತುರ್ಥಿ" }
+                Ashtami: { ta: "அஷ்டமி", te: "అష్టమి", hi: "अष्टमी", ml: "அഷ്ടമി", kn: "ಅಷ್ಟಮಿ" },
+                Shivaratri: { ta: "சிவராத்திரி", te: "శివరాత్రి", hi: "शिवरात्रि", ml: "ശിവരാത്രി", kn: "ಶಿವರಾತ್ರಿ" },
+                Sankranti: { ta: "மாதப்பிறப்பு", te: "సంక్రమణం", hi: "संक्रांति", ml: "സംക്രമം", kn: "ಸಂಕ್ರಾಮಣ" },
+                "Sukla Chaturthi": { ta: "சுக்ல சதுர்த்தி", te: "శుక్ల చవితి", hi: "शुक्ल चतुर्थी", ml: "ശുक्ല ചതുർത്ഥി", kn: "ಶುಕ್ಲ ಚತುರ್ಥಿ" },
+                "Sankatahara Chaturthi": { ta: "சங்கடஹர சதுர்த்தி", te: "సంకష్టహర చవితి", hi: "संकष्ट चतुर्थी", ml: "സങ്കടహര ചതുർത്ഥി", kn: "ಸಂಕಷ್ಟహర చతుర్థి" }
             };
             
             if (specStr.includes("Sankranti")) {
@@ -3262,12 +3287,27 @@
                     const rasis = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanus", "Makara", "Kumbha", "Meena"];
                     const idx = rasis.indexOf(rasiName);
                     if (idx !== -1) {
-                        const localRasi = rasiTranslations[currentLang] ? rasiTranslations[currentLang][idx] : rasiName;
-                        if (currentLang === 'ta') return `${localRasi} சங்கராந்தி`;
-                        if (currentLang === 'te') return `${localRasi} సంక్రాంతి`;
-                        if (currentLang === 'hi') return `${localRasi} संक्रांति`;
-                        if (currentLang === 'ml') return `${localRasi} സംക്രാന്തി`;
-                        if (currentLang === 'kn') return `${localRasi} ಸಂಕ್ರಾಂತಿ`;
+                        if (currentLang === 'ta') {
+                            const taSolarMonths = ["சித்திரை", "வைகாசி", "ஆனி", "ஆடி", "ஆவணி", "புரட்டாசி", "ஐப்பசி", "கார்த்திகை", "மார்கழி", "தை", "மாசி", "பங்குனி"];
+                            return `${taSolarMonths[idx]} மாதப்பிறப்பு`;
+                        }
+                        if (currentLang === 'te') {
+                            const teSolarRasis = ["మేష", "వృషభ", "మిథున", "కర్కాటక", "సింహ", "కన్యా", "తులా", "వృశ్చిక", "ధనుస్సు", "మకర", "కుంభ", "మీన"];
+                            return `${teSolarRasis[idx]} సంక్రమణం`;
+                        }
+                        if (currentLang === 'kn') {
+                            const knSolarRasis = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕಾಟಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"];
+                            return `${knSolarRasis[idx]} ಸಂಕ್ರಮಣ`;
+                        }
+                        if (currentLang === 'ml') {
+                            const mlSolarMonths = ["മേട", "ഇടവ", "മിഥുന", "കർക്കടക", "ചിങ്ങ", "കന്നി", "തുലാ", "വൃശ്ചിക", "ധനു", "മകര", "കുംഭ", "മീന"];
+                            return `${mlSolarMonths[idx]} സംക്രമം`;
+                        }
+                        if (currentLang === 'hi') {
+                            const hiSolarRasis = ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"];
+                            return `${hiSolarRasis[idx]} संक्रांति`;
+                        }
+                        return `${rasiName} Solar Ingress`;
                     }
                 }
             }
@@ -4211,6 +4251,10 @@
             let horasHtml = "";
             let auspiciousHoursList = [];
             
+            const now = new Date();
+            const currentDec = now.getHours() + now.getMinutes() / 60;
+            const currentHourIdx = Math.floor((currentDec - sunriseDec + 24) % 24);
+            
             for (let h = 0; h < 24; h++) {
                 const lord = HORA_PLANETS[(startLordIdx + h) % 7];
                 const hStart = sunriseDec + h;
@@ -4221,14 +4265,32 @@
                 const timeRangeStr = formatRange(displayStart, displayEnd);
                 
                 const isAuspicious = ["Jupiter", "Venus", "Mercury", "Moon"].includes(lord);
-                const pillColor = isAuspicious ? "background: rgba(22, 163, 74, 0.15); border: 1px solid rgba(22, 163, 74, 0.4); color: #16a34a;" : "background: rgba(15, 23, 42, 0.04); border: 1px solid var(--border-gold);";
-                horasHtml += `<span style="font-size: 9.5px; padding: 4px 8px; border-radius: 6px; font-weight: bold; ${pillColor}">${h + 1} Hr: ${lord} (${timeRangeStr})</span>`;
+                
+                if (h === currentHourIdx) {
+                    const pillColor = isAuspicious ? "background: rgba(22, 163, 74, 0.15); border: 1px solid rgba(22, 163, 74, 0.4); color: #16a34a;" : "background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;";
+                    const horaTrans = {
+                        en: "Current Hour Hora",
+                        ta: "தற்போதைய ஹோரை",
+                        te: "ప్రస్తుత హోర",
+                        ml: "ഇപ്പോഴത്തെ ഹോര",
+                        kn: "ಪ್ರಸ್ತುತ ಹೋರೆ",
+                        hi: "वर्तमान होरा"
+                    };
+                    const currentHoraText = horaTrans[currentLang] || horaTrans.en;
+                    
+                    horasHtml = `<div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: bold; color: var(--accent-gold); font-size: 11.5px;">${currentHoraText}:</span>
+                        <span style="font-size: 11.5px; padding: 4px 10px; border-radius: 6px; font-weight: bold; ${pillColor}">
+                            ${lord} (${timeRangeStr})
+                        </span>
+                    </div>`;
+                }
                 
                 if (isAuspicious && h < 18) {
                     auspiciousHoursList.push(`${lord} Hora (${timeRangeStr})`);
                 }
             }
-            document.getElementById('panch-horas-list').innerHTML = horasHtml;
+            document.getElementById('panch-horas-list').innerHTML = horasHtml || `<span style="font-size: 11.5px; color: var(--text-muted);">--</span>`;
             document.getElementById('panch-muhurtham-desc').innerText = auspiciousHoursList.slice(0, 5).join(" | ");
 
             // Festivals logic based on selected system
@@ -4536,19 +4598,33 @@
                         let p = activeAbbr[planet] || planet.slice(0, 2);
                         if (placements[planet].is_retrograde && planet !== "Lagna") p += retroSym;
                         if (placements[planet].is_combust && planet !== "Lagna") p += combustSym;
-                        planetsInCell.push(p);
+                        planetsInCell.push({ name: planet, text: p });
                     }
                 }
                 
                 // Draw planet labels inside the cell
                 let col = 0;
                 let row = 0;
-                planetsInCell.forEach(p => {
+                planetsInCell.forEach(item => {
                     const px = cell.x + 6 + (col * 26);
                     const py = cell.y + 28 + (row * 15);
-                    const isLong = p.length > 3;
+                    const isLong = item.text.length > 3;
                     const fSize = isLong ? 7.2 : 9.5;
-                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="var(--text-primary)">${p}</text>`;
+                    
+                    // Determine planet fill color
+                    let fill = "var(--text-primary)";
+                    const pName = item.name;
+                    if (pName === "Saturn" || pName === "Sun" || pName === "Mars") {
+                        fill = "#ef4444"; // Red
+                    } else if (pName === "Jupiter" || pName === "Venus" || pName === "Mercury") {
+                        fill = "#22c55e"; // Green
+                    } else if (pName === "Moon" || pName === "Rahu" || pName === "Ketu" || pName === "Raghu" || pName === "Kethu") {
+                        fill = "#3b82f6"; // Blue
+                    } else if (pName === "Lagna") {
+                        fill = "var(--accent-gold)";
+                    }
+                    
+                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="${fill}">${item.text}</text>`;
                     col++;
                     if (col >= 2) {
                         col = 0;
@@ -4628,20 +4704,36 @@
                         let p = activeAbbr[planet] || planet.slice(0, 2);
                         if (placements[planet].is_retrograde && planet !== "Lagna") p += retroSym;
                         if (placements[planet].is_combust && planet !== "Lagna") p += combustSym;
-                        planetsInHouse.push(p);
+                        planetsInHouse.push({ name: planet, text: p });
                     }
                 }
                 
-                // Render planets text
+                // Render planets text using tspan for distinct colors
                 if (planetsInHouse.length > 0) {
-                    const hasLong = planetsInHouse.some(p => p.length > 3);
+                    const hasLong = planetsInHouse.some(item => item.text.length > 3);
                     const fSize = hasLong ? 7 : 9;
-                    const row1 = planetsInHouse.slice(0, 2).join(' ');
-                    const row2 = planetsInHouse.slice(2, 4).join(' ');
                     
-                    svgContent += `<text x="${center.x}" y="${center.y}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="var(--text-primary)" text-anchor="middle">${row1}</text>`;
+                    const getTspan = (item) => {
+                        let fill = "var(--text-primary)";
+                        const pName = item.name;
+                        if (pName === "Saturn" || pName === "Sun" || pName === "Mars") {
+                            fill = "#ef4444"; // Red
+                        } else if (pName === "Jupiter" || pName === "Venus" || pName === "Mercury") {
+                            fill = "#22c55e"; // Green
+                        } else if (pName === "Moon" || pName === "Rahu" || pName === "Ketu" || pName === "Raghu" || pName === "Kethu") {
+                            fill = "#3b82f6"; // Blue
+                        } else if (pName === "Lagna") {
+                            fill = "var(--accent-gold)";
+                        }
+                        return `<tspan fill="${fill}">${item.text}</tspan>`;
+                    };
+                    
+                    const row1 = planetsInHouse.slice(0, 2).map(getTspan).join(' ');
+                    const row2 = planetsInHouse.slice(2, 4).map(getTspan).join(' ');
+                    
+                    svgContent += `<text x="${center.x}" y="${center.y}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" text-anchor="middle">${row1}</text>`;
                     if (row2) {
-                        svgContent += `<text x="${center.x}" y="${center.y + 10}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="var(--text-primary)" text-anchor="middle">${row2}</text>`;
+                        svgContent += `<text x="${center.x}" y="${center.y + 10}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" text-anchor="middle">${row2}</text>`;
                     }
                 }
             }
