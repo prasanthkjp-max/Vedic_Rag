@@ -810,11 +810,11 @@
 
         /* High Visibility Calendar Cells */
         .calendar-cell {
-            min-height: 58px;
-            padding: 6px;
+            min-height: 95px;
+            padding: 8px;
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.72);
-            border: 1px solid rgba(217, 119, 6, 0.25);
+            background: rgba(255, 253, 245, 0.85);
+            border: 1px solid rgba(217, 119, 6, 0.35);
             transition: all 0.22s ease;
             cursor: pointer;
             display: flex;
@@ -849,7 +849,7 @@
         .calendar-cell.inauspicious { border-color: rgba(220, 38, 38, 0.28); }
 
         .cell-day-num {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--text-primary);
             line-height: 1;
@@ -859,7 +859,7 @@
         }
 
         .cell-naks {
-            font-size: 9px;
+            font-size: 9.5px;
             color: var(--text-secondary);
             line-height: 1.2;
             white-space: nowrap;
@@ -869,7 +869,7 @@
         }
 
         .cell-speciality {
-            font-size: 9px;
+            font-size: 9.5px;
             padding: 1px 4px;
             border-radius: 3px;
             margin-top: 4px;
@@ -1335,6 +1335,13 @@
         .kaalams-item.inauspicious .kaalams-time { color: #b91c1c; }
         .kaalams-item.auspicious   .kaalams-time { color: var(--text-gold); }
 
+        /* 2-Column Desktop layout for advanced wisdom panel to balance layout height */
+        .panchangam-advanced-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
         /* ════════════════════════════════════════
            PLANETARY HORAS
         ════════════════════════════════════════ */
@@ -1550,6 +1557,7 @@
             .dashboard-grid { grid-template-columns: 1fr; }
             .span-2 { grid-column: span 1; }
             .form-grid { grid-template-columns: 1fr 1fr; }
+            .panchangam-advanced-grid { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 768px) {
@@ -2459,7 +2467,7 @@
                 lbl_female_partner_title: "Female Partner Details",
                 lbl_marriage_ai_reading: "Ganesha Astro-AI Relationship Matching Reading",
                 title_gochara: "Gochara Transits",
-                desc_gochara: "Today's sidereal transit planetary map in South Indian chart style.",
+                desc_gochara: "Today's gochara transit planetary map in South Indian chart style.",
                 tamil_year: "Tamil Year",
                 tamil_month: "Tamil Date",
                 tithi: "Tithi (Phases)",
@@ -2557,8 +2565,8 @@
                 nav_btn_home: "முகப்பு (பஞ்சாங்கம்)",
                 nav_btn_jyothisyam: "ஜோதிடம்",
                 nav_btn_ai: "வேத AI சாட்",
-                title_gochara: "இன்றைய கோசார கிரகங்கள்",
-                desc_gochara: "இன்றைய வானியல் கிரக நிலைகள் தென்னிந்திய ஜாதக முறையில்.",
+                title_gochara: "கோசார மாற்றங்கள்",
+                desc_gochara: "இன்றைய கோசார கிரக மாற்றங்களின் வரைபடம் தென்னிந்திய முறையில்.",
                 tamil_year: "தமிழ் வருடம்",
                 nav_btn_marriage: "திருமண பொருத்தம்",
                 lbl_marriage_intro: "இரு மணமக்களின் பிறப்பு விவரங்களை உள்ளிட்டு நட்சத்திர பொருத்தம் (கூட்ட பொருத்தம்) மற்றும் பிரபஞ்ச ஜோதிட பலன்களைப் பெறலாம்.",
@@ -2668,8 +2676,8 @@
                 lbl_male_partner_title: "వరుడి వివరాలు (పురుషుడు)",
                 lbl_female_partner_title: "వధువు వివరాలు (స్త్రీ)",
                 lbl_marriage_ai_reading: "గణేశ జ్యోతిష్య AI వైవాహిక పొంతన ఫలాలు",
-                title_gochara: "నేటి గోచార గ్రహాలు",
-                desc_gochara: "నేటి ఖగోళ గ్రహ స్థితులు దక్షిణ భారత జాతక పద్ధతిలో.",
+                title_gochara: "గోచార సంచారము",
+                desc_gochara: "నేటి గోచార గ్రహ సంచారాల పటం దక్షిణ భారత పద్ధతిలో.",
                 tamil_year: "తమిళ సంవత్సరం",
                 tamil_month: "తమిళ తేదీ",
                 tithi: "తిథి",
@@ -2773,8 +2781,8 @@
                 lbl_male_partner_title: "വരന്റെ വിവരങ്ങൾ (പുരുഷൻ)",
                 lbl_female_partner_title: "വധുവിന്റെ വിവരങ്ങൾ (സ്ത്രീ)",
                 lbl_marriage_ai_reading: "ഗണേശ ജ്യോതിഷ AI വൈവാഹിക പൊരുത്ത ഫലങ്ങൾ",
-                title_gochara: "ഇന്നത്തെ ഗോചാര ഗ്രഹങ്ങൾ",
-                desc_gochara: "ഇന്നത്തെ ഗ്രഹ നിലകൾ ദക്ഷിണേന്ത്യൻ ജാതക ശൈലിയിൽ.",
+                title_gochara: "ഗോചാര സഞ്ചാരം",
+                desc_gochara: "ഇന്നത്തെ ഗോചാര ഗ്രഹ സഞ്ചാര ഭൂപടം ദക്ഷിണേന്ത്യൻ ശൈലിയിൽ.",
                 tamil_year: "തമിഴ് വർഷം",
                 tamil_month: "തമിഴ് തീയതി",
                 tithi: "തിഥി",
@@ -2878,8 +2886,8 @@
                 lbl_male_partner_title: "ವರನ ವಿವರಗಳು (ಪುರುಷ)",
                 lbl_female_partner_title: "ವಧುವಿನ ವಿವರಗಳು (ಸ್ತ್ರೀ)",
                 lbl_marriage_ai_reading: "ಗಣೇಶ ಜ್ಯೋತಿಷ್ಯ AI ವೈವಾಹಿಕ ಹೊಂದಾಣಿಕೆ ಫಲಗಳು",
-                title_gochara: "ಇಂದಿನ ಗೋಚಾರ ಗ್ರಹಗಳು",
-                desc_gochara: "ಇಂದಿನ ಗ್ರಹ ಸ್ಥಿತಿಗಳು ದಕ್ಷಿಣ ಭಾರತದ ಜಾತಕ ಶೈಲಿಯಲ್ಲಿ.",
+                title_gochara: "ಗೋಚಾರ ಸಂಚಾರ",
+                desc_gochara: "ಇಂದಿನ ಗೋಚಾರ ಗ್ರಹ ಸಂಚಾರಗಳ ನಕ್ಷೆ ದಕ್ಷಿಣ ಭಾರತದ ಶೈಲಿಯಲ್ಲಿ.",
                 tamil_year: "ತಮಿಳು ವರ್ಷ",
                 tamil_month: "ತಮಿಳು ದಿನಾಂಕ",
                 tithi: "ತಿಥಿ",
@@ -2983,8 +2991,8 @@
                 lbl_male_partner_title: "वर का विवरण (वर)",
                 lbl_female_partner_title: "वधू का विवरण (वधू)",
                 lbl_marriage_ai_reading: "गणेश ज्योतिष AI कुंडली मिलान फल",
-                title_gochara: "आज के गोचर ग्रह",
-                desc_gochara: "आज की खगोलीय ग्रह स्थिति दक्षिण भारतीय कुंडली शैली में।",
+                title_gochara: "गोचर पारगमन",
+                desc_gochara: "आज की गोचर ग्रह पारगमन स्थिति दक्षिण भारतीय शैली में।",
                 tamil_year: "तमिल वर्ष",
                 tamil_month: "तमिल तिथि",
                 tithi: "तिथि",
@@ -3238,12 +3246,32 @@
                 Pournami: { ta: "பௌர்ணமி", te: "పౌర్ణమి", hi: "पूर्णिमा", ml: "പൗർണ്ണമി", kn: "ಪೌರ್ಣಮಿ" },
                 Amavasya: { ta: "அமாவாசை", te: "అమావాస్య", hi: "अमावस्या", ml: "അമാവാസി", kn: "ಅಮಾವಾಸ್ಯೆ" },
                 Ekadashi: { ta: "ஏகாதசி", te: "ఏకాదశి", hi: "एकादशी", ml: "ഏകാദശി", kn: "ಏಕಾದಶಿ" },
-                Pradosham: { ta: "பிரதோஷம்", te: "ప్రదోషం", hi: "प्रदोष", ml: "പ്രദോഷം", kn: "ಪ್ರದೋಷ" },
+                Pradosham: { ta: "பிரதோஷம்", te: "ప్రదోషం", hi: "ప్రదोष", ml: "പ്രദോഷം", kn: "ಪ್ರದೋಷ" },
                 "Ganesha Chaturthi": { ta: "விநாயகர் சதுர்த்தி", te: "వినాయక చవితి", hi: "गणेश चतुर्थी", ml: "ഗണേശ ചതുർത്ഥി", kn: "ಗಣೇಶ ಚತುರ್ಥಿ" },
-                Ashtami: { ta: "அஷ்டமி", te: "అష్టమి", hi: "अष्टमी", ml: "അഷ്ടമി", kn: "ಅಷ್ಟಮಿ" },
-                Shivaratri: { ta: "சிவராத்திரி", te: "శివరాత్రి", hi: "शिवरात्रि", ml: "ശിവരാത്രി", kn: "ಶಿವರಾತ್ರಿ" },
-                Sankranti: { ta: "சங்கராந்தி", te: "సంక్రాంతి", hi: "संक्रांति", ml: "സംക്രാന്തി", kn: "ಸಂಕ್ರಾಂತಿ" }
+                Ashtami: { ta: "அஷ்டமி", te: "அష్టమి", hi: "अष्टमी", ml: "അഷ്ടമി", kn: "ಅಷ್ಟಮಿ" },
+                Shivaratri: { ta: "சிவராத்திரி", te: "శివరాత్రి", hi: "शिवरात्रि", ml: "ശിവരാത്രി", kn: "శివరాత్రి" },
+                Sankranti: { ta: "சங்கராந்தி", te: "సంక్రాంతి", hi: "संक्रांति", ml: "സംക്രാന്തി", kn: "ಸಂಕ್ರಾಂತಿ" },
+                "Sukla Chaturthi": { ta: "சுக்ல சதுர்த்தி", te: "శుక్ల చవితి", hi: "शुक्ल चतुर्थी", ml: "ശുക്ല ചതുർത്ഥി", kn: "ಶುಕ್ಲ ಚತುರ್ಥಿ" },
+                "Sankatahara Chaturthi": { ta: "சங்கடஹர சதுர்த்தி", te: "సంకష్టహర చవితి", hi: "संकष्ट चतुर्थी", ml: "സങ്കടహര ചതുർത്ഥി", kn: "ಸಂಕಷ್ಟహర ಚತುರ್ಥಿ" }
             };
+            
+            if (specStr.includes("Sankranti")) {
+                const parts = specStr.split(" ");
+                if (parts.length > 1) {
+                    const rasiName = parts[0];
+                    const rasis = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanus", "Makara", "Kumbha", "Meena"];
+                    const idx = rasis.indexOf(rasiName);
+                    if (idx !== -1) {
+                        const localRasi = rasiTranslations[currentLang] ? rasiTranslations[currentLang][idx] : rasiName;
+                        if (currentLang === 'ta') return `${localRasi} சங்கராந்தி`;
+                        if (currentLang === 'te') return `${localRasi} సంక్రాంతి`;
+                        if (currentLang === 'hi') return `${localRasi} संक्रांति`;
+                        if (currentLang === 'ml') return `${localRasi} സംക്രാന്തി`;
+                        if (currentLang === 'kn') return `${localRasi} ಸಂಕ್ರಾಂತಿ`;
+                    }
+                }
+            }
+            
             return (translations[specStr] && translations[specStr][currentLang]) || specStr;
         }
 
@@ -3886,7 +3914,148 @@
                     festivals.push("Regular Lunar Day - Good for lunar sadhana and personal shanti prayers.");
                 }
             }
-            return festivals;
+            
+            if (currentLang === 'en') return festivals;
+            
+            const festivalTranslations = {
+                "Tamil New Year (Puthandu) / Mesha Sankranti / Vishu": {
+                    ta: "தமிழ்ப்புத்தாண்டு (சித்திரை பிறப்பு) / மேஷ சங்கராந்தி / விஷு",
+                    te: "తమిళ నూతన సంవత్సరం (పుత్తాండు) / మేష సంక్రాంతి / విషు",
+                    hi: "तमिल नव वर्ष (पुथंडु) / मेष संक्रांति / विषु",
+                    ml: "തമിഴ് പുതുവർഷം (വിഷു) / മേട സംക്രാന്തി / വിഷുക്കണി",
+                    kn: "ತಮಿಳು ಹೊಸ ವರ್ಷ (ಪುತ್ತಾಂಡು) / ಮೇಷ ಸಂಕ್ರಾಂತಿ / ವಿಷು"
+                },
+                "Makara Sankranti / Pongal / Uttarayana Commencement": {
+                    ta: "மகர சங்கராந்தி / பொங்கல் / உத்தராயண தொடக்கம்",
+                    te: "మకర సంక్రాంతి / పొంగల్ / ఉత్తరాయణ పుణ్యకాలం",
+                    hi: "मकर संक्रांति / पोंगल / उत्तरायण प्रारंभ",
+                    ml: "മകര സംക്രാന്തി / പൊങ്കൽ / ഉത്തരായന ആരംഭം",
+                    kn: "ಮಕರ ಸಂಕ್ರಾಂತಿ / ಪೊಂಗಲ್ / ಉತ್ತರಾಯಣ ಪುಣ್ಯಕಾಲ"
+                },
+                "Karka Sankranti / Aadi Pandigai / Dakshinayana Commencement": {
+                    ta: "கற்கடக சங்கராந்தி / ஆடிப் பண்டிகை / தக்ஷிணாயண தொடக்கம்",
+                    te: "కర్కాటక సంక్రాంతి / ఆడి పండుగ / దక్షిణాయన పుణ్యకాలం",
+                    hi: "कर्क संक्रांति / आडी पण्डिगई / दक्षिणायन प्रारंभ",
+                    ml: "കർക്കടക സംക്രാന്തി / ആടി പണ്ടിഗൈ / ദക്ഷിണായന ആരംഭം",
+                    kn: "ಕರ್ಕಾಟಕ ಸಂಕ್ರಾಂತಿ / ಆಡಿ ಹಬ್ಬ / ದಕ್ಷಿಣಾಯನ ಪುಣ್ಯಕಾಲ"
+                },
+                "Aadi Perukku (River Adoration Festival)": {
+                    ta: "ஆடிப் பெருக்கு",
+                    te: "ఆడి పెరుక్కు (నదీ ఆరాధన పండుగ)",
+                    hi: "आडी पेरुक्कु (नदी पूजा उत्सव)",
+                    ml: "ആടി പെരുക്ക്",
+                    kn: "ಆಡಿ ಪೆರುಕ್ಕು (ನದಿ ಪೂಜೆ ಹಬ್ಬ)"
+                },
+                "Karthigai Deepam (Festival of Lights)": {
+                    ta: "கார்த்திகை தீபம்",
+                    te: "కార్తీక దీపం (జ్యోతి పండుగ)",
+                    hi: "कार्तिकेय दीपम (दीपोत्सव)",
+                    ml: "കാർത്തിക ദീപം",
+                    kn: "ಕಾರ್ತಿಕ ದೀಪೋತ್ಸವ"
+                },
+                "Ugadi / Gudi Padwa (Telugu & Kannada New Year)": {
+                    ta: "யுகாதி / குடி பாடவா (தெலுங்கு & கன்னட புத்தாண்டு)",
+                    te: "ఉగాది / గుడి పడ్వా (తెలుగు & కన్నడ నూతన సంవత్సరం)",
+                    hi: "युगादि / गुड़ी पड़वा (तेलुगु और कन्नड़ नव वर्ष)",
+                    ml: "ഉഗാദി / ഗുഡി പഡ്വ",
+                    kn: "ಯುಗಾದಿ / ಗುಡಿ ಪಾಡ್ವ (ತೆಲುಗು ಮತ್ತು ಕನ್ನಡ ಹೊಸ ವರ್ಷ)"
+                },
+                "Sri Rama Navami": {
+                    ta: "ஸ்ரீ ராம நவமி",
+                    te: "శ్రీరామ నవమి",
+                    hi: "श्री राम नवमी",
+                    ml: "ശ്രീരാമ നവമി",
+                    kn: "ಶ್ರೀ ರಾಮ ನವಮಿ"
+                },
+                "Akshaya Tritiya (Auspicious day for abundance)": {
+                    ta: "அட்சய திருதியை",
+                    te: "అక్షయ తృతీయ (సమృద్ధి కోసం శుభదినం)",
+                    hi: "अक्षय तृतीया",
+                    ml: "അക്ഷയ തൃതീയ",
+                    kn: "ಅಕ್ಷಯ ತೃತೀಯ"
+                },
+                "Guru Purnima / Vyasa Purnima": {
+                    ta: "குரு பூர்ணிமா / வியாச பூர்ணிமா",
+                    te: "గురు పౌర్ణమి / వ్యాస పౌర్ణమి",
+                    hi: "गुरु पूर्णिमा / व्यास पूर्णिमा",
+                    ml: "ഗുരു പൂർണ്ണിമ / വ്യാസ പൂർണ്ണിമ",
+                    kn: "ಗುರು ಪೂರ್ಣಿಮಾ / ವ್ಯಾಸ ಪೂರ್ಣಿಮಾ"
+                },
+                "Sri Krishna Janmashtami": {
+                    ta: "ஸ்ரீ கிருஷ்ண ஜெயந்தி (ஜன்மாஷ்டமி)",
+                    te: "శ్రీకృష్ణ జన్మాష్టమి",
+                    hi: "श्री कृष्ण जन्माष्टमी",
+                    ml: "ശ്രീകൃഷ്ണ ജന്മാഷ്ടമി",
+                    kn: "ಶ್ರೀ ಕೃಷ್ಣ ಜನ್ಮಾಷ್ಟಮಿ"
+                },
+                "Raksha Bandhan / Avani Avittam": {
+                    ta: "ரக்ஷா பந்தன் / ஆவணி அவிட்டம்",
+                    te: "రక్షా బంధన్ / ఆవణి అవిట్టం",
+                    hi: "रक्षाबंधन / अवनि अवित्तम",
+                    ml: "രക്ഷാബന്ധൻ / ആവണി അവിട്ടം",
+                    kn: "ರಕ್ಷಾಬಂಧನ / ಆವಣಿ ಅವಿಟ್ಟಂ"
+                },
+                "Ganesh Chaturthi / Vinayaka Chavithi": {
+                    ta: "விநாயகர் சதுர்த்தி",
+                    te: "వినాయక చవితి / గణేష్ చతుర్థి",
+                    hi: "गणेश चतुर्थी",
+                    ml: "ഗണേശ ചതുർത്ഥി",
+                    kn: "ಗಣೇಶ ಚತುರ್ಥಿ / ವಿನಾಯಕ ಚೌತಿ"
+                },
+                "Sharad Navratri Commencement": {
+                    ta: "சாரதா நவராத்திரி ஆரம்பம்",
+                    te: "శరన్నవరాత్రుల ప్రారంభం",
+                    hi: "शारदीय नवरात्रि प्रारंभ",
+                    ml: "ശരദ് നവരാത്രി ആരംഭം",
+                    kn: "ಶರನ್ನವರಾತ್ರಿ ಪ್ರಾರಂಭ"
+                },
+                "Mahanavami / Ayudha Puja": {
+                    ta: "மகாநவமி / ஆயுத பூஜை",
+                    te: "మహానవమి / ఆయుధ పూజ",
+                    hi: "महानवमी / आयुध पूजा",
+                    ml: "മഹാനവമി / ആയുധ പൂജ",
+                    kn: "ಮಹಾನวಮಿ / ಆಯುಧ ಪೂಜೆ"
+                },
+                "Vijayadashami / Dussehra": {
+                    ta: "விஜயதசமி / தசரா",
+                    te: "విజయదశమి / దసరా",
+                    hi: "विजयादशमी / दशहरा",
+                    ml: "വിജയദശമി / ദസറ",
+                    kn: "ವಿಜಯದಶಮಿ / ದಸರಾ"
+                },
+                "Deepavali / Diwali (Festival of Lights)": {
+                    ta: "தீபாவளி பண்டிகை",
+                    te: "దీపావళి (దివ్య దీపాల పండుగ)",
+                    hi: "दीपावली / दीवाली (प्रकाश पर्व)",
+                    ml: "ദീപാവലി",
+                    kn: "ದೀಪಾವಳಿ (ಬೆಳಕಿನ ಹಬ್ಬ)"
+                },
+                "Maha Shivaratri (The Great Night of Lord Shiva)": {
+                    ta: "மகா சிவராத்திரி",
+                    te: "మహా శివరాత్రి",
+                    hi: "महाशिवरात्रि",
+                    ml: "മഹാ ശിവരാത്രി",
+                    kn: "ಮಹಾ ಶಿವರಾತ್ರಿ"
+                },
+                "Regular Solar Day - No major Sauramana festivals. Excellent for planetary Sauramana rituals.": {
+                    ta: "சாதாரண சூரிய நாள் - முக்கிய சௌரமான பண்டிகைகள் எதுவும் இல்லை.",
+                    te: "సాధారణ సౌర దినం - ప్రత్యేక సౌరమాన పండుగలు లేవు.",
+                    hi: "सामान्य सौर दिवस - कोई प्रमुख सौर उत्सव नहीं है।",
+                    ml: "സാധാരണ സൗര ദിനം - പ്രത്യേക സൗര ഉത്സവങ്ങൾ ഇല്ല.",
+                    kn: "ಸಾಮಾನ್ಯ ಸೌರ ದಿನ - ಪ್ರಮುಖ ಸೌರಮಾನ ಹಬ್ಬಗಳಿಲ್ಲ."
+                },
+                "Regular Lunar Day - Good for lunar sadhana and personal shanti prayers.": {
+                    ta: "சாதாரண சந்திர நாள் - சந்திர சாதனை மற்றும் தனிப்பட்ட பிரார்த்தனைகளுக்கு நல்லது.",
+                    te: "సాధారణ చంద్ర దినం - చంద్ర సాధన మరియు ప్రార్థనలకు అనుకూలం.",
+                    hi: "सामान्य चंद्र दिवस - चंद्र साधना और व्यक्तिगत शांति प्रार्थना के लिए उत्तम।",
+                    ml: "സാധാരണ ചന്ദ്ര ദിനം - ചന്ദ്ര സാധനയ്ക്കും പ്രാർത്ഥനയ്ക്കും അനുയോജ്യം.",
+                    kn: "ಸಾಮಾನ್ಯ ಚಂದ್ರ ದಿನ - ಚಂದ್ರ ಸಾಧನೆ ಮತ್ತು ವೈಯಕ್ತಿಕ ಪ್ರಾರ್ಥನೆಗಳಿಗೆ ಒಳ್ಳೆಯದು."
+                }
+            };
+            
+            return festivals.map(f => {
+                return (festivalTranslations[f] && festivalTranslations[f][currentLang]) || f;
+            });
         }
 
         function updatePanchangamUIDisplay() {
@@ -4176,8 +4345,15 @@
                     const translatedNak = translateNakshatra(dayInfo.nakshatra);
                     const abbreviatedNak = translatedNak.slice(0, 5) + (translatedNak.length > 5 ? '.' : '');
                     
+                    let regionalDateHtml = '';
+                    if (dayInfo.tamil_date) {
+                        const translatedReg = translateTamilMonth(dayInfo.tamil_date);
+                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 8.5px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translatedReg}</div>`;
+                    }
+                    
                     cell.innerHTML = `
                         <div class="cell-day-num">${dayInfo.day} ${moonIconHtml}</div>
+                        ${regionalDateHtml}
                         <div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>
                         ${specialityHtml}
                     `;
@@ -4293,8 +4469,17 @@
                 d7: 'D7 KUNDALI', d9: 'D9 KUNDALI', d10: 'D10 KUNDALI', d12: 'D12 KUNDALI',
                 navamsha: 'D9 KUNDALI'
             };
-            const centerTitle = dChartTitles[chartType] || (chartType === 'gochara' ? 'SIDEREAL' : 'RASI (D1)');
-            const centerSub = dChartSubs[chartType] || (chartType === 'gochara' ? 'TRANSITS' : 'D1 KUNDALI');
+            const gocharaTitles = {
+                en: { title: "GOCHARA", sub: "TRANSITS" },
+                ta: { title: "கோசார", sub: "மாற்றங்கள்" },
+                te: { title: "గోచార", sub: "సంచారము" },
+                ml: { title: "ഗോചാര", sub: "സഞ്ചാരം" },
+                kn: { title: "ಗೋಚಾರ", sub: "ಸಂಚಾರ" },
+                hi: { title: "गोचर", sub: "पारगमन" }
+            };
+            const gochText = gocharaTitles[currentLang] || gocharaTitles.en;
+            const centerTitle = dChartTitles[chartType] || (chartType === 'gochara' ? gochText.title : 'RASI (D1)');
+            const centerSub = dChartSubs[chartType] || (chartType === 'gochara' ? gochText.sub : 'D1 KUNDALI');
             svgContent += `<rect x="60" y="60" width="120" height="120" fill="var(--bg-glass)" stroke="var(--border-gold)" stroke-width="1"/>`;
             svgContent += `<text x="120" y="115" font-family="'Space Grotesk', sans-serif" font-weight="bold" font-size="10" fill="var(--accent-gold)" text-anchor="middle">${centerTitle}</text>`;
             svgContent += `<text x="120" y="130" font-family="'Space Grotesk', sans-serif" font-weight="bold" font-size="8" fill="var(--text-muted)" text-anchor="middle">${centerSub}</text>`;

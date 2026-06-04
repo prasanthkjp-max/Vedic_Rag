@@ -350,24 +350,37 @@ def get_regional_panchangam(chart, lang_code):
         # Months end on Full Moon (Pournami), shifting Krishna Paksha forward
         luni_idx = calculate_luni_solar_month_index(sun_long, moon_long)
         diff = (moon_long - sun_long) % 360.0
-        if diff >= 180.0:  # Krishna Paksha (after Full Moon)
+        tithi_num = math.floor(diff / 12.0) + 1
+        tithi_num = min(tithi_num, 30)
+        
+        if diff >= 180.0:  # Krishna Paksha
             luni_idx = (luni_idx + 1) % 12
+            luni_day = tithi_num - 15
+        else:  # Sukla Paksha
+            luni_day = 15 + tithi_num
+            
         luni_month = LUNI_SOLAR_MONTHS[luni_idx]
         
         # Vikrama Samvat Year
         vs_year = gregorian_year + 57
         panch["tamil_month"] = luni_month
-        panch["tamil_date"] = f"{luni_month} {tamil_day}"
+        panch["tamil_date"] = f"{luni_month} {luni_day}"
         panch["tamil_year"] = f"Vikrama Samvat {vs_year}"
         
     elif lang_code in ["te", "kn"]:
         # Telugu / Kannada Lunar Calendar (Amanta)
         luni_month = calculate_luni_solar_month(sun_long, moon_long)
         
+        # Calculate Amanta Lunar Day (1 to 30)
+        diff = (moon_long - sun_long) % 360.0
+        tithi_num = math.floor(diff / 12.0) + 1
+        tithi_num = min(tithi_num, 30)
+        luni_day = tithi_num
+        
         # Shalivahana Shaka Year
         shaka_year = gregorian_year - 78
         panch["tamil_month"] = luni_month
-        panch["tamil_date"] = f"{luni_month} {tamil_day}"
+        panch["tamil_date"] = f"{luni_month} {luni_day}"
         panch["tamil_year"] = f"Shalivahana Shaka {shaka_year}"
         
     else:

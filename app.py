@@ -735,8 +735,11 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
                 specialities.append("Ekadashi")
             elif "Tithi 13" in tithi_str:
                 specialities.append("Pradosham")
-            elif "Tithi 4" in tithi_str and "Sukla" in tithi_str:
-                specialities.append("Ganesha Chaturthi")
+            elif "Tithi 4" in tithi_str:
+                if "Sukla" in tithi_str:
+                    specialities.append("Sukla Chaturthi")
+                else:
+                    specialities.append("Sankatahara Chaturthi")
             elif "Tithi 8" in tithi_str:
                 specialities.append("Ashtami")
             elif "Tithi 14" in tithi_str and "Krishna" in tithi_str:
@@ -745,7 +748,8 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
             # Solar transition check (Sankranti)
             sun_deg = chart["placements"]["Sun"]["degree"]
             if sun_deg < 1.0:
-                specialities.append("Sankranti")
+                sun_rasi = chart["placements"]["Sun"]["rasi_name"]
+                specialities.append(f"{sun_rasi} Sankranti")
                 
             days_data.append({
                 "day": day,
