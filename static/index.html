@@ -1321,7 +1321,7 @@
                     </div>
                     <!-- Selection of Panchangam Type -->
                     <div style="display: flex; gap: 6px; align-items: center; font-size: 11px;">
-                        <span style="color: var(--text-secondary); font-weight: bold;">System:</span>
+                        <span id="lbl-panch-system-label" style="color: var(--text-secondary); font-weight: bold;">System:</span>
                         <select id="panch-system-select" onchange="togglePanchangamSystem()" style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 6px; padding: 4px 10px; font-family: var(--font-heading); font-size: 11px; font-weight: bold; color: var(--accent-gold); outline: none; cursor: pointer; transition: all 0.2s ease;">
                             <option value="sauramana">Sauramana (Solar System - e.g., Tamil, Malayalam)</option>
                             <option value="chandramana">Chandramana (Luni-Solar System - e.g., Telugu, Kannada, North Indian)</option>
@@ -1384,15 +1384,15 @@
                                     <span class="panch-value" id="panch-jeevan" style="font-size: 11px; font-weight: bold;">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px;">Vedic Ritu (Season)</span>
+                                    <span id="lbl-vedic-ritu" class="panch-label" style="font-size: 9.5px;">Vedic Ritu (Season)</span>
                                     <span class="panch-value" id="panch-ritu" style="font-size: 11px; font-weight: bold; color: var(--accent-gold);">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0;">
-                                    <span class="panch-label" style="font-size: 9.5px;">Ayana (Solar Course)</span>
+                                    <span id="lbl-ayana" class="panch-label" style="font-size: 9.5px;">Ayana (Solar Course)</span>
                                     <span class="panch-value" id="panch-ayana" style="font-size: 11px; font-weight: bold; color: var(--accent-gold);">--</span>
                                 </div>
                                 <div class="panch-item" style="padding: 6px 0; grid-column: span 2;">
-                                    <span class="panch-label" style="font-size: 9.5px;">Auspicious Muhurtham Timings (Good Hours)</span>
+                                    <span id="lbl-muhurtham-timings" class="panch-label" style="font-size: 9.5px;">Auspicious Muhurtham Timings (Good Hours)</span>
                                     <span class="panch-value" id="panch-muhurtham-desc" style="font-size: 11px; font-weight: normal; color: var(--text-secondary); white-space: normal; line-height: 1.4;">--</span>
                                 </div>
                             </div>
@@ -1404,9 +1404,9 @@
                         <!-- Horas -->
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
                             <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-hourglass-half"></i> Hourly Planetary Horas (Transit Strengths)
+                                <i class="fa-solid fa-hourglass-half"></i> <span id="lbl-horas-title">Hourly Planetary Horas (Transit Strengths)</span>
                             </div>
-                            <div style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
+                            <div id="lbl-horas-desc" style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
                             <div id="panch-horas-list" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 115px; overflow-y: auto; padding-right: 4px;">
                                 <!-- Horas populated dynamically -->
                                 <span style="font-size: 11px; color: var(--text-muted);">Please select a date to calculate Horas...</span>
@@ -1416,7 +1416,7 @@
                         <!-- Active Festivals & Cultural Observances -->
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-glass); background: var(--bg-darker); border-radius: 12px;">
                             <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-gopuram"></i> Auspicious Festivals & Observances
+                                <i class="fa-solid fa-gopuram"></i> <span id="lbl-festivals-title">Auspicious Festivals & Observances</span>
                             </div>
                             <div id="panch-festivals-list" style="font-size: 11px; color: var(--text-primary); line-height: 1.5; white-space: normal;">
                                 --
@@ -2049,7 +2049,14 @@
                 brahma_label: "Brahma Muhurtha (Predawn Auspicious)",
                 strength_title: "Muhurtham, Netram & Jeevan Strength",
                 netram_label: "Netram (Eye of the Day)",
-                jeevan_label: "Jeevan (Life of the Day)"
+                jeevan_label: "Jeevan (Life of the Day)",
+                lbl_panch_system: "System:",
+                lbl_vedic_ritu: "Vedic Ritu (Season)",
+                lbl_ayana: "Ayana (Solar Course)",
+                lbl_muhurtham_timings: "Auspicious Muhurtham Timings (Good Hours)",
+                lbl_horas_title: "Hourly Planetary Horas (Transit Strengths)",
+                lbl_horas_desc: "Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.",
+                lbl_festivals_title: "Auspicious Festivals & Observances"
             },
             ta: {
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
@@ -2129,7 +2136,14 @@
                 brahma_label: "பிரம்ம முகூர்த்தம் (அதிகாலை சுபம்)",
                 strength_title: "முகூர்த்தம், நேத்திரம் & ஜீவன் பலம்",
                 netram_label: "நேத்திரம் (நாள் பார்வை)",
-                jeevan_label: "ஜீவன் (நாள் உயிர்)"
+                jeevan_label: "ஜீவன் (நாள் உயிர்)",
+                lbl_panch_system: "முறை:",
+                lbl_vedic_ritu: "வேத ரிது (பருவகாலம்)",
+                lbl_ayana: "அயனம் (சூரிய பயணம்)",
+                lbl_muhurtham_timings: "சுப முகூர்த்த நேரங்கள் (நல்ல நேரங்கள்)",
+                lbl_horas_title: "மணிதோறும் கிரக ஹோரைகள் (கிரக வலிமைகள்)",
+                lbl_horas_desc: "சூரிய உதயத்திலிருந்து ஒவ்வொரு மணி நேரமும் கிரக ஆட்சியாளர்கள் மாறுகின்றனர். ஆட்சி கிரக பண்புகளை ஆய்வு செய்ய மணி நேரங்களை தேர்வு செய்யுங்கள்.",
+                lbl_festivals_title: "சுப திருவிழாக்கள் & அனுஷ்டானங்கள்"
             },
             te: {
                 lbl_calculating_alignments: "పొంతన లెక్కిస్తోంది...",
@@ -2209,7 +2223,14 @@
                 brahma_label: "బ్రహ్మ ముహూర్తం (ఉషఃకాల శుభప్రదం)",
                 strength_title: "ముహూర్తం, నేత్రం & జీవ బలం",
                 netram_label: "నేత్రం (రోజు దృష్టి)",
-                jeevan_label: "జీవం (రోజు ప్రాణం)"
+                jeevan_label: "జీవం (రోజు ప్రాణం)",
+                lbl_panch_system: "పద్ధతి:",
+                lbl_vedic_ritu: "వేద ఋతువు (రుతుకాలం)",
+                lbl_ayana: "అయనం (సూర్య గమనం)",
+                lbl_muhurtham_timings: "శుభ ముహూర్త సమయాలు (మంచి గంటలు)",
+                lbl_horas_title: "గంటవారీ గ్రహ హోరాలు (గ్రహ బలాలు)",
+                lbl_horas_desc: "సూర్యోదయం నుండి ప్రారంభమయ్యే ప్రతి గంటకు గ్రహ పాలకులు మారతారు. పాలక గ్రహ లక్షణాలను పరిశీలించడానికి గంటలను ఎంచుకోండి.",
+                lbl_festivals_title: "శుభ పండుగలు & ఆచరణలు"
             },
             ml: {
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
@@ -2289,7 +2310,14 @@
                 brahma_label: "ബ്രഹ്മമുഹൂർത്തം (അതിരാവിലെ ശുഭം)",
                 strength_title: "മുഹൂർത്തം, നേത്രം & ജീവൻ ബലം",
                 netram_label: "നേത്രം (ദിവസത്തെ ദൃഷ്ടി)",
-                jeevan_label: "ജീവൻ (ദിവസത്തെ ജീവൻ)"
+                jeevan_label: "ജീവൻ (ദിവസത്തെ ജീവൻ)",
+                lbl_panch_system: "സംവിധാനം:",
+                lbl_vedic_ritu: "വൈദിക ഋതു (കാലം)",
+                lbl_ayana: "അയനം (സൂര്യ ഗതി)",
+                lbl_muhurtham_timings: "ശുഭ മുഹൂർത്ത സമയങ്ങൾ (ഭദ്ര സമയം)",
+                lbl_horas_title: "മണിക്കൂർ ഗ്രഹ ഹോരകൾ (ഗ്രഹ ബലങ്ങൾ)",
+                lbl_horas_desc: "സൂര്യോദയം മുതൽ ഓരോ മണിക്കൂറിലും ഗ്രഹ ഭരണകർത്താക്കൾ മാറുന്നു. ഭരണ ഗ്രഹ ഗുണങ്ങൾ പരിശോധിക്കാൻ മണിക്കൂറുകൾ തിരഞ്ഞെടുക്കൂ.",
+                lbl_festivals_title: "ശുഭ ഉത്സവങ്ങൾ & ആചാരങ്ങൾ"
             },
             kn: {
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ...",
@@ -2369,7 +2397,14 @@
                 brahma_label: "ಬ್ರಹ್ಮ ಮುಹೂರ್ತ (ಮುಂಜಾನೆ ಶುಭ)",
                 strength_title: "ಮುಹೂರ್ತ, ನೇತ್ರ ಮತ್ತು ಜೀವ ಬಲ",
                 netram_label: "ನೇತ್ರ (ದಿನದ ದೃಷ್ಟಿ)",
-                jeevan_label: "ಜೀವ (ದಿನದ ಪ್ರಾಣ)"
+                jeevan_label: "ಜೀವ (ದಿನದ ಪ್ರಾಣ)",
+                lbl_panch_system: "ವ್ಯವಸ್ಥೆ:",
+                lbl_vedic_ritu: "ವೈದಿಕ ಋತು (ಋತುಕಾಲ)",
+                lbl_ayana: "ಅಯನ (ಸೂರ್ಯ ಗತಿ)",
+                lbl_muhurtham_timings: "ಶುಭ ಮುಹೂರ್ತ ಸಮಯಗಳು (ಒಳ್ಳೆಯ ಗಂಟೆಗಳು)",
+                lbl_horas_title: "ಗಂಟೆ ಗ್ರಹ ಹೋರಗಳು (ಗ್ರಹ ಬಲ)",
+                lbl_horas_desc: "ಸೂರ್ಯೋದಯದಿಂದ ಪ್ರಾರಂಭಿಸಿ ಪ್ರತಿ ಗಂಟೆಗೂ ಗ್ರಹ ಅಧಿಕಾರಿಗಳು ಬದಲಾಗುತ್ತಾರೆ. ಆಡಳಿತ ಗ್ರಹ ಗುಣಲಕ್ಷಣಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಗಂಟೆಗಳನ್ನು ಆಯ್ಕೆ ಮಾಡಿ.",
+                lbl_festivals_title: "ಶುಭ ಹಬ್ಬಗಳು & ಆಚರಣೆಗಳು"
             },
             hi: {
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
@@ -2449,7 +2484,14 @@
                 brahma_label: "ब्रह्म मुहूर्त (प्रातःकाल शुभ)",
                 strength_title: "मुहूर्त, नेत्र और जीवन बल",
                 netram_label: "नेत्र (दिन की दृष्टि)",
-                jeevan_label: "जीवन (दिन का प्राण)"
+                jeevan_label: "जीवन (दिन का प्राण)",
+                lbl_panch_system: "प्रणाली:",
+                lbl_vedic_ritu: "वैदिक ऋतु (मौसम)",
+                lbl_ayana: "अयन (सौर पथ)",
+                lbl_muhurtham_timings: "शुभ मुहूर्त समय (अच्छे घंटे)",
+                lbl_horas_title: "प्रति घंटे ग्रह होरा (ग्रह शक्तियाँ)",
+                lbl_horas_desc: "सूर्योदय से शुरू होकर हर घंटे ग्रह शासक बदलते हैं। शासक ग्रह के गुणों का निरीक्षण करने के लिए घंटे चुनें।",
+                lbl_festivals_title: "शुभ उत्सव & अनुष्ठान"
             }
         };
 
@@ -3051,7 +3093,22 @@
             if (netramLabel) netramLabel.innerText = dict.netram_label || "Netram (Eye of the Day)";
             const jeevanLabel = document.getElementById('lbl-jeevan-label');
             if (jeevanLabel) jeevanLabel.innerText = dict.jeevan_label || "Jeevan (Life of the Day)";
-            
+
+            const panchSysLabel = document.getElementById('lbl-panch-system-label');
+            if (panchSysLabel) panchSysLabel.innerText = dict.lbl_panch_system || "System:";
+            const vedicRituLabel = document.getElementById('lbl-vedic-ritu');
+            if (vedicRituLabel) vedicRituLabel.innerText = dict.lbl_vedic_ritu || "Vedic Ritu (Season)";
+            const ayanaLabel = document.getElementById('lbl-ayana');
+            if (ayanaLabel) ayanaLabel.innerText = dict.lbl_ayana || "Ayana (Solar Course)";
+            const muhurthamLabel = document.getElementById('lbl-muhurtham-timings');
+            if (muhurthamLabel) muhurthamLabel.innerText = dict.lbl_muhurtham_timings || "Auspicious Muhurtham Timings (Good Hours)";
+            const horasTitle = document.getElementById('lbl-horas-title');
+            if (horasTitle) horasTitle.innerText = dict.lbl_horas_title || "Hourly Planetary Horas (Transit Strengths)";
+            const horasDesc = document.getElementById('lbl-horas-desc');
+            if (horasDesc) horasDesc.innerText = dict.lbl_horas_desc || "Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.";
+            const festivalsTitle = document.getElementById('lbl-festivals-title');
+            if (festivalsTitle) festivalsTitle.innerText = dict.lbl_festivals_title || "Auspicious Festivals & Observances";
+
             document.getElementById('lbl-name').innerText = dict.name;
             document.getElementById('lbl-dob').innerText = dict.dob;
             document.getElementById('lbl-tob').innerText = dict.tob;
