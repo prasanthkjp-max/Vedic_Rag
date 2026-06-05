@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vedic Astrology — Divine AI Vedic Astrology Portal</title>
+    <title>Vedic Astro AI — Divine AI Vedic Astrology Portal</title>
     
     <!-- Google Fonts: Space Grotesk (modern UI) & Lora (classical serifs) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1780,7 +1780,7 @@
             <div class="logo-section">
                 <img src="/assets/oolaichuvadi_icon.png" alt="Oolaichuvadi">
                 <div class="logo-title">
-                    <h1 id="lbl-title">Vedic Astrology</h1>
+                    <h1 id="lbl-title">Vedic Astro AI</h1>
                     <p id="lbl-subtitle">Vedic Astronomical Panchangam & AI Portal</p>
                 </div>
             </div>
@@ -1788,9 +1788,9 @@
             <!-- Top bar subpage tabs left of translation tab -->
             <nav class="nav-top-bar">
                 <button class="nav-tab active" id="nav-btn-home" onclick="navigateToPage('home')">Home (Panchangam)</button>
-                <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Jyothisyam</button>
+                <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Astrology</button>
                 <button class="nav-tab" id="nav-btn-marriage" onclick="navigateToPage('marriage')">Marriage Matching</button>
-                <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Vedic AI Chat</button>
+                <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Astro AI Chat</button>
             </nav>
 
             <div class="header-controls">
@@ -2509,13 +2509,13 @@
         <div class="single-page-content" id="page-ai">
             <div class="card" style="min-height: 500px;">
                 <div class="card-title">
-                    <i class="fa-solid fa-brain"></i> <span id="lbl-ai-title">Vedic Astrology AI — General Chat</span>
+                    <i class="fa-solid fa-brain"></i> <span id="lbl-ai-title">Astro AI Chat — General Chat</span>
                 </div>
 
                 <!-- Tip banner (shown when no birth chart loaded) -->
                 <div class="ai-birth-summary-panel" id="lbl-ai-p1">
                     <i class="fa-solid fa-lightbulb" style="color: var(--accent-indigo); margin-right: 6px;"></i>
-                    Ask any Vedic astrology question freely! Tip: calculate your birth chart in the <strong>Jyothisyam</strong> tab first for personalized chart-aware predictions.
+                    Ask any Vedic astrology question freely! Tip: calculate your birth chart in the <strong>Astrology</strong> tab first for personalized chart-aware predictions.
                 </div>
 
                 <!-- Loaded birth details summary -->
@@ -2528,16 +2528,16 @@
                     <div class="chat-messages" id="chat-messages-container">
                         <!-- Welcome message loaded from AI -->
                         <div class="chat-message ai" id="initial-welcome-bubble">
-                            <span class="chat-message-meta">Vedic Astrology AI</span>
+                            <span class="chat-message-meta">Astro AI</span>
                             <div class="ai-predict-display">
                                 नमः सूर्याय चन्द्राय मङ्गलाय बुधाय च । गुरुशुक्रशनिभ्यश्च राहवे केतवे नमः ॥<br>
-                                <p id="lbl-ai-welcome-text" style="margin-top: 6px;">Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in <strong>Jyothisyam</strong>, I will give you personalized chart-specific readings grounded in classical RAG scriptures.</p>
+                                <p id="lbl-ai-welcome-text" style="margin-top: 6px;">Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in <strong>Astrology</strong>, I will give you personalized chart-specific readings grounded in classical RAG scriptures.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="chat-input-bar">
-                        <input type="text" class="chat-input" id="chat-user-textbox" placeholder="Ask Vedic Astrology AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)..." onkeydown="if(event.key === 'Enter') sendAIChatMessage()">
+                        <input type="text" class="chat-input" id="chat-user-textbox" placeholder="Ask Astro AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)..." onkeydown="if(event.key === 'Enter') sendAIChatMessage()">
                         <button class="chat-send-btn" id="chat-send-trigger" onclick="sendAIChatMessage()">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
@@ -2652,15 +2652,15 @@
                 th_marriage_agreement: "Agreement Rule (Porutham)",
                 th_marriage_status: "Match Status",
                 lbl_marriage_ai_loading: "Consulting relationship scripture RAG database and streaming Ganesha reading...",
-                title: "Vedic Astrology",
+                title: "Vedic Astro AI",
                 subtitle: "Vedic Astronomical Panchangam & AI Portal",
                 lbl_home_calendar: "Astronomical Panchangam Calendar",
-                lbl_jyothisyam_title: "Jyothisyam (Birth Chart Calculator)",
-                lbl_ai_title: "Vedic Astrology AI — General Chat",
+                lbl_jyothisyam_title: "Astrology (Birth Chart Calculator)",
+                lbl_ai_title: "Astro AI Chat — General Chat",
                 title_panch: "Daily Panchangam",
                 nav_btn_home: "Home (Panchangam)",
-                nav_btn_jyothisyam: "Jyothisyam",
-                nav_btn_ai: "Vedic AI Chat",
+                nav_btn_jyothisyam: "Astrology",
+                nav_btn_ai: "Astro AI Chat",
                 nav_btn_marriage: "Marriage Matching",
                 lbl_marriage_intro: "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.",
                 lbl_marriage_title: "Marriage Compatibility & Harmony",
@@ -2684,9 +2684,9 @@
                 gender: "Gender",
                 chart_style: "Visual Chart Style",
                 btn_generate: "Draft Birth Chart Report",
-                ai_p1: "Ask any Vedic astrology question freely! Tip: calculate your birth chart in the Jyothisyam tab for personalized chart-aware predictions.",
-                lbl_ai_welcome_text: "Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in the Jyothisyam tab, I will give you personalized chart-specific readings grounded in classical RAG scriptures.",
-                lbl_chat_placeholder: "Ask Vedic Astrology AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)...",
+                ai_p1: "Ask any Vedic astrology question freely! Tip: calculate your birth chart in the Astrology tab for personalized chart-aware predictions.",
+                lbl_ai_welcome_text: "Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in the Astrology tab, I will give you personalized chart-specific readings grounded in classical RAG scriptures.",
+                lbl_chat_placeholder: "Ask Astro AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)...",
                 th_planet: "Planet",
                 th_longitude: "Longitude",
                 th_rasi: "Zodiac Sign (Rasi)",
@@ -2763,15 +2763,15 @@
                 th_marriage_agreement: "பொருத்தம்",
                 th_marriage_status: "முடிவு",
                 lbl_marriage_ai_loading: "உறவுகள் பற்றிய ஜோதிட RAG தரவுத்தளத்தை ஆய்வு செய்து பிள்ளையார் பலன்களைப் பெறுகிறது...",
-                title: "வைதிக ஜோதிடம்",
+                title: "வைதிக ஆஸ்ட்ரோ AI",
                 subtitle: "வைதிக வானியல் பஞ்சாங்கம் & AI போர்டல்",
                 lbl_home_calendar: "வானியல் பஞ்சாங்க காலண்டர்",
                 lbl_jyothisyam_title: "ஜோதிடம் (ஜனன ஜாதக கணிதம்)",
-                lbl_ai_title: "வேத ஜோதிட AI — பொது சாட்",
+                lbl_ai_title: "ஆஸ்ட்ரோ AI சாட் — பொது சாட்",
                 title_panch: "தினசரி பஞ்சாங்கம்",
                 nav_btn_home: "முகப்பு (பஞ்சாங்கம்)",
                 nav_btn_jyothisyam: "ஜோதிடம்",
-                nav_btn_ai: "வேத AI சாட்",
+                nav_btn_ai: "ஆஸ்ட்ரோ AI சாட்",
                 title_gochara: "கோசார மாற்றங்கள்",
                 desc_gochara: "இன்றைய கோசார கிரக மாற்றங்களின் வரைபடம் தென்னிந்திய முறையில்.",
                 tamil_year: "தமிழ் வருடம்",
@@ -2797,7 +2797,7 @@
                 btn_generate: "ஜாதக கணிதத்தை உருவாக்கு",
                 ai_p1: "எந்த வேத ஜோதிட கேள்வியையும் கேளுங்கள்! குறிப்பு: தனிப்பட்ட பலன்களுக்கு ஜோதிடம் தாவலில் ஜாதகம் கணிக்கவும்.",
                 lbl_ai_welcome_text: "அண்ட ஞானம் தேடும் அன்பரே, வரவேற்கிறோம்! வேத ஜோதிடம் குறித்த எந்த கேள்வியையும் கேளுங்கள் — கிரக பலன்கள், யோகங்கள், தசை விளைவுகள், நட்சத்திரங்கள். ஜோதிடம் தாவலில் ஜாதகம் கணித்தால், சாஸ்திர RAG ஆதாரங்களின் அடிப்படையில் தனிப்பட்ட பலன்கள் பெறலாம்.",
-                lbl_chat_placeholder: "வேத AI-யிடம் கேளுங்கள் (எ.கா: 7-ல் சூரியன் என்ன பலன்? சனி தசை விளைவுகள் விளக்கவும்)...",
+                lbl_chat_placeholder: "ஆஸ்ட்ரோ AI-யிடம் கேளுங்கள் (எ.கா: 7-ல் சூரியன் என்ன பலன்? சனி தசை விளைவுகள் விளக்கவும்)...",
                 th_planet: "கிரகம்",
                 th_longitude: "தீர்க்கரேகை",
                 th_rasi: "ராசி",
@@ -2874,15 +2874,15 @@
                 th_marriage_agreement: "పొంతన నియమం",
                 th_marriage_status: "ఫలితం",
                 lbl_marriage_ai_loading: "సంబంధాల శాస్త్ర RAG డేటాబేస్ నుండి పరిశీలించి గణేశ వివాహ ఫలాలను సేకరిస్తోంది...",
-                title: "వైదిక జ్యోతిష్యం",
+                title: "వైదిక ఆస్ట్రో AI",
                 subtitle: "వైదిక ఖగోళ పంచాంగం & AI పోర్టల్",
                 lbl_home_calendar: "ఖగోళ పంచాంగ క్యాలెండర్",
                 lbl_jyothisyam_title: "జ్యోతిష్యం (జన్మ కుండలి గణితం)",
-                lbl_ai_title: "వైదిక జ్యోతిష్య AI — సాధారణ చాట్",
+                lbl_ai_title: "ఆస్ట్రో AI చాట్ — సాధారణ చాట్",
                 title_panch: "దినసరి పంచాంగం",
                 nav_btn_home: "హోమ్ (పంచాంగం)",
                 nav_btn_jyothisyam: "జ్యోతిష్యం",
-                nav_btn_ai: "వైదిక AI చాట్",
+                nav_btn_ai: "ఆస్ట్రో AI చాట్",
                 nav_btn_marriage: "వివాహ పొంతన",
                 lbl_marriage_intro: "ఇద్దరు భాగస్వాముల జన్మ వివరాలను నమోదు చేసి నక్షత్ర పొంతన (కూట పొంతన) మరియు వైవాహిక జ్యోతిష్య ఫలాలను పొందండి.",
                 lbl_marriage_title: "వివాహ పొంతన & వైవాహిక బంధం",
@@ -2908,7 +2908,7 @@
                 btn_generate: "జాతక గణితాన్ని సృష్టించు",
                 ai_p1: "ఏ వైదిక జ్యోతిష్య ప్రశ్నైనా అడగండి! సూచన: వ్యక్తిగత ఫలాల కోసం జ్యోతిష్యం ట్యాబ్‌లో కుండలి లెక్కించండి.",
                 lbl_ai_welcome_text: "బ్రహ్మాండ జ్ఞానం వెతికే సాధకుడికి స్వాగతం! వైదిక జ్యోతిష్యం గురించి ఏ ప్రశ్నైనా అడగండి — గ్రహ బలాలు, యోగాలు, దశా ఫలాలు, నక్షత్రాలు. జ్యోతిష్యం ట్యాబ్‌లో కుండలి లెక్కిస్తే శాస్త్ర RAG ఆధారంగా వ్యక్తిగత ఫలాలు అందిస్తాను.",
-                lbl_chat_placeholder: "వైదిక AI ని అడగండి (ఉదా: 7వ భావంలో సూర్యుడు ఏమి చెప్తాడు? శని దశా ఫలాలు వివరించండి)...",
+                lbl_chat_placeholder: "ఆస్ట్రో AI ని అడగండి (ఉదా: 7వ భావంలో సూర్యుడు ఏమి చెప్తాడు? శని దశా ఫలాలు వివరించండి)...",
                 th_planet: "గ్రహం",
                 th_longitude: "రేఖాంశం",
                 th_rasi: "రాశి",
@@ -2985,15 +2985,15 @@
                 th_marriage_agreement: "പൊരുത്ത നിയമം",
                 th_marriage_status: "ഫലം",
                 lbl_marriage_ai_loading: "ബന്ധങ്ങളെക്കുറിച്ചുള്ള ജ്യോതിഷ RAG ഡാറ്റാബേസ് പരിശോധിച്ച് ഗണേശ പ്രവചനം രേഖപ്പെടുത്തുന്നു...",
-                title: "വൈദിക ജ്യോതിഷം",
+                title: "വൈദിക ആസ്ട്രോ AI",
                 subtitle: "വൈദിക ജ്യോതിശാസ്ത്ര പഞ്ചാംഗം & AI പോർട്ടൽ",
                 lbl_home_calendar: "ജ്യോതിശാസ്ത്ര പഞ്ചാംഗ കലണ്ടർ",
                 lbl_jyothisyam_title: "ജ്യോതിഷം (ജന്മ ജാതക ഗണിതം)",
-                lbl_ai_title: "വൈദിക ജ്യോതിഷ AI — പൊതു ചാറ്റ്",
+                lbl_ai_title: "ആസ്ട്രോ AI ചാറ്റ് — പൊതു ചാറ്റ്",
                 title_panch: "ദിനസരി പഞ്ചാംഗം",
                 nav_btn_home: "ഹോം (പഞ്ചാംഗം)",
                 nav_btn_jyothisyam: "ജ്യോതിഷ്യം",
-                nav_btn_ai: "വൈദിക AI ചാറ്റ്",
+                nav_btn_ai: "ആസ്ട്രോ AI ചാറ്റ്",
                 nav_btn_marriage: "വിവാഹ പൊരുത്തം",
                 lbl_marriage_intro: "ഇരുവരുടെ ജനന വിവരങ്ങൾ നൽകി നക്ഷത്ര പൊരുത്തം (കൂട്ട പൊരുത്തം) മൂല്യനിർണ്ണയം നടത്തി ജ്യോതിഷ ഫലങ്ങൾ ലഭ്യമാക്കൂ.",
                 lbl_marriage_title: "വിവാഹ പൊരുത്തവും കുടുംബ ഐക്യവും",
@@ -3019,7 +3019,7 @@
                 btn_generate: "ജാതക ഗണിതം രൂപീകരിക്കുക",
                 ai_p1: "ഏത് വൈദിക ജ്യോതിഷ ചോദ്യവും ചോദിക്കൂ! നുറുങ്ങ്: വ്യക്തിഗത ഫലങ്ങൾക്കായി ജ്യോതിഷ്യം ടാബിൽ ജാതകം കണക്കാക്കൂ.",
                 lbl_ai_welcome_text: "പ്രപഞ്ച ജ്ഞാനം തേടുന്ന സഞ്ചാരിക്ക് സ്വാഗതം! വൈദിക ജ്യോതിഷത്തെക്കുറിച്ച് ഏത് ചോദ്യവും ചോദിക്കൂ — ഗ്രഹ ബലങ്ങൾ, യോഗങ്ങൾ, ദശ ഫലങ്ങൾ, നക്ഷത്രങ്ങൾ. ജ്യോതിഷ്യം ടാബിൽ ജാതകം കണക്കാക്കിയാൽ ശാസ്ത്ര RAG അടിസ്ഥാനത്തിൽ വ്യക്തിഗത ഫലങ്ങൾ ലഭിക്കും.",
-                lbl_chat_placeholder: "വൈദിക AI യോട് ചോദിക്കൂ (ഉദാ: 7ൽ സൂര്യൻ എന്ത് ഫലം? ശനി ദശ ഫലങ്ങൾ വിശദീകരിക്കൂ)...",
+                lbl_chat_placeholder: "ആസ്ട്രോ AI യോട് ചോദിക്കൂ (ഉദാ: 7ൽ സൂര്യൻ എന്ത് ഫലം? ശനി ദശ ഫലങ്ങൾ വിശദീകരിക്കൂ)...",
                 th_planet: "ഗ്രഹം",
                 th_longitude: "രേഖാംശം",
                 th_rasi: "രാശി",
@@ -3096,15 +3096,15 @@
                 th_marriage_agreement: "ಹೊಂದಾಣಿಕೆ ನಿಯಮ",
                 th_marriage_status: "ಫಲಿತಾಂಶ",
                 lbl_marriage_ai_loading: "ಸಂಬಂಧಗಳ ಶಾಸ್ತ್ರ RAG ಡೇಟಾಬೇಸ್‌ನಿಂದ ಪರಿಶೀಲಿಸಿ ಗಣೇಶ ವಿವಾಹ ಫಲಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...",
-                title: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ",
+                title: "ವೈದಿಕ ಆಸ್ಟ್ರೋ AI",
                 subtitle: "ವೈದಿಕ ಖಗೋಳ ಪಂಚಾಂಗ & AI ಪೋರ್ಟಲ್",
                 lbl_home_calendar: "ಖಗೋಳ ಪಂಚಾಂಗ ಕ್ಯಾಲೆಂಡರ್",
                 lbl_jyothisyam_title: "ಜ್ಯೋತಿಷ್ಯ (ಜನ್ಮ ಜಾತಕ ಗಣಿತ)",
-                lbl_ai_title: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ AI — ಸಾಮಾನ್ಯ ಚಾಟ್",
+                lbl_ai_title: "ಆಸ್ಟ್ರೋ AI ಚಾಟ್ — ಸಾಮಾನ್ಯ ಚಾಟ್",
                 title_panch: "ದಿನಸರಿ ಪಂಚಾಂಗ",
                 nav_btn_home: "ಮನೆ (ಪಂಚಾಂಗ)",
                 nav_btn_jyothisyam: "ಜ್ಯೋತಿಷ್ಯ",
-                nav_btn_ai: "ವೈದಿಕ AI ಚಾಟ್",
+                nav_btn_ai: "ಆಸ್ಟ್ರೋ AI ಚಾಟ್",
                 nav_btn_marriage: "ವಿವಾಹ ಹೊಂದಾಣಿಕೆ",
                 lbl_marriage_intro: "ಇಬ್ಬರು ಸಂಗಾತಿಗಳ ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ ನಕ್ಷತ್ರ ಹೊಂದಾಣಿಕೆ (ಕೂಟ ಹೊಂದಾಣಿಕೆ) ಮತ್ತು ಜ್ಯೋತಿಷ್ಯ ಫಲಗಳನ್ನು ಪಡೆಯಿರಿ.",
                 lbl_marriage_title: "ವಿವಾಹ ಹೊಂದಾಣಿಕೆ ಮತ್ತು ದಾಂಪತ್ಯ ಸುಖ",
@@ -3130,7 +3130,7 @@
                 btn_generate: "ಜಾತಕ ಗಣಿತವನ್ನು ರಚಿಸಿ",
                 ai_p1: "ಯಾವ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಪ್ರಶ್ನೆ ಕೇಳಬಹುದು! ಸೂಚನೆ: ವ್ಯಕ್ತಿಗತ ಫಲಗಳಿಗಾಗಿ ಜ್ಯೋತಿಷ್ಯ ಟ್ಯಾಬ್‌ನಲ್ಲಿ ಜಾತಕ ಲೆಕ್ಕಿಸಿ.",
                 lbl_ai_welcome_text: "ಬ್ರಹ್ಮಾಂಡ ಜ್ಞಾನ ಹುಡುಕುವ ಸಾಧಕರಿಗೆ ಸ್ವಾಗತ! ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯದ ಬಗ್ಗೆ ಯಾವ ಪ್ರಶ್ನೆಯನ್ನಾದರೂ ಕೇಳಿ — ಗ್ರಹ ಬಲಗಳು, ಯೋಗಗಳು, ದಶಾ ಫಲಗಳು, ನಕ್ಷತ್ರಗಳು. ಜ್ಯೋತಿಷ್ಯ ಟ್ಯಾಬ್‌ನಲ್ಲಿ ಜಾತಕ ಲೆಕ್ಕಿಸಿದರೆ ಶಾಸ್ತ್ರ RAG ಆಧಾರದ ವ್ಯಕ್ತಿಗತ ಫಲ ನೀಡುತ್ತೇನೆ.",
-                lbl_chat_placeholder: "ವೈದಿಕ AI ಗೆ ಕೇಳಿ (ಉದಾ: 7ನೇ ಭಾವದಲ್ಲಿ ಸೂರ್ಯ ಏನು ಫಲ? ಶನಿ ದಶಾ ಫಲಗಳನ್ನು ವಿವರಿಸಿ)...",
+                lbl_chat_placeholder: "ಆಸ್ಟ್ರೋ AI ಗೆ ಕೇಳಿ (ಉದಾ: 7ನೇ ಭಾವದಲ್ಲಿ ಸೂರ್ಯ ಏನು ಫಲ? ಶನಿ ದಶಾ ಫಲಗಳನ್ನು ವಿವರಿಸಿ)...",
                 th_planet: "ಗ್ರಹ",
                 th_longitude: "ರೇಖಾಂಶ",
                 th_rasi: "ರಾಶಿ",
@@ -3207,15 +3207,15 @@
                 th_marriage_agreement: "मिलान नियम",
                 th_marriage_status: "स्थिति",
                 lbl_marriage_ai_loading: "सम्बन्धों के शास्त्र RAG डेटाबेस से संदर्भ प्राप्त कर गणेश फलादेश तैयार किया जा रहा है...",
-                title: "वैदिक ज्योतिष",
+                title: "वैदिक एस्ट्रो AI",
                 subtitle: "वैदिक खगोलीय पंचांग एवं AI पोर्टल",
                 lbl_home_calendar: "खगोलीय पंचांग कैलेंडर",
                 lbl_jyothisyam_title: "ज्योतिष (जन्म कुंडली गणित)",
-                lbl_ai_title: "वैदिक ज्योतिष AI — सामान्य चैट",
+                lbl_ai_title: "एस्ट्रो AI चैट — सामान्य चैट",
                 title_panch: "दैनिक पंचांग",
                 nav_btn_home: "होम (पंचांग)",
                 nav_btn_jyothisyam: "ज्योतिषम्",
-                nav_btn_ai: "वैदिक AI चैट",
+                nav_btn_ai: "एस्ट्रो AI चैट",
                 nav_btn_marriage: "कुण्डली मिलान",
                 lbl_marriage_intro: "दोनों जातकों के जन्म विवरण दर्ज करें और नक्षत्र मिलान (कूटा मिलान) तथा ब्रह्मांडीय भविष्यफल प्राप्त करें।",
                 lbl_marriage_title: "कुण्डली मिलान एवं वैवाहिक सुख",
@@ -3241,7 +3241,7 @@
                 btn_generate: "कुंडली रिपोर्ट तैयार करें",
                 ai_p1: "कोई भी वैदिक ज्योतिष प्रश्न पूछें! सुझाव: व्यक्तिगत भविष्यफल के लिए ज्योतिष टैब में जन्म कुंडली बनाएं।",
                 lbl_ai_welcome_text: "ब्रह्मांडीय ज्ञान के जिज्ञासु, आपका स्वागत है! वैदिक ज्योतिष के बारे में कोई भी प्रश्न पूछें — ग्रह बल, योग, दशा फल, नक्षत्र। ज्योतिष टैब में कुंडली बनाने के बाद शास्त्रीय RAG आधारित व्यक्तिगत भविष्यफल पाएं।",
-                lbl_chat_placeholder: "वैदिक AI से पूछें (जैसे: 7वें घर में सूर्य का फल? या शनि दशा के प्रभाव बताएं)...",
+                lbl_chat_placeholder: "एस्ट्रो AI से पूछें (जैसे: 7वें घर में सूर्य का फल? या शनि दशा के प्रभाव बताएं)...",
                 th_planet: "ग्रह",
                 th_longitude: "रेखांश",
                 th_rasi: "राशि",
@@ -3902,8 +3902,8 @@
             document.getElementById('lbl-jyothisyam-title').innerText = dict.lbl_jyothisyam_title;
             document.getElementById('lbl-ai-title').innerText = dict.lbl_ai_title;
             document.getElementById('nav-btn-home').innerText = dict.nav_btn_home || "Home (Panchangam)";
-            document.getElementById('nav-btn-jyothisyam').innerText = dict.nav_btn_jyothisyam || "Jyothisyam";
-            document.getElementById('nav-btn-ai').innerText = dict.nav_btn_ai || "Vedic AI Chat";
+            document.getElementById('nav-btn-jyothisyam').innerText = dict.nav_btn_jyothisyam || "Astrology";
+            document.getElementById('nav-btn-ai').innerText = dict.nav_btn_ai || "Astro AI Chat";
             const marriageNavBtn = document.getElementById('nav-btn-marriage');
             if (marriageNavBtn) marriageNavBtn.innerText = dict.nav_btn_marriage || "Marriage Matching";
             const marriageIntro = document.getElementById('lbl-marriage-intro');
@@ -4087,9 +4087,9 @@
             document.getElementById('lbl-btn-generate').innerText = dict.btn_generate;
             document.getElementById('lbl-ai-p1').innerHTML = `<i class="fa-solid fa-lightbulb" style="color: var(--accent-indigo); margin-right: 6px;"></i>${dict.ai_p1}`;
             const aiWelcomeText = document.getElementById('lbl-ai-welcome-text');
-            if (aiWelcomeText) aiWelcomeText.innerText = dict.lbl_ai_welcome_text || "Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in the Jyothisyam tab, I will give you personalized chart-specific readings grounded in classical RAG scriptures.";
+            if (aiWelcomeText) aiWelcomeText.innerText = dict.lbl_ai_welcome_text || "Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in the Astrology tab, I will give you personalized chart-specific readings grounded in classical RAG scriptures.";
             const chatInput = document.getElementById('chat-user-textbox');
-            if (chatInput) chatInput.placeholder = dict.lbl_chat_placeholder || "Ask Vedic Astrology AI...";
+            if (chatInput) chatInput.placeholder = dict.lbl_chat_placeholder || "Ask Astro AI...";
 
             // Localize table headers & chart labels
             document.getElementById('th-planet').innerText = dict.th_planet || "Planet";
@@ -5846,12 +5846,12 @@
             };
 
             const metaTitles = {
-                en: "Vedic Astrology AI • Cosmic Invocation",
-                ta: "வேத ஜோதிட AI • பிரபஞ்ச ஆசி",
-                te: "వైదిక జ్యోతిష్య AI • బ్రహ్మాండ ఆశీస్సు",
-                ml: "വൈദിക ജ്യോതിഷ AI • പ്രപഞ്ചാനുഗ്രഹം",
-                kn: "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ AI • ಬ್ರಹ್ಮಾಂಡ ಆಶೀರ್ವಾದ",
-                hi: "वैदिक ज्योतिष AI • ब्रह्मांडीय मंगलाचरण"
+                en: "Astro AI • Cosmic Invocation",
+                ta: "ஆஸ்ட்ரோ AI • பிரபஞ்ச ஆசி",
+                te: "ఆస్ట్రో AI • బ్రహ్మాండ ఆశీస్సు",
+                ml: "ആസ്ട്രോ AI • പ്രപഞ്ചാനുഗ്രഹം",
+                kn: "ಆಸ್ಟ್ರೋ AI • ಬ್ರಹ್ಮಾಂಡ ಆಶೀರ್ವಾದ",
+                hi: "एस्ट्रो AI • ब्रह्मांडीय मंगलाचरण"
             };
 
             const naksLocal = translateNakshatra(calculatedChartData.panchangam.nakshatra);
@@ -5933,7 +5933,7 @@
             const aiMsgDiv = document.createElement('div');
             aiMsgDiv.className = 'chat-message ai';
             aiMsgDiv.innerHTML = `
-                <span class="chat-message-meta">Vedic Astrology AI</span>
+                <span class="chat-message-meta">Astro AI</span>
                 <div class="ai-predict-display" id="active-ai-typing-stream"><span class="typing-cursor"></span></div>
             `;
             chatContainer.appendChild(aiMsgDiv);
