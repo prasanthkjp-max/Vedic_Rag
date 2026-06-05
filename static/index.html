@@ -792,10 +792,18 @@
             color: #ea580c;
         }
 
+        .calendar-section {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
+            grid-auto-rows: 1fr;
+            gap: 6px;
+            width: 100%;
         }
 
         .calendar-day-header {
@@ -804,22 +812,29 @@
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 6px 2px 8px;
+            letter-spacing: 0.5px;
+            padding: 4px 2px 6px;
         }
 
         /* High Visibility Calendar Cells */
         .calendar-cell {
-            min-height: 95px;
-            padding: 8px;
+            height: 76px;
+            padding: 6px 8px;
             border-radius: 8px;
             background: rgba(255, 253, 245, 0.85);
-            border: 1px solid rgba(217, 119, 6, 0.35);
+            border: 1px solid rgba(217, 119, 6, 0.25);
             transition: all 0.22s ease;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .calendar-cell.empty {
+            background: transparent !important;
+            border: 1px dashed rgba(217, 119, 6, 0.15) !important;
+            pointer-events: none;
         }
 
         .calendar-cell:hover {
@@ -849,38 +864,158 @@
         .calendar-cell.inauspicious { border-color: rgba(220, 38, 38, 0.28); }
 
         .cell-day-num {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             color: var(--text-primary);
             line-height: 1;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
         }
 
         .cell-naks {
-            font-size: 9.5px;
+            font-size: 8.5px;
             color: var(--text-secondary);
-            line-height: 1.2;
+            line-height: 1.1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .cell-speciality {
-            font-size: 9.5px;
-            padding: 1px 4px;
+            font-size: 8px;
+            padding: 0.5px 3px;
             border-radius: 3px;
-            margin-top: 4px;
-            line-height: 1.3;
-            background: rgba(234, 88, 12, 0.12);
+            margin-top: 2px;
+            line-height: 1.2;
+            background: rgba(234, 88, 12, 0.1);
             color: #c2410c;
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            border: 1px solid rgba(234, 88, 12, 0.18);
+            border: 1px solid rgba(234, 88, 12, 0.15);
+        }
+
+        /* ── Unified Dashboard Card Layout ── */
+        .dashboard-unified-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .calendar-panel {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .panchangam-details-panel {
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 23, 42, 0.015);
+            border: 1px solid var(--border-gold);
+            border-radius: 14px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            gap: 16px;
+        }
+
+        .panchangam-compact-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .panch-compact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 253, 245, 0.75);
+            border: 1px solid rgba(217, 119, 6, 0.22);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .panch-compact-item:hover {
+            border-color: rgba(234, 88, 12, 0.45);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .panch-compact-icon {
+            font-size: 13px;
+            color: var(--accent-gold);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: rgba(217, 119, 6, 0.08);
+            border-radius: 50%;
+        }
+
+        .panch-compact-content {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .panch-compact-label {
+            font-size: 8.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .panch-compact-val {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .panch-details-subgrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            padding: 6px 10px;
+            background: rgba(255, 253, 245, 0.3);
+            border-radius: 6px;
+            border: 1px solid rgba(217, 119, 6, 0.1);
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .detail-val {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .gochara-chart-wrapper svg {
+            width: 100%;
+            height: 100%;
         }
 
         /* ════════════════════════════════════════
@@ -1629,7 +1764,7 @@
 
         .gochara-svg {
             width: 100%;
-            max-width: 220px;
+            max-width: 100%;
             height: auto;
             aspect-ratio: 1 / 1;
             margin: 0 auto;
@@ -1731,111 +1866,140 @@
                 </div>
             </div>
 
-            <div class="dashboard-grid">
-                
-                <!-- Left Side: Interactive Panchangam Calendar Grid -->
-                <div class="card">
-                    <div class="card-title">
-                        <i class="fa-solid fa-calendar-days"></i> <span id="lbl-home-calendar">Astronomical Panchangam Calendar</span>
-                    </div>
+            <!-- Combined Unified Cosmic Panchangam Dashboard -->
+            <div class="card unified-dashboard-card" style="padding: 24px; margin-bottom: 24px;">
+                <div class="dashboard-unified-layout">
                     
-                    <div class="calendar-section">
-                        <div class="calendar-header">
-                            <button class="calendar-nav-btn" onclick="navigateMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                            <div class="calendar-month-title" id="calendar-title-label">May 2026</div>
-                            <button class="calendar-nav-btn" onclick="navigateMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    <!-- Left Column: Calendar Grid -->
+                    <div class="calendar-panel">
+                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-calendar-days" style="color: var(--accent-gold);"></i> 
+                                <span id="lbl-home-calendar" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Astronomical Panchangam Calendar</span>
+                            </div>
+                            <div class="calendar-header-nav" style="display: flex; align-items: center; gap: 12px;">
+                                <button class="calendar-nav-btn" onclick="navigateMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                                <div class="calendar-month-title" id="calendar-title-label" style="font-family: var(--font-heading); font-size: 14px; font-weight: bold; color: var(--text-primary);">May 2026</div>
+                                <button class="calendar-nav-btn" onclick="navigateMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
                         </div>
+                        
                         <div class="calendar-grid" id="calendar-grid-container">
                             <!-- Populated dynamically via JS -->
                         </div>
                     </div>
-                </div>
+                    
+                    <!-- Right Column: Daily Panchangam Details & Gochara Transits (Rendered Below Calendar) -->
+                    <div class="panchangam-details-panel">
+                        <div class="details-layout-wrapper" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; width: 100%;">
+                            
+                            <!-- Left: Astrological Data Columns -->
+                            <div class="astrology-data-left" style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+                                <!-- Date selector and display -->
+                                <div class="date-picker-section" style="border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="date-display" id="gregorian-date-str" style="font-size: 14px; font-weight: bold; color: var(--accent-gold);">Loading...</div>
+                                    <div class="calendar-wrapper">
+                                        <i class="fa-solid fa-calendar-alt calendar-icon"></i>
+                                        <input type="date" class="calendar-input" id="calendar-date-picker" onchange="changePanchangamDate()">
+                                    </div>
+                                </div>
+                                
+                                <!-- Core Astrological parameters (2 columns) -->
+                                <div class="panchangam-compact-grid">
+                                    <div class="panch-compact-item" id="item-tithi">
+                                        <div class="panch-compact-icon"><i class="fa-solid fa-circle-half-stroke"></i></div>
+                                        <div class="panch-compact-content">
+                                            <span class="panch-compact-label" id="lbl-tithi">Tithi (Phases)</span>
+                                            <span class="panch-compact-val" id="panch-tithi">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="panch-compact-item" id="item-nakshatra">
+                                        <div class="panch-compact-icon"><i class="fa-solid fa-star"></i></div>
+                                        <div class="panch-compact-content">
+                                            <span class="panch-compact-label" id="lbl-naks">Nakshatram</span>
+                                            <span class="panch-compact-val" id="panch-naks">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="panch-compact-item" id="item-yogam">
+                                        <div class="panch-compact-icon"><i class="fa-solid fa-link"></i></div>
+                                        <div class="panch-compact-content">
+                                            <span class="panch-compact-label" id="lbl-yogam">Yogam</span>
+                                            <span class="panch-compact-val" id="panch-yogam">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="panch-compact-item" id="item-karanam">
+                                        <div class="panch-compact-icon"><i class="fa-solid fa-yin-yang"></i></div>
+                                        <div class="panch-compact-content">
+                                            <span class="panch-compact-label" id="lbl-karanam">Karanam</span>
+                                            <span class="panch-compact-val" id="panch-karanam">--</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-                <!-- Right Side: Today's Selected Panchangam details & Gochara chart -->
-                <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
-                    <div>
-                        <div class="card-title" style="margin-bottom: 12px;">
-                            <i class="fa-solid fa-calendar-day"></i> <span id="lbl-title-panch">Daily Panchangam</span>
-                        </div>
-                        
-                        <div class="panchangam-widget">
-                            <!-- Selected Date Picker Display -->
-                            <div class="date-picker-section">
-                                <div class="date-display" id="gregorian-date-str">Loading...</div>
-                                <div class="calendar-wrapper">
-                                    <i class="fa-solid fa-calendar-alt calendar-icon"></i>
-                                    <input type="date" class="calendar-input" id="calendar-date-picker" onchange="changePanchangamDate()">
+                                <!-- Sun, Moon & Metadata Group (2 columns) -->
+                                <div class="panch-details-subgrid">
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-tamil-year"><i class="fa-solid fa-calendar-day"></i> Tamil Year:</span>
+                                        <span class="detail-val" id="panch-tamil-year">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-tamil-month"><i class="fa-solid fa-calendar-week"></i> Tamil Date:</span>
+                                        <span class="detail-val" id="panch-tamil-month">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-kali-year"><i class="fa-solid fa-timeline"></i> Kali Year:</span>
+                                        <span class="detail-val" id="panch-kali-year">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-udayadhi"><i class="fa-solid fa-hourglass-half"></i> Udayadhi:</span>
+                                        <span class="detail-val" id="panch-udayadhi">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-sunrise"><i class="fa-solid fa-sun-plant-wilt" style="color: #ea580c;"></i> Sunrise:</span>
+                                        <span class="detail-val" id="panch-sunrise">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-sunset"><i class="fa-solid fa-sunset" style="color: #b45309;"></i> Sunset:</span>
+                                        <span class="detail-val" id="panch-sunset">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-moonrise"><i class="fa-solid fa-moon"></i> Moonrise:</span>
+                                        <span class="detail-val" id="panch-moonrise">--</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="detail-label" id="lbl-moonset"><i class="fa-solid fa-moon" style="opacity: 0.6;"></i> Moonset:</span>
+                                        <span class="detail-val" id="panch-moonset">--</span>
+                                    </div>
+                                    <div class="details-row" style="display: none;">
+                                        <span id="lbl-ahas">Day Duration (Ahas)</span>
+                                        <span id="panch-ahas">--</span>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Detailed localized Panchangam values -->
-                            <div class="panchangam-grid">
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-tamil-year">Tamil Year</span>
-                                    <span class="panch-value" id="panch-tamil-year">--</span>
+                            <!-- Right: Gochara Transit Chart (360px max) -->
+                            <div class="gochara-transit-right" style="width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; margin: 0 auto;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="font-weight: bold; font-size: 14px; color: var(--text-gold); display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-chart-network"></i> <span id="lbl-title-gochara">Gochara Transits</span>
+                                    </div>
+                                    <div style="font-size: 10.5px; color: var(--text-secondary); line-height: 1.35;" id="lbl-desc-gochara">Today's sidereal transit planetary map in South Indian chart style.</div>
                                 </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-tamil-month">Tamil Date</span>
-                                    <span class="panch-value" id="panch-tamil-month">--</span>
+                                
+                                <!-- Gochara Style Toggle Buttons -->
+                                <div class="gochara-style-toggle" style="display: flex; background: rgba(15, 23, 42, 0.25); border: 1px solid var(--border-gold); border-radius: 8px; padding: 3px; gap: 4px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);">
+                                    <button id="btn-gochara-south" onclick="setGocharaStyle('south')" style="flex: 1; background: var(--accent-gold); color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">South Indian</button>
+                                    <button id="btn-gochara-north" onclick="setGocharaStyle('north')" style="flex: 1; background: transparent; color: var(--text-secondary); border: none; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">North Indian</button>
                                 </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-tithi">Tithi (Phases)</span>
-                                    <span class="panch-value" id="panch-tithi">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-naks">Nakshatram</span>
-                                    <span class="panch-value" id="panch-naks">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-yogam">Yogam</span>
-                                    <span class="panch-value" id="panch-yogam">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-karanam">Karanam</span>
-                                    <span class="panch-value" id="panch-karanam">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-sunrise">Sunrise Time</span>
-                                    <span class="panch-value" id="panch-sunrise">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-sunset">Sunset Time</span>
-                                    <span class="panch-value" id="panch-sunset">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-moonrise">Moonrise Time</span>
-                                    <span class="panch-value" id="panch-moonrise">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-moonset">Moonset Time</span>
-                                    <span class="panch-value" id="panch-moonset">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-ahas">Day Duration (Ahas)</span>
-                                    <span class="panch-value" id="panch-ahas">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-udayadhi">Udayadhi Nazhikai</span>
-                                    <span class="panch-value" id="panch-udayadhi">--</span>
-                                </div>
-                                <div class="panch-item">
-                                    <span class="panch-label" id="lbl-kali-year">Kali Yuga Year</span>
-                                    <span class="panch-value" id="panch-kali-year">--</span>
+                                
+                                <div class="gochara-chart-wrapper" id="gochara-svg-rendered" style="width: 100%; aspect-ratio: 1; background: var(--bg-darker); border: 1px solid var(--border-gold); border-radius: 12px; overflow: hidden; padding: 0px; display: flex; justify-content: center; align-items: center; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                                    <!-- SVG elements loaded dynamically -->
                                 </div>
                             </div>
+                            
                         </div>
                     </div>
-
-                    <!-- Gochara South Indian Chart SVG -->
-                    <div>
-                        <div class="card-title" style="margin-bottom: 12px; font-size: 14px;">
-                            <i class="fa-solid fa-chart-line"></i> <span id="lbl-title-gochara">Gochara Transits</span>
-                        </div>
-                        <div style="font-size: 9.5px; color: var(--text-secondary); margin-bottom: 10px;" id="lbl-desc-gochara">Today's sidereal transit planetary map in South Indian chart style.</div>
-                        <div class="gochara-chart-container" id="gochara-svg-rendered">
-                            <!-- SVG elements loaded dynamically -->
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -1846,10 +2010,10 @@
                         <i class="fa-solid fa-book-open-reader"></i> 
                         <span id="lbl-panch-wisdom-title">Panchangam Wisdom & Astrological Timings</span>
                     </div>
-                    <!-- Selection of Panchangam Type -->
-                    <div style="display: flex; gap: 6px; align-items: center; font-size: 11px;">
+                    <!-- Selection of Panchangam Type (Hidden - Auto-linked to Selected Language) -->
+                    <div style="display: none;">
                         <span id="lbl-panch-system-label" style="color: var(--text-secondary); font-weight: bold;">System:</span>
-                        <select id="panch-system-select" onchange="togglePanchangamSystem()" style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 6px; padding: 4px 10px; font-family: var(--font-heading); font-size: 11px; font-weight: bold; color: var(--accent-gold); outline: none; cursor: pointer; transition: all 0.2s ease;">
+                        <select id="panch-system-select" onchange="togglePanchangamSystem()">
                             <option value="sauramana">Sauramana (Solar System - e.g., Tamil, Malayalam)</option>
                             <option value="chandramana">Chandramana (Luni-Solar System - e.g., Telugu, Kannada, North Indian)</option>
                         </select>
@@ -3959,6 +4123,9 @@
             if (calculatedChartData) {
                 renderBirthReportOutputs();
             }
+            
+            // Re-render Gochara description and layout in the new language
+            setGocharaStyle(currentGocharaStyle);
         }
 
         // Switch config sub-tabs (Basic vs Advanced)
@@ -3988,6 +4155,62 @@
         let selectedPanchangamDate = "";
         let calendarYear = 2026;
         let calendarMonth = 5; // May standard on load
+        let currentGocharaStyle = 'south';
+
+        function setGocharaStyle(style) {
+            currentGocharaStyle = style;
+            
+            const btnSouth = document.getElementById('btn-gochara-south');
+            const btnNorth = document.getElementById('btn-gochara-north');
+            
+            if (btnSouth && btnNorth) {
+                const buttonLabelMap = {
+                    en: { south: "South Indian", north: "North Indian" },
+                    ta: { south: "தென்னிந்திய முறை", north: "வடஇந்திய முறை" },
+                    te: { south: "దక్షిణ భారత", north: "ఉత్తర భారత" },
+                    ml: { south: "ദക്ഷിണേന്ത്യൻ", north: "ഉത്തരേന്ത്യൻ" },
+                    kn: { south: "ದಕ್ಷಿಣ ಭಾರತ", north: "ಉತ್ತರ ಭಾರತ" },
+                    hi: { south: "दक्षिण भारतीय", north: "उत्तर भारतीय" }
+                };
+                const langLabels = buttonLabelMap[currentLang] || buttonLabelMap.en;
+                btnSouth.innerText = langLabels.south;
+                btnNorth.innerText = langLabels.north;
+
+                if (style === 'north') {
+                    btnNorth.style.background = 'var(--accent-gold)';
+                    btnNorth.style.color = '#fff';
+                    btnSouth.style.background = 'transparent';
+                    btnSouth.style.color = 'var(--text-secondary)';
+                } else {
+                    btnSouth.style.background = 'var(--accent-gold)';
+                    btnSouth.style.color = '#fff';
+                    btnNorth.style.background = 'transparent';
+                    btnNorth.style.color = 'var(--text-secondary)';
+                }
+            }
+            
+            const descLabel = document.getElementById('lbl-desc-gochara');
+            if (descLabel) {
+                const descMap = {
+                    en: { south: "Today's gochara transit planetary map in South Indian chart style.", north: "Today's gochara transit planetary map in North Indian chart style." },
+                    ta: { south: "இன்றைய கோசார கிரக மாற்றங்களின் வரைபடம் தென்னிந்திய முறையில்.", north: "இன்றைய கோசார கிரக மாற்றங்களின் வரைபடம் வடஇந்திய முறையில்." },
+                    te: { south: "నేటి గోచార గ్రహ సంచారాల పటం దక్షిణ భారత పద్ధతిలో.", north: "నేటి గోచార గ్రహ సంచారాల పటం ఉత్తర భారత పద్ధతిలో." },
+                    ml: { south: "ഇന്നത്തെ ഗോചാര ഗ്രഹ സഞ്ചാര ഭൂപടം ദക്ഷിണേന്ത്യൻ ശൈലിയിൽ.", north: "ഇന്നത്തെ ഗോചാര ഗ്രഹ സഞ്ചാര ഭൂപടം ഉത്തരേന്ത്യൻ ശൈലിയിൽ." },
+                    kn: { south: "ಇಂದಿನ ಗೋಚಾರ ಗ್ರಹ ಸಂಚಾರಗಳ ನಕ್ಷೆ ದಕ್ಷಿಣ ಭಾರತದ ಶೈಲಿಯಲ್ಲಿ.", north: "ಇಂದಿನ ಗೋಚಾರ ಗ್ರಹ ಸಂಚಾರಗಳ ನಕ್ಷೆ ಉತ್ತರ ಭಾರತದ ಶೈಲಿಯಲ್ಲಿ." },
+                    hi: { south: "आज की गोचर ग्रह पारगमन स्थिति दक्षिण भारतीय शैली में।", north: "आज की गोचर ग्रह पारगमन स्थिति उत्तर भारतीय शैली में।" }
+                };
+                const langDesc = descMap[currentLang] || descMap.en;
+                descLabel.innerText = langDesc[style];
+            }
+            
+            if (dailyPanchangamData && dailyPanchangamData.placements) {
+                if (currentGocharaStyle === 'north') {
+                    drawNorthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
+                } else {
+                    drawSouthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
+                }
+            }
+        }
 
         async function fetchDailyPanchangam(dateStr = "") {
             try {
@@ -4295,8 +4518,12 @@
             document.getElementById('panch-ayana').innerText = translateAyana(dailyPanchangamData.panchangam.ayana);
             document.getElementById('panch-ritu').innerText = translateRitu(dailyPanchangamData.panchangam.ritu);
 
-            // Draw Gochara South Indian Chart (SVG)
-            drawSouthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
+            // Draw Gochara Chart (SVG) based on selected style
+            if (currentGocharaStyle === 'north') {
+                drawNorthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
+            } else {
+                drawSouthIndianChartSVG('gochara-svg-rendered', dailyPanchangamData.placements, 'gochara');
+            }
 
             // --- Advanced calculations ---
             const sunriseStr = dailyPanchangamData.panchangam.sunrise || "06:00";
@@ -4550,7 +4777,7 @@
             };
             weekdayLabels[currentLang].forEach(label => {
                 const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-weekday';
+                dayEl.className = 'calendar-day-header';
                 dayEl.innerText = label;
                 container.appendChild(dayEl);
             });
@@ -4719,7 +4946,7 @@
             let svgContent = `<svg viewBox="0 0 240 240" class="gochara-svg" xmlns="http://www.w3.org/2000/svg">`;
             
             // Outer golden boundary
-            svgContent += `<rect x="0" y="0" width="240" height="240" fill="var(--bg-darker)" stroke="var(--accent-gold)" stroke-width="2"/>`;
+            svgContent += `<rect x="0" y="0" width="240" height="240" fill="var(--bg-darker)" stroke="var(--accent-gold)" stroke-width="1"/>`;
             
             // Grid lines
             for (let i = 1; i <= 3; i++) {
@@ -4852,7 +5079,7 @@
             let svgContent = `<svg viewBox="0 0 240 240" class="gochara-svg" xmlns="http://www.w3.org/2000/svg">`;
             
             // Background and golden border
-            svgContent += `<rect x="0" y="0" width="240" height="240" fill="var(--bg-darker)" stroke="var(--accent-gold)" stroke-width="2"/>`;
+            svgContent += `<rect x="0" y="0" width="240" height="240" fill="var(--bg-darker)" stroke="var(--accent-gold)" stroke-width="1"/>`;
             
             // Draw internal diagonals
             svgContent += `<line x1="0" y1="0" x2="240" y2="240" stroke="var(--border-glass)" stroke-width="1"/>`;
