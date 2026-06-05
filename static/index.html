@@ -4884,7 +4884,7 @@
                     if (dayInfo.specialities && dayInfo.specialities.length > 0) {
                         const imgPath = getFestivalImage(dayInfo.specialities[0], currentLang);
                         if (imgPath) {
-                            festivalImgHtml = `<img src="${imgPath}" alt="${dayInfo.specialities[0]}" class="cell-fest-img" style="width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                            festivalImgHtml = `<img src="${imgPath}?v=2" alt="${dayInfo.specialities[0]}" class="cell-fest-img" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
                         }
                         const translatedSpec = translateSpeciality(dayInfo.specialities[0]);
                         specialityHtml = `<div class="cell-speciality">${translatedSpec}</div>`;
