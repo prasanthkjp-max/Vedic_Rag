@@ -808,18 +808,18 @@
 
         .calendar-day-header {
             text-align: center;
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-gold);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 4px 2px 6px;
+            padding: 6px 2px 8px;
         }
 
         /* High Visibility Calendar Cells */
         .calendar-cell {
-            height: 76px;
-            padding: 6px 8px;
+            height: 125px;
+            padding: 8px 10px;
             border-radius: 8px;
             background: rgba(255, 253, 245, 0.85);
             border: 1px solid rgba(217, 119, 6, 0.25);
@@ -864,8 +864,8 @@
         .calendar-cell.inauspicious { border-color: rgba(220, 38, 38, 0.28); }
 
         .cell-day-num {
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 800;
             color: var(--text-primary);
             line-height: 1;
             display: flex;
@@ -875,24 +875,25 @@
         }
 
         .cell-naks {
-            font-size: 8.5px;
+            font-size: 11px;
             color: var(--text-secondary);
             line-height: 1.1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 2px;
+            margin-top: 4px;
+            font-weight: 600;
         }
 
         .cell-speciality {
-            font-size: 8px;
-            padding: 0.5px 3px;
-            border-radius: 3px;
-            margin-top: 2px;
+            font-size: 10.5px;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-top: 4px;
             line-height: 1.2;
             background: rgba(234, 88, 12, 0.1);
             color: #c2410c;
-            font-weight: 600;
+            font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -3564,6 +3565,15 @@
                 Shivaratri: { ta: "சிவராத்திரி", te: "శివరాత్రి", hi: "शिवरात्रि", ml: "ശിവരാത്രി", kn: "ಶಿವರಾತ್ರಿ" },
                 Sankranti: { ta: "மாதப்பிறப்பு", te: "సంక్రమణం", hi: "संक्रांति", ml: "സംക്രമം", kn: "ಸಂಕ್ರಾಮಣ" },
                 "Sukla Chaturthi": { ta: "சுக்ல சதுர்த்தி", te: "శుక్ల చవితి", hi: "शुक्ल चतुर्थी", ml: "ശുक्ല ചതുർത്ഥി", kn: "ಶುಕ್ಲ ಚತುರ್ಥಿ" },
+                "Sashti": { ta: "சஷ்டி", te: "షష్ఠి", hi: "षष्ठी", ml: "ഷഷ്ഠി", kn: "ಷಷ್ಠಿ" },
+                "Janmashtami": { ta: "கோகுலாஷ்டമി", te: "కృష్ణాష్టమి", hi: "जन्माष्टमी", ml: "ശ്രീകൃഷ്ണ ജയന്തി", kn: "ಕೃಷ್ಣ ಜನ್മാಷ್ಟಮಿ" },
+                "Rama Navami": { ta: "ஸ்ரீ ராம நவமி", te: "శ్రీరామ నవమి", hi: "श्री राम नवमी", ml: "ശ്രീരാമ నവമി", kn: "ಶ್ರೀ ರಾಮನವಮಿ" },
+                "Hanuman Jayanti": { ta: "அனுமன் ஜெயந்தி", te: "హनुమాన్ జయంతి", hi: "हनुमान जयंती", ml: "ഹനുമാൻ ஜயന്തി", kn: "ಹನುಮ ಜಯಂತಿ" },
+                "Durga Ashtami": { ta: "துர்கா அஷ்டமி", te: "దుర్గాష్టమి", hi: "दुर्गा अष्टमी", ml: "ദുർഗ്ഗാഷ്ടമി", kn: "ದುರ್ಗಾష్టമി" },
+                "Diwali": { ta: "தீபாவளி", te: "దీపావళి", hi: "दीपावली", ml: "ദീപാവലി", kn: "ದೀపಾವಳಿ" },
+                "Pongal / Sankranti": { ta: "பொங்கல் திருநாள்", te: "మకర సంక్రాంతి", hi: "मकर संक्रांति", ml: "മകര സംക്രാന്തി", kn: "ಮಕರ ಸಂಕ್ರಾಂತಿ" },
+                "Vishu / Puthandu": { ta: "தமிழ்ப் புத்தாண்டு (விஷு)", te: "ವಿಷు / తమిళ నూతన సంవత్సరం", hi: "मेष संक्रांति (विषु / पुथंडू)", ml: "വിಷു", kn: "ವಿಷು / ತಮಿಳು ಹೊಸ ವರ್ಷ" },
+                "Ugadi": { ta: "யுகாதி", te: "యుగాది", hi: "युगादि", ml: "യുഗാദി", kn: "ಯುಗಾದಿ" },
                 "Sankatahara Chaturthi": { ta: "சங்கடஹர சதுர்த்தி", te: "సంకష్టహర చవితి", hi: "संकष्ट चतुर्थी", ml: "സങ്കടహര ചതുർത്ഥി", kn: "ಸಂಕಷ್ಟహర చతుర్థి" }
             };
             
@@ -3600,6 +3610,36 @@
             }
             
             return (translations[specStr] && translations[specStr][currentLang]) || specStr;
+        }
+
+        function getFestivalImage(specStr, lang) {
+            if (!specStr) return null;
+            if (specStr === "Sashti") {
+                if (lang === "hi" || lang === "en") return null;
+                return "/assets/lord_murugar.png";
+            }
+            const mapping = {
+                "Ekadashi": "/assets/lord_venkateswara.png",
+                "Pradosham": "/assets/lord_shiva.png",
+                "Shivaratri": "/assets/lord_shiva.png",
+                "Ganesha Chaturthi": "/assets/lord_vinayaka.png",
+                "Sukla Chaturthi": "/assets/lord_vinayaka.png",
+                "Sankatahara Chaturthi": "/assets/lord_vinayaka.png",
+                "Janmashtami": "/assets/baby_krishna.png",
+                "Rama Navami": "/assets/lord_rama.png",
+                "Hanuman Jayanti": "/assets/lord_hanuman.png",
+                "Durga Ashtami": "/assets/goddess_durga.png",
+                "Diwali": "/assets/diya_lamp.png",
+                "Pongal / Sankranti": "/assets/pongal_pot.png",
+                "Vishu / Puthandu": "/assets/kalasam.png",
+                "Ugadi": "/assets/kalasam.png"
+            };
+            if (specStr.includes("Sankranti")) {
+                if (specStr.includes("Makara")) return "/assets/pongal_pot.png";
+                if (specStr.includes("Mesha")) return "/assets/kalasam.png";
+                return null;
+            }
+            return mapping[specStr] || null;
         }
 
                 function translateTamilMonth(monthStr) {
@@ -4838,9 +4878,14 @@
                         moonIconHtml = '<span class="cell-moon" style="color: #64748b;">🌑</span>';
                     }
                     
-                    // Choose speciality label (e.g. festivals or Ekadashi)
+                    // Check for festival image
+                    let festivalImgHtml = '';
                     let specialityHtml = '';
                     if (dayInfo.specialities && dayInfo.specialities.length > 0) {
+                        const imgPath = getFestivalImage(dayInfo.specialities[0], currentLang);
+                        if (imgPath) {
+                            festivalImgHtml = `<img src="${imgPath}" alt="${dayInfo.specialities[0]}" class="cell-fest-img" style="width: 28px; height: 28px; object-fit: contain; border-radius: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                        }
                         const translatedSpec = translateSpeciality(dayInfo.specialities[0]);
                         specialityHtml = `<div class="cell-speciality">${translatedSpec}</div>`;
                     }
@@ -4852,14 +4897,23 @@
                     let regionalDateHtml = '';
                     if (dayInfo.tamil_date) {
                         const translatedReg = translateTamilMonth(dayInfo.tamil_date);
-                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 8.5px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translatedReg}</div>`;
+                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translatedReg}</div>`;
                     }
                     
                     cell.innerHTML = `
-                        <div class="cell-day-num">${dayInfo.day} ${moonIconHtml}</div>
-                        ${regionalDateHtml}
-                        <div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>
-                        ${specialityHtml}
+                        <div class="calendar-cell-content" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; width: 100%;">
+                            <div class="cell-top" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                <span class="cell-day-num">${dayInfo.day} ${moonIconHtml}</span>
+                                ${festivalImgHtml}
+                            </div>
+                            <div class="cell-mid" style="margin-top: 4px;">
+                                ${regionalDateHtml}
+                                <div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>
+                            </div>
+                            <div class="cell-bottom" style="margin-top: auto;">
+                                ${specialityHtml}
+                            </div>
+                        </div>
                     `;
                     
                     cell.onclick = function() {

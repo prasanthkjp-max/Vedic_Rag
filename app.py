@@ -741,7 +741,10 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
             if is_pournami:
                 specialities.append("Pournami")
             elif is_amavasya:
-                specialities.append("Amavasya")
+                if month in [10, 11]:
+                    specialities.append("Diwali")
+                else:
+                    specialities.append("Amavasya")
                 
             if "Tithi 11" in tithi_str:
                 specialities.append("Ekadashi")
@@ -749,11 +752,27 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
                 specialities.append("Pradosham")
             elif "Tithi 4" in tithi_str:
                 if "Sukla" in tithi_str:
-                    specialities.append("Sukla Chaturthi")
+                    if month in [8, 9]:
+                        specialities.append("Ganesha Chaturthi")
+                    else:
+                        specialities.append("Sukla Chaturthi")
                 else:
                     specialities.append("Sankatahara Chaturthi")
+            elif "Tithi 6" in tithi_str and "Sukla" in tithi_str:
+                specialities.append("Sashti")
             elif "Tithi 8" in tithi_str:
-                specialities.append("Ashtami")
+                if "Krishna" in tithi_str and month in [8, 9]:
+                    specialities.append("Janmashtami")
+                elif "Sukla" in tithi_str and month in [9, 10]:
+                    specialities.append("Durga Ashtami")
+                else:
+                    specialities.append("Ashtami")
+            elif "Tithi 9" in tithi_str and "Sukla" in tithi_str and month in [3, 4]:
+                specialities.append("Rama Navami")
+            elif "Tithi 15" in tithi_str and month in [3, 4, 12, 1]:
+                specialities.append("Hanuman Jayanti")
+            elif "Tithi 1" in tithi_str and "Sukla" in tithi_str and month in [3, 4]:
+                specialities.append("Ugadi")
             elif "Tithi 14" in tithi_str and "Krishna" in tithi_str:
                 specialities.append("Shivaratri")
                 
@@ -761,7 +780,12 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
             sun_deg = chart["placements"]["Sun"]["degree"]
             if sun_deg < 1.0:
                 sun_rasi = chart["placements"]["Sun"]["rasi_name"]
-                specialities.append(f"{sun_rasi} Sankranti")
+                if sun_rasi == "Makara":
+                    specialities.append("Pongal / Sankranti")
+                elif sun_rasi == "Mesha":
+                    specialities.append("Vishu / Puthandu")
+                else:
+                    specialities.append(f"{sun_rasi} Sankranti")
                 
             days_data.append({
                 "day": day,
