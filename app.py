@@ -728,15 +728,43 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
         _, num_days = calendar.monthrange(year, month)
         
         days_data = []
+        # Keep track of previously added festivals to enforce deduplication
+        added_festivals_prev = set()
+        
         for day in range(1, num_days + 1):
-            chart = get_astrological_chart(year, month, day, 5, 30, lon, lat, "Lahiri")
-            localized_panch = get_regional_panchangam(chart, lang)
+            # Sunrise (approx. 5:30 AM)
+            chart_sunrise = get_astrological_chart(year, month, day, 5, 30, lon, lat, "Lahiri")
+            localized_panch = get_regional_panchangam(chart_sunrise, lang)
+            tithi_sunrise = chart_sunrise["panchangam"]["tithi"]
             
-            # Specialities detection
+            # Mid-day (1:00 PM) - used for Sashti, Chaturthi, Rama Navami, Durga Ashtami
+            chart_midday = get_astrological_chart(year, month, day, 13, 0, lon, lat, "Lahiri")
+            tithi_midday = chart_midday["panchangam"]["tithi"]
+            
+            # Sunset / Evening (6:30 PM) - used for Pradosham, Pournami, Amavasya, Diwali
+            chart_sunset = get_astrological_chart(year, month, day, 18, 30, lon, lat, "Lahiri")
+            tithi_sunset = chart_sunset["panchangam"]["tithi"]
+            
+            # Night (9:00 PM) - used for Sankatahara Chaturthi (Moonrise)
+            chart_night = get_astrological_chart(year, month, day, 21, 0, lon, lat, "Lahiri")
+            tithi_night = chart_night["panchangam"]["tithi"]
+            
+            # Midnight (12:00 AM) - used for Janmashtami, Shivaratri
+            chart_midnight = get_astrological_chart(year, month, day, 0, 0, lon, lat, "Lahiri")
+            tithi_midnight = chart_midnight["panchangam"]["tithi"]
+            
+            # Lookahead Sunrise (next day) for Ekadashi check
+            tithi_tomorrow_sunrise = ""
+            if day < num_days:
+                chart_tomorrow = get_astrological_chart(year, month, day + 1, 5, 30, lon, lat, "Lahiri")
+                tithi_tomorrow_sunrise = chart_tomorrow["panchangam"]["tithi"]
+            
+            # Specialities list for today
             specialities = []
-            tithi_str = localized_panch["tithi"]
-            is_pournami = "Pournami" in tithi_str
-            is_amavasya = "Amavasya" in tithi_str
+            
+            # Pournami / Amavasya / Diwali (Sunset / Night)
+            is_pournami = "Pournami" in tithi_sunset
+            is_amavasya = "Amavasya" in tithi_sunset
             
             if is_pournami:
                 specialities.append("Pournami")
@@ -745,55 +773,112 @@ def get_month_panchangam(year: int, month: int, lang: str = "en"):
                     specialities.append("Diwali")
                 else:
                     specialities.append("Amavasya")
-                
-            if "Tithi 11" in tithi_str:
-                specialities.append("Ekadashi")
-            elif "Tithi 13" in tithi_str:
-                specialities.append("Pradosham")
-            elif "Tithi 4" in tithi_str:
-                if "Sukla" in tithi_str:
-                    if month in [8, 9]:
-                        specialities.append("Ganesha Chaturthi")
+            
+            # Ekadashi: active at Sunrise.
+            # Bhagavata rule: If tomorrow is also Ekadashi, do not observe today.
+            if "Tithi 11" in tithi_sunrise:
+                if day < num_days and "Tithi 11" in tithi_tomorrow_sunrise:
+                    pass
+                else:
+                    specialities.append("Ekadashi")
+            elif day > 1:
+                # If yesterday had Ekadashi but was skipped (double Sunrise Ekadashi)
+                chart_yesterday = get_astrological_chart(year, month, day - 1, 5, 30, lon, lat, "Lahiri")
+                tithi_yesterday_sunrise = chart_yesterday["panchangam"]["tithi"]
+                if "Tithi 11" in tithi_yesterday_sunrise:
+                    if day > 2:
+                        chart_day_before = get_astrological_chart(year, month, day - 2, 5, 30, lon, lat, "Lahiri")
+                        tithi_day_before_sunrise = chart_day_before["panchangam"]["tithi"]
+                        if "Tithi 11" not in tithi_day_before_sunrise:
+                            specialities.append("Ekadashi")
                     else:
-                        specialities.append("Sukla Chaturthi")
-                else:
-                    specialities.append("Sankatahara Chaturthi")
-            elif "Tithi 6" in tithi_str and "Sukla" in tithi_str:
+                        specialities.append("Ekadashi")
+            
+            # Pradosham: Trayodashi (Tithi 13) active at Sunset
+            if "Tithi 13" in tithi_sunset:
+                specialities.append("Pradosham")
+                
+            # Sashti: Sukla Paksha Sashti (Tithi 6) active at Midday
+            if "Tithi 6" in tithi_midday and "Sukla" in tithi_midday:
                 specialities.append("Sashti")
-            elif "Tithi 8" in tithi_str:
-                if "Krishna" in tithi_str and month in [8, 9]:
-                    specialities.append("Janmashtami")
-                elif "Sukla" in tithi_str and month in [9, 10]:
-                    specialities.append("Durga Ashtami")
+                
+            # Ganesha Chaturthi / Sukla Chaturthi / Sankatahara Chaturthi:
+            if "Tithi 4" in tithi_midday and "Sukla" in tithi_midday:
+                if month in [8, 9]:
+                    specialities.append("Ganesha Chaturthi")
                 else:
-                    specialities.append("Ashtami")
-            elif "Tithi 9" in tithi_str and "Sukla" in tithi_str and month in [3, 4]:
+                    specialities.append("Sukla Chaturthi")
+            elif "Tithi 4" in tithi_night and "Krishna" in tithi_night:
+                specialities.append("Sankatahara Chaturthi")
+                
+            # Janmashtami: Krishna Paksha Ashtami active at Midnight in August/September
+            if "Tithi 8" in tithi_midnight and "Krishna" in tithi_midnight and month in [8, 9]:
+                specialities.append("Janmashtami")
+            # Durga Ashtami: Sukla Paksha Ashtami active at Midday in September/October
+            elif "Tithi 8" in tithi_midday and "Sukla" in tithi_midday and month in [9, 10]:
+                specialities.append("Durga Ashtami")
+            # General Ashtami: if not Janmashtami or Durga Ashtami, but active at Midday
+            elif "Tithi 8" in tithi_midday:
+                specialities.append("Ashtami")
+                
+            # Rama Navami: Sukla Paksha Navami active at Midday in March/April
+            if "Tithi 9" in tithi_midday and "Sukla" in tithi_midday and month in [3, 4]:
                 specialities.append("Rama Navami")
-            elif "Tithi 15" in tithi_str and month in [3, 4, 12, 1]:
+                
+            # Hanuman Jayanti: Tithi 15 active at Sunrise/Midday in Dec/Jan/April
+            if "Tithi 15" in tithi_sunrise and month in [3, 4, 12, 1]:
                 specialities.append("Hanuman Jayanti")
-            elif "Tithi 1" in tithi_str and "Sukla" in tithi_str and month in [3, 4]:
+                
+            # Ugadi: Sukla Paksha Pratipada (Tithi 1) active at Sunrise in March/April
+            if "Tithi 1" in tithi_sunrise and "Sukla" in tithi_sunrise and month in [3, 4]:
                 specialities.append("Ugadi")
-            elif "Tithi 14" in tithi_str and "Krishna" in tithi_str:
+                
+            # Shivaratri: Krishna Paksha Chaturdashi active at Midnight
+            if "Tithi 14" in tithi_midnight and "Krishna" in tithi_midnight:
                 specialities.append("Shivaratri")
                 
+            # --- National Holidays (Gregorian) ---
+            if month == 1 and day == 1:
+                specialities.append("New Year's Day")
+            elif month == 1 and day == 26:
+                specialities.append("Republic Day")
+            elif month == 5 and day == 1:
+                specialities.append("May Day")
+            elif month == 8 and day == 15:
+                specialities.append("Independence Day")
+            elif month == 10 and day == 2:
+                specialities.append("Gandhi Jayanti")
+            elif month == 12 and day == 25:
+                specialities.append("Christmas")
+                
             # Solar transition check (Sankranti)
-            sun_deg = chart["placements"]["Sun"]["degree"]
+            sun_deg = chart_sunrise["placements"]["Sun"]["degree"]
             if sun_deg < 1.0:
-                sun_rasi = chart["placements"]["Sun"]["rasi_name"]
+                sun_rasi = chart_sunrise["placements"]["Sun"]["rasi_name"]
                 if sun_rasi == "Makara":
                     specialities.append("Pongal / Sankranti")
                 elif sun_rasi == "Mesha":
                     specialities.append("Vishu / Puthandu")
                 else:
                     specialities.append(f"{sun_rasi} Sankranti")
-                
+            
+            # DEDUPLICATION: Remove any festival that was already observed on the previous day
+            dedup_specialities = []
+            for spec in specialities:
+                if spec in added_festivals_prev:
+                    pass
+                else:
+                    dedup_specialities.append(spec)
+            
+            added_festivals_prev = set(dedup_specialities)
+            
             days_data.append({
                 "day": day,
-                "tithi": tithi_str,
+                "tithi": tithi_sunrise,
                 "is_pournami": is_pournami,
                 "is_amavasya": is_amavasya,
                 "nakshatra": localized_panch["nakshatra"],
-                "specialities": specialities,
+                "specialities": dedup_specialities,
                 "tamil_date": localized_panch.get("tamil_date", "")
             })
             
