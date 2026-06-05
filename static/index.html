@@ -1891,6 +1891,10 @@
                     
                     <!-- Right Column: Daily Panchangam Details & Gochara Transits (Rendered Below Calendar) -->
                     <div class="panchangam-details-panel">
+                        <div class="panel-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                            <i class="fa-solid fa-calendar-day" style="color: var(--accent-gold);"></i>
+                            <span id="lbl-title-panch" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Daily Panchangam</span>
+                        </div>
                         <div class="details-layout-wrapper" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; width: 100%;">
                             
                             <!-- Left: Astrological Data Columns -->
@@ -2064,9 +2068,10 @@
 
                     <!-- Horas (Only related to the current hour) -->
                     <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
-                        <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                             <i class="fa-solid fa-hourglass-half"></i> <span id="lbl-horas-title">Hourly Planetary Horas (Transit Strengths)</span>
                         </div>
+                        <div id="lbl-horas-desc" style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
                         <div id="panch-horas-list" style="font-size: 11.5px; color: var(--text-primary);">
                             <span style="font-size: 11.5px; color: var(--text-muted);">Please select a date to calculate Horas...</span>
                         </div>
@@ -3968,9 +3973,12 @@
                     ${dict.lbl_marriage_ai_welcome || "Fill the details and click Calculate Compatibility to get the matching report and Ganesha prediction."}
                 `;
             }
-            document.getElementById('lbl-title-panch').innerText = dict.title_panch;
-            document.getElementById('lbl-title-gochara').innerText = dict.title_gochara;
-            document.getElementById('lbl-desc-gochara').innerText = dict.desc_gochara;
+            const titlePanch = document.getElementById('lbl-title-panch');
+            if (titlePanch) titlePanch.innerText = dict.title_panch;
+            const titleGochara = document.getElementById('lbl-title-gochara');
+            if (titleGochara) titleGochara.innerText = dict.title_gochara;
+            const descGochara = document.getElementById('lbl-desc-gochara');
+            if (descGochara) descGochara.innerText = dict.desc_gochara;
             updateDynamicPanchangamLabels(langCode, systemSelect ? systemSelect.value : 'sauramana');
             document.getElementById('lbl-tithi').innerText = dict.tithi;
             document.getElementById('lbl-naks').innerText = dict.naks;
