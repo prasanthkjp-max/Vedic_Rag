@@ -3920,6 +3920,7 @@
         // Change website language in real-time
         async function changeLanguage(langCode) {
             currentLang = langCode;
+            localStorage.setItem('vedic_lang', langCode);
             document.documentElement.setAttribute('lang', langCode);
             document.getElementById('lang-menu').style.display = 'none';
             
@@ -4759,7 +4760,10 @@
                 const timeRangeStr = formatRange(displayStart, displayEnd);
                 
                 const isAuspicious = ["Jupiter", "Venus", "Mercury", "Moon"].includes(lord);
-                
+                const horaWord = { en: "Hora", ta: "ஹோரை", te: "హోర", ml: "ഹോര", kn: "ಹೋರ", hi: "होरा" };
+                const horaLabel = horaWord[currentLang] || "Hora";
+                const lordName = (planetTranslations[currentLang] && planetTranslations[currentLang][lord]) || lord;
+
                 if (h === currentHourIdx) {
                     const pillColor = isAuspicious ? "background: rgba(22, 163, 74, 0.15); border: 1px solid rgba(22, 163, 74, 0.4); color: #16a34a;" : "background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;";
                     const horaTrans = {
@@ -4771,17 +4775,17 @@
                         hi: "वर्तमान होरा"
                     };
                     const currentHoraText = horaTrans[currentLang] || horaTrans.en;
-                    
+
                     horasHtml = `<div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-weight: bold; color: var(--accent-gold); font-size: 11.5px;">${currentHoraText}:</span>
                         <span style="font-size: 11.5px; padding: 4px 10px; border-radius: 6px; font-weight: bold; ${pillColor}">
-                            ${lord} (${timeRangeStr})
+                            ${lordName} (${timeRangeStr})
                         </span>
                     </div>`;
                 }
-                
+
                 if (isAuspicious && h < 18) {
-                    auspiciousHoursList.push(`${lord} Hora (${timeRangeStr})`);
+                    auspiciousHoursList.push(`${lordName} ${horaLabel} (${timeRangeStr})`);
                 }
             }
             document.getElementById('panch-horas-list').innerHTML = horasHtml || `<span style="font-size: 11.5px; color: var(--text-muted);">--</span>`;
@@ -6977,6 +6981,13 @@
 
             if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
+
+            // Restore previously chosen language (persisted in localStorage)
+            const savedLang = localStorage.getItem('vedic_lang');
+            if (savedLang && savedLang !== 'en') {
+                await changeLanguage(savedLang);
+            }
+
             // Load current date daily panchangam and render calendar
             const today = new Date().toISOString().split('T')[0];
             selectedPanchangamDate = today;
