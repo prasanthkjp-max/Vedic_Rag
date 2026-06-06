@@ -415,7 +415,7 @@
             font-weight: 700;
         }
 
-        /* ── Header controls (API key + lang selector) ── */
+        /* ── Header controls (Sign In + lang selector) ── */
         .header-controls {
             display: flex;
             align-items: center;
@@ -1814,9 +1814,7 @@
                     </div>
                 </div>
 
-                <button class="lang-select-btn" id="api-key-config-btn" onclick="configureApiKey()" style="margin-right: 8px;">
-                    <i class="fa-solid fa-key"></i> <span id="api-status-text">Set API Key</span>
-                </button>
+
                 <div class="lang-selector">
                     <button class="lang-select-btn" onclick="toggleLangDropdown()">
                         <i class="fa-solid fa-language"></i> <span id="current-lang-name">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
@@ -2631,56 +2629,14 @@
 
     <!-- Multi-lingual Localization Dictionary -->
     <script>
-        // --- API key handling -------------------------------------------------
-        // The backend gates every /api/* data endpoint behind a shared key.
-        // We keep it in localStorage and inject it as the X-API-Key header on
-        // all backend calls.
-        function getApiKey() {
-            return localStorage.getItem('vedic_api_key') || '';
-        }
 
-        function updateApiStatusUI() {
-            const btn = document.getElementById('api-key-config-btn');
-            const txt = document.getElementById('api-status-text');
-            if (!btn || !txt) return;
-            
-            const key = localStorage.getItem('vedic_api_key');
-            if (key) {
-                txt.innerText = 'Key Set';
-                btn.style.borderColor = 'var(--border-gold)';
-                btn.style.color = 'var(--accent-gold)';
-                btn.style.background = 'rgba(255, 255, 255, 0.8)';
-            } else {
-                txt.innerText = 'Set API Key';
-                btn.style.borderColor = '#dc2626'; // red
-                btn.style.color = '#dc2626'; // red
-                btn.style.background = 'rgba(220, 38, 38, 0.05)';
-            }
-        }
-
-        function configureApiKey() {
-            const key = (window.prompt('Enter your Vedic Portal API Key:', localStorage.getItem('vedic_api_key') || '') || '').trim();
-            if (key) {
-                localStorage.setItem('vedic_api_key', key);
-            } else {
-                localStorage.removeItem('vedic_api_key');
-            }
-            updateApiStatusUI();
-            
-            // Reload page data
-            const today = selectedPanchangamDate || new Date().toISOString().split('T')[0];
-            fetchDailyPanchangam(today);
-            renderMonthlyCalendar();
-        }
 
         // Drop-in replacement for fetch() that targets our own API. Adds the
         // key header and, on a 401, clears the stored key, prompts once and
         // retries so a wrong/rotated key is easy to recover from.
         let promptPromise = null;
-        async function apiFetch(url, options = {}, _retried = false) {
+        async function apiFetch(url, options = {}) {
             const opts = { ...options, headers: { ...(options.headers || {}) } };
-            const key = getApiKey();
-            if (key) opts.headers['X-API-Key'] = key;
             const token = localStorage.getItem('session_token');
             if (token) opts.headers['x-session-token'] = token;
             
@@ -2689,30 +2645,8 @@
                 alert("Insufficient Credits. Please click your profile/name in the header to buy credits or subscribe to a pass.");
                 openProfileModal();
             } else if (response.status === 401 && !url.includes('/api/auth/')) {
-                if (!promptPromise) {
-                    promptPromise = (async () => {
-                        localStorage.removeItem('vedic_api_key');
-                        if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
-                        const keyPrompt = (window.prompt('API key was missing or invalid. Please enter the Vedic Portal API key (printed in the server console / .api_key file):') || '').trim();
-                        if (keyPrompt) {
-                            localStorage.setItem('vedic_api_key', keyPrompt);
-                            if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
-                            return keyPrompt;
-                        }
-                        return null;
-                    })();
-                    promptPromise.finally(() => {
-                        setTimeout(() => { promptPromise = null; }, 100);
-                    });
-                }
-                
-                const newKey = await promptPromise;
-                if (newKey) {
-                    const retryOpts = { ...options, headers: { ...(options.headers || {}) } };
-                    retryOpts.headers['X-API-Key'] = newKey;
-                    if (token) retryOpts.headers['x-session-token'] = token;
-                    return fetch(url, retryOpts);
-                }
+                alert("Session expired or authentication required. Please sign in.");
+                openLoginModal();
             }
             return response;
         }
@@ -2720,7 +2654,7 @@
         const localization = {
             en: {
                 lbl_calculating_alignments: "Calculating Alignments...",
-                lbl_unauthorized_alert: "Unauthorized: Please configure a valid API Key using the button in the top bar.",
+                lbl_unauthorized_alert: "Unauthorized: Please sign in to access this feature.",
                 lbl_calculation_failed: "Calculation failed",
                 lbl_male_name_placeholder: "Male Name",
                 lbl_female_name_placeholder: "Female Name",
@@ -2831,7 +2765,7 @@
             },
             ta: {
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
-                lbl_unauthorized_alert: "அங்கீகரிக்கப்படவில்லை: மேலே உள்ள பொத்தானைப் பயன்படுத்தி சரியான API விசையை உள்ளிடவும்.",
+                lbl_unauthorized_alert: "அனுமதி இல்லை: இந்த அம்சத்தை அணுக உள்நுழையவும்.",
                 lbl_calculation_failed: "கணக்கீடு தோல்வியடைந்தது",
                 lbl_male_name_placeholder: "ஆண் பெயர்",
                 lbl_female_name_placeholder: "பெண் பெயர்",
@@ -2942,7 +2876,7 @@
             },
             te: {
                 lbl_calculating_alignments: "పొంతన లెక్కిస్తోంది...",
-                lbl_unauthorized_alert: "అనధికారికం: దయచేసి ఎగువ బార్‌లోని బటన్ ఉపయోగించి సరైన API కీని కాన్ఫిగర్ చేయండి.",
+                lbl_unauthorized_alert: "అనధికారికం: ఈ ఫీచర్‌ని యాక్సెస్ చేయడానికి దయచేసి సైన్ ఇన్ చేయండి.",
                 lbl_calculation_failed: "గణన విఫలమైంది",
                 lbl_male_name_placeholder: "వరుడి పేరు",
                 lbl_female_name_placeholder: "వధువు పేరు",
@@ -3053,7 +2987,7 @@
             },
             ml: {
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
-                lbl_unauthorized_alert: "അനധികൃതമാണ്: മുകളിലെ ബാറിലെ ബട്ടൺ ഉപയോഗിച്ച് ദയവായി ഒരു സാധുവായ API കീ നൽകുക.",
+                lbl_unauthorized_alert: "അനധികൃതമാണ്: ഈ ഫീച്ചർ ആക്സസ് ചെയ്യാൻ ദയവായി സൈൻ ഇൻ ചെയ്യുക.",
                 lbl_calculation_failed: "കണക്കുകൂട്ടൽ പരാജയപ്പെട്ടു",
                 lbl_male_name_placeholder: "വരന്റെ പേര്",
                 lbl_female_name_placeholder: "വധുവിന്റെ പേര്",
@@ -3164,7 +3098,7 @@
             },
             kn: {
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ...",
-                lbl_unauthorized_alert: "ಅನಧಿಕೃತ: ದಯವಿಟ್ಟು ಮೇಲಿನ ಪಟ್ಟಿಯಲ್ಲಿರುವ ಬಟನ್ ಬಳಸಿ ಮಾನ್ಯವಾದ API ಕೀಲಿಯನ್ನು ಕಾನ್ಫಿಗರ್ ಮಾಡಿ.",
+                lbl_unauthorized_alert: "ಅನಧಿಕೃತ: ಈ ವೈಶಿಷ್ಟ್ಯವನ್ನು ಪ್ರವೇಶಿಸಲು ದಯವಿಟ್ಟು ಸೈನ್ ಇನ್ ಮಾಡಿ.",
                 lbl_calculation_failed: "ಲೆಕ್ಕಾಚಾರ ವಿಫಲವಾಗಿದೆ",
                 lbl_male_name_placeholder: "ವರನ ಹೆಸರು",
                 lbl_female_name_placeholder: "ವಧುವಿನ ಹೆಸರು",
@@ -3275,7 +3209,7 @@
             },
             hi: {
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
-                lbl_unauthorized_alert: "अनधिकृत: कृपया शीर्ष बार में बटन का उपयोग करके एक वैध API कुंजी दर्ज करें।",
+                lbl_unauthorized_alert: "अनधिकृत: कृपया इस सुविधा का उपयोग करने के लिए साइन इन करें।",
                 lbl_calculation_failed: "गणना विफल रही",
                 lbl_male_name_placeholder: "वर का नाम",
                 lbl_female_name_placeholder: "वधू का नाम",
@@ -4374,7 +4308,7 @@
                 console.error("Error loading Panchangam:", err);
                 const gregDateLabel = document.getElementById('gregorian-date-str');
                 if (gregDateLabel) {
-                    gregDateLabel.innerText = "Error loading Panchangam. Please verify your API key.";
+                    gregDateLabel.innerText = "Error loading Panchangam. Please refresh the page.";
                 }
             }
         }
@@ -5040,7 +4974,7 @@
                     <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
                     Failed to load Calendar Data.<br>
                     <span style="font-size: 11.5px; font-weight: normal; color: var(--text-muted);">
-                        Please verify your API key using the button in the header.
+                        Please reload the page or check your connection.
                     </span>
                 `;
                 container.appendChild(errorDiv);
@@ -6485,17 +6419,15 @@
             };
             
             try {
-                const response = await fetch('/api/calculate-marriage', {
+                const response = await apiFetch('/api/calculate-marriage', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': localStorage.getItem('vedic_api_key') || ''
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ male: maleReq, female: femaleReq })
                 });
                 
                 if (response.status === 401) {
-                    alert(dict.lbl_unauthorized_alert || "Unauthorized: Please configure a valid API Key using the button in the top bar.");
                     btn.disabled = false;
                     btn.innerText = dict.lbl_btn_calculate || "Calculate Compatibility";
                     return;
@@ -6649,17 +6581,16 @@
             };
             
             try {
-                const response = await fetch('/api/ai-predict-marriage', {
+                const response = await apiFetch('/api/ai-predict-marriage', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': localStorage.getItem('vedic_api_key') || ''
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
                 });
                 
                 if (response.status === 401) {
-                    chatBox.innerHTML = `<span style="color:#F56565;">*Unauthorized: Invalid or missing API key. Configure it in the top bar.*</span>`;
+                    chatBox.innerHTML = `<span style="color:#F56565;">*Authentication required. Please sign in.*</span>`;
                     return;
                 }
                 
@@ -7047,22 +6978,6 @@
         }
         // --- Initialize Page details on startup ---
         window.onload = async function() {
-            // Attempt to auto-fetch local API key if not set
-            if (!localStorage.getItem('vedic_api_key')) {
-                try {
-                    const res = await fetch('/api/local-key');
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data && data.api_key) {
-                            localStorage.setItem('vedic_api_key', data.api_key);
-                        }
-                    }
-                } catch (e) {
-                    console.log("Not local or error fetching auto-key:", e);
-                }
-            }
-
-            if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
 
             // Initialise current date BEFORE language restore so that any
