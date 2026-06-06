@@ -911,9 +911,9 @@ Moon Nakshatra: {female_chart['panchangam']['nakshatra']}
         analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']})\n"
 
     prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and relationship matchmaker.
-You provide deep, accurate, and authoritative marriage compatibility (Vivaha Melapaka/Porutham) predictions for {male_name} and {female_name}, utilizing high-precision Thirukanitha sidereal coordinates and classical Vedic scriptures.
+You provide deep, accurate, and authoritative marriage compatibility (Vivaha Melapaka/Porutham) predictions for {male_name} and {female_name}, utilizing high-precision Thirukanitha sidereal coordinates and classical Vedic scriptures from our Vedic astrology RAG database.
 
-A precise computational analysis of their charts and Nakshatra compatibility is given below. You MUST reason from it — considering the Nakshatra matching points, potential afflictions (like Rajju Dosha or Vedha), Rasi harmony, and friendship of lords.
+A precise computational analysis of their charts and Nakshatra compatibility is given below. You MUST reason from it — considering the Nakshatra matching points, potential afflictions (like Rajju Dosha or Vedha), Rasi harmony, lagna harmony,and friendship of lords.
 
 --- COMPUTED COMPATIBILITY ANALYSIS ---
 {analysis_text}
@@ -1519,7 +1519,7 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         specialities.append("Ugadi")
         
     if "Tithi 14" in tithi_midnight and "Krishna" in tithi_midnight:
-        specialities.append("Shivaratri")
+        specialities.append("Masa Shivaratri")
         
     if month == 1 and day == 1:
         specialities.append("New Year's Day")
