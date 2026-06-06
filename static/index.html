@@ -6982,22 +6982,26 @@
             if (typeof updateApiStatusUI === 'function') updateApiStatusUI();
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
 
-            // Restore previously chosen language (persisted in localStorage)
-            const savedLang = localStorage.getItem('vedic_lang');
-            if (savedLang && savedLang !== 'en') {
-                await changeLanguage(savedLang);
-            }
-
-            // Load current date daily panchangam and render calendar
+            // Initialise current date BEFORE language restore so that any
+            // renderMonthlyCalendar() call inside changeLanguage() uses the
+            // correct month (not the stale May=5 default), which previously
+            // caused May and June cells to appear together in one calendar view.
             const today = new Date().toISOString().split('T')[0];
             selectedPanchangamDate = today;
-            
             const parts = today.split("-");
             calendarYear = parseInt(parts[0]);
             calendarMonth = parseInt(parts[1]);
-            
-            fetchDailyPanchangam(today);
-            renderMonthlyCalendar();
+
+            // Restore previously chosen language (persisted in localStorage).
+            // changeLanguage() already calls fetchDailyPanchangam + renderMonthlyCalendar,
+            // so skip the duplicate calls below when it runs.
+            const savedLang = localStorage.getItem('vedic_lang');
+            if (savedLang && savedLang !== 'en') {
+                await changeLanguage(savedLang);
+            } else {
+                fetchDailyPanchangam(today);
+                renderMonthlyCalendar();
+            }
             
             // Add listener to D-chart dropdown select
             const dChartSelect = document.getElementById('d-chart-select');
