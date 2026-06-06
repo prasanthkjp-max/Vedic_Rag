@@ -531,8 +531,14 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
     gender = chart.get("metadata", {}).get("gender", "male")
     lines.append(f"GENDER: {gender.capitalize()}")
     lagna_p = placements["Lagna"]
-    lines.append(f"LAGNA (Ascendant): {lagna_p['rasi_name']} at {lagna_p['degree']:.2f}°, "
-                 f"Navamsha {lagna_p['navamsha_rasi_name']}. Lagna lord is {SIGN_LORDS[lagna_idx]}.")
+    d_charts_lag = []
+    for k, label in [("drekkana_rasi_name", "D3"), ("navamsha_rasi_name", "D9"), 
+                     ("dashamsha_rasi_name", "D10"), ("dwadashamsha_rasi_name", "D12"), 
+                     ("trishamsha_rasi_name", "D30"), ("shastiamsha_rasi_name", "D60")]:
+        if k in lagna_p:
+            d_charts_lag.append(f"{label}: {lagna_p[k]}")
+    d_charts_lag_str = f" ({', '.join(d_charts_lag)})" if d_charts_lag else ""
+    lines.append(f"LAGNA (Ascendant): {lagna_p['rasi_name']} at {lagna_p['degree']:.2f}°{d_charts_lag_str}. Lagna lord is {SIGN_LORDS[lagna_idx]}.")
 
     lines.append("\nPLANETARY PLACEMENTS (house from Lagna, sign, dignity, state):")
     for body in GRAHAS:
@@ -545,9 +551,16 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
         if p.get("is_combust"):
             flags.append("Combust")
         flag_str = f" [{', '.join(flags)}]" if flags else ""
+        d_charts_pl = []
+        for k, label in [("drekkana_rasi_name", "D3"), ("navamsha_rasi_name", "D9"), 
+                         ("dashamsha_rasi_name", "D10"), ("dwadashamsha_rasi_name", "D12"), 
+                         ("trishamsha_rasi_name", "D30"), ("shastiamsha_rasi_name", "D60")]:
+            if k in p:
+                d_charts_pl.append(f"{label}: {p[k]}")
+        d_charts_pl_str = f" [Divisions - {', '.join(d_charts_pl)}]" if d_charts_pl else ""
         lines.append(
             f"  - {body}: {_ord(houses[body])} house ({HOUSE_SIGNIFICATIONS[houses[body]]}), "
-            f"{p['degree']:.2f}° {p['rasi_name']}, Navamsha {p['navamsha_rasi_name']}, "
+            f"{p['degree']:.2f}° {p['rasi_name']}{d_charts_pl_str}, "
             f"{p.get('dignity', 'Neutral')}{flag_str}")
 
     lines.append("\nHOUSE LORDS (Bhava adhipati):")
@@ -608,6 +621,20 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
             for idx, score in enumerate(sav):
                 status = "Strong (>28)" if score > 28 else ("Weak (<20)" if score < 20 else "Average")
                 lines.append(f"  - {signs_names[idx]}: {score} points ({status})")
+                
+        shodhya = ashtakavarga.get("shodhya_pinda", {})
+        if shodhya:
+            lines.append("\nASHTAKAVARGA SHODHYA PINDA (Reduced Ashtakavarga totals):")
+            for p, val in shodhya.items():
+                lines.append(f"  - {p}: Rasi Pinda={val['rasi_pinda']}, Graha Pinda={val['graha_pinda']}, Total Shodhya Pinda={val['shodhya_pinda']}")
+
+    # Expose Shadbala Strengths
+    shadbala = chart.get("shadbala", {})
+    if shadbala:
+        lines.append("\nPLANETARY STRENGTHS (Shadbala points & percentage of required minimum):")
+        for p, score in shadbala.items():
+            status = "Strong" if score["percentage_strength"] >= 100.0 else "Weak"
+            lines.append(f"  - {p}: {score['total_points']:.2f} points ({score['percentage_strength']:.1f}% of required {score['required_points']} - {status})")
 
     if gochara:
         lines.append("\nGOCHARA (current transits as of {}):".format(ref_date.isoformat()))
