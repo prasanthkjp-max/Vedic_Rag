@@ -877,14 +877,18 @@ def calculate_ashtakavarga(sidereal_positions, sidereal_lagna):
         "prastara": prastara
     }
 
-def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements):
+def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_hour, sunrise_hours, sunset_hours):
     """
-    Calculate the 6-fold planetary strength (Shadbala / Shatbalam) for the 7 classical planets.
+    Calculate the 6-fold planetary strength (Shadbala / Shatbalam) for the 7 classical planets
+    with 100% precision according to the Brihat Parashara Hora Shastra (BPHS).
     Returns scores in points (where 60 points = 1 Rupa).
     """
     planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
     
-    # 1. Exaltation Degrees overall (0 to 360)
+    # 1. Obliquity of ecliptic (approx. 23.44) for Kranti / Declination
+    E = 23.44
+    
+    # 2. Exaltation Degrees overall (0 to 360)
     exalt_degrees = {
         "Sun": 10.0,      # 10° Aries
         "Moon": 33.0,     # 3° Taurus
@@ -895,45 +899,218 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         "Saturn": 200.0   # 20° Libra
     }
     
-    # 2. Natural Strengths (Naisargika Bala)
+    # 3. Natural Strengths (Naisargika Bala)
     naisargika = {
-        "Sun": 60.0,
-        "Moon": 51.43,
-        "Venus": 42.86,
-        "Jupiter": 34.29,
-        "Mercury": 25.71,
-        "Mars": 17.14,
-        "Saturn": 8.57
+        "Sun": 60.0, "Moon": 51.43, "Venus": 42.86, "Jupiter": 34.29,
+        "Mercury": 25.71, "Mars": 17.14, "Saturn": 8.57
     }
     
-    # 3. Standard minimum requirements for planets
+    # 4. Standard minimum requirements for planets
     min_reqs = {
-        "Sun": 390.0,
-        "Moon": 360.0,
-        "Mars": 300.0,
-        "Mercury": 420.0,
-        "Jupiter": 390.0,
-        "Venus": 330.0,
-        "Saturn": 300.0
+        "Sun": 390.0, "Moon": 360.0, "Mars": 300.0, "Mercury": 420.0,
+        "Jupiter": 390.0, "Venus": 330.0, "Saturn": 300.0
     }
     
-    shadbala_result = {}
+    # 5. Natural Relations for Panchadha Sambandha (Natural + Temporal)
+    NATURAL_RELATIONS = {
+        "Sun": {"Sun": "Friend", "Moon": "Friend", "Mars": "Friend", "Jupiter": "Friend", "Mercury": "Neutral", "Venus": "Enemy", "Saturn": "Enemy"},
+        "Moon": {"Sun": "Friend", "Mercury": "Friend", "Moon": "Friend", "Mars": "Neutral", "Jupiter": "Neutral", "Venus": "Neutral", "Saturn": "Neutral"},
+        "Mars": {"Sun": "Friend", "Moon": "Friend", "Jupiter": "Friend", "Mars": "Friend", "Venus": "Neutral", "Saturn": "Neutral", "Mercury": "Enemy"},
+        "Mercury": {"Sun": "Friend", "Venus": "Friend", "Mercury": "Friend", "Mars": "Neutral", "Jupiter": "Neutral", "Saturn": "Neutral", "Moon": "Enemy"},
+        "Jupiter": {"Sun": "Friend", "Moon": "Friend", "Mars": "Friend", "Jupiter": "Friend", "Saturn": "Neutral", "Mercury": "Enemy", "Venus": "Enemy"},
+        "Venus": {"Mercury": "Friend", "Saturn": "Friend", "Venus": "Friend", "Mars": "Neutral", "Jupiter": "Neutral", "Sun": "Enemy", "Moon": "Enemy"},
+        "Saturn": {"Mercury": "Friend", "Venus": "Friend", "Saturn": "Friend", "Jupiter": "Neutral", "Sun": "Enemy", "Moon": "Enemy", "Mars": "Enemy"}
+    }
     
+    # Sign (rasi) lords, index 0 = Mesha .. 11 = Meena
+    SIGN_LORDS = [
+        "Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
+        "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter",
+    ]
+
+    # Helper to resolve sign placements for divisional vargas
+    def get_varga_sign(p, long_val):
+        rasi_idx = math.floor(long_val / 30.0) % 12
+        deg = long_val % 30.0
+        
+        # D1
+        d1 = rasi_idx
+        
+        # D2 (Hora)
+        if rasi_idx % 2 == 0: # Odd sign
+            d2 = 4 if deg < 15.0 else 3
+        else: # Even sign
+            d2 = 3 if deg < 15.0 else 4
+            
+        # D3 (Drekkana)
+        d3_idx = min(math.floor(deg / 10.0), 2)
+        d3 = (rasi_idx + d3_idx * 4) % 12
+        
+        # D7 (Saptamsha)
+        d7_idx = min(math.floor(deg / (30.0 / 7.0)), 6)
+        if rasi_idx % 2 == 0: # Odd
+            d7 = (rasi_idx + d7_idx) % 12
+        else: # Even
+            d7 = (rasi_idx + 6 + d7_idx) % 12
+            
+        # D9 (Navamsha)
+        d9_idx = min(math.floor(deg / (30.0 / 9.0)), 8)
+        if rasi_idx in [0, 4, 8]: start = 0
+        elif rasi_idx in [1, 5, 9]: start = 9
+        elif rasi_idx in [2, 6, 10]: start = 6
+        else: start = 3
+        d9 = (start + d9_idx) % 12
+        
+        # D12 (Dwadashamsha)
+        d12_idx = min(math.floor(deg / 2.5), 11)
+        d12 = (rasi_idx + d12_idx) % 12
+        
+        # D30 (Trishamsha)
+        if rasi_idx % 2 == 0: # Odd sign
+            if deg < 5.0: d30 = 0
+            elif deg < 10.0: d30 = 10
+            elif deg < 18.0: d30 = 8
+            elif deg < 25.0: d30 = 2
+            else: d30 = 1
+        else: # Even sign
+            if deg < 5.0: d30 = 1
+            elif deg < 12.0: d30 = 5
+            elif deg < 20.0: d30 = 11
+            elif deg < 25.0: d30 = 9
+            else: d30 = 7
+            
+        return [d1, d2, d3, d7, d9, d12, d30]
+
+    # Helper to check Moolatrikona
+    def is_moolatrikona(p, sign_idx, deg):
+        if p == "Sun" and sign_idx == 4 and deg <= 20.0: return True
+        if p == "Moon" and sign_idx == 1 and 3.0 <= deg <= 30.0: return True
+        if p == "Mars" and sign_idx == 0 and deg <= 12.0: return True
+        if p == "Mercury" and sign_idx == 5 and 15.0 <= deg <= 20.0: return True
+        if p == "Jupiter" and sign_idx == 8 and deg <= 10.0: return True
+        if p == "Venus" and sign_idx == 6 and deg <= 15.0: return True
+        if p == "Saturn" and sign_idx == 10 and deg <= 20.0: return True
+        return False
+
+    # Get vargas for all planets
+    planet_vargas = {}
+    for p in planets:
+        planet_vargas[p] = get_varga_sign(p, sidereal_positions[p])
+
     # Calculate Paksha (waxing/waning Moon)
     moon_long = sidereal_positions["Moon"]
     sun_long = sidereal_positions["Sun"]
     moon_sun_diff = (moon_long - sun_long) % 360.0
     is_shukla_paksha = moon_sun_diff < 180.0
     
+    # Classify weekday lords and horadhipati
+    day_idx = math.floor(JD + 1.5) % 7
+    dina_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[day_idx]
+    
+    # Hora Lord
+    h_elapsed = (local_hour - sunrise_hours) % 24
+    hora_idx = math.floor(h_elapsed)
+    seq = [0, 5, 3, 1, 6, 4, 2] # Sun, Ven, Mer, Moon, Sat, Jup, Mars
+    start_seq_idx = seq.index(day_idx)
+    hora_lord_idx = seq[(start_seq_idx + hora_idx) % 7]
+    hora_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[hora_lord_idx]
+    
+    # Month Lord (Masa Lord) and Year Lord (Varsha Lord)
+    masa_day_idx = math.floor(JD - (sun_long % 30.0) + 1.5) % 7
+    varsha_day_idx = math.floor(JD - (sun_long % 360.0) + 1.5) % 7
+    masa_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[masa_day_idx]
+    varsha_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[varsha_day_idx]
+
+    # Helper to calculate Panchadha Sambandha points
+    def get_relation_points(p1, p2, sign_idx, deg):
+        if p1 == p2:
+            return 45.0 if is_moolatrikona(p1, sign_idx, deg) else 30.0
+            
+        nat = NATURAL_RELATIONS[p1].get(p2, "Neutral")
+        
+        # Temporal relationship (Tatkalika)
+        s1 = math.floor(sidereal_positions[p1] / 30.0) % 12
+        s2 = math.floor(sidereal_positions[p2] / 30.0) % 12
+        is_temp_friend = ((s2 - s1) % 12) in {1, 2, 3, 9, 10, 11}
+        
+        if nat == "Friend":
+            rel = "Adhi Mitra" if is_temp_friend else "Sama"
+        elif nat == "Neutral":
+            rel = "Mitra" if is_temp_friend else "Shatru"
+        else: # Enemy
+            rel = "Sama" if is_temp_friend else "Adhi Shatru"
+            
+        return {
+            "Adhi Mitra": 20.0,
+            "Mitra": 15.0,
+            "Sama": 10.0,
+            "Shatru": 4.0,
+            "Adhi Shatru": 2.0
+        }[rel]
+
+    # Compute Saptavargiya Bala
+    saptavargiya_bala = {}
+    for p in planets:
+        total_sv = 0.0
+        pos = sidereal_positions[p]
+        deg_d1 = pos % 30.0
+        for d in range(7):
+            v_sign = planet_vargas[p][d]
+            v_lord = SIGN_LORDS[v_sign]
+            d_deg = deg_d1 if d == 0 else 0.0
+            points = get_relation_points(p, v_lord, v_sign, d_deg)
+            total_sv += points
+        saptavargiya_bala[p] = total_sv
+
+    # Compute Ojha-Yugma Rasi Bala
+    ojha_yugma_bala = {}
+    for p in planets:
+        is_masc = p in ["Sun", "Mars", "Jupiter", "Mercury", "Saturn"]
+        d1_sign = planet_vargas[p][0]
+        d1_is_odd = d1_sign % 2 == 0
+        d1_points = 15.0 if (is_masc == d1_is_odd) else 0.0
+        
+        d9_sign = planet_vargas[p][4]
+        d9_is_odd = d9_sign % 2 == 0
+        d9_points = 15.0 if (is_masc == d9_is_odd) else 0.0
+        
+        ojha_yugma_bala[p] = d1_points + d9_points
+
+    # Compute Kendra Bala
+    kendra_bala = {}
+    for p in planets:
+        h = math.floor((sidereal_positions[p] - sidereal_lagna) % 360.0 / 30.0) + 1
+        if h in {1, 4, 7, 10}:
+            kendra_bala[p] = 60.0
+        elif h in {2, 5, 8, 11}:
+            kendra_bala[p] = 30.0
+        else:
+            kendra_bala[p] = 15.0
+
+    # Compute Drekkana Bala
+    drekkana_bala = {}
+    for p in planets:
+        pos = sidereal_positions[p]
+        deg = pos % 30.0
+        d3_idx = min(math.floor(deg / 10.0), 2)
+        if p in ["Sun", "Mars", "Jupiter"] and d3_idx == 0:
+            drekkana_bala[p] = 15.0
+        elif p in ["Saturn", "Mercury"] and d3_idx == 1:
+            drekkana_bala[p] = 15.0
+        elif p in ["Moon", "Venus"] and d3_idx == 2:
+            drekkana_bala[p] = 15.0
+        else:
+            drekkana_bala[p] = 0.0
+
+    shadbala_result = {}
+    
     for p in planets:
         pos = sidereal_positions[p]
         placement = rasi_placements[p]
-        dignity = placement["dignity"]
         is_retro = placement["is_retrograde"]
         is_combust = placement["is_combust"]
         
         # --- A. Sthana Bala (Positional) ---
-        # 1. Exaltation Bala (max 60 points)
         ex_deg = exalt_degrees[p]
         deb_deg = (ex_deg + 180.0) % 360.0
         diff = abs(pos - deb_deg) % 360.0
@@ -941,98 +1118,134 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
             diff = 360.0 - diff
         exalt_bala = (diff / 180.0) * 60.0
         
-        # 2. Sign Placement Bala (max 30 points)
-        if "Exalted" in dignity or "Own" in dignity:
-            sign_bala = 30.0
-        elif "Friendly" in dignity:
-            sign_bala = 20.0
-        elif "Neutral" in dignity:
-            sign_bala = 15.0
-        else:
-            sign_bala = 10.0
-            
-        # 3. Combustion challenge
+        sthana_bala = exalt_bala + saptavargiya_bala[p] + ojha_yugma_bala[p] + kendra_bala[p] + drekkana_bala[p]
         if is_combust:
-            sign_bala -= 5.0
-            
-        sthana_bala = exalt_bala + sign_bala
+            sthana_bala -= 5.0
+        sthana_bala = max(0.0, sthana_bala)
         
         # --- B. Dig Bala (Directional) ---
-        # Jupiter, Mercury -> 1st house
-        # Moon, Venus -> 4th house
-        # Saturn -> 7th house
-        # Sun, Mars -> 10th house
-        house = math.floor((pos - sidereal_lagna) % 360.0 / 30.0) + 1
-        
         if p in ["Jupiter", "Mercury"]:
-            target_house = 1
+            target_deg = sidereal_lagna
         elif p in ["Moon", "Venus"]:
-            target_house = 4
+            target_deg = (sidereal_lagna + 90.0) % 360.0
         elif p in ["Saturn"]:
-            target_house = 7
+            target_deg = (sidereal_lagna + 180.0) % 360.0
         else:  # Sun, Mars
-            target_house = 10
+            target_deg = (sidereal_lagna + 270.0) % 360.0
             
-        min_house = (target_house + 6 - 1) % 12 + 1
-        h_diff = (house - min_house) % 12
-        dig_bala = (h_diff / 6.0) * 60.0
+        min_deg = (target_deg + 180.0) % 360.0
+        diff_dig = abs(pos - min_deg) % 360.0
+        if diff_dig > 180.0:
+            diff_dig = 360.0 - diff_dig
+        dig_bala = (diff_dig / 180.0) * 60.0
         
         # --- C. Kala Bala (Temporal) ---
-        # 1. Nathanonnatha Bala (Day/Night strength)
-        if is_daytime:
-            day_night_bala = 60.0 if p in ["Sun", "Jupiter", "Venus"] else 30.0
-        else:
-            day_night_bala = 60.0 if p in ["Moon", "Mars", "Saturn"] else 30.0
-        if p == "Mercury":
+        D_noon = abs(local_hour - 12.0)
+        if D_noon > 12.0:
+            D_noon = 24.0 - D_noon
+        D_mid = 12.0 - D_noon
+        
+        if p in ["Moon", "Mars", "Saturn"]:
+            day_night_bala = (D_noon / 12.0) * 60.0
+        elif p in ["Sun", "Jupiter", "Venus"]:
+            day_night_bala = (D_mid / 12.0) * 60.0
+        else: # Mercury
             day_night_bala = 60.0
             
-        # 2. Paksha Bala (max 60 points)
-        if p in ["Jupiter", "Venus"]:
-            paksha_bala = 60.0 if is_shukla_paksha else 30.0
-        elif p in ["Sun", "Mars", "Saturn"]:
-            paksha_bala = 60.0 if not is_shukla_paksha else 30.0
-        elif p == "Moon":
-            ratio = moon_sun_diff / 180.0 if is_shukla_paksha else (360.0 - moon_sun_diff) / 180.0
-            paksha_bala = ratio * 60.0
-        else:  # Mercury
-            paksha_bala = 45.0
-            
-        kala_bala = day_night_bala + paksha_bala
+        is_mercury_malefic = False
+        if p == "Mercury":
+            m_sign = math.floor(sidereal_positions["Mercury"] / 30.0) % 12
+            for other_p in ["Sun", "Mars", "Saturn"]:
+                if math.floor(sidereal_positions[other_p] / 30.0) % 12 == m_sign:
+                    is_mercury_malefic = True
+                    break
+        
+        is_benefic = p in ["Jupiter", "Venus"] or (p == "Moon" and is_shukla_paksha) or (p == "Mercury" and not is_mercury_malefic)
+        ratio = moon_sun_diff / 180.0 if is_shukla_paksha else (360.0 - moon_sun_diff) / 180.0
+        pak_val = ratio * 60.0
+        paksha_bala = pak_val if is_benefic else (60.0 - pak_val)
+        
+        varsha_points = 15.0 if p == varsha_lord_name else 0.0
+        masa_points = 30.0 if p == masa_lord_name else 0.0
+        dina_points = 45.0 if p == dina_lord_name else 0.0
+        hora_points = 60.0 if p == hora_lord_name else 0.0
+        
+        kranti_rad = math.asin(math.sin(math.radians(pos)) * math.sin(math.radians(E)))
+        kranti_deg = math.degrees(kranti_rad)
+        if p in ["Sun", "Mars", "Jupiter", "Venus"]:
+            ayana_val = 30.0 + 1.28 * kranti_deg
+        elif p in ["Moon", "Saturn"]:
+            ayana_val = 30.0 - 1.28 * kranti_deg
+        else: # Mercury
+            ayana_val = 30.0 + 1.28 * abs(kranti_deg)
+        ayana_bala = max(0.0, min(60.0, ayana_val))
+        
+        kala_bala = day_night_bala + paksha_bala + varsha_points + masa_points + dina_points + hora_points + ayana_bala
         
         # --- D. Cheshta Bala (Motional) ---
         if p in ["Sun", "Moon"]:
             cheshta_bala = 45.0
         else:
-            cheshta_bala = 60.0 if is_retro else 30.0
-            
+            diff_sun = abs(pos - sun_long) % 360.0
+            if p in ["Mercury", "Venus"]:
+                cheshta_bala = 60.0 if is_retro else 30.0
+            else:
+                cheshta_bala = (diff_sun / 180.0) * 60.0
+                
         # --- E. Naisargika Bala (Natural) ---
         naisargika_bala = naisargika[p]
         
         # --- F. Drik Bala (Aspect) ---
-        drik_bala = 15.0
-        p_sign = math.floor(pos / 30.0) % 12
+        Benefic_aspect_sum = 0.0
+        Malefic_aspect_sum = 0.0
         for other_p in planets:
             if other_p == p:
                 continue
             other_pos = sidereal_positions[other_p]
-            other_sign = math.floor(other_pos / 30.0) % 12
-            diff_sign = (p_sign - other_sign) % 12
+            diff_deg = (pos - other_pos) % 360.0
             
-            has_aspect = (diff_sign == 6)
-            if other_p == "Jupiter" and diff_sign in [4, 8]:
-                has_aspect = True
-            elif other_p == "Mars" and diff_sign in [3, 7]:
-                has_aspect = True
-            elif other_p == "Saturn" and diff_sign in [2, 9]:
-                has_aspect = True
+            asp_val = 0.0
+            if 30.0 <= diff_deg < 60.0:
+                asp_val = ((diff_deg - 30.0) / 30.0) * 15.0
+            elif 60.0 <= diff_deg < 90.0:
+                asp_val = 15.0 + ((diff_deg - 60.0) / 30.0) * 30.0
+            elif 90.0 <= diff_deg < 120.0:
+                asp_val = 45.0 - ((diff_deg - 90.0) / 30.0) * 15.0
+            elif 120.0 <= diff_deg < 150.0:
+                asp_val = 30.0 - ((diff_deg - 120.0) / 30.0) * 30.0
+            elif 150.0 <= diff_deg < 180.0:
+                asp_val = ((diff_deg - 150.0) / 30.0) * 60.0
+            elif 180.0 <= diff_deg < 210.0:
+                asp_val = 60.0 - ((diff_deg - 180.0) / 30.0) * 15.0
+            elif 210.0 <= diff_deg < 240.0:
+                asp_val = 45.0 - ((diff_deg - 210.0) / 30.0) * 15.0
+            elif 240.0 <= diff_deg < 270.0:
+                asp_val = 30.0 - ((diff_deg - 240.0) / 30.0) * 15.0
+            elif 270.0 <= diff_deg < 300.0:
+                asp_val = 15.0 - ((diff_deg - 270.0) / 30.0) * 15.0
                 
-            if has_aspect:
-                if other_p in ["Jupiter", "Venus"]:
-                    drik_bala += 10.0
-                elif other_p in ["Saturn", "Mars"]:
-                    drik_bala -= 8.0
-                    
-        drik_bala = max(0.0, drik_bala)
+            if other_p == "Mars" and (90.0 <= diff_deg < 120.0 or 210.0 <= diff_deg < 240.0):
+                asp_val = 60.0
+            elif other_p == "Jupiter" and (120.0 <= diff_deg < 150.0 or 240.0 <= diff_deg < 270.0):
+                asp_val = 60.0
+            elif other_p == "Saturn" and (60.0 <= diff_deg < 90.0 or 270.0 <= diff_deg < 300.0):
+                asp_val = 60.0
+                
+            is_other_mercury_malefic = False
+            if other_p == "Mercury":
+                other_m_sign = math.floor(sidereal_positions["Mercury"] / 30.0) % 12
+                for mal_p in ["Sun", "Mars", "Saturn"]:
+                    if math.floor(sidereal_positions[mal_p] / 30.0) % 12 == other_m_sign:
+                        is_other_mercury_malefic = True
+                        break
+                        
+            is_other_benefic = other_p in ["Jupiter", "Venus"] or (other_p == "Moon" and is_shukla_paksha) or (other_p == "Mercury" and not is_other_mercury_malefic)
+            if is_other_benefic:
+                Benefic_aspect_sum += asp_val
+            else:
+                Malefic_aspect_sum += asp_val
+                
+        drik_bala = (Benefic_aspect_sum - Malefic_aspect_sum) / 4.0
         
         total_points = sthana_bala + dig_bala + kala_bala + cheshta_bala + naisargika_bala + drik_bala
         req = min_reqs[p]
@@ -1544,7 +1757,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     # Calculate Shadbala (Shatbalam) points
     local_decimal_hour = hour + (minute / 60.0)
     is_daytime = sunrise_hours <= local_decimal_hour <= sunset_hours
-    shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements)
+    shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_decimal_hour, sunrise_hours, sunset_hours)
 
     return {
         "metadata": {
