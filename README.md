@@ -106,6 +106,10 @@ it in production.**
 
 ## Other configuration
 
+See **`.env.example`** for a documented template of every supported variable
+(`cp .env.example .env` and load it before launch — the app reads the process
+environment, it doesn't auto-load `.env`).
+
 All env-overridable (see `config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
 `OLLAMA_HOST`, `VEDIC_EMBED_MODEL`, `VEDIC_EMBED_DIM`, `VEDIC_LLM_MODEL`,
 `VEDIC_EMBED_TIMEOUT`, `VEDIC_LLM_TIMEOUT`.
