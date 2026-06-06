@@ -37,6 +37,7 @@ from config import (
     STRIPE_SECRET_KEY,
     ALLOW_SIMULATED_PAYMENTS,
     CORS_ALLOW_ORIGINS,
+    UNLIMITED_EMAILS,
     connect_db,
 )
 import re
@@ -286,10 +287,14 @@ def check_credits_or_raise(token: str, cost: int, action_type: str):
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
-    
+
+    # Allowlisted (e.g. operator) accounts skip metering entirely.
+    if (user.get("email") or "").lower() in UNLIMITED_EMAILS:
+        return user
+
     if user["subscription_active"]:
         return user
-    
+
     if user["credit_balance"] < cost:
         raise HTTPException(
             status_code=402, 

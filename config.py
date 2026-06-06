@@ -53,6 +53,15 @@ FACEBOOK_APP_SECRET = os.environ.get("FACEBOOK_APP_SECRET", "")
 # cannot be used to take over real users. NEVER enable this in production.
 ALLOW_MOCK_OAUTH = os.environ.get("VEDIC_ALLOW_MOCK_OAUTH", "0") == "1"
 
+# --- Credit exemptions ---
+# Comma-separated emails that bypass the credit/subscription metering entirely
+# (e.g. the operator/admin account). Matched case-insensitively.
+UNLIMITED_EMAILS = {
+    e.strip().lower()
+    for e in os.environ.get("VEDIC_UNLIMITED_EMAILS", "").split(",")
+    if e.strip()
+}
+
 # --- Billing / payments ---
 # Real payment processing is not wired up. Set STRIPE_SECRET_KEY to integrate
 # Stripe (the buy-credits/subscribe handlers must then create real

@@ -24,6 +24,10 @@ memory.md
 # Secrets
 .api_key
 
+# Runtime logs
+server.log
+*.log
+
 # Generated newsletters
 static/newsletters_sent/
 newsletters_sent/
