@@ -421,7 +421,7 @@ def jd_to_date_string(jd):
 
 def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
     """
-    Calculate 100-year chronologically sequenced Vimshottari Dasas and Bhuktis
+    Calculate 120-year chronologically sequenced Vimshottari Dasas and Bhuktis
     based on the Moon's exact fractional position inside the birth Nakshatra.
     """
     # 1. Total span of one Nakshatra is 13.333333 degrees (800 arcminutes)
@@ -1429,7 +1429,7 @@ def calculate_precise_rise_set(jd_sunrise, longitude, latitude, timezone_offset=
 def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male"):
     """
     Master function to calculate the complete Sidereal astrological chart
-    with Thirukanitha panchangam planet coordinates and 100-year Dasas.
+    with Thirukanitha panchangam planet coordinates and 120-year Dasas.
     """
     # 1. Convert local birth time to UT (Universal Time) using standard timezone offset
     if timezone_offset is None:
@@ -1680,7 +1680,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     tamil_day = math.floor(sidereal_positions["Sun"] % 30.0) + 1
     tamil_date = f"{tamil_month} {tamil_day}"
     
-    # 8. Compute 100-Year Vimshottari Dasas
+    # 8. Compute 120-Year Vimshottari Dasas
     dasa_table = calculate_vimshottari_dasa(JD, sidereal_positions["Moon"], birth_naks_idx)
     
     # --- Additional astronomical calculations for birth details ---

@@ -710,7 +710,7 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en"):
 
 @app.post("/api/calculate-chart")
 def calculate_chart(req: BirthChartRequest, raw_req: Request):
-    """Calculate Sidereal chart with Thirukanitha positions and 100-year Dasas"""
+    """Calculate Sidereal chart with Thirukanitha positions and 120-year Dasas"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
     check_credits_or_raise(token, 50, "calculate_chart")
     try:
