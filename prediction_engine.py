@@ -658,6 +658,8 @@ def build_rag_queries(chart, analysis, max_queries=8):
 
     # Strongest / most notable placements first: exalted, debilitated, own, or in kendra/trikona
     def salience(body):
+        if body not in placements or body not in houses:
+            return -999
         p = placements[body]
         score = 0
         dig = p.get("dignity", "")
@@ -669,6 +671,8 @@ def build_rag_queries(chart, analysis, max_queries=8):
         return score
 
     for body in sorted(GRAHAS, key=salience, reverse=True)[:4]:
+        if body not in placements or body not in houses:
+            continue
         queries.append(f"{body} in {_ord(houses[body])} house results effects")
 
     # Conjunctions
