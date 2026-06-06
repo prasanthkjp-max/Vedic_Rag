@@ -1519,6 +1519,82 @@
         .ashtaka-cell.low  { border-color: rgba(220, 38, 38, 0.28);  color: #be123c; }
 
         /* ════════════════════════════════════════
+           ASTROLOGY STRENGTH & DASA UI (enhanced)
+        ════════════════════════════════════════ */
+        /* -- Sliding toggle switch -- */
+        .vx-toggle { display:inline-flex; align-items:center; gap:7px; cursor:pointer; user-select:none;
+            font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; }
+        .vx-toggle input { display:none; }
+        .vx-cap { color:var(--text-muted); transition:color .2s; }
+        .vx-track { position:relative; width:38px; height:20px; border-radius:20px;
+            background:rgba(217,119,6,.20); border:1px solid var(--border-gold); transition:background .25s,border-color .25s; flex-shrink:0; }
+        .vx-thumb { position:absolute; top:1px; left:1px; width:16px; height:16px; border-radius:50%;
+            background:linear-gradient(135deg,#fbbf24,#ea580c); box-shadow:0 1px 3px rgba(124,45,18,.4); transition:transform .25s ease; }
+        .vx-toggle input:checked + .vx-track { background:rgba(124,58,237,.22); border-color:var(--border-violet); }
+        .vx-toggle input:checked + .vx-track .vx-thumb { transform:translateX(18px); background:linear-gradient(135deg,#a78bfa,#7c3aed); }
+
+        /* -- Shadbala bars -- */
+        .sb-row { display:flex; flex-direction:column; gap:3px; }
+        .sb-head { display:flex; justify-content:space-between; align-items:center; font-size:10px; font-weight:700; color:var(--text-primary); }
+        .sb-name { display:flex; align-items:center; gap:6px; }
+        .sb-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .sb-val { font-size:9px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:6px; }
+        .sb-track { height:9px; border-radius:6px; background:rgba(217,119,6,.10); overflow:hidden; border:1px solid rgba(217,119,6,.12); }
+        .sb-fill { height:100%; border-radius:6px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+        .sb-chip { font-size:8px; font-weight:800; padding:1px 6px; border-radius:20px; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; }
+        .sb-chip.strong { background:rgba(16,185,129,.16); color:#047857; }
+        .sb-chip.avg    { background:rgba(245,158,11,.20); color:#b45309; }
+        .sb-chip.weak   { background:rgba(239,68,68,.15);  color:#b91c1c; }
+
+        /* -- Shadbala table -- */
+        .sb-table { width:100%; border-collapse:collapse; font-size:9px; }
+        .sb-table th { color:var(--accent-azure); font-weight:800; text-align:center; padding:5px 2px;
+            border-bottom:1px solid var(--border-gold); text-transform:uppercase; font-size:7.5px; letter-spacing:.2px; }
+        .sb-table td { text-align:center; padding:5px 2px; color:var(--text-secondary); border-bottom:1px solid rgba(217,119,6,.10); }
+        .sb-table td.sb-pl { text-align:left; font-weight:700; color:var(--text-primary); white-space:nowrap; }
+        .sb-table td.sb-tot { font-weight:800; color:var(--text-primary); }
+        .sb-table tr:hover td { background:rgba(254,243,199,.45); }
+
+        /* -- Ashtakavarga colourful boxes -- */
+        .av-cell { border-radius:10px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; gap:2px;
+            border:1px solid transparent; transition:transform .15s,box-shadow .15s; }
+        .av-cell:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(124,45,18,.10); }
+        .av-sign { font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:.2px; opacity:.9; }
+        .av-num  { font-size:17px; font-weight:900; line-height:1; }
+        .av-cell.strong { background:linear-gradient(135deg,rgba(16,185,129,.20),rgba(16,185,129,.06)); border-color:rgba(16,185,129,.42); color:#065f46; }
+        .av-cell.avg    { background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(245,158,11,.05)); border-color:rgba(217,119,6,.42); color:#92400e; }
+        .av-cell.weak   { background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(239,68,68,.05)); border-color:rgba(239,68,68,.38); color:#991b1b; }
+        .av-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:8.5px; color:var(--text-secondary); font-weight:600; }
+        .av-leg { display:flex; align-items:center; gap:4px; }
+        .av-sw { width:11px; height:11px; border-radius:3px; }
+
+        /* -- Vimshottari dasa accordion -- */
+        .dz-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:12px; margin-top:14px; }
+        .dz-card { background:var(--bg-card); border:1px solid var(--border-gold); border-radius:12px; overflow:hidden;
+            box-shadow:0 2px 8px rgba(124,45,18,.06); display:flex; flex-direction:column; }
+        .dz-card.active { border-color:var(--accent-violet); box-shadow:0 0 0 2px rgba(124,58,237,.22),0 6px 16px rgba(124,58,237,.14); }
+        .dz-head { padding:9px 12px; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+        .dz-pl { font-family:var(--font-heading); font-weight:700; font-size:13px; letter-spacing:.5px; display:flex; align-items:center; gap:7px; }
+        .dz-dur { font-size:8.5px; font-weight:800; background:rgba(255,255,255,.28); padding:2px 8px; border-radius:20px; }
+        .dz-now { font-size:7px; font-weight:800; background:#fff; color:var(--accent-violet); padding:1px 6px; border-radius:20px; letter-spacing:.5px; }
+        .dz-dates { font-size:8.5px; color:var(--text-muted); padding:5px 12px; border-bottom:1px solid rgba(217,119,6,.12); background:rgba(254,243,199,.3); }
+        .dz-bhuktis { padding:4px; display:flex; flex-direction:column; gap:1px; }
+        .dz-bhukti-head { display:flex; justify-content:space-between; align-items:center; padding:5px 8px; font-size:9.5px; cursor:pointer; border-radius:7px; transition:background .15s; }
+        .dz-bhukti-head:hover { background:rgba(254,243,199,.6); }
+        .dz-b-name { display:flex; align-items:center; gap:6px; font-weight:600; color:var(--text-secondary); }
+        .dz-b-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+        .dz-b-date { font-size:8px; color:var(--text-muted); display:flex; align-items:center; gap:4px; }
+        .dz-bhukti.active > .dz-bhukti-head { background:rgba(124,58,237,.10); }
+        .dz-bhukti.active .dz-b-name { color:var(--accent-violet); font-weight:800; }
+        .dz-antaram { display:none; padding:3px 6px 6px 16px; flex-direction:column; gap:1px; }
+        .dz-bhukti.open .dz-antaram { display:flex; }
+        .dz-antaram-item { display:flex; justify-content:space-between; font-size:8px; color:var(--text-muted);
+            padding:2px 7px; border-left:2px solid rgba(245,158,11,.35); border-radius:0 4px 4px 0; }
+        .dz-antaram-item.active { border-left-color:var(--accent-violet); background:rgba(124,58,237,.08); color:var(--accent-violet); font-weight:700; }
+        .dz-chev { font-size:7px; color:var(--accent-gold); transition:transform .2s; }
+        .dz-bhukti.open .dz-chev { transform:rotate(180deg); }
+
+        /* ════════════════════════════════════════
            DAILY KAALAMS
         ════════════════════════════════════════ */
         .kaalams-grid {
@@ -2374,8 +2450,16 @@
                     <div class="strengths-section" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                         <!-- Shatbalam Panel -->
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-gold); background: var(--bg-darker); border-radius: 12px;">
-                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-chart-bar"></i> <span id="lbl-shatbalam-title">Shatbalam (Planetary Strengths)</span>
+                            <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <i class="fa-solid fa-chart-bar"></i> <span id="lbl-shatbalam-title">Shatbalam (Planetary Strengths)</span>
+                                </div>
+                                <label class="vx-toggle" title="Switch between bar and table view">
+                                    <span class="vx-cap" data-cap="bars" style="color:var(--accent-cosmic);">Bars</span>
+                                    <input type="checkbox" id="shadbala-view-toggle" onchange="toggleShadbalaView()">
+                                    <span class="vx-track"><span class="vx-thumb"></span></span>
+                                    <span class="vx-cap" data-cap="table">Table</span>
+                                </label>
                             </div>
                             <p id="lbl-shatbalam-desc" style="font-size: 10px; color: var(--text-secondary); margin-bottom: 12px;">Six-fold mathematical planetary power (Shadbala) comparison against scriptural minimum requirements.</p>
                             <div id="shadbala-bars-container" style="display: flex; flex-direction: column; gap: 10px;">
@@ -2404,6 +2488,7 @@
                             <div id="ashtakavarga-grid-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-family: 'Space Grotesk', sans-serif; text-align: center;">
                                 <!-- Populated dynamically -->
                             </div>
+                            <div id="ashtakavarga-legend" class="av-legend"><!-- legend rendered dynamically --></div>
                         </div>
                     </div>
 
@@ -5743,108 +5828,154 @@
                 tableBody.innerHTML += rowHtml;
             });
 
-            // Render Vimshottari Dasas Cards
-            const dasaGrid = document.getElementById('dasa-grid-list');
-            dasaGrid.innerHTML = '';
-            
-            calculatedChartData.dasas.forEach(dasa => {
-                let bhuktisHtml = '';
-                dasa.bhuktis.slice(0, 9).forEach((b, bIdx) => {
-                    let antaramHtml = '';
-                    if (b.pratyantars) {
-                        b.pratyantars.forEach(pd => {
-                            antaramHtml += `
-                                <div class="antaram-item">
-                                    <span>${pd.pratyantar_lord}</span>
-                                    <span>${pd.start_date}</span>
-                                </div>
-                            `;
-                        });
-                    }
-                    const antaramId = `antaram-${dasa.dasa_lord.toLowerCase()}-${b.bhukti_lord.toLowerCase()}-${bIdx}`;
-                    bhuktisHtml += `
-                        <div class="bhukti-item-wrapper" style="margin-bottom: 2px;">
-                            <div class="bhukti-item" onclick="toggleAntaram('${antaramId}')" style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-secondary); cursor: pointer;">
-                                <span>${b.bhukti_lord}</span>
-                                <span>${b.start_date} <i class="fa-solid fa-chevron-down" style="font-size: 6px; margin-left: 2px; color: var(--accent-gold);"></i></span>
-                            </div>
-                            <div class="antaram-list" id="${antaramId}">
-                                ${antaramHtml}
-                            </div>
-                        </div>
-                    `;
-                });
-
-                const cardHtml = `
-                    <div class="dasa-card">
-                        <div class="dasa-lord-header">
-                            <span>${dasa.dasa_lord.toUpperCase()}</span>
-                            <span style="font-size: 8px; color: var(--accent-gold);">${dasa.duration_years} Y</span>
-                        </div>
-                        <div class="dasa-dates">From: ${dasa.start_date}<br>To: ${dasa.end_date}</div>
-                        <div class="bhuktis-list">
-                            ${bhuktisHtml}
-                        </div>
-                    </div>
-                `;
-                dasaGrid.innerHTML += cardHtml;
-            });
+            // Render Vimshottari Dasa accordion (Mahadasa -> Bhukti -> Antaram)
+            renderDasaAccordion();
 
             // Populate Shatbalam and Ashtakavarga grids!
-            renderShadbalaBars();
+            renderShadbala();
             renderAshtakavargaGrid();
         }
 
-        function renderShadbalaBars() {
-            const container = document.getElementById('shadbala-bars-container');
-            if (!container || !calculatedChartData || !calculatedChartData.shadbala) return;
-            
-            container.innerHTML = '';
-            
-            const planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
-            
-            planets.forEach(p => {
-                const data = calculatedChartData.shadbala[p];
-                if (!data) return;
-                
-                let barColor = "#ef4444"; // Weak (red)
-                if (data.percentage_strength >= 100.0) {
-                    barColor = "#10b981"; // Strong (emerald green)
-                } else if (data.percentage_strength >= 85.0) {
-                    barColor = "#f59e0b"; // Average (warm gold)
-                }
-                
-                const tooltipHtml = `
-                    <div class="shadbala-tooltip">
-                        <strong style="color: var(--accent-gold); font-size: 11px;">${p.toUpperCase()} Strength Breakup</strong><br>
-                        <hr style="border-color: rgba(255,255,255,0.1); margin: 4px 0;">
-                        Sthana Bala (Positional): ${data.sthana_bala} pt<br>
-                        Dig Bala (Directional): ${data.dig_bala} pt<br>
-                        Kala Bala (Temporal): ${data.kala_bala} pt<br>
-                        Cheshta Bala (Motional): ${data.cheshta_bala} pt<br>
-                        Naisargika Bala (Natural): ${data.naisargika_bala} pt<br>
-                        Drik Bala (Aspect): ${data.drik_bala} pt<br>
-                        <hr style="border-color: rgba(255,255,255,0.1); margin: 4px 0;">
-                        <strong>Total Shadbala: ${data.total_points} / ${data.required_points} pt (${data.percentage_strength}%)</strong>
-                    </div>
-                `;
-                
-                const itemHtml = `
-                    <div class="shadbala-bar-wrapper">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; font-weight: bold; color: var(--text-primary);">
-                            <span>${p.toUpperCase()}</span>
-                            <span>${data.total_points} / ${data.required_points} pt (${data.percentage_strength}%)</span>
+        // Planet colours used across the strength + dasa UI
+        const PLANET_COLORS = {
+            Sun:'#ea580c', Moon:'#0284c7', Mars:'#dc2626', Mercury:'#16a34a',
+            Jupiter:'#d97706', Venus:'#db2777', Saturn:'#4f46e5', Rahu:'#475569', Ketu:'#78716c'
+        };
+        function planetColor(p){ return PLANET_COLORS[p] || '#9a3412'; }
+        function todayISO(){
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+        // Periods carry ISO (YYYY-MM-DD) strings, which compare correctly as text.
+        function isActivePeriod(start, end){ const t = todayISO(); return !!start && !!end && start <= t && t < end; }
+
+        function renderDasaAccordion() {
+            const dasaGrid = document.getElementById('dasa-grid-list');
+            if (!dasaGrid || !calculatedChartData || !calculatedChartData.dasas) return;
+            dasaGrid.className = 'dz-grid';
+            dasaGrid.innerHTML = '';
+
+            calculatedChartData.dasas.forEach((dasa, dIdx) => {
+                const mActive = isActivePeriod(dasa.start_date, dasa.end_date);
+                const pColor = planetColor(dasa.dasa_lord);
+                let bhuktisHtml = '';
+
+                dasa.bhuktis.slice(0, 9).forEach((b, bIdx) => {
+                    const bActive = isActivePeriod(b.start_date, b.end_date);
+                    let antaramHtml = '';
+                    (b.pratyantars || []).forEach(pd => {
+                        const aActive = isActivePeriod(pd.start_date, pd.end_date);
+                        antaramHtml += `
+                            <div class="dz-antaram-item ${aActive ? 'active' : ''}">
+                                <span>${pd.pratyantar_lord}${aActive ? ' •' : ''}</span>
+                                <span>${pd.start_date}</span>
+                            </div>`;
+                    });
+                    const bid = `dz-${dIdx}-${bIdx}`;
+                    bhuktisHtml += `
+                        <div class="dz-bhukti ${bActive ? 'active' : ''} ${bActive ? 'open' : ''}" id="${bid}">
+                            <div class="dz-bhukti-head" onclick="toggleDz('${bid}')">
+                                <span class="dz-b-name">
+                                    <span class="dz-b-dot" style="background:${planetColor(b.bhukti_lord)};"></span>
+                                    ${b.bhukti_lord}${bActive ? ' <span class="dz-now">NOW</span>' : ''}
+                                </span>
+                                <span class="dz-b-date">${b.start_date} <i class="fa-solid fa-chevron-down dz-chev"></i></span>
+                            </div>
+                            <div class="dz-antaram">${antaramHtml}</div>
+                        </div>`;
+                });
+
+                dasaGrid.innerHTML += `
+                    <div class="dz-card ${mActive ? 'active' : ''}">
+                        <div class="dz-head" style="background:linear-gradient(135deg, ${pColor}, ${pColor}dd);">
+                            <span class="dz-pl">${dasa.dasa_lord}${mActive ? ' <span class="dz-now">NOW</span>' : ''}</span>
+                            <span class="dz-dur">${dasa.duration_years} Y</span>
                         </div>
-                        <div class="shadbala-bar-bg">
-                            <div class="shadbala-bar-fill" style="width: ${Math.min(data.percentage_strength, 100)}%; background: ${barColor};"></div>
-                        </div>
-                        ${tooltipHtml}
-                    </div>
-                `;
-                container.innerHTML += itemHtml;
+                        <div class="dz-dates">${dasa.start_date} &nbsp;→&nbsp; ${dasa.end_date}</div>
+                        <div class="dz-bhuktis">${bhuktisHtml}</div>
+                    </div>`;
             });
         }
-        
+
+        function toggleDz(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('open');
+        }
+
+        let shadbalaViewMode = 'bars';
+        const SHADBALA_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
+
+        function shadbalaTier(pct) { return pct >= 100 ? 'strong' : (pct >= 85 ? 'avg' : 'weak'); }
+        function shadbalaColor(tier) { return tier === 'strong' ? '#10b981' : (tier === 'avg' ? '#f59e0b' : '#ef4444'); }
+        function shadbalaLabel(tier) { return tier === 'strong' ? 'Strong' : (tier === 'avg' ? 'Average' : 'Weak'); }
+
+        function toggleShadbalaView() {
+            const tg = document.getElementById('shadbala-view-toggle');
+            shadbalaViewMode = (tg && tg.checked) ? 'table' : 'bars';
+            const wrap = tg ? tg.closest('.vx-toggle') : null;
+            if (wrap) {
+                const left = wrap.querySelector('[data-cap="bars"]');
+                const right = wrap.querySelector('[data-cap="table"]');
+                if (left)  left.style.color  = shadbalaViewMode === 'bars'  ? 'var(--accent-cosmic)' : 'var(--text-muted)';
+                if (right) right.style.color = shadbalaViewMode === 'table' ? 'var(--accent-violet)' : 'var(--text-muted)';
+            }
+            renderShadbala();
+        }
+
+        function renderShadbala() {
+            const container = document.getElementById('shadbala-bars-container');
+            if (!container || !calculatedChartData || !calculatedChartData.shadbala) return;
+
+            if (shadbalaViewMode === 'table') { renderShadbalaTable(container); return; }
+
+            container.style.display = 'flex';
+            container.innerHTML = '';
+            SHADBALA_PLANETS.forEach(p => {
+                const data = calculatedChartData.shadbala[p];
+                if (!data) return;
+                const tier = shadbalaTier(data.percentage_strength);
+                const color = shadbalaColor(tier);
+                const tip = `${p} — Sthana ${data.sthana_bala}, Dig ${data.dig_bala}, Kala ${data.kala_bala}, `
+                          + `Cheshta ${data.cheshta_bala}, Naisargika ${data.naisargika_bala}, Drik ${data.drik_bala} pt`;
+                container.innerHTML += `
+                    <div class="sb-row" title="${tip}">
+                        <div class="sb-head">
+                            <span class="sb-name"><span class="sb-dot" style="background:${planetColor(p)};"></span>${p}</span>
+                            <span class="sb-val">${data.total_points}/${data.required_points} <span class="sb-chip ${tier}">${data.percentage_strength}%</span></span>
+                        </div>
+                        <div class="sb-track">
+                            <div class="sb-fill" style="width:${Math.min(data.percentage_strength, 100)}%; background:linear-gradient(90deg, ${color}, ${color}aa);"></div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function renderShadbalaTable(container) {
+            container.style.display = 'block';
+            let rows = '';
+            SHADBALA_PLANETS.forEach(p => {
+                const d = calculatedChartData.shadbala[p];
+                if (!d) return;
+                const tier = shadbalaTier(d.percentage_strength);
+                rows += `
+                    <tr>
+                        <td class="sb-pl"><span class="sb-dot" style="display:inline-block;background:${planetColor(p)};margin-right:5px;"></span>${p}</td>
+                        <td>${d.sthana_bala}</td><td>${d.dig_bala}</td><td>${d.kala_bala}</td>
+                        <td>${d.cheshta_bala}</td><td>${d.naisargika_bala}</td><td>${d.drik_bala}</td>
+                        <td class="sb-tot">${d.total_points}</td><td>${d.percentage_strength}%</td>
+                        <td><span class="sb-chip ${tier}">${shadbalaLabel(tier)}</span></td>
+                    </tr>`;
+            });
+            container.innerHTML = `
+                <table class="sb-table">
+                    <thead><tr>
+                        <th style="text-align:left;">Planet</th><th>Sthana</th><th>Dig</th><th>Kala</th>
+                        <th>Cheshta</th><th>Nais.</th><th>Drik</th><th>Total</th><th>%</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
         function renderAshtakavargaGrid() {
             const container = document.getElementById('ashtakavarga-grid-container');
             const selector = document.getElementById('ashtakavarga-select');
@@ -5874,32 +6005,33 @@
             }
             
             if (!pointsArray || pointsArray.length === 0) return;
-            
+
+            const isSav = selectedType === 'sav';
+            const tierOf = (points) => {
+                if (isSav) return points > 28 ? 'strong' : (points < 20 ? 'weak' : 'avg');
+                return points > 4 ? 'strong' : (points < 4 ? 'weak' : 'avg');
+            };
+
+            container.innerHTML = '';
             pointsArray.forEach((points, idx) => {
-                let cellClass = "ashtakavarga-cell ashtakavarga-average";
-                
-                if (selectedType === 'sav') {
-                    if (points > 28) {
-                        cellClass = "ashtakavarga-cell ashtakavarga-strong";
-                    } else if (points < 20) {
-                        cellClass = "ashtakavarga-cell ashtakavarga-weak";
-                    }
-                } else {
-                    if (points > 4) {
-                        cellClass = "ashtakavarga-cell ashtakavarga-strong";
-                    } else if (points < 4) {
-                        cellClass = "ashtakavarga-cell ashtakavarga-weak";
-                    }
-                }
-                
-                const cellHtml = `
-                    <div class="${cellClass}">
-                        <span style="font-size: 8px; font-weight: bold; text-transform: uppercase;">${localizedSigns[idx]}</span>
-                        <span style="font-size: 15px; font-weight: 900; margin-top: 2px;">${points}</span>
-                    </div>
-                `;
-                container.innerHTML += cellHtml;
+                container.innerHTML += `
+                    <div class="av-cell ${tierOf(points)}">
+                        <span class="av-sign">${localizedSigns[idx]}</span>
+                        <span class="av-num">${points}</span>
+                    </div>`;
             });
+
+            // Legend showing the point thresholds for the active view
+            const legend = document.getElementById('ashtakavarga-legend');
+            if (legend) {
+                const labels = isSav
+                    ? { strong: 'Strong (&gt;28)', avg: 'Average (20–28)', weak: 'Weak (&lt;20)' }
+                    : { strong: 'Strong (&gt;4)',  avg: 'Average (4)',      weak: 'Weak (&lt;4)' };
+                legend.innerHTML = `
+                    <span class="av-leg"><span class="av-sw" style="background:#10b981;"></span>${labels.strong}</span>
+                    <span class="av-leg"><span class="av-sw" style="background:#f59e0b;"></span>${labels.avg}</span>
+                    <span class="av-leg"><span class="av-sw" style="background:#ef4444;"></span>${labels.weak}</span>`;
+            }
         }
         
         function toggleAntaram(id) {

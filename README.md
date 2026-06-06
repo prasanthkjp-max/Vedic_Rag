@@ -113,6 +113,9 @@ All env-overridable (see `config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
 - `VEDIC_CORS_ORIGINS` — comma-separated allowed origins (default `*`). Set to
   your real front-end origin in production; credentials are enabled automatically
   once it's no longer the wildcard.
+- `VEDIC_UNLIMITED_EMAILS` — comma-separated emails that bypass credit/
+  subscription metering entirely (e.g. the operator's own account). Matched
+  case-insensitively by `check_credits_or_raise`.
 - Billing: real Stripe is not wired up. `buy-credits`/`subscribe` are **disabled
   by default** (they would otherwise grant credits for free). Set
   `STRIPE_SECRET_KEY` to plug in a real integration, or
