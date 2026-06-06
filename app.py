@@ -276,31 +276,6 @@ class SubscribeRequest(BaseModel):
     tier: str
 
 
-@app.middleware("http")
-async def api_key_guard(request: Request, call_next):
-    """
-    Gate every /api/* data endpoint behind a shared API key. The key is accepted
-    either as the `X-API-Key` header (used by the SPA's fetch wrapper) or an
-    `api_key` query parameter (handy for direct links / tools). The static
-    frontend, root, version and health probes stay open so the page can load
-    and prompt for the key.
-    
-    Bypassed for local loopback requests to enable seamless out-of-the-box local usage.
-    """
-    path = request.url.path
-    if (
-        path.startswith("/api/")
-        and path not in _OPEN_API_PATHS
-        and request.method != "OPTIONS"
-    ):
-        client_host = request.client.host if request.client else ""
-        if client_host not in ("127.0.0.1", "::1", "localhost"):
-            provided = request.headers.get("x-api-key") or request.query_params.get("api_key")
-            if not provided or not secrets.compare_digest(provided, API_KEY):
-                return JSONResponse(status_code=401, content={"detail": "Invalid or missing API key"})
-    return await call_next(request)
-
-
 # Initialize Search Engine
 search_engine = VedicSearchEngine(DB_PATH)
 
