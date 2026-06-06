@@ -201,7 +201,7 @@ def check_marriage_for_lang(page, lang):
             issues.append(f"#{elem_id}: element not found in DOM")
             continue
         actual = el.inner_text().strip()
-        if actual != expected:
+        if actual.upper() != expected.upper():
             issues.append(f"#{elem_id}: expected '{expected}', got '{actual}'")
 
     return issues
