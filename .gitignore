@@ -23,3 +23,7 @@ memory.md
 
 # Secrets
 .api_key
+
+# Generated newsletters
+static/newsletters_sent/
+newsletters_sent/
