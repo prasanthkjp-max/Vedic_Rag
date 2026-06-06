@@ -458,75 +458,161 @@ def calculate_vimshottari_dasa(birth_jd, moon_sidereal_long, birth_naks_idx):
             
         if i == 0:
             duration = remaining_years
+            start_jd = current_jd
+            end_jd = start_jd + (duration * DAYS_IN_YEAR)
+            start_date_str = jd_to_date_string(start_jd)
+            end_date_str = jd_to_date_string(end_jd)
+            
+            # Hypothetical start of the first Dasa
+            dasa_start_jd = birth_jd - (lord_duration * fraction * DAYS_IN_YEAR)
+            
+            bhukti_start_idx = DASA_PLANETS.index(planet)
+            bhukti_order = DASA_PLANETS[bhukti_start_idx:] + DASA_PLANETS[:bhukti_start_idx]
+            
+            bhuktis = []
+            b_current_jd = dasa_start_jd
+            
+            for b_planet in bhukti_order:
+                b_dur_years = (DASA_DURATIONS[planet] * DASA_DURATIONS[b_planet]) / 120.0
+                b_end_jd = b_current_jd + (b_dur_years * DAYS_IN_YEAR)
+                
+                if b_end_jd > birth_jd:
+                    actual_start_jd = max(b_current_jd, birth_jd)
+                    b_actual_dur_years = (b_end_jd - actual_start_jd) / DAYS_IN_YEAR
+                    
+                    # Generate Pratyantar Dasas
+                    pratyantars = []
+                    pd_start_idx = DASA_PLANETS.index(b_planet)
+                    pd_order = DASA_PLANETS[pd_start_idx:] + DASA_PLANETS[:pd_start_idx]
+                    pd_current_jd = b_current_jd
+                    
+                    for pd_planet in pd_order:
+                        pd_dur_years = (b_dur_years * DASA_DURATIONS[pd_planet]) / 120.0
+                        pd_end_jd = pd_current_jd + (pd_dur_years * DAYS_IN_YEAR)
+                        
+                        if pd_end_jd > birth_jd:
+                            pd_actual_start_jd = max(pd_current_jd, birth_jd)
+                            pd_actual_dur_years = (pd_end_jd - pd_actual_start_jd) / DAYS_IN_YEAR
+                            
+                            pratyantars.append({
+                                "pratyantar_lord": pd_planet,
+                                "duration_years": round(pd_actual_dur_years, 4),
+                                "start_date": jd_to_date_string(pd_actual_start_jd),
+                                "end_date": jd_to_date_string(pd_end_jd)
+                            })
+                        pd_current_jd = pd_end_jd
+                        
+                    bhuktis.append({
+                        "bhukti_lord": b_planet,
+                        "duration_years": round(b_actual_dur_years, 2),
+                        "start_date": jd_to_date_string(actual_start_jd),
+                        "end_date": jd_to_date_string(b_end_jd),
+                        "pratyantars": pratyantars
+                    })
+                b_current_jd = b_end_jd
+                
         elif i == 9:
             duration = lord_duration * fraction
             if duration <= 0.01:
                 break
+            start_jd = current_jd
+            end_jd = start_jd + (duration * DAYS_IN_YEAR)
+            start_date_str = jd_to_date_string(start_jd)
+            end_date_str = jd_to_date_string(end_jd)
+            
+            cutoff_jd = end_jd
+            
+            bhukti_start_idx = DASA_PLANETS.index(planet)
+            bhukti_order = DASA_PLANETS[bhukti_start_idx:] + DASA_PLANETS[:bhukti_start_idx]
+            
+            bhuktis = []
+            b_current_jd = start_jd
+            
+            for b_planet in bhukti_order:
+                if b_current_jd >= cutoff_jd:
+                    break
+                b_dur_years = (DASA_DURATIONS[planet] * DASA_DURATIONS[b_planet]) / 120.0
+                b_end_jd = b_current_jd + (b_dur_years * DAYS_IN_YEAR)
+                
+                actual_end_jd = min(b_end_jd, cutoff_jd)
+                b_actual_dur_years = (actual_end_jd - b_current_jd) / DAYS_IN_YEAR
+                
+                # Generate Pratyantar Dasas
+                pratyantars = []
+                pd_start_idx = DASA_PLANETS.index(b_planet)
+                pd_order = DASA_PLANETS[pd_start_idx:] + DASA_PLANETS[:pd_start_idx]
+                pd_current_jd = b_current_jd
+                
+                for pd_planet in pd_order:
+                    if pd_current_jd >= cutoff_jd:
+                        break
+                    pd_dur_years = (b_dur_years * DASA_DURATIONS[pd_planet]) / 120.0
+                    pd_end_jd = pd_current_jd + (pd_dur_years * DAYS_IN_YEAR)
+                    
+                    actual_pd_end_jd = min(pd_end_jd, cutoff_jd)
+                    pd_actual_dur_years = (actual_pd_end_jd - pd_current_jd) / DAYS_IN_YEAR
+                    
+                    pratyantars.append({
+                        "pratyantar_lord": pd_planet,
+                        "duration_years": round(pd_actual_dur_years, 4),
+                        "start_date": jd_to_date_string(pd_current_jd),
+                        "end_date": jd_to_date_string(actual_pd_end_jd)
+                    })
+                    pd_current_jd = pd_end_jd
+                    
+                bhuktis.append({
+                    "bhukti_lord": b_planet,
+                    "duration_years": round(b_actual_dur_years, 2),
+                    "start_date": jd_to_date_string(b_current_jd),
+                    "end_date": jd_to_date_string(actual_end_jd),
+                    "pratyantars": pratyantars
+                })
+                b_current_jd = b_end_jd
+                
         else:
             duration = DASA_DURATIONS[planet]
+            start_jd = current_jd
+            end_jd = start_jd + (duration * DAYS_IN_YEAR)
+            start_date_str = jd_to_date_string(start_jd)
+            end_date_str = jd_to_date_string(end_jd)
             
-        # Period start & end Julian dates
-        start_jd = current_jd
-        end_jd = start_jd + (duration * DAYS_IN_YEAR)
-        
-        # Convert JD to human readable Gregorian dates
-        # Simple estimation:
-        # 1 JD = 1 day, so we can convert directly using datetime offset
-        epoch = datetime(2000, 1, 1, 12, 0, 0)
-        start_date_str = jd_to_date_string(start_jd)
-        end_date_str = jd_to_date_string(end_jd)
-        
-        # Generate Bhuktis (Sub-periods)
-        bhuktis = []
-        # Bhukti planetary sequence starts from the Dasa lord itself!
-        bhukti_start_idx = DASA_PLANETS.index(planet)
-        bhukti_order = DASA_PLANETS[bhukti_start_idx:] + DASA_PLANETS[:bhukti_start_idx]
-        
-        b_current_jd = start_jd
-        for b_planet in bhukti_order:
-            # Bhukti duration is (Dasa Duration of Planet * Dasa Duration of Bhukti Lord) / 120 (in years)
-            b_dur_years = (DASA_DURATIONS[planet] * DASA_DURATIONS[b_planet]) / 120.0
-            # Scale proportionally if the first Dasa is fractional
-            if i == 0:
-                b_dur_years *= (1.0 - fraction)
-            elif i == 9:
-                b_dur_years *= fraction
+            bhukti_start_idx = DASA_PLANETS.index(planet)
+            bhukti_order = DASA_PLANETS[bhukti_start_idx:] + DASA_PLANETS[:bhukti_start_idx]
+            
+            bhuktis = []
+            b_current_jd = start_jd
+            
+            for b_planet in bhukti_order:
+                b_dur_years = (DASA_DURATIONS[planet] * DASA_DURATIONS[b_planet]) / 120.0
+                b_end_jd = b_current_jd + (b_dur_years * DAYS_IN_YEAR)
                 
-            b_end_jd = b_current_jd + (b_dur_years * DAYS_IN_YEAR)
-            
-            b_start_date_str = jd_to_date_string(b_current_jd)
-            b_end_date_str = jd_to_date_string(b_end_jd)
-            
-            # Generate Pratyantar Dasas (sub-sub-periods)
-            pratyantars = []
-            pd_start_idx = DASA_PLANETS.index(b_planet)
-            pd_order = DASA_PLANETS[pd_start_idx:] + DASA_PLANETS[:pd_start_idx]
-            pd_current_jd = b_current_jd
-            
-            for pd_planet in pd_order:
-                pd_dur_years = (b_dur_years * DASA_DURATIONS[pd_planet]) / 120.0
-                pd_end_jd = pd_current_jd + (pd_dur_years * DAYS_IN_YEAR)
+                # Generate Pratyantar Dasas
+                pratyantars = []
+                pd_start_idx = DASA_PLANETS.index(b_planet)
+                pd_order = DASA_PLANETS[pd_start_idx:] + DASA_PLANETS[:pd_start_idx]
+                pd_current_jd = b_current_jd
                 
-                pd_start_date_str = jd_to_date_string(pd_current_jd)
-                pd_end_date_str = jd_to_date_string(pd_end_jd)
-                
-                pratyantars.append({
-                    "pratyantar_lord": pd_planet,
-                    "duration_years": round(pd_dur_years, 4),
-                    "start_date": pd_start_date_str,
-                    "end_date": pd_end_date_str
+                for pd_planet in pd_order:
+                    pd_dur_years = (b_dur_years * DASA_DURATIONS[pd_planet]) / 120.0
+                    pd_end_jd = pd_current_jd + (pd_dur_years * DAYS_IN_YEAR)
+                    
+                    pratyantars.append({
+                        "pratyantar_lord": pd_planet,
+                        "duration_years": round(pd_dur_years, 4),
+                        "start_date": jd_to_date_string(pd_current_jd),
+                        "end_date": jd_to_date_string(pd_end_jd)
+                    })
+                    pd_current_jd = pd_end_jd
+                    
+                bhuktis.append({
+                    "bhukti_lord": b_planet,
+                    "duration_years": round(b_dur_years, 2),
+                    "start_date": jd_to_date_string(b_current_jd),
+                    "end_date": jd_to_date_string(b_end_jd),
+                    "pratyantars": pratyantars
                 })
-                pd_current_jd = pd_end_jd
+                b_current_jd = b_end_jd
                 
-            bhuktis.append({
-                "bhukti_lord": b_planet,
-                "duration_years": round(b_dur_years, 2),
-                "start_date": b_start_date_str,
-                "end_date": b_end_date_str,
-                "pratyantars": pratyantars
-            })
-            b_current_jd = b_end_jd
-            
         dasa_list.append({
             "dasa_lord": planet,
             "duration_years": round(duration, 2),
@@ -544,8 +630,20 @@ def get_planetary_dignity(planet, rasi_idx, degree):
     """
     Determine planetary strength/dignity (Ucha, Neecha, Swakshetra, friendly, enemy)
     """
-    if planet == "Lagna" or planet == "Rahu" or planet == "Ketu":
+    if planet == "Lagna":
         return "Neutral"
+        
+    if planet == "Rahu":
+        if rasi_idx in {1, 2}: return "Exalted (Ucha)"
+        if rasi_idx in {7, 8}: return "Debilitated (Neecha)"
+        if rasi_idx == 5: return "Own Sign (Swakshetra)"
+        return "Neutral Sign (Sama Rasi)"
+        
+    if planet == "Ketu":
+        if rasi_idx in {7, 8}: return "Exalted (Ucha)"
+        if rasi_idx in {1, 2}: return "Debilitated (Neecha)"
+        if rasi_idx == 11: return "Own Sign (Swakshetra)"
+        return "Neutral Sign (Sama Rasi)"
         
     dignities = {
         "Sun":     {"exalt": 0, "deb": 6, "own": [4]},
@@ -885,8 +983,9 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
     """
     planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
     
-    # 1. Obliquity of ecliptic (approx. 23.44) for Kranti / Declination
-    E = 23.44
+    # 1. Obliquity of ecliptic for Kranti / Declination (dynamic calculation from JD)
+    T_obl = (JD - 2451545.0) / 36525.0
+    E = 23.4392911 - (46.8150 * T_obl + 0.00059 * T_obl**2 - 0.001813 * T_obl**3) / 3600.0
     
     # 2. Exaltation Degrees overall (0 to 360)
     exalt_degrees = {
