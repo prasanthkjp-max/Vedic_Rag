@@ -113,7 +113,7 @@ EXPECTED = {
     },
     "lbl-m-style-txt": {
         "en": "Visual Chart Style", "ta": "ஜாதக வரைபட முறை", "te": "జాతక చక్ర శైలి",
-        "ml": "ജാതക ചക്ര ശൈലി", "kn": "ಜಾತಕ ಚಕ್ರ ಶൈಲಿ", "hi": "कुंडली शैली",
+        "ml": "ജാതക ചക്ര ശൈലി", "kn": "ಜಾತಕ ಚಕ್ರ ಶೈಲಿ", "hi": "कुंडली शैली",
     },
     "btn-generate-marriage": {
         "en": "Calculate Compatibility",
