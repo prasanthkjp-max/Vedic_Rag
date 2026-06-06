@@ -129,10 +129,17 @@ def compute_aspects(placements, houses):
 
 
 def _parse(d):
-    try:
-        return datetime.strptime(d, "%Y-%m-%d").date()
-    except Exception:
-        return None
+    if isinstance(d, datetime):
+        return d.date()
+    if isinstance(d, date):
+        return d
+    if isinstance(d, str):
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y"):
+            try:
+                return datetime.strptime(d.strip(), fmt).date()
+            except ValueError:
+                continue
+    return None
 
 
 def get_current_dasa(dasa_table, ref_date=None):
@@ -144,6 +151,8 @@ def get_current_dasa(dasa_table, ref_date=None):
         ref_date = date.today()
     elif isinstance(ref_date, datetime):
         ref_date = ref_date.date()
+    elif isinstance(ref_date, str):
+        ref_date = _parse(ref_date)
 
     current = {
         "mahadasa": None, "antardasa": None, "pratyantardasa": None,
@@ -266,14 +275,16 @@ def detect_yogas(placements, houses):
                           "detail": f"Jupiter is in the {jm}th from the Moon (a kendra)"})
 
     # Budha-Aditya: Sun + Mercury in the same sign
-    if placements.get("Sun", {}).get("rasi_index") == placements.get("Mercury", {}).get("rasi_index"):
-        yogas.append({"name": "Budha-Aditya Yoga",
-                      "detail": f"Sun and Mercury conjoin in {RASI_SHORT[placements['Sun']['rasi_index']]}"})
+    if "Sun" in placements and "Mercury" in placements:
+        if placements["Sun"]["rasi_index"] == placements["Mercury"]["rasi_index"]:
+            yogas.append({"name": "Budha-Aditya Yoga",
+                          "detail": f"Sun and Mercury conjoin in {RASI_SHORT[placements['Sun']['rasi_index']]}"})
 
     # Chandra-Mangala: Moon + Mars in the same sign
-    if placements.get("Moon", {}).get("rasi_index") == placements.get("Mars", {}).get("rasi_index"):
-        yogas.append({"name": "Chandra-Mangala Yoga",
-                      "detail": f"Moon and Mars conjoin in {RASI_SHORT[placements['Moon']['rasi_index']]}"})
+    if "Moon" in placements and "Mars" in placements:
+        if placements["Moon"]["rasi_index"] == placements["Mars"]["rasi_index"]:
+            yogas.append({"name": "Chandra-Mangala Yoga",
+                          "detail": f"Moon and Mars conjoin in {RASI_SHORT[placements['Moon']['rasi_index']]}"})
 
     # Parivartana (exchange) between any two planets owning each other's sign
     seen = set()
@@ -317,6 +328,8 @@ def detect_yogas(placements, houses):
             lt = lords[t]
             if lk == lt:
                 continue
+            if lk not in placements or lt not in placements:
+                continue
             
             # Conjunction
             if placements[lk]["rasi_index"] == placements[lt]["rasi_index"]:
@@ -351,6 +364,8 @@ def detect_yogas(placements, houses):
             l2 = lords[h2]
             if l1 == l2:
                 continue
+            if l1 not in placements or l2 not in placements:
+                continue
             
             # Conjunction
             if placements[l1]["rasi_index"] == placements[l2]["rasi_index"]:
@@ -377,15 +392,16 @@ def detect_yogas(placements, houses):
                     
     # 4. Arishta / Dainya Position (Lagna Lord in Dusthana, or Dusthana Lord in Lagna)
     lagna_lord = lords[1]
-    lagna_lord_house = houses[lagna_lord]
-    if lagna_lord_house in {6, 8, 12}:
-        yogas.append({
-            "name": f"Arishta / Dainya Position (Lagna Lord in house {lagna_lord_house})",
-            "detail": f"Lagna lord {lagna_lord} is placed in the {lagna_lord_house}th house (Dusthana)."
-        })
+    if lagna_lord in placements:
+        lagna_lord_house = houses[lagna_lord]
+        if lagna_lord_house in {6, 8, 12}:
+            yogas.append({
+                "name": f"Arishta / Dainya Position (Lagna Lord in house {lagna_lord_house})",
+                "detail": f"Lagna lord {lagna_lord} is placed in the {lagna_lord_house}th house (Dusthana)."
+            })
     for dh in {6, 8, 12}:
         dl = lords[dh]
-        if houses[dl] == 1:
+        if dl in placements and houses[dl] == 1 and dl != lagna_lord:
             yogas.append({
                 "name": f"Arishta / Dainya Position (Lord of house {dh} in Lagna)",
                 "detail": f"Lord of the {dh}th house ({dl}) is placed in the 1st house (Lagna)."
@@ -422,6 +438,68 @@ def detect_yogas(placements, houses):
                     "detail": f"{target} in {RASI_SHORT[st]} is hemmed in between benefic planets (in {RASI_SHORT[s_prev]} and {RASI_SHORT[s_next]})."
                 })
 
+    # 6. Solar & Lunar Yogas
+    if "Moon" in placements:
+        m_rasi = placements["Moon"]["rasi_index"]
+        s_prev_m = (m_rasi - 1) % 12
+        s_next_m = (m_rasi + 1) % 12
+        
+        planets_2nd_moon = [p for p in GRAHAS if p in placements and p not in {"Moon", "Sun", "Rahu", "Ketu"} and placements[p]["rasi_index"] == s_next_m]
+        planets_12th_moon = [p for p in GRAHAS if p in placements and p not in {"Moon", "Sun", "Rahu", "Ketu"} and placements[p]["rasi_index"] == s_prev_m]
+        
+        has_2nd = len(planets_2nd_moon) > 0
+        has_12th = len(planets_12th_moon) > 0
+        
+        if has_2nd and has_12th:
+            yogas.append({
+                "name": "Dhurdhura Yoga",
+                "detail": f"Planets occupy both the 2nd ({', '.join(planets_2nd_moon)}) and 12th ({', '.join(planets_12th_moon)}) houses from the Moon."
+            })
+        elif has_2nd:
+            yogas.append({
+                "name": "Sunapha Yoga",
+                "detail": f"Planets occupy the 2nd house ({', '.join(planets_2nd_moon)}) from the Moon."
+            })
+        elif has_12th:
+            yogas.append({
+                "name": "Anapha Yoga",
+                "detail": f"Planets occupy the 12th house ({', '.join(planets_12th_moon)}) from the Moon."
+            })
+        else:
+            kendra_planets = [p for p in GRAHAS if p in placements and p not in {"Rahu", "Ketu"} and (houses[p] in {1, 4, 7, 10} or ((placements[p]["rasi_index"] - m_rasi) % 12 + 1) in {1, 4, 7, 10})]
+            if not kendra_planets:
+                yogas.append({
+                    "name": "Kemadruma Yoga",
+                    "detail": "No planets occupy the 2nd or 12th houses from the Moon, and no planets are in Kendras from Lagna or Moon."
+                })
+
+    if "Sun" in placements:
+        s_rasi = placements["Sun"]["rasi_index"]
+        s_prev_s = (s_rasi - 1) % 12
+        s_next_s = (s_rasi + 1) % 12
+        
+        planets_2nd_sun = [p for p in GRAHAS if p in placements and p not in {"Sun", "Moon", "Rahu", "Ketu"} and placements[p]["rasi_index"] == s_next_s]
+        planets_12th_sun = [p for p in GRAHAS if p in placements and p not in {"Sun", "Moon", "Rahu", "Ketu"} and placements[p]["rasi_index"] == s_prev_s]
+        
+        has_2nd_s = len(planets_2nd_sun) > 0
+        has_12th_s = len(planets_12th_sun) > 0
+        
+        if has_2nd_s and has_12th_s:
+            yogas.append({
+                "name": "Obhayachara Yoga",
+                "detail": f"Planets occupy both the 2nd ({', '.join(planets_2nd_sun)}) and 12th ({', '.join(planets_12th_sun)}) houses from the Sun."
+            })
+        elif has_2nd_s:
+            yogas.append({
+                "name": "Vesi Yoga",
+                "detail": f"Planets occupy the 2nd house ({', '.join(planets_2nd_sun)}) from the Sun."
+            })
+        elif has_12th_s:
+            yogas.append({
+                "name": "Vasi Yoga",
+                "detail": f"Planets occupy the 12th house ({', '.join(planets_12th_sun)}) from the Sun."
+            })
+
     return yogas
 
 
@@ -432,6 +510,10 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
     """
     if ref_date is None:
         ref_date = date.today()
+    elif isinstance(ref_date, datetime):
+        ref_date = ref_date.date()
+    elif isinstance(ref_date, str):
+        ref_date = _parse(ref_date)
     placements = chart["placements"]
     lagna_idx, houses = compute_houses(placements)
     lords = house_lords(lagna_idx)
