@@ -37,6 +37,41 @@ DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", "gemma4:31b-cloud")
 EMBED_TIMEOUT = int(os.environ.get("VEDIC_EMBED_TIMEOUT", "15"))
 LLM_STREAM_TIMEOUT = int(os.environ.get("VEDIC_LLM_TIMEOUT", "300"))
 
+# --- OAuth / social login ---
+# The /api/auth/oauth endpoint verifies the provider token server-side and
+# derives the email from the *verified* response — it never trusts a
+# client-supplied email. Set these to your real OAuth app credentials to enable
+# Google / Facebook sign-in. When a provider is unconfigured, sign-in with that
+# provider fails closed.
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+FACEBOOK_APP_ID = os.environ.get("FACEBOOK_APP_ID", "")
+FACEBOOK_APP_SECRET = os.environ.get("FACEBOOK_APP_SECRET", "")
+
+# Opt-in, OFF by default. Allows a *mock* OAuth login (trusting the supplied
+# email) for local dev / newsletter testing only. Even when enabled it refuses
+# to log into accounts that have a password or a different OAuth provider, so it
+# cannot be used to take over real users. NEVER enable this in production.
+ALLOW_MOCK_OAUTH = os.environ.get("VEDIC_ALLOW_MOCK_OAUTH", "0") == "1"
+
+# --- Billing / payments ---
+# Real payment processing is not wired up. Set STRIPE_SECRET_KEY to integrate
+# Stripe (the buy-credits/subscribe handlers must then create real
+# PaymentIntents/Subscriptions and verify them, ideally via webhooks). Until
+# then the endpoints would hand out credits for free, so they are DISABLED by
+# default and only run in an explicit, opt-in simulation mode for local dev.
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+ALLOW_SIMULATED_PAYMENTS = os.environ.get("VEDIC_ALLOW_SIMULATED_PAYMENTS", "0") == "1"
+
+# --- CORS ---
+# Comma-separated list of allowed origins, or "*" for any (the default, kept for
+# backward compatibility). In production set this to your real front-end origin
+# (e.g. "https://astro.example.com") to stop arbitrary sites calling the API.
+# Credentials (cookies) are only allowed when the origin list is explicit, since
+# the browser forbids combining a "*" origin with credentialed requests.
+CORS_ALLOW_ORIGINS = [
+    o.strip() for o in os.environ.get("VEDIC_CORS_ORIGINS", "*").split(",") if o.strip()
+] or ["*"]
+
 
 def connect_db(path=DB_PATH, timeout=30):
     """

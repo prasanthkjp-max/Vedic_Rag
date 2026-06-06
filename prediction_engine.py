@@ -241,9 +241,6 @@ def detect_yogas(placements, houses):
     """Detect a conservative set of high-confidence classical yogas."""
     yogas = []
 
-    def in_kendra(body, ref_house_body="Lagna"):
-        return houses[body] in (1, 4, 7, 10)
-
     # Pancha Mahapurusha Yogas: Mars/Mer/Jup/Ven/Sat in own/exalted AND in a kendra from Lagna
     mahapurusha = {"Mars": "Ruchaka", "Mercury": "Bhadra", "Jupiter": "Hamsa",
                    "Venus": "Malavya", "Saturn": "Sasa"}

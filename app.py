@@ -4,6 +4,7 @@ import uuid
 import secrets
 import urllib.request
 import urllib.error
+import urllib.parse
 import tempfile
 from datetime import datetime
 import fitz  # PyMuPDF
@@ -29,6 +30,13 @@ from config import (
     LLM_STREAM_TIMEOUT,
     EMBEDDING_DIM,
     API_KEY,
+    GOOGLE_OAUTH_CLIENT_ID,
+    FACEBOOK_APP_ID,
+    FACEBOOK_APP_SECRET,
+    ALLOW_MOCK_OAUTH,
+    STRIPE_SECRET_KEY,
+    ALLOW_SIMULATED_PAYMENTS,
+    CORS_ALLOW_ORIGINS,
     connect_db,
 )
 import re
@@ -46,13 +54,14 @@ def _safe_slug(name, fallback="chart"):
 
 app = FastAPI(title="Vedic Astrology AI RAG Portal", version=VERSION)
 
-# Enable CORS for frontend flexibility.
-# Note: a wildcard origin cannot be combined with allow_credentials=True (the
-# browser rejects it), so credentials are disabled to keep "*" working.
+# Enable CORS. Origins come from config (VEDIC_CORS_ORIGINS); default "*".
+# A wildcard origin cannot be combined with allow_credentials=True (the browser
+# rejects it), so credentials are enabled only when explicit origins are set.
+_cors_wildcard = CORS_ALLOW_ORIGINS == ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_credentials=not _cors_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -72,6 +81,37 @@ _OPEN_API_PATHS = {
     "/api/billing/subscribe",
     "/api/billing/cancel-subscription"
 }
+
+
+@app.middleware("http")
+async def api_key_guard(request: Request, call_next):
+    """Gate every /api/* call behind the shared API_KEY.
+
+    Skips non-API routes (the static frontend), CORS preflight (OPTIONS) and the
+    handful of bootstrap/auth paths in _OPEN_API_PATHS. The key may be supplied
+    as the X-API-Key header or an api_key query parameter. The frontend fetches
+    it once from the loopback-only /api/local-key (or prompts for it) and then
+    sends it automatically.
+
+    Returns 403 (not 401) on failure so it stays distinct from a 401 "session
+    expired", which the UI handles differently. The marker header lets the client
+    clear a stale key and re-bootstrap.
+    """
+    path = request.url.path
+    if (
+        request.method != "OPTIONS"
+        and path.startswith("/api/")
+        and path not in _OPEN_API_PATHS
+    ):
+        supplied = request.headers.get("x-api-key") or request.query_params.get("api_key")
+        if not supplied or not secrets.compare_digest(supplied, API_KEY):
+            return JSONResponse(
+                {"detail": "Invalid or missing API key"},
+                status_code=403,
+                headers={"X-API-Key-Required": "1", "Access-Control-Allow-Origin": "*"},
+            )
+    return await call_next(request)
+
 
 # --- User Database & Authentication Initialization ---
 from datetime import timedelta
@@ -219,6 +259,12 @@ def get_user_by_session(token: str):
                 "wants_newsletter": bool(wants_news),
                 "location_name": loc_name
             }
+        else:
+            # Session has expired — drop the row so stale tokens don't accumulate.
+            conn = connect_db(DB_PATH)
+            conn.execute("DELETE FROM sessions WHERE session_token = ?", (token,))
+            conn.commit()
+            conn.close()
     return None
 
 def debit_user_credits(user_id: int, amount: int, action_type: str, details: str = None):
@@ -991,32 +1037,32 @@ TITHI_TRANSLATIONS = {
 }
 
 NAKSHATRA_TRANSLATIONS = {
-    "Aswini": {"ta": "அசுவினி", "te": "అశ్విని", "ml": "അശ്വതി", "kn": "ಅಶ್ವಿನಿ", "hi": "अश्विनी"},
+    "Ashwini": {"ta": "அசுவினி", "te": "అశ్విని", "ml": "അശ്വതി", "kn": "ಅಶ್ವಿನಿ", "hi": "अश्विनी"},
     "Bharani": {"ta": "பரணி", "te": "భరణి", "ml": "ഭരണി", "kn": "ಭರಣಿ", "hi": "भरणी"},
     "Krittika": {"ta": "கார்த்திகை", "te": "కృత్తిక", "ml": "കാർത്തിка", "kn": "ಕೃತ್ತಿಕಾ", "hi": "कृत्तिका"},
     "Rohini": {"ta": "ரோகிணி", "te": "రోహిణి", "ml": "രോഹിണി", "kn": "ರೋಹಿಣಿ", "hi": "रोहिणी"},
-    "Mrigasira": {"ta": "மிருகசீரிடம்", "te": "మృగశిర", "ml": "മകയിരം", "kn": "ಮೃಗಶಿರ", "hi": "मृगशिरा"},
-    "Arudra": {"ta": "திருவாதிரை", "te": "ఆర్ద్ర", "ml": "തിരുവാതിര", "kn": "ಆರಿದ್ರಾ", "hi": "आर्द्र"},
+    "Mrigashira": {"ta": "மிருகசீரிடம்", "te": "మృగశిర", "ml": "മകയിരം", "kn": "ಮೃಗಶಿರ", "hi": "मृगशिरा"},
+    "Ardra": {"ta": "திருவாதிரை", "te": "ఆర్ద్ర", "ml": "തിരുവാതിര", "kn": "ಆರಿದ್ರಾ", "hi": "आर्द्र"},
     "Punarvasu": {"ta": "புனர்பூசம்", "te": "పునర్వసు", "ml": "പുണർതം", "kn": "ಪುನರ್ವಸು", "hi": "पुनर्वसु"},
     "Pushya": {"ta": "பூசம்", "te": "పుష్యమి", "ml": "പൂയം", "kn": "ಪುಷ್ಯ", "hi": "पुष्य"},
-    "Aslesha": {"ta": "ஆயில்யம்", "te": "ఆశ్లేష", "ml": "ആയില്യം", "kn": "ಆಶ್ಲೇಷ", "hi": "अश्लेषा"},
-    "Makha": {"ta": "மகம்", "te": "మఖ", "ml": "മകം", "kn": "ಮಖ", "hi": "मघा"},
-    "Poorvaphalguni": {"ta": "பூரம்", "te": "పూర్వాఫాల్గుణి", "ml": "പൂരം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाफाल्गुनी"},
-    "Uttaraphalguni": {"ta": "உத்திரம்", "te": "उत्तराफाल्गुनी", "ml": "ഉത്രം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराफाल्गुनी"},
+    "Ashlesha": {"ta": "ஆயில்யம்", "te": "ఆశ్లేష", "ml": "ആയില്യം", "kn": "ಆಶ್ಲೇಷ", "hi": "अश्लेषा"},
+    "Magha": {"ta": "மகம்", "te": "మఖ", "ml": "മകം", "kn": "ಮಖ", "hi": "मघा"},
+    "Purva Phalguni": {"ta": "பூரம்", "te": "పూర్వాఫాల్గుణి", "ml": "പൂരം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाफाल्गुनी"},
+    "Uttara Phalguni": {"ta": "உத்திரம்", "te": "उत्तराफाल्गुनी", "ml": "ഉത്രം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराफाल्गुनी"},
     "Hasta": {"ta": "அஸ்தம்", "te": "ಹಸ್ತ", "ml": "അത്തം", "kn": "ಹಸ್ತ", "hi": "हस्त"},
     "Chitra": {"ta": "சித்திரை", "te": "చిత్త", "ml": "ചിത്ര", "kn": "ಚಿತ್ತಾ", "hi": "चित्रा"},
-    "Svati": {"ta": "சுவாதி", "te": "స్వాతి", "ml": "ചോതി", "kn": "ಸ್ವಾತಿ", "hi": "स्वाति"},
-    "Visakha": {"ta": "விசாகம்", "te": "విశాఖ", "ml": "വിശാഖം", "kn": "ವಿಶಾಖ", "hi": "विशाखा"},
+    "Swati": {"ta": "சுவாதி", "te": "స్వాతి", "ml": "ചോതി", "kn": "ಸ್ವಾತಿ", "hi": "स्वाति"},
+    "Vishakha": {"ta": "விசாகம்", "te": "విశాఖ", "ml": "വിശാഖം", "kn": "ವಿಶಾಖ", "hi": "विशाखा"},
     "Anuradha": {"ta": "அனுஷம்", "te": "అనూరాధ", "ml": "அನಿഴം", "kn": "అనూరాధ", "hi": "अनुराधा"},
     "Jyeshtha": {"ta": "கேட்டை", "te": "జ్యేష్ఠ", "ml": "തൃക്കേട്ട", "kn": "ಜ್ಯೇಷ्ಠ", "hi": "ज्येष्ठा"},
-    "Moola": {"ta": "மூலம்", "te": "మూల", "ml": "മൂലം", "kn": "ಮೂಲಾ", "hi": "मूल"},
-    "Poorvashadha": {"ta": "பூராடம்", "te": "పూర్వాషాఢ", "ml": "പൂരാടം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाषाढ़"},
-    "Uttarashadha": {"ta": "உத்திராடம்", "te": "ఉత్తరాషాఢ", "ml": "ഉത്രാടം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराषाढ़"},
-    "Sravana": {"ta": "திருவோணம்", "te": "శ్రవణం", "ml": "തിരുവോണം", "kn": "ಶ್ರವಣ", "hi": "श्रवण"},
+    "Mula": {"ta": "மூலம்", "te": "మూల", "ml": "മൂലം", "kn": "ಮೂಲಾ", "hi": "मूल"},
+    "Purva Ashadha": {"ta": "பூராடம்", "te": "పూర్వాషాఢ", "ml": "പൂരാടം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाषाढ़"},
+    "Uttara Ashadha": {"ta": "உத்திராடம்", "te": "ఉత్తరాషాఢ", "ml": "ഉത്രാടം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराषाढ़"},
+    "Shravana": {"ta": "திருவோணம்", "te": "శ్రవణం", "ml": "തിരുവോണം", "kn": "ಶ್ರವಣ", "hi": "श्रवण"},
     "Dhanishta": {"ta": "அவிட்டம்", "te": "ధనిష్ఠ", "ml": "അവിട്ടം", "kn": "ಧನಿಷ್ಠ", "hi": "धनिष्ठा"},
-    "Satabhisha": {"ta": "சதயம்", "te": "శతభిషం", "ml": "ചതയം", "kn": "ಶತಭಿಷ", "hi": "शतभिषा"},
-    "Poorvabhadra": {"ta": "பூரட்டாதி", "te": "పూర్వాభాద్ర", "ml": "പൂരുരുട്ടാതി", "kn": "ಪೂರ್ವಾಭಾದ್ರ", "hi": "पूर्वभाद्रपद"},
-    "Uttarabhadra": {"ta": "உத்திரட்டாதி", "te": "உತ್ತರಾభాద్ర", "ml": "ഉത്രട്ടാതി", "kn": "ಉತ್ತರಾಭಾದ್ರ", "hi": "उत्तरभाद्रपद"},
+    "Shatabhisha": {"ta": "சதயம்", "te": "శతభిషం", "ml": "ചതയം", "kn": "ಶತಭಿಷ", "hi": "शतभिषा"},
+    "Purva Bhadrapada": {"ta": "பூரட்டாதி", "te": "పూర్వాభాద్ర", "ml": "പൂരുരുട്ടാതി", "kn": "ಪೂರ್ವಾಭಾದ್ರ", "hi": "पूर्वभाद्रपद"},
+    "Uttara Bhadrapada": {"ta": "உத்திரட்டாதி", "te": "உತ್ತರಾభాద్ర", "ml": "ഉത്രട്ടാതി", "kn": "ಉತ್ತರಾಭಾದ್ರ", "hi": "उत्तरभाद्रपद"},
     "Revati": {"ta": "ரேவதி", "te": "ரேவதி", "ml": "രേവതി", "kn": "ರೇವತಿ", "hi": "रेवती"}
 }
 
@@ -1836,11 +1882,26 @@ def dispatch_daily_newsletters(target_email: str = None, test_date: date = None)
             
     return results
 
+def require_admin(request: Request):
+    """Gate admin-only endpoints behind the shared API_KEY.
+
+    The key is the one resolved by config._load_api_key() (VEDIC_API_KEY env var
+    or the auto-generated .api_key printed to the console on first run). It must
+    be supplied as the X-API-Key header or an api_key query parameter. Without
+    this, anyone could trigger mass newsletter dispatch or enumerate users by
+    email.
+    """
+    supplied = request.headers.get("x-api-key") or request.query_params.get("api_key")
+    if not supplied or not secrets.compare_digest(supplied, API_KEY):
+        raise HTTPException(status_code=403, detail="Forbidden: admin API key required")
+
+
 @app.post("/api/admin/dispatch-newsletters")
-def admin_dispatch_newsletters(email: str = None, date_str: str = None):
+def admin_dispatch_newsletters(request: Request, email: str = None, date_str: str = None):
     """
     Trigger manual dispatch of daily newsletters. Handy for testing specific dates or email accounts.
     """
+    require_admin(request)
     test_date = None
     if date_str:
         try:
@@ -1940,7 +2001,9 @@ Start directly with the chat response:
                         yield text_chunk
         except Exception as e:
             yield f"\n\n*Error streaming chat prediction: {e}*"
-            
+
+    return StreamingResponse(chat_stream_generator(), media_type="text/event-stream")
+
 @app.post("/api/auth/signup")
 def auth_signup(req: SignupRequest):
     conn = connect_db(DB_PATH)
@@ -1982,7 +2045,10 @@ def auth_login(req: LoginRequest):
     if not hashed or not verify_password(req.password, hashed):
         conn.close()
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    
+
+    # Opportunistically purge expired sessions (ISO-8601 strings sort correctly).
+    cursor.execute("DELETE FROM sessions WHERE expires_at < ?", (datetime.utcnow().isoformat(),))
+
     # create session
     token = secrets.token_hex(32)
     expires_at = (datetime.utcnow() + timedelta(days=7)).isoformat()
@@ -1999,12 +2065,111 @@ def auth_login(req: LoginRequest):
         "user": get_user_by_session(token)
     }
 
-@app.post("/api/auth/oauth")
-def auth_oauth(req: OAuthRequest):
-    # Mock Google/Facebook login endpoint
+def _verify_google_token(token: str):
+    """Verify a Google ID token via Google's tokeninfo endpoint.
+
+    Returns (email, name) derived from the *verified* token, or None on any
+    failure. Confirms the token was issued for our client id (aud) and that the
+    email is verified — so a token minted for some other app cannot be replayed.
+    """
+    if not GOOGLE_OAUTH_CLIENT_ID or not token:
+        return None
+    try:
+        url = "https://oauth2.googleapis.com/tokeninfo?" + urllib.parse.urlencode({"id_token": token})
+        with urllib.request.urlopen(url, timeout=10) as r:
+            data = json.loads(r.read().decode("utf-8"))
+    except Exception:
+        return None
+    if data.get("aud") != GOOGLE_OAUTH_CLIENT_ID:
+        return None
+    if str(data.get("email_verified")).lower() != "true":
+        return None
+    email = data.get("email")
+    if not email:
+        return None
+    return email, data.get("name") or email.split("@")[0]
+
+
+def _verify_facebook_token(token: str):
+    """Verify a Facebook access token via the Graph API.
+
+    debug_token confirms the token belongs to OUR app (and is valid); /me then
+    yields the verified email. Returns (email, name) or None.
+    """
+    if not (FACEBOOK_APP_ID and FACEBOOK_APP_SECRET) or not token:
+        return None
+    try:
+        app_token = f"{FACEBOOK_APP_ID}|{FACEBOOK_APP_SECRET}"
+        dbg = "https://graph.facebook.com/debug_token?" + urllib.parse.urlencode(
+            {"input_token": token, "access_token": app_token}
+        )
+        with urllib.request.urlopen(dbg, timeout=10) as r:
+            info = json.loads(r.read().decode("utf-8")).get("data", {})
+        if not info.get("is_valid") or str(info.get("app_id")) != str(FACEBOOK_APP_ID):
+            return None
+        me = "https://graph.facebook.com/me?" + urllib.parse.urlencode(
+            {"fields": "id,name,email", "access_token": token}
+        )
+        with urllib.request.urlopen(me, timeout=10) as r:
+            prof = json.loads(r.read().decode("utf-8"))
+    except Exception:
+        return None
+    email = prof.get("email")
+    if not email:
+        return None
+    return email, prof.get("name") or email.split("@")[0]
+
+
+def _mock_oauth_identity(req: "OAuthRequest"):
+    """Dev-only fallback (config.ALLOW_MOCK_OAUTH). Trusts the supplied email but
+    REFUSES to log into an account that has a password or a different OAuth
+    provider — so it can never take over a real user, only create/login a
+    mock OAuth account. Off by default."""
+    email = (req.email or "").strip()
+    if not email:
+        return None
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, full_name, credit_balance FROM users WHERE email = ?", (req.email,))
+    row = cursor.execute(
+        "SELECT password_hash, oauth_provider FROM users WHERE email = ?", (email,)
+    ).fetchone()
+    conn.close()
+    if row:
+        password_hash, existing_provider = row
+        if password_hash:
+            return None  # real password account — never hijack via mock
+        if existing_provider and existing_provider != req.provider:
+            return None  # belongs to a different provider
+    return email, req.name or email.split("@")[0]
+
+
+@app.post("/api/auth/oauth")
+def auth_oauth(req: OAuthRequest):
+    """Social login. The identity (email) is taken ONLY from a provider-verified
+    token, never from the client-supplied email, which closes the account-
+    takeover hole. Unconfigured providers fail closed (unless the explicit
+    dev-only mock mode is enabled)."""
+    provider = (req.provider or "").lower()
+    if provider == "google":
+        identity = _verify_google_token(req.token)
+    elif provider == "facebook":
+        identity = _verify_facebook_token(req.token)
+    else:
+        identity = None
+
+    if identity is None and ALLOW_MOCK_OAUTH:
+        identity = _mock_oauth_identity(req)
+
+    if identity is None:
+        raise HTTPException(
+            status_code=401,
+            detail="OAuth verification failed or provider not configured.",
+        )
+    verified_email, verified_name = identity
+
+    conn = connect_db(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, full_name, credit_balance FROM users WHERE email = ?", (verified_email,))
     row = cursor.fetchone()
     if row:
         user_id, full_name, credit_balance = row
@@ -2013,14 +2178,14 @@ def auth_oauth(req: OAuthRequest):
         cursor.execute("""
             INSERT INTO users (email, full_name, oauth_provider, oauth_id, credit_balance, latitude, longitude, timezone, language, wants_newsletter, location_name)
             VALUES (?, ?, ?, ?, 100, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
-        """, (req.email, req.name, req.provider, req.token))
+        """, (verified_email, verified_name, provider, verified_email))
         user_id = cursor.lastrowid
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
             VALUES (?, 100, 'signup_bonus', 'OAuth signup credit bonus')
         """, (user_id,))
         conn.commit()
-    
+
     # create session
     token = secrets.token_hex(32)
     expires_at = (datetime.utcnow() + timedelta(days=7)).isoformat()
@@ -2056,13 +2221,32 @@ def auth_me(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
+def _require_payments_enabled():
+    """Block credit-granting endpoints unless payments are actually wired up.
+
+    Real Stripe isn't integrated yet, so without this guard buy-credits/subscribe
+    would hand out credits (and 5000-credit subscriptions) for free to anyone
+    with a session. Fail closed; allow only the explicit local-dev simulation.
+    """
+    if STRIPE_SECRET_KEY:
+        # A real integration would run here; not implemented yet, so fail closed
+        # rather than silently granting credits without charging.
+        raise HTTPException(status_code=501, detail="Live payments not yet implemented.")
+    if not ALLOW_SIMULATED_PAYMENTS:
+        raise HTTPException(
+            status_code=503,
+            detail="Payments are not configured on this server.",
+        )
+
+
 @app.post("/api/billing/buy-credits")
 def buy_credits(req: BuyCreditsRequest, request: Request):
     token = request.headers.get("x-session-token") or request.cookies.get("session_token")
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+    _require_payments_enabled()
+
     # Simulate Stripe transaction
     payment_intent = "pi_" + secrets.token_hex(16)
     cents = 199 if req.amount == 50 else 799
@@ -2087,7 +2271,8 @@ def billing_subscribe(req: SubscribeRequest, request: Request):
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+    _require_payments_enabled()
+
     sub_id = "sub_" + secrets.token_hex(16)
     period_end = (datetime.utcnow() + timedelta(days=30)).isoformat()
     

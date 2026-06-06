@@ -47,6 +47,10 @@ class VedicSearchEngine:
         Returns None on failure so callers can distinguish a real vector from a
         silent all-zero fallback (which would otherwise produce garbage hits).
         """
+        # Reuse the shared text->vector cache (the batch path populates it too),
+        # so repeated/identical queries skip the ~3s CPU embed.
+        if text in self._embed_cache:
+            return self._embed_cache[text]
         data = {
             "model": EMBEDDING_MODEL,
             "prompt": text
@@ -60,6 +64,8 @@ class VedicSearchEngine:
             with urllib.request.urlopen(req, timeout=EMBED_TIMEOUT) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
                 embedding = res_data.get("embedding", [])
+                if embedding and len(embedding) == EMBEDDING_DIM:
+                    self._embed_cache[text] = embedding
                 return embedding if embedding else None
         except Exception as e:
             print(f"Error generating embedding in search engine: {e}")
