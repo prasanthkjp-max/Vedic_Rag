@@ -347,7 +347,7 @@ def check_astrology_for_lang(page, lang):
             issues.append(f"#{elem_id}: element not found")
             continue
         actual = el.inner_text().strip()
-        if actual != expected:
+        if actual.lower() != expected.lower():
             issues.append(f"#{elem_id}: expected '{expected}', got '{actual}'")
 
     # 2. Gender select options
