@@ -23,18 +23,41 @@ python3 app.py          # serves on http://0.0.0.0:8008
 Requires a local Ollama instance (`http://localhost:11434` by default) with the
 embedding model (`nomic-embed-text`) and a chat model pulled.
 
-## API key authentication
+## Authentication
 
-Every `/api/*` data endpoint is gated by a shared API key (the static frontend,
-`/api/version` and `/api/health` stay open). Requests must send the key as the
-`X-API-Key` header **or** an `api_key` query parameter; the web UI prompts for
-it once and stores it in `localStorage`.
+There are **two layers**:
+
+**1. Shared API key (client gate).** Every `/api/*` request is gated by a shared
+key, enforced by the `api_key_guard` HTTP middleware in `app.py`. The key is sent
+as the `X-API-Key` header **or** an `api_key` query parameter. Open exceptions
+(no key needed) are the bootstrap/probe paths and the auth/billing endpoints —
+see `_OPEN_API_PATHS`: `/api/version`, `/api/health`, `/api/local-key`,
+`/api/auth/*`, `/api/billing/*`. Everything else (chart calculation, search, AI
+prediction/chat, PDF, panchangam, admin) requires the key; a missing/invalid key
+returns **403** with an `X-API-Key-Required` marker header.
+
+The web UI handles this transparently: a small bootstrap script patches
+`window.fetch` to attach the key to same-origin `/api/` calls. It fetches the key
+once from the loopback-only `/api/local-key` (so a self-hosted browser is
+auto-configured) and, when accessed remotely, prompts for it once and stores it
+in `localStorage`. On a 403 it clears the stale key, re-bootstraps and retries.
 
 The key is resolved by `config._load_api_key()` with this precedence:
 
 1. the **`VEDIC_API_KEY`** environment variable, else
 2. a key auto-generated and persisted to `.api_key` (gitignored) on first run,
    printed once to the server console.
+
+**2. Session tokens (per-user billing).** On top of the key, the
+credit/subscription-metered endpoints (chart calculation, AI prediction/chat,
+PDF, marriage) require a user **session**: clients sign in (`/api/auth/*`) and
+send the returned token as the `x-session-token` header (or `session_token`
+cookie), checked via `check_credits_or_raise`. A 401 here means "session
+expired" — distinct from the 403 of a missing API key.
+
+> Note: admin endpoints (`/api/admin/dispatch-newsletters`) are gated by this
+> same shared key, so it is the operator's deployment secret — do not distribute
+> it if you need admin separated from regular clients.
 
 ### Recommended: set it via the environment
 
@@ -65,8 +88,32 @@ Notes:
 - Never commit the key. `.api_key` is gitignored; do not paste the real value
   into tracked files (including this README).
 
+### Social login (Google / Facebook)
+
+`/api/auth/oauth` derives the user's identity **only** from a provider-verified
+token — it never trusts the client-supplied email, so it cannot be used to take
+over another account. Configure the provider credentials to enable real sign-in:
+
+- Google: `GOOGLE_OAUTH_CLIENT_ID` (the ID token's `aud` is checked against it).
+- Facebook: `FACEBOOK_APP_ID` + `FACEBOOK_APP_SECRET` (the access token is
+  validated via `debug_token`).
+
+A provider with no credentials configured **fails closed**. For local
+development / newsletter testing there is an opt-in mock mode,
+`VEDIC_ALLOW_MOCK_OAUTH=1`, which trusts the supplied email but still refuses to
+log into any account that has a password or a different provider. **Never enable
+it in production.**
+
 ## Other configuration
 
 All env-overridable (see `config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
 `OLLAMA_HOST`, `VEDIC_EMBED_MODEL`, `VEDIC_EMBED_DIM`, `VEDIC_LLM_MODEL`,
 `VEDIC_EMBED_TIMEOUT`, `VEDIC_LLM_TIMEOUT`.
+
+- `VEDIC_CORS_ORIGINS` — comma-separated allowed origins (default `*`). Set to
+  your real front-end origin in production; credentials are enabled automatically
+  once it's no longer the wildcard.
+- Billing: real Stripe is not wired up. `buy-credits`/`subscribe` are **disabled
+  by default** (they would otherwise grant credits for free). Set
+  `STRIPE_SECRET_KEY` to plug in a real integration, or
+  `VEDIC_ALLOW_SIMULATED_PAYMENTS=1` for the local-dev simulation only.

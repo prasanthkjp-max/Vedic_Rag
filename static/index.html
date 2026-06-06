@@ -4,6 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vedic Astro AI — Divine AI Vedic Astrology Portal</title>
+
+    <!-- API-key gate bootstrap. The backend gates every /api/* call (except the
+         open auth/health paths) behind a shared key. We patch window.fetch so
+         every same-origin /api request carries the X-API-Key header — covering
+         apiFetch() and the direct fetch() calls alike. The key is fetched once
+         from the loopback-only /api/local-key when self-hosting, else prompted
+         for, and persisted in localStorage. Bootstrap is lazy: it only triggers
+         when a gated call actually returns 403, so open paths never prompt. -->
+    <script>
+    (function () {
+        var KEY_STORE = 'vedic_api_key';
+        var origFetch = window.fetch.bind(window);
+        var apiKey = localStorage.getItem(KEY_STORE) || '';
+        var bootstrapping = null;
+
+        function isApiUrl(url) {
+            try {
+                var u = new URL(url, location.origin);
+                return u.origin === location.origin && u.pathname.indexOf('/api/') === 0;
+            } catch (e) {
+                return typeof url === 'string' && url.indexOf('/api/') === 0;
+            }
+        }
+
+        function bootstrapKey() {
+            if (apiKey) return Promise.resolve(apiKey);
+            if (bootstrapping) return bootstrapping;
+            bootstrapping = (async function () {
+                try {
+                    var r = await origFetch('/api/local-key');
+                    if (r.ok) {
+                        var d = await r.json();
+                        if (d && d.api_key) {
+                            apiKey = d.api_key;
+                            localStorage.setItem(KEY_STORE, apiKey);
+                            return apiKey;
+                        }
+                    }
+                } catch (e) { /* not a loopback client */ }
+                var entered = window.prompt('Enter the Vedic portal API key to continue:');
+                if (entered) {
+                    apiKey = entered.trim();
+                    localStorage.setItem(KEY_STORE, apiKey);
+                }
+                return apiKey;
+            })();
+            bootstrapping.finally(function () { bootstrapping = null; });
+            return bootstrapping;
+        }
+
+        window.fetch = async function (input, init) {
+            var url = (typeof input === 'string') ? input : (input && input.url) || '';
+            if (!isApiUrl(url)) return origFetch(input, init);
+
+            function call() {
+                var opts = Object.assign({}, init);
+                var headers = new Headers(
+                    (init && init.headers) ||
+                    (typeof input !== 'string' && input && input.headers) || {}
+                );
+                if (apiKey && !headers.has('X-API-Key')) headers.set('X-API-Key', apiKey);
+                opts.headers = headers;
+                return origFetch(input, opts);
+            }
+
+            var resp = await call();
+            if (resp.status === 403 && resp.headers.get('X-API-Key-Required')) {
+                // Stale/wrong/absent key — clear, (re)bootstrap, retry once.
+                apiKey = '';
+                localStorage.removeItem(KEY_STORE);
+                await bootstrapKey();
+                if (apiKey) resp = await call();
+            }
+            return resp;
+        };
+    })();
+    </script>
     
     <!-- Google Fonts: Space Grotesk (modern UI) & Lora (classical serifs) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

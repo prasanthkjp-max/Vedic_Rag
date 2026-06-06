@@ -46,26 +46,6 @@ NAKSHATRA_DASA_LORDS = [
     "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"  # Mula to Revati
 ]
 
-# Keplerian Orbital Elements at J2000.0 (semi-major axis a, eccentricity e, inclination I, mean longitude L, longitude of perihelion p, longitude of ascending node o)
-PLANET_ELEMENTS = {
-    "Sun":     {"a": 1.00000011, "e": 0.01671022, "I": 0.0,      "L": 280.46645, "p": 282.94042, "o": 0.0},
-    "Mercury": {"a": 0.38709893, "e": 0.20563069, "I": 7.00487,  "L": 252.25084, "p": 77.45645,  "o": 48.33167},
-    "Venus":   {"a": 0.72333199, "e": 0.00677323, "I": 3.39471,  "L": 181.97973, "p": 131.53298, "o": 76.68069},
-    "Mars":    {"a": 1.52366231, "e": 0.09341233, "I": 1.85061,  "L": 355.45332, "p": 336.04084, "o": 49.57854},
-    "Jupiter": {"a": 5.20336301, "e": 0.04839266, "I": 1.30530,  "L":  34.40438, "p":  14.75385, "o": 100.55615},
-    "Saturn":  {"a": 9.53707032, "e": 0.05415060, "I": 2.48446,  "L":  50.07747, "p":  92.43194, "o": 113.71504}
-}
-
-# Rates of change per century (J2000.0)
-PLANET_RATES = {
-    "Sun":     {"a": 0.0,         "e": -0.00003804, "I": 0.0,       "L": 36000.76983, "p": 0.32255,   "o": 0.0},
-    "Mercury": {"a": 0.0,         "e": 0.00002040,  "I": -0.00594,  "L": 149472.67411, "p": 0.15901,  "o": -0.12534},
-    "Venus":   {"a": 0.0,         "e": -0.00004776, "I": -0.00079,  "L": 58517.81538,  "p": 0.00244,  "o": -0.27769},
-    "Mars":    {"a": 0.0,         "e": 0.00011902,  "I": -0.00813,  "L": 19140.30268,  "p": 0.44388,  "o": -0.29497},
-    "Jupiter": {"a": 0.00060737,  "e": -0.00012880, "I": -0.00415,  "L": 3034.74612,   "p": 0.19113,  "o": -0.20174},
-    "Saturn":  {"a": -0.00301530, "e": -0.00036762, "I": 0.00193,   "L": 1222.11379,   "p": -0.41897, "o": -0.39170}
-}
-
 def get_julian_date(year, month, day, hour):
     """Calculate Julian Date (JD) from Gregorian Date/Time in Universal Time (UT)"""
     if month <= 2:
@@ -76,10 +56,6 @@ def get_julian_date(year, month, day, hour):
     JD = math.floor(365.25 * (year + 4716)) + math.floor(30.6001 * (month + 1)) + day + B - 1524.5
     JD += hour / 24.0
     return JD
-
-def get_obliquity(T):
-    """Earth Obliquity (ecliptic tilt)"""
-    return 23.439291 - 0.01300416 * T
 
 def get_ayanamsa(T, ayanamsa_name="Lahiri", JD=None):
     """
@@ -114,67 +90,6 @@ def get_ayanamsa(T, ayanamsa_name="Lahiri", JD=None):
         return lahiri + 0.20  # DP offset
     return lahiri # Default Lahiri
 
-def calculate_keplerian(planet, T):
-    """Calculate heliocentric coordinates (geocentric for Sun) for Keplerian planets"""
-    elem = PLANET_ELEMENTS[planet]
-    rates = PLANET_RATES[planet]
-    
-    # Calculate elements at T (Julian centuries since J2000.0)
-    a = elem["a"] + rates["a"] * T
-    e = elem["e"] + rates["e"] * T
-    I = elem["I"] + rates["I"] * T
-    L = elem["L"] + rates["L"] * T
-    p = elem["p"] + rates["p"] * T
-    o = elem["o"] + rates["o"] * T
-    
-    # Normalize angles to [0, 360)
-    L = L % 360.0
-    p = p % 360.0
-    o = o % 360.0
-    
-    # Mean Anomaly
-    M = (L - p) % 360.0
-    M_rad = math.radians(M)
-    
-    # Solve Kepler's Equation: E - e sin E = M
-    E = M_rad
-    for _ in range(15):
-        delta = E - e * math.sin(E) - M_rad
-        E -= delta / (1.0 - e * math.cos(E))
-        if abs(delta) < 1e-6:
-            break
-            
-    # Position in orbital plane
-    x_orbit = a * (math.cos(E) - e)
-    y_orbit = a * math.sqrt(1.0 - e**2) * math.sin(E)
-    
-    # Convert to heliocentric ecliptic coordinates
-    I_rad = math.radians(I)
-    o_rad = math.radians(o)
-    p_rad = math.radians(p - o) # Arg of perihelion from ascending node
-    
-    # Rotate by argument of perihelion
-    cos_p = math.cos(p_rad)
-    sin_p = math.sin(p_rad)
-    x_node = x_orbit * cos_p - y_orbit * sin_p
-    y_node = x_orbit * sin_p + y_orbit * cos_p
-    
-    # Rotate by inclination and ascending node longitude
-    cos_o = math.cos(o_rad)
-    sin_o = math.sin(o_rad)
-    cos_i = math.cos(I_rad)
-    
-    X = x_node * cos_o - y_node * sin_o * cos_i
-    Y = x_node * sin_o + y_node * cos_o * cos_i
-    Z = y_node * math.sin(I_rad)
-    
-    # Heliocentric Longitude (L_h) and Latitude (B_h)
-    L_h = math.degrees(math.atan2(Y, X)) % 360.0
-    B_h = math.degrees(math.asin(Z / math.sqrt(X**2 + Y**2 + Z**2)))
-    R_h = math.sqrt(X**2 + Y**2 + Z**2)
-    
-    return L_h, B_h, R_h
-
 def get_planet_longitudes(T, JD):
     """
     Computes geocentric ecliptic longitudes (tropical) for Sun, Moon, Rahu, Ketu and planets
@@ -206,18 +121,23 @@ def calculate_lagna(JD, longitude, latitude, T):
     res = swe.houses(JD, latitude, longitude, b'P')
     return res[1][0]
 
-def get_tamil_year_month(JD, sun_sidereal_long):
+def get_tamil_year_month(JD, sun_sidereal_long, gregorian_year=None):
     """
     Calculate Tamil Year Name and Month based on traditional Thirukanitha Panchangam:
     Month is determined by Sun's Sidereal Longitude.
+
+    `gregorian_year` should be the true calendar year of the date. When omitted it
+    is approximated from JD, but that estimate is off by one near the Jan 1 boundary
+    (and drifts for dates far from J2000), so callers should pass the real year.
     """
     # Sun in Aries (0-30 deg) is Chithirai, Taurus (30-60) is Vaikasi, etc.
     month_idx = math.floor(sun_sidereal_long / 30.0) % 12
     tamil_month = TAMIL_MONTHS[month_idx]
-    
-    epoch_jd = JD - 2451545.0
-    gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
-    
+
+    if gregorian_year is None:
+        epoch_jd = JD - 2451545.0
+        gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
+
     # Since Gregorian year rolls over on Jan 1st, but Tamil year only rolls over
     # at Chithirai 1st (mid-April, Sun entering Aries = 0 deg),
     # the months Thai (9), Maasi (10), Panguni (11) belong to the previous year's cycle.
@@ -252,24 +172,27 @@ def calculate_ayana(sun_long):
 
 def calculate_ritu(sun_long):
     """
-    Ritu (6 seasons of the Vedic calendar based on Sun's sidereal longitude)
-    - Vasanta (Spring): Sun in Pisces/Aries (330 to 30 deg)
-    - Grishma (Summer): Sun in Taurus/Gemini (30 to 90 deg)
-    - Varsha (Monsoon): Sun in Cancer/Leo (90 to 150 deg)
-    - Sharad (Autumn): Sun in Virgo/Libra (150 to 210 deg)
-    - Hemanta (Pre-winter): Sun in Scorpio/Sagittarius (210 to 270 deg)
-    - Shishira (Winter): Sun in Capricorn/Aquarius (270 to 330 deg)
+    Ritu (6 seasons), each spanning two sidereal solar months, reckoned from the
+    Sun's sidereal longitude. Aligned with this engine's Tamil/Thirukanitha month
+    framework where the year begins at Mesha 0° (Chithirai), so each ritu maps to
+    a pair of Tamil months:
+    - Vasanta  (Spring):       Mesha/Vrishabha   (0–60)    Chithirai, Vaikasi
+    - Grishma  (Summer):       Mithuna/Karka     (60–120)  Aani, Aadi
+    - Varsha   (Monsoon):      Simha/Kanya       (120–180) Aavani, Purattasi
+    - Sharad   (Autumn):       Tula/Vrischika    (180–240) Aippasi, Karthigai
+    - Hemanta  (Pre-winter):   Dhanus/Makara     (240–300) Margazhi, Thai
+    - Shishira (Winter):       Kumbha/Meena      (300–360) Maasi, Panguni
     """
     deg = sun_long % 360.0
-    if 330.0 <= deg or deg < 30.0:
+    if deg < 60.0:
         return "Vasanta"
-    elif 30.0 <= deg and deg < 90.0:
+    elif deg < 120.0:
         return "Grishma"
-    elif 90.0 <= deg and deg < 150.0:
+    elif deg < 180.0:
         return "Varsha"
-    elif 150.0 <= deg and deg < 210.0:
+    elif deg < 240.0:
         return "Sharad"
-    elif 210.0 <= deg and deg < 270.0:
+    elif deg < 300.0:
         return "Hemanta"
     else:
         return "Shishira"
@@ -305,11 +228,17 @@ def get_regional_panchangam(chart, lang_code):
     tamil_year = panch["tamil_year"]
     tamil_day = panch.get("tamil_day", 1)
     
-    # Standard Gregorian Year estimation
+    # Use the true calendar year from the chart's datetime. (Approximating it
+    # from JD is off by one near the Jan 1 boundary, which would shift the
+    # Samvat / Shaka / Kollavarsham year shown for early-January dates.)
     JD = chart["metadata"]["julian_date"]
-    epoch_jd = JD - 2451545.0
-    gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
-    
+    dt_str = chart["metadata"].get("datetime", "")
+    try:
+        gregorian_year = int(dt_str.split("-")[0])
+    except (ValueError, IndexError):
+        epoch_jd = JD - 2451545.0
+        gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
+
     sun_long = chart["placements"]["Sun"]["longitude"]
     moon_long = chart["placements"]["Moon"]["longitude"]
     
@@ -673,93 +602,11 @@ DAYS_OF_WEEK = {
     "hi": ["रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार"]
 }
 
-GANESHA_MANTRAS = {
-    "en": "Vakratunda Mahakaya Suryakoti Samaprabha | Nirvighnam Kuru Me Deva Sarvakaryeshu Sarvada ||",
-    "ta": "வக்ரதுண்ட மஹாகாய சூர்யகோடி ஸமப்ரப। நிர்விக்னம் குரு மே தேவ ஸர்வ கார்யேஷு ஸர்வதா॥",
-    "te": "వక్రతుండ మహాకాయ సూర్యకోటి సమప్రభ। నిర్విఘ్నం కురు మే దేవ సర్వకార్యేషు సర్వదా॥",
-    "ml": "വക്രതുണ്ഡ മഹാകായ സൂര്യകോടി സമപ്രഭ। നിർവിഘ്നം കുരു മേ ദേവ സർവകാര്യേഷു സർവദാ॥",
-    "kn": "ವಕ್ರತುಂಡ ಮಹಾಕಾಯ ಸೂರ್ಯಕೋಟಿ ಸಮಪ್ರಭ। ನಿರ್ವಿಘ್ನಂ ಕುರು ಮೇ ದೇವ ಸರ್ವಕಾರ್ಯೇಷು ಸರ್ವದಾ॥",
-    "hi": "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ। निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥"
-}
-
 def format_deg_to_dms(deg):
     """Format decimal degrees to DD°MM' format"""
     d = math.floor(deg)
     m = round((deg - d) * 60)
     return f"{d}°{m:02d}'"
-
-def calculate_sunrise_sunset(year, month, day, longitude, latitude, timezone_offset=5.5):
-    """
-    Calculate Sunrise and Sunset times for a given location and date.
-    Returns (sunrise_decimal_hours, sunset_decimal_hours) in local standard time.
-    """
-    # 1. First, calculate the day of the year (N)
-    N1 = math.floor(275 * month / 9)
-    N2 = math.floor((month + 9) / 12)
-    N3 = (1 + math.floor((year - 4 * math.floor(year / 4) + 2) / 3))
-    N = N1 - (N2 * N3) + day - 30
-    
-    # 2. Approximate sunrise/sunset times
-    ln_hour = longitude / 15.0
-    t_rise = N + ((6.0 - ln_hour) / 24.0)
-    t_set = N + ((18.0 - ln_hour) / 24.0)
-    
-    # 3. Solar Mean Anomaly (M)
-    M_rise = (0.9856 * t_rise) - 3.289
-    M_set = (0.9856 * t_set) - 3.289
-    
-    # 4. Solar True Longitude (L)
-    L_rise = (M_rise + (1.916 * math.sin(math.radians(M_rise))) + (0.020 * math.sin(math.radians(2 * M_rise))) + 282.634) % 360.0
-    L_set = (M_set + (1.916 * math.sin(math.radians(M_set))) + (0.020 * math.sin(math.radians(2 * M_set))) + 282.634) % 360.0
-    
-    # 5. Right Ascension (RA)
-    RA_rise = math.degrees(math.atan(0.91764 * math.tan(math.radians(L_rise)))) % 360.0
-    RA_set = math.degrees(math.atan(0.91764 * math.tan(math.radians(L_set)))) % 360.0
-    
-    # Adjust RA to same quadrant as L
-    L_quad_rise = math.floor(L_rise / 90.0) * 90.0
-    RA_quad_rise = math.floor(RA_rise / 90.0) * 90.0
-    RA_rise = (RA_rise + (L_quad_rise - RA_quad_rise)) / 15.0
-    
-    L_quad_set = math.floor(L_set / 90.0) * 90.0
-    RA_quad_set = math.floor(RA_set / 90.0) * 90.0
-    RA_set = (RA_set + (L_quad_set - RA_quad_set)) / 15.0
-    
-    # 6. Declination (sin_dec, cos_dec)
-    sin_dec_rise = 0.39782 * math.sin(math.radians(L_rise))
-    cos_dec_rise = math.cos(math.asin(sin_dec_rise))
-    
-    sin_dec_set = 0.39782 * math.sin(math.radians(L_set))
-    cos_dec_set = math.cos(math.asin(sin_dec_set))
-    
-    # 7. Local Hour Angle (H) for zenith of 90.833 degrees
-    zenith = 90.833
-    cos_H_rise = (math.cos(math.radians(zenith)) - (sin_dec_rise * math.sin(math.radians(latitude)))) / (cos_dec_rise * math.cos(math.radians(latitude)))
-    cos_H_set = (math.cos(math.radians(zenith)) - (sin_dec_set * math.sin(math.radians(latitude)))) / (cos_dec_set * math.cos(math.radians(latitude)))
-    
-    # Check if sun rises/sets
-    if cos_H_rise > 1.0 or cos_H_rise < -1.0:
-        return 6.0, 18.0
-        
-    H_rise = 360.0 - math.degrees(math.acos(cos_H_rise))
-    H_set = math.degrees(math.acos(cos_H_set))
-    
-    H_rise = H_rise / 15.0
-    H_set = H_set / 15.0
-    
-    # 8. Local Mean Time
-    T_rise = H_rise + RA_rise - (0.06571 * t_rise) - 6.622
-    T_set = H_set + RA_set - (0.06571 * t_set) - 6.622
-    
-    # 9. Universal Time
-    UT_rise = (T_rise - ln_hour) % 24.0
-    UT_set = (T_set - ln_hour) % 24.0
-    
-    # 10. Local Standard Time
-    LST_rise = (UT_rise + timezone_offset) % 24.0
-    LST_set = (UT_set + timezone_offset) % 24.0
-    
-    return LST_rise, LST_set
 
 def get_timezone_offset(longitude, latitude):
     """
@@ -1098,12 +945,20 @@ def format_jd_to_local_time(jd, jd_sunrise, timezone_offset=5.5):
     next_day_suffix = " (Next Day)" if is_next_day else ""
     return f"{h:02d}:{m:02d} {ampm}{next_day_suffix}"
 
-def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
+def calculate_panchangam_transitions(jd_ref, timezone_offset=5.5, ayanamsa_name="Lahiri"):
+    """
+    Find when the tithi/nakshatra/yoga/karana prevailing at `jd_ref` (the chart's
+    reference moment) next change, scanning forward ~28h. Uses the SAME ayanamsa
+    as the chart so transitions stay consistent for non-Lahiri systems (the old
+    code always used Swiss Ephemeris' default Lahiri, which was wrong for
+    Tropical/DP/etc.).
+    """
     steps = 56
     dt = 0.5 / 24.0
-    
+
     def get_indices_at_jd(jd):
-        ayan = swe.get_ayanamsa(jd)
+        T_jd = (jd - 2451545.0) / 36525.0
+        ayan = get_ayanamsa(T_jd, ayanamsa_name, JD=jd)
         res_sun, _ = swe.calc_ut(jd, swe.SUN)
         res_moon, _ = swe.calc_ut(jd, swe.MOON)
         sun_l = (res_sun[0] - ayan) % 360.0
@@ -1117,7 +972,7 @@ def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
         kar_num = math.floor(diff / 6.0) % 60
         return tithi_num, naks_num, yog_num, kar_num
 
-    last_t, last_n, last_y, last_k = get_indices_at_jd(jd_sunrise)
+    last_t, last_n, last_y, last_k = get_indices_at_jd(jd_ref)
     
     tithi_end_time = "Full Night"
     tithi_next_idx = (last_t + 1) % 30
@@ -1134,11 +989,11 @@ def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
     found_t, found_n, found_y, found_k = False, False, False, False
     
     for step in range(1, steps + 1):
-        jd_curr = jd_sunrise + step * dt
+        jd_curr = jd_ref + step * dt
         curr_t, curr_n, curr_y, curr_k = get_indices_at_jd(jd_curr)
         
         if not found_t and curr_t != last_t:
-            low = jd_sunrise + (step - 1) * dt
+            low = jd_ref + (step - 1) * dt
             high = jd_curr
             for _ in range(10):
                 mid = (low + high) / 2
@@ -1147,12 +1002,12 @@ def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
                     low = mid
                 else:
                     high = mid
-            tithi_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            tithi_end_time = format_jd_to_local_time(low, jd_ref, timezone_offset)
             tithi_next_idx = curr_t
             found_t = True
             
         if not found_n and curr_n != last_n:
-            low = jd_sunrise + (step - 1) * dt
+            low = jd_ref + (step - 1) * dt
             high = jd_curr
             for _ in range(10):
                 mid = (low + high) / 2
@@ -1161,12 +1016,12 @@ def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
                     low = mid
                 else:
                     high = mid
-            nakshatra_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            nakshatra_end_time = format_jd_to_local_time(low, jd_ref, timezone_offset)
             nakshatra_next_idx = curr_n
             found_n = True
             
         if not found_y and curr_y != last_y:
-            low = jd_sunrise + (step - 1) * dt
+            low = jd_ref + (step - 1) * dt
             high = jd_curr
             for _ in range(10):
                 mid = (low + high) / 2
@@ -1175,12 +1030,12 @@ def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
                     low = mid
                 else:
                     high = mid
-            yogam_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            yogam_end_time = format_jd_to_local_time(low, jd_ref, timezone_offset)
             yogam_next_idx = curr_y
             found_y = True
             
         if not found_k and curr_k != last_k:
-            low = jd_sunrise + (step - 1) * dt
+            low = jd_ref + (step - 1) * dt
             high = jd_curr
             for _ in range(10):
                 mid = (low + high) / 2
@@ -1189,7 +1044,7 @@ def calculate_panchangam_transitions(jd_sunrise, timezone_offset=5.5):
                     low = mid
                 else:
                     high = mid
-            karanam_end_time = format_jd_to_local_time(low, jd_sunrise, timezone_offset)
+            karanam_end_time = format_jd_to_local_time(low, jd_ref, timezone_offset)
             karanam_next_idx = curr_k
             found_k = True
             
@@ -1447,7 +1302,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         sidereal_positions["Sun"], sidereal_positions["Moon"]
     )
     
-    tamil_year, tamil_month = get_tamil_year_month(JD, sidereal_positions["Sun"])
+    tamil_year, tamil_month = get_tamil_year_month(JD, sidereal_positions["Sun"], gregorian_year=year)
     tamil_day = math.floor(sidereal_positions["Sun"] % 30.0) + 1
     tamil_date = f"{tamil_month} {tamil_day}"
     
@@ -1477,7 +1332,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         sunset_hours = 18.0
         
     # Calculate Tithi, Nakshatra, Yoga, Karana transitions
-    transitions = calculate_panchangam_transitions(JD, timezone_offset)
+    transitions = calculate_panchangam_transitions(JD, timezone_offset, ayanamsa_name=ayanamsa_name)
     
     # Calculate day duration (Ahas)
     day_duration_hours = sunset_hours - sunrise_hours
