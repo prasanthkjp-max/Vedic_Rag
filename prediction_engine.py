@@ -241,6 +241,10 @@ def detect_yogas(placements, houses):
     """Detect a conservative set of high-confidence classical yogas."""
     yogas = []
 
+    # Lagna rasi index
+    lagna_idx = placements["Lagna"]["rasi_index"]
+    lords = house_lords(lagna_idx)
+
     # Pancha Mahapurusha Yogas: Mars/Mer/Jup/Ven/Sat in own/exalted AND in a kendra from Lagna
     mahapurusha = {"Mars": "Ruchaka", "Mercury": "Bhadra", "Jupiter": "Hamsa",
                    "Venus": "Malavya", "Saturn": "Sasa"}
@@ -285,8 +289,138 @@ def detect_yogas(placements, houses):
                 key = tuple(sorted([a, b]))
                 if key not in seen:
                     seen.add(key)
-                    yogas.append({"name": "Parivartana Yoga (exchange)",
-                                  "detail": f"{a} and {b} exchange signs ({RASI_SHORT[a_sign]} / {RASI_SHORT[b_sign]})"})
+                    h_a = ((a_sign - lagna_idx) % 12) + 1
+                    h_b = ((b_sign - lagna_idx) % 12) + 1
+                    if h_a in {6, 8, 12} or h_b in {6, 8, 12}:
+                        yogas.append({"name": "Dainya Parivartana Yoga (exchange)",
+                                      "detail": f"{a} (house {h_a}) and {b} (house {h_b}) exchange signs, involving a Dusthana."})
+                    else:
+                        yogas.append({"name": "Parivartana Yoga (exchange)",
+                                      "detail": f"{a} and {b} exchange signs ({RASI_SHORT[a_sign]} / {RASI_SHORT[b_sign]})"})
+
+    # --- Expanded Yogas ---
+    # 1. Yoga Karaka (planet ruling both a Kendra and Trikona)
+    for planet in ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]:
+        ruled_houses = [h for h, lord in lords.items() if lord == planet]
+        is_kendra = any(h in {1, 4, 7, 10} for h in ruled_houses)
+        is_trikona = any(h in {1, 5, 9} for h in ruled_houses)
+        if is_kendra and is_trikona:
+            yogas.append({
+                "name": "Yoga Karaka",
+                "detail": f"{planet} rules both a Kendra and a Trikona house, making it a powerful Yoga Karaka."
+            })
+            
+    # 2. Raja Yogas (conjunction/aspect of Kendra & Trikona lords)
+    for k in [1, 4, 7, 10]:
+        for t in [1, 5, 9]:
+            lk = lords[k]
+            lt = lords[t]
+            if lk == lt:
+                continue
+            
+            # Conjunction
+            if placements[lk]["rasi_index"] == placements[lt]["rasi_index"]:
+                yogas.append({
+                    "name": f"Raja Yoga (Lords of house {k} and {t})",
+                    "detail": f"Kendra lord {lk} (house {k}) and Trikona lord {lt} (house {t}) are conjoined in {RASI_SHORT[placements[lk]['rasi_index']]}."
+                })
+            else:
+                # Mutual aspect
+                sk = placements[lk]["rasi_index"]
+                st = placements[lt]["rasi_index"]
+                
+                offsets_k = SPECIAL_ASPECTS.get(lk, DEFAULT_ASPECTS)
+                offsets_t = SPECIAL_ASPECTS.get(lt, DEFAULT_ASPECTS)
+                
+                aspects_k_to_t = ((st - sk) % 12) + 1 in offsets_k
+                aspects_t_to_k = ((sk - st) % 12) + 1 in offsets_t
+                
+                if aspects_k_to_t and aspects_t_to_k:
+                     yogas.append({
+                         "name": f"Raja Yoga (Lords of house {k} and {t})",
+                         "detail": f"Kendra lord {lk} (house {k}) and Trikona lord {lt} (house {t}) aspect each other mutually."
+                     })
+                     
+    # 3. Dhana Yogas (combinations of 1, 2, 5, 9, 11 lords)
+    dhana_houses = [1, 2, 5, 9, 11]
+    for i in range(len(dhana_houses)):
+        for j in range(i + 1, len(dhana_houses)):
+            h1 = dhana_houses[i]
+            h2 = dhana_houses[j]
+            l1 = lords[h1]
+            l2 = lords[h2]
+            if l1 == l2:
+                continue
+            
+            # Conjunction
+            if placements[l1]["rasi_index"] == placements[l2]["rasi_index"]:
+                yogas.append({
+                    "name": f"Dhana Yoga (Wealth Union of house {h1} and {h2} lords)",
+                    "detail": f"Lord of house {h1} ({l1}) and Lord of house {h2} ({l2}) conjoin in {RASI_SHORT[placements[l1]['rasi_index']]}."
+                })
+            else:
+                # Mutual aspect
+                s1 = placements[l1]["rasi_index"]
+                s2 = placements[l2]["rasi_index"]
+                
+                offsets_1 = SPECIAL_ASPECTS.get(l1, DEFAULT_ASPECTS)
+                offsets_2 = SPECIAL_ASPECTS.get(l2, DEFAULT_ASPECTS)
+                
+                aspects_1_to_2 = ((s2 - s1) % 12) + 1 in offsets_1
+                aspects_2_to_1 = ((s1 - s2) % 12) + 1 in offsets_2
+                
+                if aspects_1_to_2 and aspects_2_to_1:
+                    yogas.append({
+                        "name": f"Dhana Yoga (Wealth Aspect of house {h1} and {h2} lords)",
+                        "detail": f"Lord of house {h1} ({l1}) and Lord of house {h2} ({l2}) mutually aspect each other."
+                    })
+                    
+    # 4. Arishta / Dainya Position (Lagna Lord in Dusthana, or Dusthana Lord in Lagna)
+    lagna_lord = lords[1]
+    lagna_lord_house = houses[lagna_lord]
+    if lagna_lord_house in {6, 8, 12}:
+        yogas.append({
+            "name": f"Arishta / Dainya Position (Lagna Lord in house {lagna_lord_house})",
+            "detail": f"Lagna lord {lagna_lord} is placed in the {lagna_lord_house}th house (Dusthana)."
+        })
+    for dh in {6, 8, 12}:
+        dl = lords[dh]
+        if houses[dl] == 1:
+            yogas.append({
+                "name": f"Arishta / Dainya Position (Lord of house {dh} in Lagna)",
+                "detail": f"Lord of the {dh}th house ({dl}) is placed in the 1st house (Lagna)."
+            })
+            
+    # 5. Kartari Yogas (Lagna, Sun, Moon hemmed in by malefics or benefics)
+    benefics = {"Jupiter", "Venus", "Mercury", "Moon"}
+    malefics = {"Sun", "Mars", "Saturn", "Rahu", "Ketu"}
+    
+    for target in ["Lagna", "Sun", "Moon"]:
+        if target not in placements:
+            continue
+        st = placements[target]["rasi_index"]
+        s_prev = (st - 1) % 12
+        s_next = (st + 1) % 12
+        
+        planets_prev = [p for p in GRAHAS if p in placements and p != target and placements[p]["rasi_index"] == s_prev]
+        planets_next = [p for p in GRAHAS if p in placements and p != target and placements[p]["rasi_index"] == s_next]
+        
+        if planets_prev and planets_next:
+            all_malefics_prev = all(p in malefics for p in planets_prev)
+            all_malefics_next = all(p in malefics for p in planets_next)
+            if all_malefics_prev and all_malefics_next:
+                yogas.append({
+                    "name": f"Paapa-Kartari Yoga affecting {target}",
+                    "detail": f"{target} in {RASI_SHORT[st]} is hemmed in between malefic planets (in {RASI_SHORT[s_prev]} and {RASI_SHORT[s_next]})."
+                })
+                
+            all_benefics_prev = all(p in benefics for p in planets_prev)
+            all_benefics_next = all(p in benefics for p in planets_next)
+            if all_benefics_prev and all_benefics_next:
+                yogas.append({
+                    "name": f"Subha-Kartari Yoga affecting {target}",
+                    "detail": f"{target} in {RASI_SHORT[st]} is hemmed in between benefic planets (in {RASI_SHORT[s_prev]} and {RASI_SHORT[s_next]})."
+                })
 
     return yogas
 

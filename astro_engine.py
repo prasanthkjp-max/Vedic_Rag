@@ -715,8 +715,9 @@ ASHTAKAVARGA_RULES = {
 
 def calculate_ashtakavarga(sidereal_positions, sidereal_lagna):
     """
-    Calculate Bhinnashtakavarga (BAV) for the 7 classical planets and
-    the combined Sarvashtakavarga (SAV) for the 12 signs.
+    Calculate Bhinnashtakavarga (BAV) for the 7 classical planets,
+    Prastara Ashtakavarga spreadsheet, Trikona and Ekadhipatya Shodhana,
+    and Shodhya Pinda calculations.
     """
     planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
     
@@ -731,7 +732,14 @@ def calculate_ashtakavarga(sidereal_positions, sidereal_lagna):
     for p in planets:
         bav[p] = [0] * 12
         
-    # Calculate BAV for each target planet
+    # Initialize Prastara matrix tables: planet -> source -> [12 values]
+    prastara = {}
+    for p in planets:
+        prastara[p] = {}
+        for source in planets + ["Lagna"]:
+            prastara[p][source] = [0] * 12
+            
+    # Calculate BAV and Prastara for each target planet
     for target in planets:
         rules = ASHTAKAVARGA_RULES[target]
         for source, offsets in rules.items():
@@ -739,15 +747,134 @@ def calculate_ashtakavarga(sidereal_positions, sidereal_lagna):
             for offset in offsets:
                 target_sign = (source_sign + offset - 1) % 12
                 bav[target][target_sign] += 1
+                prastara[target][source][target_sign] = 1
                 
     # Calculate Sarvashtakavarga (SAV)
     sav = [0] * 12
     for sign_idx in range(12):
         sav[sign_idx] = sum(bav[p][sign_idx] for p in planets)
         
+    # Helpers for Shodhana reductions
+    def trikona_shodhana(bav_list):
+        reduced = list(bav_list)
+        trines = [
+            [0, 4, 8],   # Aries, Leo, Sagittarius (Fire)
+            [1, 5, 9],   # Taurus, Virgo, Capricorn (Earth)
+            [2, 6, 10],  # Gemini, Libra, Aquarius (Air)
+            [3, 7, 11]   # Cancer, Scorpio, Pisces (Water)
+        ]
+        for trine in trines:
+            vals = [reduced[i] for i in trine]
+            zeros = vals.count(0)
+            if zeros == 3:
+                continue
+            elif zeros == 2:
+                # If two signs are zero, the third is also reduced to zero
+                for i in trine:
+                    reduced[i] = 0
+            elif zeros == 1:
+                # If one sign is zero, no reduction is performed
+                continue
+            else: # zeros == 0
+                m = min(vals)
+                for i in trine:
+                    reduced[i] -= m
+        return reduced
+
+    def ekadhipatya_shodhana(trikona_reduced, occupied_signs):
+        reduced = list(trikona_reduced)
+        pairs = [
+            (0, 7),   # Mars: Aries (0) and Scorpio (7)
+            (1, 6),   # Venus: Taurus (1) and Libra (6)
+            (2, 5),   # Mercury: Gemini (2) and Virgo (5)
+            (8, 11),  # Jupiter: Sagittarius (8) and Pisces (11)
+            (9, 10)   # Saturn: Capricorn (9) and Aquarius (10)
+        ]
+        
+        for s1, s2 in pairs:
+            v1 = reduced[s1]
+            v2 = reduced[s2]
+            
+            # If one of the signs has zero bindus, no reduction is performed
+            if v1 == 0 or v2 == 0:
+                continue
+                
+            occ1 = s1 in occupied_signs
+            occ2 = s2 in occupied_signs
+            
+            # If both are occupied, no reduction is performed
+            if occ1 and occ2:
+                continue
+                
+            if occ1 or occ2:
+                # One sign is occupied, one is unoccupied
+                s_occ, s_unocc = (s1, s2) if occ1 else (s2, s1)
+                v_occ = reduced[s_occ]
+                v_unocc = reduced[s_unocc]
+                
+                if v_occ >= v_unocc:
+                    # If occupied >= unoccupied, unoccupied becomes 0
+                    reduced[s_unocc] = 0
+                else:
+                    # If occupied < unoccupied, unoccupied matches occupied
+                    reduced[s_unocc] = v_occ
+            else:
+                # Both are unoccupied
+                if v1 == v2:
+                    reduced[s1] = 0
+                    reduced[s2] = 0
+                else:
+                    m = min(v1, v2)
+                    reduced[s1] = m
+                    reduced[s2] = m
+                    
+        return reduced
+
+    # Identify occupied signs by the 7 planets (excluding Lagna)
+    occupied_signs = {signs[p] for p in planets}
+    
+    # Calculate Shodhana reductions and Shodhya Pinda for each planet
+    trikona_reduced_bav = {}
+    ekadhipatya_reduced_bav = {}
+    shodhya_pinda = {}
+    
+    rasi_gunakaras = [7, 10, 8, 4, 10, 5, 7, 8, 9, 5, 11, 12]
+    graha_gunakaras = {
+        "Sun": 5, "Moon": 5, "Mars": 8, "Mercury": 5,
+        "Jupiter": 10, "Venus": 7, "Saturn": 5
+    }
+    
+    for p in planets:
+        trikona = trikona_shodhana(bav[p])
+        ekadhipatya = ekadhipatya_shodhana(trikona, occupied_signs)
+        
+        trikona_reduced_bav[p] = trikona
+        ekadhipatya_reduced_bav[p] = ekadhipatya
+        
+        # Rasi Pinda
+        rasi_pinda = sum(ekadhipatya[s] * rasi_gunakaras[s] for s in range(12))
+        
+        # Graha Pinda
+        graha_pinda = 0
+        for q in planets:
+            s_q = signs[q]
+            bindus = ekadhipatya[s_q]
+            g_q = graha_gunakaras[q]
+            graha_pinda += bindus * g_q
+            
+        shodhya_pinda[p] = {
+            "rasi_pinda": rasi_pinda,
+            "graha_pinda": graha_pinda,
+            "shodhya_pinda": rasi_pinda + graha_pinda
+        }
+        
     return {
         "bav": bav,
-        "sav": sav
+        "sav": sav,
+        "trikona": trikona_reduced_bav,
+        "ekadhipatya": ekadhipatya_reduced_bav,
+        "shodhya_pinda": shodhya_pinda,
+        "prastara": prastara
     }
 
 def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements):
@@ -1171,6 +1298,11 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             start_sign = 3
         nav_rasi_idx = (start_sign + nav_idx) % 12
         
+        # D3 Drekkana calculation
+        d3_idx = math.floor(deg_in_sign / 10.0)
+        d3_idx = min(d3_idx, 2)
+        d3_rasi_idx = (rasi_idx + d3_idx * 4) % 12
+        
         # D10 Dashamsha calculation
         d10_idx = math.floor(deg_in_sign / 3.0)
         d10_idx = min(d10_idx, 9)
@@ -1208,6 +1340,14 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             else:
                 d30_rasi_idx = 7 # Scorpio (Mars)
                 
+        # D60 Shastiamsha calculation
+        d60_idx = math.floor(deg_in_sign / 0.5)
+        d60_idx = min(d60_idx, 59)
+        if rasi_idx % 2 == 0: # Odd sign (Aries=0, Gemini=2, etc.)
+            d60_rasi_idx = (rasi_idx + d60_idx) % 12
+        else: # Even sign (Taurus=1, Cancer=3, etc.)
+            d60_rasi_idx = (rasi_idx + 11 + d60_idx) % 12
+            
         dignity = get_planetary_dignity(planet, rasi_idx, deg_in_sign)
         
         rasi_placements[planet] = {
@@ -1217,12 +1357,16 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "rasi_name": RASIS[rasi_idx],
             "navamsha_rasi_index": nav_rasi_idx,
             "navamsha_rasi_name": RASIS[nav_rasi_idx],
+            "drekkana_rasi_index": d3_rasi_idx,
+            "drekkana_rasi_name": RASIS[d3_rasi_idx],
             "dashamsha_rasi_index": d10_rasi_idx,
             "dashamsha_rasi_name": RASIS[d10_rasi_idx],
             "dwadashamsha_rasi_index": d12_rasi_idx,
             "dwadashamsha_rasi_name": RASIS[d12_rasi_idx],
             "trishamsha_rasi_index": d30_rasi_idx,
             "trishamsha_rasi_name": RASIS[d30_rasi_idx],
+            "shastiamsha_rasi_index": d60_rasi_idx,
+            "shastiamsha_rasi_name": RASIS[d60_rasi_idx],
             "dignity": dignity,
             "is_retrograde": is_retrograde,
             "is_combust": is_combust
@@ -1241,6 +1385,11 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     else:
         lag_start_sign = 3
     lag_nav_rasi_idx = (lag_start_sign + lag_nav_idx) % 12
+    
+    # D3 for Lagna
+    lag_d3_idx = math.floor(lag_deg_in_sign / 10.0)
+    lag_d3_idx = min(lag_d3_idx, 2)
+    lag_d3_rasi_idx = (lagna_rasi_idx + lag_d3_idx * 4) % 12
     
     # D10 for Lagna
     d10_lag_idx = math.floor(lag_deg_in_sign / 3.0)
@@ -1279,6 +1428,14 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         else:
             lag_d30_rasi_idx = 7
             
+    # D60 for Lagna
+    lag_d60_idx = math.floor(lag_deg_in_sign / 0.5)
+    lag_d60_idx = min(lag_d60_idx, 59)
+    if lagna_rasi_idx % 2 == 0:
+        lag_d60_rasi_idx = (lagna_rasi_idx + lag_d60_idx) % 12
+    else:
+        lag_d60_rasi_idx = (lagna_rasi_idx + 11 + lag_d60_idx) % 12
+            
     rasi_placements["Lagna"] = {
         "longitude": round(sidereal_lagna, 4),
         "degree": round(lag_deg_in_sign, 4),
@@ -1286,12 +1443,16 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         "rasi_name": RASIS[lagna_rasi_idx],
         "navamsha_rasi_index": lag_nav_rasi_idx,
         "navamsha_rasi_name": RASIS[lag_nav_rasi_idx],
+        "drekkana_rasi_index": lag_d3_rasi_idx,
+        "drekkana_rasi_name": RASIS[lag_d3_rasi_idx],
         "dashamsha_rasi_index": lag_d10_rasi_idx,
         "dashamsha_rasi_name": RASIS[lag_d10_rasi_idx],
         "dwadashamsha_rasi_index": lag_d12_rasi_idx,
         "dwadashamsha_rasi_name": RASIS[lag_d12_rasi_idx],
         "trishamsha_rasi_index": lag_d30_rasi_idx,
         "trishamsha_rasi_name": RASIS[lag_d30_rasi_idx],
+        "shastiamsha_rasi_index": lag_d60_rasi_idx,
+        "shastiamsha_rasi_name": RASIS[lag_d60_rasi_idx],
         "dignity": "Neutral",
         "is_retrograde": False,
         "is_combust": False
@@ -1433,9 +1594,10 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     }
 def calculate_marriage_compatibility(male_chart, female_chart):
     """
-    Computes Vedic Nakshatra compatibility (Porutham / Koota agreement)
-    between a Male native and a Female native based on Moon Nakshatra & Rasi.
+    Computes comprehensive Vedic compatibility (Porutham and Ashta Koota agreement)
+    between a Male native and a Female native, and evaluates Kuja Dosha.
     """
+    # 1. Resolve Nakshatra Indices
     male_naks = male_chart["panchangam"]["nakshatra"]
     female_naks = female_chart["panchangam"]["nakshatra"]
     
@@ -1448,53 +1610,7 @@ def calculate_marriage_compatibility(male_chart, female_chart):
     except ValueError:
         female_idx = 0
         
-    # Dina Porutham
-    diff = (male_idx - female_idx) % 27 + 1
-    dina_match = diff in {2, 4, 6, 8, 9, 11, 13, 15, 17, 18, 20, 22, 24, 26, 27}
-    dina_score = 1.0 if dina_match else 0.0
-    
-    # Gana Porutham
-    deva = {0, 4, 6, 7, 12, 14, 16, 21, 26}
-    manushya = {1, 3, 5, 10, 11, 19, 20, 24, 25}
-    
-    def get_gana(idx):
-        if idx in deva: return "Deva"
-        if idx in manushya: return "Manushya"
-        return "Rakshasa"
-        
-    m_gana = get_gana(male_idx)
-    f_gana = get_gana(female_idx)
-    
-    if f_gana == "Deva":
-        gana_score = 1.0 if m_gana in {"Deva", "Manushya"} else 0.0
-    elif f_gana == "Manushya":
-        gana_score = 1.0 if m_gana in {"Deva", "Manushya"} else 0.0
-    else: # Rakshasa
-        gana_score = 1.0 if m_gana == "Rakshasa" else 0.0
-        
-    # Rajju Porutham (Must not be the same)
-    def get_rajju(idx):
-        if idx in {0, 8, 9, 17, 18, 26}: return "Feet"
-        if idx in {1, 7, 10, 16, 19, 25}: return "Thighs"
-        if idx in {2, 6, 11, 15, 20, 24}: return "Navel"
-        if idx in {3, 5, 12, 14, 21, 23}: return "Neck"
-        return "Head"
-        
-    m_rajju = get_rajju(male_idx)
-    f_rajju = get_rajju(female_idx)
-    rajju_match = m_rajju != f_rajju
-    rajju_score = 1.0 if rajju_match else 0.0
-    
-    # Vedha Porutham (Must not be in vedha pair)
-    vedha_pairs = {
-        (0, 17), (1, 16), (2, 15), (3, 14), (5, 21), (6, 20), (7, 19), (8, 18), (9, 26),
-        (10, 25), (11, 24), (12, 23), (4, 13), (13, 22), (4, 22)
-    }
-    pair = (min(male_idx, female_idx), max(male_idx, female_idx))
-    vedha_match = pair not in vedha_pairs
-    vedha_score = 1.0 if vedha_match else 0.0
-    
-    # Rasi Porutham
+    # 2. Resolve Moon Rasi Indices
     m_rasi_name = male_chart["placements"].get("Moon", {}).get("rasi_name", "")
     f_rasi_name = female_chart["placements"].get("Moon", {}).get("rasi_name", "")
     
@@ -1507,11 +1623,56 @@ def calculate_marriage_compatibility(male_chart, female_chart):
     m_rasi_idx = get_rasi_idx(m_rasi_name)
     f_rasi_idx = get_rasi_idx(f_rasi_name)
     
-    rasi_diff = (m_rasi_idx - f_rasi_idx) % 12 + 1
-    rasi_match = rasi_diff in {1, 7, 9, 10, 11, 12}
-    rasi_score = 1.0 if rasi_match else 0.0
+    m_moon_deg = male_chart["placements"].get("Moon", {}).get("degree", 0.0)
+    f_moon_deg = female_chart["placements"].get("Moon", {}).get("degree", 0.0)
+
+    # 3. Define Astrological Constants & Relationships
+    GRAHA_RELATIONS = {
+        "Sun": {
+            "Sun": "Friend", "Moon": "Friend", "Mars": "Friend", "Jupiter": "Friend",
+            "Mercury": "Neutral", "Venus": "Enemy", "Saturn": "Enemy"
+        },
+        "Moon": {
+            "Sun": "Friend", "Mercury": "Friend",
+            "Moon": "Friend", "Mars": "Neutral", "Jupiter": "Neutral", "Venus": "Neutral", "Saturn": "Neutral"
+        },
+        "Mars": {
+            "Sun": "Friend", "Moon": "Friend", "Jupiter": "Friend",
+            "Mars": "Friend", "Venus": "Neutral", "Saturn": "Neutral",
+            "Mercury": "Enemy"
+        },
+        "Mercury": {
+            "Sun": "Friend", "Venus": "Friend",
+            "Mercury": "Friend", "Mars": "Neutral", "Jupiter": "Neutral", "Saturn": "Neutral",
+            "Moon": "Enemy"
+        },
+        "Jupiter": {
+            "Sun": "Friend", "Moon": "Friend", "Mars": "Friend",
+            "Jupiter": "Friend", "Saturn": "Neutral",
+            "Mercury": "Enemy", "Venus": "Enemy"
+        },
+        "Venus": {
+            "Mercury": "Friend", "Saturn": "Friend",
+            "Venus": "Friend", "Mars": "Neutral", "Jupiter": "Neutral",
+            "Sun": "Enemy", "Moon": "Enemy"
+        },
+        "Saturn": {
+            "Mercury": "Friend", "Venus": "Friend",
+            "Saturn": "Friend", "Jupiter": "Neutral",
+            "Sun": "Enemy", "Moon": "Enemy", "Mars": "Enemy"
+        }
+    }
     
-    # Rasiyadhipathi Porutham (Friendship of Lords)
+    MILKY_NAKSHATRAS = {2, 3, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 21, 24, 26}
+    
+    YONI_ANIMAL_MAP = {
+        0: "Horse", 1: "Elephant", 2: "Goat", 3: "Serpent", 4: "Serpent", 5: "Dog",
+        6: "Cat", 7: "Goat", 8: "Cat", 9: "Rat", 10: "Rat", 11: "Cow",
+        12: "Buffalo", 13: "Tiger", 14: "Buffalo", 15: "Tiger", 16: "Hare", 17: "Hare",
+        18: "Dog", 19: "Monkey", 20: "Mongoose", 21: "Monkey", 22: "Lion", 23: "Horse",
+        24: "Lion", 25: "Cow", 26: "Elephant"
+    }
+    
     def get_lord(idx):
         if idx in {0, 7}: return "Mars"
         if idx in {1, 6}: return "Venus"
@@ -1520,30 +1681,458 @@ def calculate_marriage_compatibility(male_chart, female_chart):
         if idx == 4: return "Sun"
         if idx in {8, 11}: return "Jupiter"
         return "Saturn"
+
+    # ==================== A. SOUTH INDIAN PORUTHAMS ====================
+    # 1. Dina Porutham
+    diff = (male_idx - female_idx) % 27 + 1
+    dina_match = diff in {2, 4, 6, 8, 9, 11, 13, 15, 17, 18, 20, 22, 24, 26, 27}
+    dina_score = 1.0 if dina_match else 0.0
+    
+    # 2. Gana Porutham
+    deva = {0, 4, 6, 7, 12, 14, 16, 21, 26}
+    manushya = {1, 3, 5, 10, 11, 19, 20, 24, 25}
+    def get_gana(idx):
+        if idx in deva: return "Deva"
+        if idx in manushya: return "Manushya"
+        return "Rakshasa"
+    m_gana = get_gana(male_idx)
+    f_gana = get_gana(female_idx)
+    if f_gana == "Deva":
+        gana_score = 1.0 if m_gana in {"Deva", "Manushya"} else 0.0
+    elif f_gana == "Manushya":
+        gana_score = 1.0 if m_gana in {"Deva", "Manushya"} else 0.0
+    else: # Rakshasa
+        gana_score = 1.0 if m_gana == "Rakshasa" else 0.0
         
+    # 3. Rajju Porutham (Must not be the same)
+    def get_rajju(idx):
+        if idx in {0, 8, 9, 17, 18, 26}: return "Feet"
+        if idx in {1, 7, 10, 16, 19, 25}: return "Thighs"
+        if idx in {2, 6, 11, 15, 20, 24}: return "Navel"
+        if idx in {3, 5, 12, 14, 21, 23}: return "Neck"
+        return "Head"
+    m_rajju = get_rajju(male_idx)
+    f_rajju = get_rajju(female_idx)
+    rajju_match = m_rajju != f_rajju
+    rajju_score = 1.0 if rajju_match else 0.0
+    
+    # 4. Vedha Porutham
+    vedha_pairs = {
+        (0, 17), (1, 16), (2, 15), (3, 14), (5, 21), (6, 20), (7, 19), (8, 18), (9, 26),
+        (10, 25), (11, 24), (12, 23), (4, 13), (13, 22), (4, 22)
+    }
+    pair = (min(male_idx, female_idx), max(male_idx, female_idx))
+    vedha_match = pair not in vedha_pairs
+    vedha_score = 1.0 if vedha_match else 0.0
+    
+    # 5. Rasi Porutham
+    rasi_diff = (m_rasi_idx - f_rasi_idx) % 12 + 1
+    rasi_match = rasi_diff in {1, 7, 9, 10, 11, 12}
+    rasi_score = 1.0 if rasi_match else 0.0
+    
+    # 6. Rasiyadhipathi Porutham
     m_lord = get_lord(m_rasi_idx)
     f_lord = get_lord(f_rasi_idx)
     
-    # Simple group friendship
-    grp1 = {"Sun", "Moon", "Mars", "Jupiter"}
-    grp2 = {"Mercury", "Venus", "Saturn"}
-    lord_match = (m_lord in grp1 and f_lord in grp1) or (m_lord in grp2 and f_lord in grp2)
+    r12 = GRAHA_RELATIONS[m_lord].get(f_lord, "Neutral")
+    r21 = GRAHA_RELATIONS[f_lord].get(m_lord, "Neutral")
+    lord_match = (r12 in {"Friend", "Neutral"} or r21 in {"Friend", "Neutral"} or m_lord == f_lord)
     lord_score = 1.0 if lord_match else 0.0
     
-    total_score = dina_score + gana_score + rajju_score + vedha_score + rasi_score + lord_score
-    percentage = round((total_score / 6.0) * 100, 1)
+    # 7. Mahendra Porutham (Count from Bride to Groom)
+    mahendra_match = diff in {4, 7, 10, 13, 16, 19, 22, 25}
+    mahendra_score = 1.0 if mahendra_match else 0.0
+    
+    # 8. Sthree Deergam Porutham (Count from Bride to Groom)
+    if diff >= 13:
+        sthree_deergam_score = 1.0
+        sthree_deergam_match = True
+    elif diff >= 9:
+        sthree_deergam_score = 0.5
+        sthree_deergam_match = True
+    else:
+        sthree_deergam_score = 0.0
+        sthree_deergam_match = False
+        
+    # 9. Yoni Porutham (South Indian: Match if not enemy)
+    m_yoni = YONI_ANIMAL_MAP.get(male_idx, "Horse")
+    f_yoni = YONI_ANIMAL_MAP.get(female_idx, "Horse")
+    
+    enemies_set = {
+        ("Cat", "Rat"), ("Dog", "Hare"), ("Mongoose", "Serpent"),
+        ("Cow", "Tiger"), ("Elephant", "Lion"), ("Buffalo", "Horse"),
+        ("Goat", "Monkey")
+    }
+    yoni_pair = (min(m_yoni, f_yoni), max(m_yoni, f_yoni))
+    yoni_match = yoni_pair not in enemies_set
+    yoni_porutham_score = 1.0 if yoni_match else 0.0
+    
+    # 10. Vasya Porutham (South Indian: Moon Rasi attraction)
+    VASYA_MAP = {
+        0: {4, 7}, 1: {3, 6}, 2: {5}, 3: {7, 8}, 4: {6}, 5: {2, 11},
+        6: {9}, 7: {3, 5}, 8: {11}, 9: {0, 10}, 10: {0}, 11: {9}
+    }
+    m_vasya_list = VASYA_MAP.get(m_rasi_idx, set())
+    f_vasya_list = VASYA_MAP.get(f_rasi_idx, set())
+    vasya_porutham_match = (f_rasi_idx in m_vasya_list) or (m_rasi_idx in f_vasya_list)
+    vasya_porutham_score = 1.0 if vasya_porutham_match else 0.0
+    
+    # 11. Vriksha Porutham
+    m_milky = male_idx in MILKY_NAKSHATRAS
+    f_milky = female_idx in MILKY_NAKSHATRAS
+    vriksha_match = m_milky or f_milky
+    vriksha_score = 1.0 if vriksha_match else 0.0
+    
+    south_indian_score = (
+        dina_score + gana_score + rajju_score + vedha_score + rasi_score +
+        lord_score + mahendra_score + sthree_deergam_score + yoni_porutham_score +
+        vasya_porutham_score + vriksha_score
+    )
+
+    # ==================== B. NORTH INDIAN ASHTA KOOTAS (36 points) ====================
+    # 1. Varna (1 point)
+    def get_varna_rank(r_idx):
+        if r_idx in {3, 7, 11}: return 4 # Brahmin
+        if r_idx in {0, 4, 8}: return 3 # Kshatriya
+        if r_idx in {1, 5, 9}: return 2 # Vaishya
+        return 1 # Shudra
+    m_varna = get_varna_rank(m_rasi_idx)
+    f_varna = get_varna_rank(f_rasi_idx)
+    varna_koota_score = 1.0 if m_varna >= f_varna else 0.0
+    
+    # 2. Vasya (2 points)
+    def get_vasya_category(r_idx, deg):
+        if r_idx in {0, 1}: return "Chatushpada"
+        elif r_idx == 8: return "Nara" if deg < 15.0 else "Chatushpada"
+        elif r_idx == 9: return "Chatushpada" if deg < 15.0 else "Jalchar"
+        elif r_idx in {2, 5, 6, 10}: return "Nara"
+        elif r_idx in {3, 11}: return "Jalchar"
+        elif r_idx == 4: return "Vanacara"
+        else: return "Keeta" # 7
+    m_vasya_cat = get_vasya_category(m_rasi_idx, m_moon_deg)
+    f_vasya_cat = get_vasya_category(f_rasi_idx, f_moon_deg)
+    
+    if m_vasya_cat == f_vasya_cat:
+        vasya_koota_score = 2.0
+    else:
+        v_matrix = {
+            "Chatushpada": {"Nara": 1.0, "Jalchar": 1.0, "Vanacara": 1.5, "Keeta": 1.0},
+            "Nara": {"Chatushpada": 1.0, "Jalchar": 1.5, "Vanacara": 0.0, "Keeta": 1.0},
+            "Jalchar": {"Chatushpada": 1.0, "Nara": 1.5, "Vanacara": 1.0, "Keeta": 1.0},
+            "Vanacara": {"Chatushpada": 0.0, "Nara": 0.0, "Jalchar": 0.0, "Keeta": 0.0},
+            "Keeta": {"Chatushpada": 1.0, "Nara": 1.0, "Jalchar": 1.0, "Vanacara": 0.0}
+        }
+        vasya_koota_score = v_matrix.get(f_vasya_cat, {}).get(m_vasya_cat, 0.0)
+        
+    # 3. Tara (3 points)
+    tara_diff_f_to_m = (male_idx - female_idx) % 27 + 1
+    tara_diff_m_to_f = (female_idx - male_idx) % 27 + 1
+    
+    r1_tara = tara_diff_f_to_m % 9
+    if r1_tara == 0: r1_tara = 9
+    r2_tara = tara_diff_m_to_f % 9
+    if r2_tara == 0: r2_tara = 9
+    
+    r1_ok = r1_tara not in {3, 5, 7}
+    r2_ok = r2_tara not in {3, 5, 7}
+    
+    if r1_ok and r2_ok:
+        tara_koota_score = 3.0
+    elif r1_ok or r2_ok:
+        tara_koota_score = 1.5
+    else:
+        tara_koota_score = 0.0
+        
+    # 4. Yoni (4 points)
+    def calculate_yoni_score(y1, y2):
+        if y1 == y2:
+            return 4.0
+        p_yoni = (min(y1, y2), max(y1, y2))
+        if p_yoni in enemies_set:
+            return 0.0
+            
+        friend_set = {
+            ("Horse", "Serpent"), ("Horse", "Hare"), ("Horse", "Monkey"),
+            ("Elephant", "Goat"), ("Elephant", "Serpent"), ("Elephant", "Buffalo"), ("Elephant", "Monkey"),
+            ("Goat", "Cow"), ("Goat", "Buffalo"), ("Goat", "Mongoose"),
+            ("Cat", "Hare"), ("Cat", "Monkey"),
+            ("Cow", "Buffalo")
+        }
+        if p_yoni in friend_set:
+            return 3.0
+            
+        unfriendly_set = {
+            ("Cat", "Serpent"), ("Cow", "Horse"), ("Dog", "Goat"),
+            ("Dog", "Rat"), ("Dog", "Cow"), ("Dog", "Mongoose"),
+            ("Tiger", "Horse"), ("Tiger", "Elephant"), ("Tiger", "Goat"),
+            ("Tiger", "Serpent"), ("Tiger", "Dog"), ("Tiger", "Cat"),
+            ("Tiger", "Rat"), ("Tiger", "Buffalo"),
+            ("Lion", "Horse"), ("Lion", "Goat"), ("Lion", "Serpent"),
+            ("Lion", "Dog"), ("Lion", "Cat"), ("Lion", "Rat"),
+            ("Lion", "Cow"), ("Lion", "Buffalo")
+        }
+        if p_yoni in unfriendly_set:
+            return 1.0
+            
+        return 2.0
+    yoni_koota_score = calculate_yoni_score(m_yoni, f_yoni)
+    
+    # 5. Graha Maitri (5 points)
+    def calculate_graha_maitri_score(l1, l2):
+        if l1 == l2:
+            return 5.0
+        v1 = GRAHA_RELATIONS[l1].get(l2, "Neutral")
+        v2 = GRAHA_RELATIONS[l2].get(l1, "Neutral")
+        v_sorted = sorted([v1, v2])
+        if v_sorted == ['Friend', 'Friend']:
+            return 5.0
+        elif v_sorted == ['Friend', 'Neutral']:
+            return 4.0
+        elif v_sorted == ['Neutral', 'Neutral']:
+            return 3.0
+        elif v_sorted == ['Enemy', 'Friend']:
+            return 1.0
+        elif v_sorted == ['Enemy', 'Neutral']:
+            return 0.5
+        else:
+            return 0.0
+    graha_maitri_score = calculate_graha_maitri_score(m_lord, f_lord)
+    
+    # 6. Gana (6 points)
+    if m_gana == f_gana:
+        gana_koota_score = 6.0
+    elif (f_gana == "Deva" and m_gana == "Manushya") or (f_gana == "Manushya" and m_gana == "Deva"):
+        gana_koota_score = 5.0
+    elif f_gana == "Manushya" and m_gana == "Rakshasa":
+        gana_koota_score = 1.0
+    else:
+        gana_koota_score = 0.0
+        
+    # 7. Bhakoot (7 points)
+    bhakoot_diff = (m_rasi_idx - f_rasi_idx) % 12 + 1
+    bhakoot_dosha = False
+    bhakoot_reason = "None"
+    
+    if bhakoot_diff in {2, 12}:
+        bhakoot_dosha = True
+        bhakoot_reason = "2/12 relative position"
+    elif bhakoot_diff in {5, 9}:
+        bhakoot_dosha = True
+        bhakoot_reason = "5/9 relative position"
+    elif bhakoot_diff in {6, 8}:
+        bhakoot_dosha = True
+        bhakoot_reason = "6/8 relative position"
+        
+    if not bhakoot_dosha:
+        bhakoot_koota_score = 7.0
+    else:
+        # Check cancellation by Lord friendship
+        r12_lord = GRAHA_RELATIONS[m_lord].get(f_lord, "Neutral")
+        r21_lord = GRAHA_RELATIONS[f_lord].get(m_lord, "Neutral")
+        is_friendly = (r12_lord == "Friend" or r21_lord == "Friend" or m_lord == f_lord)
+        if is_friendly:
+            bhakoot_koota_score = 7.0
+            bhakoot_dosha = False
+            bhakoot_reason = f"Cancelled due to Rasi Lord friendship ({m_lord} & {f_lord})"
+        else:
+            bhakoot_koota_score = 0.0
+            
+    # 8. Nadi (8 points)
+    ADI_NADI = {0, 5, 6, 11, 12, 17, 18, 23, 24}
+    MADHYA_NADI = {1, 4, 7, 10, 13, 16, 19, 22, 25}
+    ANTYA_NADI = {2, 3, 8, 9, 14, 15, 20, 21, 26}
+    
+    def get_nadi(naks_idx):
+        if naks_idx in ADI_NADI: return "Adi"
+        elif naks_idx in MADHYA_NADI: return "Madhya"
+        return "Antya"
+        
+    m_nadi = get_nadi(male_idx)
+    f_nadi = get_nadi(female_idx)
+    
+    if m_nadi != f_nadi:
+        nadi_koota_score = 8.0
+        nadi_dosha = False
+        nadi_reason = "None"
+    else:
+        # Same Nadi -> check cancellation
+        is_nadi_cancelled = False
+        if male_idx == female_idx and m_rasi_idx != f_rasi_idx:
+            is_nadi_cancelled = True
+            nadi_reason = "Same Nakshatra but different Rasi signs"
+        elif m_rasi_idx != f_rasi_idx and m_lord == f_lord:
+            is_nadi_cancelled = True
+            nadi_reason = "Different signs but same sign lord"
+            
+        if is_nadi_cancelled:
+            nadi_koota_score = 8.0
+            nadi_dosha = False
+            nadi_reason = "Cancelled: " + nadi_reason
+        else:
+            nadi_koota_score = 0.0
+            nadi_dosha = True
+            nadi_reason = "Same Nadi without cancellation"
+            
+    north_indian_score = (
+        varna_koota_score + vasya_koota_score + tara_koota_score + yoni_koota_score +
+        graha_maitri_score + gana_koota_score + bhakoot_koota_score + nadi_koota_score
+    )
+
+    # ==================== C. KUJA DOSHA (MANGLIK) ====================
+    def check_kuja_dosha_for_chart(chart):
+        placements = chart["placements"]
+        mars_rasi = placements.get("Mars", {}).get("rasi_index")
+        lagna_rasi = placements.get("Lagna", {}).get("rasi_index")
+        moon_rasi = placements.get("Moon", {}).get("rasi_index")
+        venus_rasi = placements.get("Venus", {}).get("rasi_index")
+        
+        if mars_rasi is None:
+            return {"has_dosha": False, "details": "No Mars position data", "points": {}}
+            
+        h_lagna = (mars_rasi - lagna_rasi) % 12 + 1
+        h_moon = (mars_rasi - moon_rasi) % 12 + 1
+        h_venus = (mars_rasi - venus_rasi) % 12 + 1
+        
+        pts = {}
+        
+        def check_house_dosha(h, source_name):
+            if h in {1, 2, 4, 7, 8, 12}:
+                if mars_rasi in {0, 7, 9}:
+                    return False, f"Mars in {RASIS[mars_rasi]} (Swakshetra/Exaltation exception)"
+                if mars_rasi in {4, 10}:
+                    return False, f"Mars in {RASIS[mars_rasi]} (General exception)"
+                if h == 2 and mars_rasi in {2, 5}:
+                    return False, "Mars in 2nd house in Mercury sign"
+                if h == 4 and mars_rasi in {1, 6}:
+                    return False, "Mars in 4th house in Venus sign"
+                if h == 7 and mars_rasi in {3, 9}:
+                    return False, "Mars in 7th house exception"
+                if h == 8 and mars_rasi in {8, 11}:
+                    return False, "Mars in 8th house in Jupiter sign"
+                if h == 12 and mars_rasi in {1, 6, 3}:
+                    return False, "Mars in 12th house exception"
+                return True, f"Mars in {h} house from {source_name}"
+            return False, "No affliction"
+
+        has_lagna_dosha, lagna_desc = check_house_dosha(h_lagna, "Lagna")
+        has_moon_dosha, moon_desc = check_house_dosha(h_moon, "Moon")
+        has_venus_dosha, venus_desc = check_house_dosha(h_venus, "Venus")
+        
+        pts["Lagna"] = {"house": h_lagna, "has_dosha": has_lagna_dosha, "description": lagna_desc}
+        pts["Moon"] = {"house": h_moon, "has_dosha": has_moon_dosha, "description": moon_desc}
+        pts["Venus"] = {"house": h_venus, "has_dosha": has_venus_dosha, "description": venus_desc}
+        
+        has_dosha = has_lagna_dosha or has_moon_dosha or has_venus_dosha
+        
+        details_list = []
+        if has_lagna_dosha: details_list.append(lagna_desc)
+        if has_moon_dosha: details_list.append(moon_desc)
+        if has_venus_dosha: details_list.append(venus_desc)
+        
+        if not has_dosha:
+            details = "No Kuja Dosha (Mars is well placed or exceptions apply)"
+        else:
+            details = "Kuja Dosha detected: " + ", ".join(details_list)
+            
+        return {
+            "has_dosha": has_dosha,
+            "details": details,
+            "points": pts
+        }
+
+    male_kuja = check_kuja_dosha_for_chart(male_chart)
+    female_kuja = check_kuja_dosha_for_chart(female_chart)
+    
+    m_has = male_kuja["has_dosha"]
+    f_has = female_kuja["has_dosha"]
+    if m_has and f_has:
+        kuja_verdict = "Compatible (Both have Kuja Dosha, resulting in mutual cancellation/Samya)"
+        kuja_compat_score = 1.0
+    elif (not m_has) and (not f_has):
+        kuja_verdict = "Compatible (Neither has Kuja Dosha)"
+        kuja_compat_score = 1.0
+    elif m_has:
+        kuja_verdict = "Incompatible / Tension (Only the Male native has Kuja Dosha)"
+        kuja_compat_score = 0.0
+    else:
+        kuja_verdict = "Incompatible / Tension (Only the Female native has Kuja Dosha)"
+        kuja_compat_score = 0.0
+
+    # ==================== D. COMBINED SCORE & DETAILS ====================
+    # We set top-level score and percentage to the 36-point North Indian Ashta Koota (standard Guna Milan)
+    percentage = round((north_indian_score / 36.0) * 100, 1)
+    
+    # Details dict holds all matches for dynamic frontend rendering
+    details = {
+        # Keep original 6 keys at the top for backwards-compatibility:
+        "dina": {"match": dina_match, "score": dina_score, "label": "Dina (Health/Longevity)"},
+        "gana": {"match": gana_score > 0, "score": gana_score, "label": f"Gana (Mental Temperament) [Male: {m_gana}, Female: {f_gana}]"},
+        "rajju": {"match": rajju_match, "score": rajju_score, "label": f"Rajju (Longevity of Husband) [Male: {m_rajju}, Female: {f_rajju}]"},
+        "vedha": {"match": vedha_match, "score": vedha_score, "label": "Vedha (No Affliction/Obstacles)"},
+        "rasi": {"match": rasi_match, "score": rasi_score, "label": "Rasi (Zodiac Harmony)"},
+        "lord": {"match": lord_match, "score": lord_score, "label": f"Rasiyadhipathi (Lords Friendship) [Male Lord: {m_lord}, Female Lord: {f_lord}]"},
+        
+        # Add the 5 new South Indian Poruthams:
+        "mahendra": {"match": mahendra_match, "score": mahendra_score, "label": "Mahendra (Progeny)"},
+        "sthree_deergam": {"match": sthree_deergam_match, "score": sthree_deergam_score, "label": "Sthree Deergam (Wife's Well-being)"},
+        "yoni_porutham": {"match": yoni_match, "score": yoni_porutham_score, "label": f"Yoni (Physical Compatibility) [Male Yoni: {m_yoni}, Female Yoni: {f_yoni}]"},
+        "vasya_porutham": {"match": vasya_porutham_match, "score": vasya_porutham_score, "label": "Vasya (Mutual Attraction)"},
+        "vriksha": {"match": vriksha_match, "score": vriksha_score, "label": "Vriksha (Tree Matching/Lineage)"},
+        
+        # Add the 4 new North Indian Ashta Kootas:
+        "varna": {"match": varna_koota_score > 0, "score": varna_koota_score, "label": "Varna (Caste/Duty Harmony)"},
+        "tara": {"match": tara_koota_score > 0, "score": tara_koota_score, "label": "Tara (Destiny/Stars Harmony)"},
+        "bhakoot": {"match": not bhakoot_dosha, "score": bhakoot_koota_score, "label": f"Bhakoot (Moon Sign Harmony) [Reason: {bhakoot_reason}]"},
+        "nadi": {"match": not nadi_dosha, "score": nadi_koota_score, "label": f"Nadi (Physiological Temperament) [Reason: {nadi_reason}]"},
+        
+        # Add Kuja Dosha Compatibility row:
+        "kuja_dosha_compat": {"match": kuja_compat_score > 0, "score": kuja_compat_score, "label": f"Kuja Dosha Compatibility [Verdict: {kuja_verdict}]"}
+    }
     
     return {
-        "score": total_score,
-        "max_score": 6.0,
+        "score": north_indian_score,
+        "max_score": 36.0,
         "percentage": percentage,
-        "details": {
-            "dina": {"match": dina_match, "score": dina_score, "label": "Dina (Health/Longevity)"},
-            "gana": {"match": gana_score > 0, "score": gana_score, "label": f"Gana (Mental Temperament) [Male: {m_gana}, Female: {f_gana}]"},
-            "rajju": {"match": rajju_match, "score": rajju_score, "label": f"Rajju (Longevity of Husband) [Male: {m_rajju}, Female: {f_rajju}]"},
-            "vedha": {"match": vedha_match, "score": vedha_score, "label": "Vedha (No Affliction/Obstacles)"},
-            "rasi": {"match": rasi_match, "score": rasi_score, "label": "Rasi (Zodiac Harmony)"},
-            "lord": {"match": lord_match, "score": lord_score, "label": f"Rasiyadhipathi (Lords Friendship) [Male Lord: {m_lord}, Female Lord: {f_lord}]"}
+        "details": details,
+        "south_indian": {
+            "score": south_indian_score,
+            "max_score": 11.0,
+            "percentage": round((south_indian_score / 11.0) * 100, 1),
+            "poruthams": {
+                "dina": {"match": dina_match, "score": dina_score, "label": "Dina"},
+                "gana": {"match": gana_score > 0, "score": gana_score, "label": "Gana"},
+                "mahendra": {"match": mahendra_match, "score": mahendra_score, "label": "Mahendra"},
+                "sthree_deergam": {"match": sthree_deergam_match, "score": sthree_deergam_score, "label": "Sthree Deergam"},
+                "yoni": {"match": yoni_match, "score": yoni_porutham_score, "label": "Yoni"},
+                "rasi": {"match": rasi_match, "score": rasi_score, "label": "Rasi"},
+                "lord": {"match": lord_match, "score": lord_score, "label": "Rasiyadhipathi"},
+                "vasya": {"match": vasya_porutham_match, "score": vasya_porutham_score, "label": "Vasya"},
+                "rajju": {"match": rajju_match, "score": rajju_score, "label": "Rajju"},
+                "vedha": {"match": vedha_match, "score": vedha_score, "label": "Vedha"},
+                "vriksha": {"match": vriksha_match, "score": vriksha_score, "label": "Vriksha"}
+            }
+        },
+        "north_indian": {
+            "score": north_indian_score,
+            "max_score": 36.0,
+            "percentage": percentage,
+            "kootas": {
+                "varna": {"score": varna_koota_score, "max": 1.0},
+                "vasya": {"score": vasya_koota_score, "max": 2.0},
+                "tara": {"score": tara_koota_score, "max": 3.0},
+                "yoni": {"score": yoni_koota_score, "max": 4.0},
+                "graha_maitri": {"score": graha_maitri_score, "max": 5.0},
+                "gana": {"score": gana_koota_score, "max": 6.0},
+                "bhakoot": {"score": bhakoot_koota_score, "max": 7.0},
+                "nadi": {"score": nadi_koota_score, "max": 8.0}
+            },
+            "nadi_dosha": nadi_dosha,
+            "bhakoot_dosha": bhakoot_dosha
+        },
+        "kuja_dosha": {
+            "male": male_kuja,
+            "female": female_kuja,
+            "compatibility_verdict": kuja_verdict
         }
     }
 
