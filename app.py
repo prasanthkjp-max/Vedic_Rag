@@ -664,6 +664,7 @@ class AIPredictRequest(BaseModel):
     client_name: str
     place_name: str
     model: str = DEFAULT_LLM_MODEL
+    lang: str = "en"
 
 
 class MarriageChartRequest(BaseModel):
@@ -796,6 +797,16 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
     client = req.client_name
     place = req.place_name
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    
+    lang_map = {
+        "en": "English",
+        "ta": "Tamil (தமிழ்)",
+        "te": "Telugu (తెలుగు)",
+        "ml": "Malayalam (മലയാളം)",
+        "kn": "Kannada (ಕನ್ನಡ)",
+        "hi": "Hindi (हिन्दी)"
+    }
+    target_lang = lang_map.get(req.lang, "English")
 
     # Derive full interpretive analysis (houses, conjunctions, aspects, current
     # dasa/bhukti, gochara, yogas) and retrieve grounding passages from the RAG.
@@ -816,17 +827,19 @@ A precise computational analysis of the chart is given below. You MUST reason fr
 {rag_context}
 ---------------------------------------------
 
-Using the classical rules from the retrieved texts AND standard Jyotish technique, write an exceptionally insightful, accurate reading in beautiful Markdown. Cite the source book and page (e.g. [Brihat Parasara Hora Sastra, Page 52]) whenever you apply a rule from the references. Structure it as:
-1. **Divine Invocation** — a short Sanskrit invocation and blessing.
-2. **Lagna & Personality** — ascendant, its lord's placement/strength, and overall constitution.
-3. **Mind & Emotions (Moon & Nakshatra)** — Moon's house, sign, dignity and Janma Nakshatra.
-4. **Key Yogas, Conjunctions & Planetary Strengths** — interpret the actual conjunctions, aspects, exaltation/debilitation and yogas detected; note both blessings and cautions.
-5. **House-by-House Life Areas** — career (10th), wealth (2nd/11th), marriage (7th), education/children (5th), health (6th), fortune (9th), drawing on house lords and occupants.
-6. **Dasa–Bhukti Timing** — interpret the CURRENT Mahadasa and Antardasa specifically, what it activates, and what the upcoming bhukti brings.
-7. **Gochara (Current Transits)** — address Sade Sati / major transits flagged in the analysis and practical guidance.
-8. **Remedies (Parihara)** — fitting classical remedies.
+CRITICAL REQUIREMENT: You MUST write the entire response, including headings, labels, sections, and descriptions, in the following language: {target_lang}. Use professional, grammatically correct, and astrologically appropriate phrasing in {target_lang}. Do not include English text unless it represents a standard untranslatable planet or coordinate abbreviation.
 
-Be authoritative, compassionate, and precise. Start directly with the invocation:
+Using the classical rules from the retrieved texts AND standard Jyotish technique, write an exceptionally insightful, accurate reading in beautiful Markdown. Cite the source book and page (e.g. [Brihat Parasara Hora Sastra, Page 52]) whenever you apply a rule from the references. Structure it as:
+1. **Divine Invocation** (in {target_lang}) — a short Sanskrit invocation and blessing.
+2. **Lagna & Personality** (in {target_lang}) — ascendant, its lord's placement/strength, and overall constitution.
+3. **Mind & Emotions (Moon & Nakshatra)** (in {target_lang}) — Moon's house, sign, dignity and Janma Nakshatra.
+4. **Key Yogas, Conjunctions & Planetary Strengths** (in {target_lang}) — interpret the actual conjunctions, aspects, exaltation/debilitation and yogas detected; note both blessings and cautions.
+5. **House-by-House Life Areas** (in {target_lang}) — career (10th), wealth (2nd/11th), marriage (7th), education/children (5th), health (6th), fortune (9th), drawing on house lords and occupants.
+6. **Dasa–Bhukti Timing** (in {target_lang}) — interpret the CURRENT Mahadasa and Antardasa specifically, what it activates, and what the upcoming bhukti brings.
+7. **Gochara (Current Transits)** (in {target_lang}) — address Sade Sati / major transits flagged in the analysis and practical guidance.
+8. **Remedies (Parihara)** (in {target_lang}) — fitting classical remedies.
+
+Be authoritative, compassionate, and precise. Start directly with the invocation in {target_lang}:
 """
 
     def prediction_stream_generator():
