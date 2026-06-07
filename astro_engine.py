@@ -117,8 +117,17 @@ def get_planet_longitudes(T, JD):
 def calculate_lagna(JD, longitude, latitude, T):
     """
     Calculate Lagna (Ascendant Ecliptic Longitude) using high-precision Swiss Ephemeris.
+
+    Placidus cusps are undefined above the polar circle (|lat| > ~66.5°), where
+    swe.houses(..., b'P') raises an error and would otherwise crash the whole
+    chart. Fall back to whole-sign houses, which still return a valid ascendant
+    at any latitude. Only the ascendant (ascmc[0]) is used downstream, so the
+    house-system choice does not change results at normal latitudes.
     """
-    res = swe.houses(JD, latitude, longitude, b'P')
+    try:
+        res = swe.houses(JD, latitude, longitude, b'P')
+    except Exception:
+        res = swe.houses(JD, latitude, longitude, b'W')
     return res[1][0]
 
 def get_tamil_year_month(JD, sun_sidereal_long, gregorian_year=None):
@@ -1191,10 +1200,15 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         
         ojha_yugma_bala[p] = d1_points + d9_points
 
-    # Compute Kendra Bala
+    # Compute Kendra Bala. House is the whole-sign house from the Lagna sign,
+    # consistent with the rest of the engine (Kuja dosha, chart rendering);
+    # a longitude difference would mis-house a planet sharing the Lagna sign
+    # but sitting below the ascendant degree.
     kendra_bala = {}
+    lagna_sign_idx = math.floor(sidereal_lagna / 30.0) % 12
     for p in planets:
-        h = math.floor((sidereal_positions[p] - sidereal_lagna) % 360.0 / 30.0) + 1
+        p_sign_idx = math.floor(sidereal_positions[p] / 30.0) % 12
+        h = (p_sign_idx - lagna_sign_idx) % 12 + 1
         if h in {1, 4, 7, 10}:
             kendra_bala[p] = 60.0
         elif h in {2, 5, 8, 11}:
@@ -1546,6 +1560,21 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     Master function to calculate the complete Sidereal astrological chart
     with Thirukanitha panchangam planet coordinates and 120-year Dasas.
     """
+    # 0. Validate inputs so out-of-range values fail loudly instead of silently
+    #    producing a garbage chart (e.g. month=13 -> "1990-13-15").
+    if not (1 <= month <= 12):
+        raise ValueError(f"month must be 1-12, got {month}")
+    if not (1 <= day <= 31):
+        raise ValueError(f"day must be 1-31, got {day}")
+    if not (0 <= hour <= 23):
+        raise ValueError(f"hour must be 0-23, got {hour}")
+    if not (0 <= minute <= 59):
+        raise ValueError(f"minute must be 0-59, got {minute}")
+    if not (-90.0 <= latitude <= 90.0):
+        raise ValueError(f"latitude must be -90..90, got {latitude}")
+    if not (-180.0 <= longitude <= 180.0):
+        raise ValueError(f"longitude must be -180..180, got {longitude}")
+
     # 1. Convert local birth time to UT (Universal Time) using standard timezone offset
     if timezone_offset is None:
         timezone_offset = get_timezone_offset(longitude, latitude)
@@ -1668,13 +1697,13 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             else:
                 d30_rasi_idx = 7 # Scorpio (Mars)
                 
-        # D60 Shastiamsha calculation
+        # D60 Shastiamsha calculation. Per Parashara the N-th shashtiamsa is
+        # counted forward from the sign itself for ALL signs (no odd/even
+        # reversal); the deity/name differs by parity but the sign placement
+        # does not.
         d60_idx = math.floor(deg_in_sign / 0.5)
         d60_idx = min(d60_idx, 59)
-        if rasi_idx % 2 == 0: # Odd sign (Aries=0, Gemini=2, etc.)
-            d60_rasi_idx = (rasi_idx + d60_idx) % 12
-        else: # Even sign (Taurus=1, Cancer=3, etc.)
-            d60_rasi_idx = (rasi_idx + 11 + d60_idx) % 12
+        d60_rasi_idx = (rasi_idx + d60_idx) % 12
             
         dignity = get_planetary_dignity(planet, rasi_idx, deg_in_sign)
         
@@ -1765,13 +1794,10 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         else:
             lag_d30_rasi_idx = 7
             
-    # D60 for Lagna
+    # D60 for Lagna (counted forward from the sign for all signs; see above)
     lag_d60_idx = math.floor(lag_deg_in_sign / 0.5)
     lag_d60_idx = min(lag_d60_idx, 59)
-    if lagna_rasi_idx % 2 == 0:
-        lag_d60_rasi_idx = (lagna_rasi_idx + lag_d60_idx) % 12
-    else:
-        lag_d60_rasi_idx = (lagna_rasi_idx + 11 + lag_d60_idx) % 12
+    lag_d60_rasi_idx = (lagna_rasi_idx + lag_d60_idx) % 12
             
     # Calculate Lagna Nakshatra, Pada, and Sign Lord
     lag_naks_idx = math.floor(sidereal_lagna / (360.0 / 27.0)) % 27
@@ -1817,9 +1843,12 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     dasa_table = calculate_vimshottari_dasa(JD, sidereal_positions["Moon"], birth_naks_idx)
     
     # --- Additional astronomical calculations for birth details ---
-    # Calculate sunrise/sunset, moonrise/moonset precisely using Swiss Ephemeris
-    # Use JD (Julian date of 5:30 AM local or birth time) as base
-    sunrise_str, sunset_str, moonrise_str, moonset_str = calculate_precise_rise_set(JD, longitude, latitude, timezone_offset)
+    # Calculate sunrise/sunset, moonrise/moonset precisely using Swiss Ephemeris.
+    # Search from the START of the birth's local calendar day (local midnight in
+    # UT) so we report THAT day's rise/set. Searching from the birth instant
+    # would return the *next* day's sunrise for afternoon births.
+    jd_day_start = get_julian_date(year, month, day, -timezone_offset)
+    sunrise_str, sunset_str, moonrise_str, moonset_str = calculate_precise_rise_set(jd_day_start, longitude, latitude, timezone_offset)
     
     # Parse back sunrise_hours and sunset_hours for Nazhikai and daytime calculations
     try:
@@ -1868,9 +1897,12 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         vigh_int = 0
     udayadhi_nazhikai_str = f"{nazh_int:02d}:{vigh_int:02d} நா.வி"
     
-    # Calculate LMT (சுதேச மணி)
+    # Calculate LMT (சுதேச மணி). The clock time is offset from the zone's
+    # standard meridian (timezone_offset * 15°), not India's 82.5° — so this
+    # stays correct for births outside India.
     birth_minutes = hour * 60 + minute
-    lmt_minutes = birth_minutes - (82.5 - longitude) * 4
+    standard_meridian = timezone_offset * 15.0
+    lmt_minutes = birth_minutes - (standard_meridian - longitude) * 4
     lmt_hour = math.floor(lmt_minutes / 60) % 24
     lmt_minute = math.floor(lmt_minutes % 60)
     lmt_second = round((lmt_minutes % 1) * 60)
