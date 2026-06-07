@@ -682,6 +682,8 @@ def build_rag_queries(chart, analysis, max_queries=8):
         queries.append(f"{cd['mahadasa']} mahadasa effects results predictions")
         if cd["antardasa"]:
             queries.append(f"{cd['mahadasa']} dasa {cd['antardasa']} bhukti antardasa results")
+            if cd.get("pratyantardasa"):
+                queries.append(f"{cd['mahadasa']} mahadasa {cd['antardasa']} bhukti {cd['pratyantardasa']} pratyantardasa antaram results")
 
     # Strongest / most notable placements first: exalted, debilitated, own, or in kendra/trikona
     def salience(body):
