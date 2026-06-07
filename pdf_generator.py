@@ -428,7 +428,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "VIMSHOTTARI DASA TIMELINE REPORT (120 YEARS)",
         "dasa_subtitle": "Starting Lord based on Birth Moon Nakshatram: {}",
         "dasa_header": "CHRONOLOGICAL VIMSHOTTARI DASA MAHADASAS & SUB-PERIODS (BHUKTIS)",
-        "mahadasa": "MAHADASA: {} ({} Y)", "from_to": "From: {} To: {}"
+        "mahadasa": "MAHADASA: {} ({} Y)", "from_to": "From: {} To: {}", "rasi_lord": "Rasi Lord", "nakshatra": "Nakshatra", "pada": "Pada"
     },
     "ta": {
         "title": "வைதிக ஜோதிட AI போர்டல்",
@@ -447,7 +447,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "விம்சோத்தரி தசா புத்திகள் காலவரிசை (120 ஆண்டுகள்)",
         "dasa_subtitle": "ஜனன சந்திர நட்சத்திரத்தின் அடிப்படை தசா அதிபதி: {}",
         "dasa_header": "காலவரிசை விம்சோத்தரி தசா மஹா தசைகள் மற்றும் புத்திகள்",
-        "mahadasa": "மஹா தசை: {} ({} வருடங்கள்)", "from_to": "துவக்கம்: {} முடிவு: {}"
+        "mahadasa": "மஹா தசை: {} ({} வருடங்கள்)", "from_to": "துவக்கம்: {} முடிவு: {}", "rasi_lord": "ராசி அதிபதி", "nakshatra": "நட்சத்திரம்", "pada": "பாதம்"
     },
     "te": {
         "title": "వైదిక జ్యోతిష్య AI పోర్టల్",
@@ -466,7 +466,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "వింశోత్తరి దశా భుక్తులు కాలపట్టిక (120 సంవత్సరాలు)",
         "dasa_subtitle": "జన్మ చంద్ర నక్షత్ర దశా అధిపతి: {}",
         "dasa_header": "వింశోత్తరి మహర్షి దశా కాలాలు మరియు అంతర్దశలు",
-        "mahadasa": "మహా దశ: {} ({} సం)", "from_to": "ప్రారంభం: {} ముగింపు: {}"
+        "mahadasa": "మహా దశ: {} ({} సం)", "from_to": "ప్రారంభం: {} ముగింపు: {}", "rasi_lord": "రాశ్యాధిపతి", "nakshatra": "నక్షత్రం", "pada": "పాదం"
     },
     "ml": {
         "title": "വൈദിക ജ്യോതിഷ AI പോർട്ടൽ",
@@ -485,7 +485,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "വിംശോത്തരി ദശാ ഭുക്തി കാലപ്പട്ടിക (120 വർഷം)",
         "dasa_subtitle": "ജനന നക്ഷത്ര ദശാധിപൻ: {}",
         "dasa_header": "വിംശോത്തരി ദശാ കാലങ്ങളും അപഹാരങ്ങളും",
-        "mahadasa": "മഹാ ദശ: {} ({} വർഷം)", "from_to": "തുടക്കം: {} ഒടുക്കം: {}"
+        "mahadasa": "മഹാ ദശ: {} ({} വർഷം)", "from_to": "തുടക്കം: {} ഒടുക്കം: {}", "rasi_lord": "രാശ്യാധിപതി", "nakshatra": "നക്ഷത്രം", "pada": "പാദം"
     },
     "kn": {
         "title": "ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ AI ಪೋರ್ಟಲ್",
@@ -504,7 +504,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಭುಕ್ತಿ ಕಾಲಪಟ್ಟಿ (120 ವರ್ಷಗಳು)",
         "dasa_subtitle": "ಜನ್ಮ ನಕ್ಷತ್ರ ದಶಾ ಅಧಿಪತಿ: {}",
         "dasa_header": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಅವಧಿಗಳು ಮತ್ತು ಭುಕ್ತಿಗಳು",
-        "mahadasa": "ಮಹಾ ದಶ: {} ({} ವರ್ಷ)", "from_to": "ಪ್ರಾರಂಭ: {} ಮುಕ್ತಾಯ: {}"
+        "mahadasa": "ಮಹಾ ದಶ: {} ({} ವರ್ಷ)", "from_to": "ಪ್ರಾರಂಭ: {} ಮುಕ್ತಾಯ: {}", "rasi_lord": "ರాಶ್ಯಾಧಿಪತಿ", "nakshatra": "ನಕ್ಷತ್ರ", "pada": "ಪಾದ"
     },
     "hi": {
         "title": "वैदिक ज्योतिष AI पोर्टल",
@@ -523,7 +523,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "विंशोत्तरी दशा भुक्ति समय सारिणी (120 वर्ष)",
         "dasa_subtitle": "जन्म नक्षत्र दशा अधिपति: {}",
         "dasa_header": "क्रमशः विंशोत्तरी महादशाएं एवं अंतर्दशाएं (भुक्ति)",
-        "mahadasa": "महादशा: {} ({} वर्ष)", "from_to": "प्रारंभ: {} अंत: {}"
+        "mahadasa": "महादशा: {} ({} वर्ष)", "from_to": "प्रारंभ: {} अंत: {}", "rasi_lord": "राश्याधिपति", "nakshatra": "नक्षत्र", "pada": "चरण/पाद"
     }
 }
 
@@ -618,22 +618,34 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         c.setFont(FONT_REGULAR, 6.5)
         c.drawString(x + 4, y + box_size - 9, RASI_TRANSLATIONS.get(lang, RASI_TRANSLATIONS["en"])[rasi_idx][:5])
         
-        # Arrange planets in rows of 2 inside the cell
+        num_planets = len(planets_in_cell)
         col_idx = 0
         row_idx = 0
-        for p_abbr in planets_in_cell:
-            px = x + 5 + (col_idx * 23)
-            py = y + box_size - 22 - (row_idx * 13)
-            c.setFillColor(HexColor("#2C3E50")) # Charcoal body text
-            if len(p_abbr) > 2:
-                c.setFont(FONT_BOLD, 6.5) # Smaller font for retrograde/combust
-            else:
-                c.setFont(FONT_BOLD, 7.5)
-            c.drawString(px, py, p_abbr)
-            col_idx += 1
-            if col_idx >= 2:
-                col_idx = 0
+        
+        if num_planets <= 4:
+            # Single-column vertical stack to prevent horizontal overlap of regional scripts
+            for p_abbr in planets_in_cell:
+                px = x + 6
+                py = y + box_size - 19 - (row_idx * 10.5)
+                c.setFillColor(HexColor("#2C3E50")) # Charcoal body text
+                if len(p_abbr) > 2:
+                    c.setFont(FONT_BOLD, 6.5) # Smaller font for retrograde/combust
+                else:
+                    c.setFont(FONT_BOLD, 7.5)
+                c.drawString(px, py, p_abbr)
                 row_idx += 1
+        else:
+            # 2-column layout with smaller font for stelliums to prevent overlap/overflow
+            for p_abbr in planets_in_cell:
+                px = x + 4 + (col_idx * 25)
+                py = y + box_size - 18 - (row_idx * 9.0)
+                c.setFillColor(HexColor("#2C3E50")) # Charcoal body text
+                c.setFont(FONT_BOLD, 5.5)
+                c.drawString(px, py, p_abbr)
+                col_idx += 1
+                if col_idx >= 2:
+                    col_idx = 0
+                    row_idx += 1
 
 def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", size=220):
     """
@@ -710,18 +722,40 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
         hx, hy = center
         
         if len(planets_in_house) > 0:
-            has_long_abbr = any(len(p) > 2 for p in planets_in_house)
-            if has_long_abbr:
-                c.setFont(FONT_BOLD, 6.5)
+            num_planets = len(planets_in_house)
+            if num_planets <= 2:
+                # 1 row of at most 2 planets
+                has_long_abbr = any(len(p) > 2 for p in planets_in_house)
+                c.setFont(FONT_BOLD, 6.5 if has_long_abbr else 7.5)
+                c.drawCentredString(hx, hy - 2, " ".join(planets_in_house))
+            elif num_planets <= 4:
+                # 2 rows of at most 2 planets
+                has_long_abbr = any(len(p) > 2 for p in planets_in_house)
+                c.setFont(FONT_BOLD, 6.0 if has_long_abbr else 7.0)
+                row_1 = planets_in_house[:2]
+                row_2 = planets_in_house[2:]
+                c.drawCentredString(hx, hy + 3, " ".join(row_1))
+                c.drawCentredString(hx, hy - 7, " ".join(row_2))
+            elif num_planets <= 6:
+                # 3 rows of at most 2 planets
+                c.setFont(FONT_BOLD, 5.5)
+                row_1 = planets_in_house[:2]
+                row_2 = planets_in_house[2:4]
+                row_3 = planets_in_house[4:]
+                c.drawCentredString(hx, hy + 8, " ".join(row_1))
+                c.drawCentredString(hx, hy - 1, " ".join(row_2))
+                c.drawCentredString(hx, hy - 10, " ".join(row_3))
             else:
-                c.setFont(FONT_BOLD, 7.5)
-                
-            row_1 = planets_in_house[:3]
-            row_2 = planets_in_house[3:]
-            
-            c.drawCentredString(hx, hy - 1, " ".join(row_1))
-            if row_2:
-                c.drawCentredString(hx, hy - 10, " ".join(row_2))
+                # 4 rows of at most 2 planets (maximum 8-9 planets in house)
+                c.setFont(FONT_BOLD, 5.0)
+                row_1 = planets_in_house[:2]
+                row_2 = planets_in_house[2:4]
+                row_3 = planets_in_house[4:6]
+                row_4 = planets_in_house[6:]
+                c.drawCentredString(hx, hy + 12, " ".join(row_1))
+                c.drawCentredString(hx, hy + 3, " ".join(row_2))
+                c.drawCentredString(hx, hy - 6, " ".join(row_3))
+                c.drawCentredString(hx, hy - 15, " ".join(row_4))
 
 def draw_page_border_decorations(c, page_num, lang):
     """Draw a premium double-line border around the entire page with geometric gold corner accents."""
@@ -1116,11 +1150,14 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     
     c.setFillColor(HexColor("#2C3E50"))
     c.setFont(FONT_BOLD, 7)
-    c.drawString(44, table_y + 124, labels["planet"])
-    c.drawString(124, table_y + 124, labels["longitude"])
-    c.drawString(224, table_y + 124, labels["rasi"])
-    c.drawString(344, table_y + 124, labels["rasi_deg"])
-    c.drawString(444, table_y + 124, labels["dignity"])
+    c.drawString(42, table_y + 124, labels["planet"])
+    c.drawString(92, table_y + 124, labels["rasi"])
+    c.drawString(152, table_y + 124, labels["rasi_lord"])
+    c.drawString(207, table_y + 124, labels["longitude"])
+    c.drawString(272, table_y + 124, labels["rasi_deg"])
+    c.drawString(327, table_y + 124, labels["nakshatra"])
+    c.drawString(392, table_y + 124, labels["pada"])
+    c.drawString(427, table_y + 124, labels["dignity"])
     
     c.setFont(FONT_REGULAR, 7)
     row_y = table_y + 104
@@ -1138,10 +1175,24 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         planet_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(planet, planet)
         rasi_local = RASI_TRANSLATIONS.get(lang, RASI_TRANSLATIONS["en"])[plac['rasi_index']]
         
-        c.drawString(44, row_y, planet_local)
-        c.drawString(124, row_y, f"{plac['longitude']}°")
-        c.drawString(224, row_y, rasi_local)
-        c.drawString(344, row_y, f"{plac['degree']:.2f}°")
+        # Translate Rasi Lord
+        lord_name = plac['rasi_lord']
+        lord_local = PLANET_TRANSLATIONS.get(lang, PLANET_TRANSLATIONS["en"]).get(lord_name, lord_name)
+        
+        # Translate Nakshatra
+        naks_name = plac['nakshatra']
+        naks_local = translate_nakshatra(naks_name, lang)
+        
+        # Pada
+        pada_val = str(plac['pada'])
+        
+        c.drawString(42, row_y, planet_local)
+        c.drawString(92, row_y, rasi_local)
+        c.drawString(152, row_y, lord_local)
+        c.drawString(207, row_y, f"{plac['longitude']}°")
+        c.drawString(272, row_y, f"{plac['degree']:.2f}°")
+        c.drawString(327, row_y, naks_local)
+        c.drawString(392, row_y, pada_val)
         
         # Style dignity beautifully
         raw_dig = plac.get("dignity", "Neutral")
@@ -1174,7 +1225,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         else:
             c.setFillColor(HexColor("#475569")) # Slate
             
-        c.drawString(444, row_y, dig_local)
+        c.drawString(427, row_y, dig_local)
         row_y -= 11.0
         
     # Footer on Page 1 (Outside the borders)

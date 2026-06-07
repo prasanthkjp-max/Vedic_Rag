@@ -2433,9 +2433,12 @@
                                 <thead>
                                     <tr>
                                         <th id="th-planet">Planet</th>
-                                        <th id="th-longitude">Longitude</th>
                                         <th id="th-rasi">Zodiac Sign (Rasi)</th>
+                                        <th id="th-rasi-lord">Rasi Lord</th>
+                                        <th id="th-longitude">Longitude</th>
                                         <th id="th-degree">Rasi Degree</th>
+                                        <th id="th-nakshatra">Nakshatra</th>
+                                        <th id="th-pada">Pada</th>
                                         <th id="th-dignity">Dignity (Strength)</th>
                                     </tr>
                                 </thead>
@@ -2883,6 +2886,9 @@
                 th_longitude: "Longitude",
                 th_rasi: "Zodiac Sign (Rasi)",
                 th_degree: "Rasi Degree",
+                th_rasi_lord: "Rasi Lord",
+                th_nakshatra: "Nakshatra",
+                th_pada: "Pada",
                 th_dignity: "Dignity (Strength)",
                 lbl_rasi_chart: "Rasi Chart (D1)",
                 lbl_navamsha_chart: "Navamsha Chart (D9)",
@@ -2994,6 +3000,9 @@
                 th_longitude: "தீர்க்கரேகை",
                 th_rasi: "ராசி",
                 th_degree: "ராசி பாகை",
+                th_rasi_lord: "ராசி அதிபதி",
+                th_nakshatra: "நட்சத்திரம்",
+                th_pada: "பாதம்",
                 th_dignity: "கிரக பலம் / நிலை (Dignity)",
                 lbl_rasi_chart: "ராசி சக்கரம் (D1)",
                 lbl_navamsha_chart: "நவாம்ச சக்கரம் (D9)",
@@ -3105,6 +3114,9 @@
                 th_longitude: "రేఖాంశం",
                 th_rasi: "రాశి",
                 th_degree: "రాశి డిగ్రీ",
+                th_rasi_lord: "రాశ్యాధిపతి",
+                th_nakshatra: "నక్షత్రం",
+                th_pada: "పాదం",
                 th_dignity: "గ్రహ బలం / స్థితి",
                 lbl_rasi_chart: "రాశి చక్రం (D1)",
                 lbl_navamsha_chart: "నవాంశ చక్రం (D9)",
@@ -3216,6 +3228,9 @@
                 th_longitude: "രേഖാംശം",
                 th_rasi: "രാശി",
                 th_degree: "രാശി ഡിഗ്രി",
+                th_rasi_lord: "രാശ്യാധിപതി",
+                th_nakshatra: "നക്ഷത്രം",
+                th_pada: "പാദം",
                 th_dignity: "ഗ്രഹ ബലം / നില",
                 lbl_rasi_chart: "രാശി ചക്രം (D1)",
                 lbl_navamsha_chart: "നവാംശ ചക്രം (D9)",
@@ -3327,6 +3342,9 @@
                 th_longitude: "ರೇಖಾಂಶ",
                 th_rasi: "ರಾಶಿ",
                 th_degree: "ರಾಶಿ ಡಿಗ್ರಿ",
+                th_rasi_lord: "ರಾಶ್ಯಾಧಿಪತಿ",
+                th_nakshatra: "ನಕ್ಷತ್ರ",
+                th_pada: "ಪಾದ",
                 th_dignity: "ಗ್ರಹ ಬಲ / ಸ್ಥಿತಿ",
                 lbl_rasi_chart: "ರಾಶಿ ಚಕ್ರ (D1)",
                 lbl_navamsha_chart: "ನವಾಂಶ ಚಕ್ರ (D9)",
@@ -3438,6 +3456,9 @@
                 th_longitude: "रेखांश",
                 th_rasi: "राशि",
                 th_degree: "राशि अंश",
+                th_rasi_lord: "राश्याधिपति",
+                th_nakshatra: "नक्षत्र",
+                th_pada: "चरण/पाद",
                 th_dignity: "ग्रह बल / स्थिति",
                 lbl_rasi_chart: "राशि कुंडली (D1)",
                 lbl_navamsha_chart: "नवांश कुंडली (D9)",
@@ -4342,7 +4363,10 @@
             document.getElementById('th-planet').innerText = dict.th_planet || "Planet";
             document.getElementById('th-longitude').innerText = dict.th_longitude || "Longitude";
             document.getElementById('th-rasi').innerText = dict.th_rasi || "Zodiac Sign (Rasi)";
+            document.getElementById('th-rasi-lord').innerText = dict.th_rasi_lord || "Rasi Lord";
             document.getElementById('th-degree').innerText = dict.th_degree || "Rasi Degree";
+            document.getElementById('th-nakshatra').innerText = dict.th_nakshatra || "Nakshatra";
+            document.getElementById('th-pada').innerText = dict.th_pada || "Pada";
             document.getElementById('th-dignity').innerText = dict.th_dignity || "Dignity (Strength)";
             
             const rasiLbl = document.getElementById('lbl-rasi-chart-title');
@@ -5816,12 +5840,26 @@
                     dignityStyle = 'color: #ea580c; font-size: 11px;'; // Orange
                 }
                 
+                // Fetch and translate Rasi Lord
+                const rawRasiLord = plac.rasi_lord || "";
+                const translatedRasiLord = planetTranslations[currentLang][rawRasiLord] || rawRasiLord;
+
+                // Fetch and translate Nakshatra
+                const rawNakshatra = plac.nakshatra || "";
+                const translatedNakshatra = translateNakshatra(rawNakshatra) || rawNakshatra;
+
+                // Pada
+                const padaVal = plac.pada !== undefined ? plac.pada : "";
+
                 const rowHtml = `
                     <tr>
                         <td style="font-weight: 600; color: var(--accent-gold);">${translatedPlanetName}</td>
-                        <td>${plac.longitude}°</td>
                         <td style="font-family: var(--font-serif);">${translatedRasiName}</td>
+                        <td>${translatedRasiLord}</td>
+                        <td>${plac.longitude}°</td>
                         <td>${plac.degree.toFixed(2)}°</td>
+                        <td>${translatedNakshatra}</td>
+                        <td>${padaVal}</td>
                         <td style="${dignityStyle}">${finalDignityDisplay}</td>
                     </tr>
                 `;

@@ -1662,11 +1662,20 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             
         dignity = get_planetary_dignity(planet, rasi_idx, deg_in_sign)
         
+        # Calculate Nakshatra, Pada, and Rasi Adhipathi (Sign Lord)
+        naks_idx = math.floor(long_val / (360.0 / 27.0)) % 27
+        pada = math.floor((long_val % (360.0 / 27.0)) / (360.0 / 27.0 / 4.0)) + 1
+        lords = ["Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter"]
+        rasi_lord = lords[rasi_idx]
+        
         rasi_placements[planet] = {
             "longitude": round(long_val, 4),
             "degree": round(deg_in_sign, 4),
             "rasi_index": rasi_idx,
             "rasi_name": RASIS[rasi_idx],
+            "rasi_lord": rasi_lord,
+            "nakshatra": NAKSHATRAS[naks_idx],
+            "pada": pada,
             "navamsha_rasi_index": nav_rasi_idx,
             "navamsha_rasi_name": RASIS[nav_rasi_idx],
             "drekkana_rasi_index": d3_rasi_idx,
@@ -1748,11 +1757,20 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     else:
         lag_d60_rasi_idx = (lagna_rasi_idx + 11 + lag_d60_idx) % 12
             
+    # Calculate Lagna Nakshatra, Pada, and Sign Lord
+    lag_naks_idx = math.floor(sidereal_lagna / (360.0 / 27.0)) % 27
+    lag_pada = math.floor((sidereal_lagna % (360.0 / 27.0)) / (360.0 / 27.0 / 4.0)) + 1
+    lords = ["Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter"]
+    lag_lord = lords[lagna_rasi_idx]
+    
     rasi_placements["Lagna"] = {
         "longitude": round(sidereal_lagna, 4),
         "degree": round(lag_deg_in_sign, 4),
         "rasi_index": lagna_rasi_idx,
         "rasi_name": RASIS[lagna_rasi_idx],
+        "rasi_lord": lag_lord,
+        "nakshatra": NAKSHATRAS[lag_naks_idx],
+        "pada": lag_pada,
         "navamsha_rasi_index": lag_nav_rasi_idx,
         "navamsha_rasi_name": RASIS[lag_nav_rasi_idx],
         "drekkana_rasi_index": lag_d3_rasi_idx,
