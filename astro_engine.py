@@ -208,13 +208,6 @@ def calculate_luni_solar_month_index(sun_long, moon_long):
     luni_month_idx = (sun_sign_at_new_moon + 1) % 12
     return luni_month_idx
 
-def calculate_luni_solar_month(sun_long, moon_long):
-    """
-    Amanta style (default for Telugu, Kannada)
-    """
-    idx = calculate_luni_solar_month_index(sun_long, moon_long)
-    return LUNI_SOLAR_MONTHS[idx]
-
 def get_regional_panchangam(chart, lang_code):
     """
     Returns localized and adapted panchangam terms based on selected language.
@@ -222,6 +215,11 @@ def get_regional_panchangam(chart, lang_code):
     Malayalam: Solar months (Chingam starting at Sun 120°), Kolla Varsham era incremented on Chingam 1st.
     Hindi: Purnimanta system (shifted Krishna Paksha) and Vikrama Samvat year.
     Telugu/Kannada: Amanta system (Shalivahana Shaka year).
+
+    Both Vikrama Samvat and Shalivahana Shaka are reckoned Chaitradi here (year
+    rolls over at Chaitra Shukla Pratipada). Note North-Indian VS is sometimes
+    counted Kartikadi (Diwali rollover); Chaitradi is used for consistency with
+    Shaka and this engine's Chaitra-based lunar framing.
     """
     panch = chart["panchangam"].copy()
     tamil_month = panch["tamil_month"]
