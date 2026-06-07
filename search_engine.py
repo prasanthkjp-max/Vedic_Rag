@@ -11,6 +11,7 @@ from config import (
     EMBEDDING_DIM,
     OLLAMA_EMBED_URL,
     OLLAMA_EMBED_BATCH_URL,
+    OLLAMA_API_KEY,
     EMBED_TIMEOUT,
     connect_db,
     ensure_fts,
@@ -55,10 +56,13 @@ class VedicSearchEngine:
             "model": EMBEDDING_MODEL,
             "prompt": text
         }
+        headers = {"Content-Type": "application/json"}
+        if OLLAMA_API_KEY:
+            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
         req = urllib.request.Request(
             OLLAMA_EMBED_URL,
             data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
+            headers=headers
         )
         try:
             with urllib.request.urlopen(req, timeout=EMBED_TIMEOUT) as response:
@@ -92,10 +96,13 @@ class VedicSearchEngine:
             return results
 
         data = {"model": EMBEDDING_MODEL, "input": to_embed}
+        headers = {"Content-Type": "application/json"}
+        if OLLAMA_API_KEY:
+            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
         req = urllib.request.Request(
             OLLAMA_EMBED_BATCH_URL,
             data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers=headers,
         )
         try:
             # Scale the timeout with batch size (serial CPU embedding).

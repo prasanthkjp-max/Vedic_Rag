@@ -22,6 +22,7 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # --- Ollama ---
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_API_KEY = os.environ.get("OLLAMA_API_KEY", "")
 OLLAMA_EMBED_URL = f"{OLLAMA_HOST}/api/embeddings"        # single-prompt (legacy)
 OLLAMA_EMBED_BATCH_URL = f"{OLLAMA_HOST}/api/embed"       # batched (input: [..])
 OLLAMA_GENERATE_URL = f"{OLLAMA_HOST}/api/generate"
