@@ -2420,6 +2420,8 @@
                                         <option value="d7">Saptamsha (D7)</option>
                                         <option value="d10">Dasamsha (D10)</option>
                                         <option value="d12">Dwadasamsha (D12)</option>
+                                        <option value="d30">Trimsamsa (D30)</option>
+                                        <option value="d60">Shashtiamsa (D60)</option>
                                         <option value="d1">Rasi (D1)</option>
                                     </select>
                                 </div>
@@ -4136,12 +4138,12 @@
             const dChartSelect = document.getElementById('d-chart-select');
             if (dChartSelect) {
                 const dChartTranslations = {
-                    en: { d9: "Navamsha (D9)", d2: "Hora (D2)", d3: "Drekkana (D3)", d4: "Chaturthamsa (D4)", d7: "Saptamsha (D7)", d10: "Dasamsha (D10)", d12: "Dwadasamsha (D12)", d1: "Rasi (D1)" },
-                    ta: { d9: "நவாம்சம் (D9)", d2: "ஹோரை (D2)", d3: "திரேக்காணம் (D3)", d4: "சதுர்த்தாம்சம் (D4)", d7: "சப்தாம்சம் (D7)", d10: "தசாம்சம் (D10)", d12: "துவாதசாம்சம் (D12)", d1: "ராசி (D1)" },
-                    te: { d9: "నవాంశ (D9)", d2: "హోర (D2)", d3: "ద్రేక్కాణ (D3)", d4: "చతుర్థాంశ (D4)", d7: "సప్తమాంశ (D7)", d10: "దశాంశ (D10)", d12: "ద్వాదశాంశ (D12)", d1: "రాశి (D1)" },
-                    ml: { d9: "നവാംശം (D9)", d2: "ഹോര (D2)", d3: "ദ്രേക്കാണം (D3)", d4: "ചതുർത്ഥാംശം (D4)", d7: "സപ്തമാംശം (D7)", d10: "ദശാംശം (D10)", d12: "ദ്വാദശാംശം (D12)", d1: "രാശി (D1)" },
-                    kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d1: "ರಾಶಿ (D1)" },
-                    hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d1: "राशि (D1)" }
+                    en: { d9: "Navamsha (D9)", d2: "Hora (D2)", d3: "Drekkana (D3)", d4: "Chaturthamsa (D4)", d7: "Saptamsha (D7)", d10: "Dasamsha (D10)", d12: "Dwadasamsha (D12)", d30: "Trimsamsa (D30)", d60: "Shashtiamsa (D60)", d1: "Rasi (D1)" },
+                    ta: { d9: "நவாம்சம் (D9)", d2: "ஹோரை (D2)", d3: "திரேக்காணம் (D3)", d4: "சதுர்த்தாம்சம் (D4)", d7: "சப்தாம்சம் (D7)", d10: "தசாம்சம் (D10)", d12: "துவாதசாம்சம் (D12)", d30: "திரிம்சாம்சம் (D30)", d60: "ஷஷ்டியாம்சம் (D60)", d1: "ராசி (D1)" },
+                    te: { d9: "నవాంశ (D9)", d2: "హోర (D2)", d3: "ద్రేక్కాణ (D3)", d4: "చతుర్థాంశ (D4)", d7: "సప్తమాంశ (D7)", d10: "దశాంశ (D10)", d12: "ద్వాదశాంశ (D12)", d30: "త్రింశాంశ (D30)", d60: "షష్టియాంశ (D60)", d1: "రాశి (D1)" },
+                    ml: { d9: "നവാംശം (D9)", d2: "ഹോര (D2)", d3: "ദ്രേക്കാണം (D3)", d4: "ചതുർത്ഥാംശം (D4)", d7: "സപ്തമാംശം (D7)", d10: "ദശാംശം (D10)", d12: "ദ്വാദശാംശം (D12)", d30: "ത്രിംശാംശം (D30)", d60: "ഷഷ്ടിയാംശം (D60)", d1: "രാശി (D1)" },
+                    kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d30: "ತ್ರಿಂಶಾಂಶ (D30)", d60: "ಷಷ್ಟ್ಯಂಶ (D60)", d1: "ರಾಶಿ (D1)" },
+                    hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d30: "त्रिंशांश (D30)", d60: "षष्ट्यंश (D60)", d1: "राशि (D1)" }
                 };
                 const trans = dChartTranslations[langCode] || dChartTranslations.en;
                 Array.from(dChartSelect.options).forEach(opt => {
@@ -4738,12 +4740,12 @@
             const dChartSelect = document.getElementById('d-chart-select');
             if (dChartSelect) {
                 const dChartTranslations = {
-                    en: { d9: "Navamsha (D9)", d2: "Hora (D2)", d3: "Drekkana (D3)", d4: "Chaturthamsa (D4)", d7: "Saptamsha (D7)", d10: "Dasamsha (D10)", d12: "Dwadasamsha (D12)", d1: "Rasi (D1)" },
-                    ta: { d9: "நவாம்சம் (D9)", d2: "ஹோரை (D2)", d3: "திரேக்காணம் (D3)", d4: "சதுர்த்தாம்சம் (D4)", d7: "சப்தாம்சம் (D7)", d10: "தசாம்சம் (D10)", d12: "துவாதசாம்சம் (D12)", d1: "ராசி (D1)" },
-                    te: { d9: "నవాంశ (D9)", d2: "హోర (D2)", d3: "ద్రేక్కాణ (D3)", d4: "చతుర్థాంశ (D4)", d7: "సప్తమాంశ (D7)", d10: "దశాంశ (D10)", d12: "ద్వాదశాంశ (D12)", d1: "రాశి (D1)" },
-                    ml: { d9: "നവാംശം (D9)", d2: "ഹോര (D2)", d3: "ദ്രേക്കാണം (D3)", d4: "ചതുർത്ഥാംശം (D4)", d7: "സപ്തമാംശം (D7)", d10: "ദശാംശം (D10)", d12: "ദ്വാദശാംശം (D12)", d1: "രാശി (D1)" },
-                    kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d1: "ರಾಶಿ (D1)" },
-                    hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d1: "राशि (D1)" }
+                    en: { d9: "Navamsha (D9)", d2: "Hora (D2)", d3: "Drekkana (D3)", d4: "Chaturthamsa (D4)", d7: "Saptamsha (D7)", d10: "Dasamsha (D10)", d12: "Dwadasamsha (D12)", d30: "Trimsamsa (D30)", d60: "Shashtiamsa (D60)", d1: "Rasi (D1)" },
+                    ta: { d9: "நவாம்சம் (D9)", d2: "ஹோரை (D2)", d3: "திரேக்காணம் (D3)", d4: "சதுர்த்தாம்சம் (D4)", d7: "சப்தாம்சம் (D7)", d10: "தசாம்சம் (D10)", d12: "துவாதசாம்சம் (D12)", d30: "திரிம்சாம்சம் (D30)", d60: "ஷஷ்டியாம்சம் (D60)", d1: "ராசி (D1)" },
+                    te: { d9: "నవాంశ (D9)", d2: "హోర (D2)", d3: "ద్రేక్కాణ (D3)", d4: "చతుర్థాంశ (D4)", d7: "సప్తమాంశ (D7)", d10: "దశాంశ (D10)", d12: "ద్వాదశాంశ (D12)", d30: "త్రింశాంశ (D30)", d60: "షష్టియాంశ (D60)", d1: "రాశి (D1)" },
+                    ml: { d9: "നവാംശം (D9)", d2: "ഹോര (D2)", d3: "ദ്രേക്കാണം (D3)", d4: "ചതുർത്ഥാംശം (D4)", d7: "സപ്തമാംശം (D7)", d10: "ദശാംശം (D10)", d12: "ദ്വാദശാംശം (D12)", d30: "ത്രിംശാംശം (D30)", d60: "ഷഷ്ടിയാംശം (D60)", d1: "രാശി (D1)" },
+                    kn: { d9: "ನವಾಂಶ (D9)", d2: "ಹೋರ (D2)", d3: "ದ್ರೇಕ್ಕಾಣ (D3)", d4: "ಚತುರ್ಥಾಂಶ (D4)", d7: "ಸಪ್ತಮಾಂಶ (D7)", d10: "ದಶಾಂಶ (D10)", d12: "ದ್ವಾದಶಾಂಶ (D12)", d30: "ತ್ರಿಂಶಾಂಶ (D30)", d60: "ಷಷ್ಟ್ಯಂಶ (D60)", d1: "ರಾಶಿ (D1)" },
+                    hi: { d9: "नवांश (D9)", d2: "होरा (D2)", d3: "द्रेष्काण (D3)", d4: "चतुर्थांश (D4)", d7: "सप्तमांश (D7)", d10: "दशांश (D10)", d12: "द्वादशांश (D12)", d30: "त्रिंशांश (D30)", d60: "षष्ट्यंश (D60)", d1: "राशि (D1)" }
                 };
                 const trans = dChartTranslations[currentLang] || dChartTranslations.en;
                 Array.from(dChartSelect.options).forEach(opt => {
@@ -5192,36 +5194,29 @@
             const rasiIdx = Math.floor(longVal / 30.0) % 12;
             const degInSign = longVal % 30.0;
             
+            // Vargas the Python engine already computes are read straight from
+            // the chart data (single source of truth). D2/D4/D7 are not returned
+            // by the engine, so they are derived here.
             switch (dType) {
                 case 'd1': return rasiIdx;
                 case 'd2':
                     const isOddSign = (rasiIdx % 2) === 0;
                     if (isOddSign) return (degInSign < 15.0) ? 4 : 3;
                     else return (degInSign < 15.0) ? 3 : 4;
-                case 'd3':
-                    if (degInSign < 10.0) return rasiIdx;
-                    if (degInSign < 20.0) return (rasiIdx + 4) % 12;
-                    return (rasiIdx + 8) % 12;
+                case 'd3': return info.drekkana_rasi_index;
                 case 'd4':
                     return (rasiIdx + (Math.floor(degInSign / 7.5) * 3)) % 12;
                 case 'd7':
                     const saptPart = Math.floor(degInSign / (30.0 / 7.0));
                     return ((rasiIdx % 2) === 0) ? (rasiIdx + saptPart) % 12 : (rasiIdx + 6 + saptPart) % 12;
                 case 'd9':
-                    const navPart = Math.floor(degInSign / (30.0 / 9.0));
-                    let navStart = 0;
-                    if ([0, 4, 8].includes(rasiIdx)) navStart = 0;
-                    else if ([1, 5, 9].includes(rasiIdx)) navStart = 9;
-                    else if ([2, 6, 10].includes(rasiIdx)) navStart = 6;
-                    else navStart = 3;
-                    return (navStart + navPart) % 12;
-                case 'd10':
-                    const dasPart = Math.floor(degInSign / 3.0);
-                    return ((rasiIdx % 2) === 0) ? (rasiIdx + dasPart) % 12 : (rasiIdx + 8 + dasPart) % 12;
-                case 'd12':
-                    return (rasiIdx + Math.floor(degInSign / 2.5)) % 12;
+                case 'navamsha':
+                    return info.navamsha_rasi_index;
+                case 'd10': return info.dashamsha_rasi_index;
+                case 'd12': return info.dwadashamsha_rasi_index;
+                case 'd30': return info.trishamsha_rasi_index;
+                case 'd60': return info.shastiamsha_rasi_index;
                 default:
-                    if (dType === 'navamsha') return info.navamsha_rasi_index;
                     return rasiIdx;
             }
         }
@@ -5246,11 +5241,13 @@
             const dChartTitles = {
                 d1: 'RASI (D1)', d2: 'HORA (D2)', d3: 'DREKKANA (D3)', d4: 'CHATURTHAMSA (D4)',
                 d7: 'SAPTAMSHA (D7)', d9: 'NAVAMSHA (D9)', d10: 'DASAMSHA (D10)', d12: 'DWADASAMSHA (D12)',
+                d30: 'TRIMSAMSA (D30)', d60: 'SHASHTIAMSA (D60)',
                 navamsha: 'NAVAMSHA (D9)'
             };
             const dChartSubs = {
                 d1: 'D1 KUNDALI', d2: 'D2 KUNDALI', d3: 'D3 KUNDALI', d4: 'D4 KUNDALI',
                 d7: 'D7 KUNDALI', d9: 'D9 KUNDALI', d10: 'D10 KUNDALI', d12: 'D12 KUNDALI',
+                d30: 'D30 KUNDALI', d60: 'D60 KUNDALI',
                 navamsha: 'D9 KUNDALI'
             };
             const gocharaTitles = {
