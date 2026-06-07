@@ -238,6 +238,19 @@ def get_regional_panchangam(chart, lang_code):
     except (ValueError, IndexError):
         epoch_jd = JD - 2451545.0
         gregorian_year = 2000 + math.floor(epoch_jd / 365.2425)
+    try:
+        gregorian_month = int(dt_str.split("-")[1])
+    except (ValueError, IndexError):
+        gregorian_month = 6
+
+    # Chaitra-reckoned lunar calendars (Vikrama Samvat, Shalivahana Shaka) roll
+    # over at Chaitra Shukla Pratipada (~Mar/Apr), not Jan 1. So for the tail
+    # lunar months (Pausha/Magha/Phalguna) that fall in Jan-Apr, the running
+    # Samvat/Shaka year is one less than the plain Gregorian offset.
+    def chaitradi_year(offset_year, lunar_month_idx):
+        if lunar_month_idx in (9, 10, 11) and gregorian_month <= 4:
+            return offset_year - 1
+        return offset_year
 
     sun_long = chart["placements"]["Sun"]["longitude"]
     moon_long = chart["placements"]["Moon"]["longitude"]
@@ -278,36 +291,38 @@ def get_regional_panchangam(chart, lang_code):
         # Hindi Luni-Solar Calendar (Purnimanta)
         # Months end on Full Moon (Pournami), shifting Krishna Paksha forward
         luni_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+        amanta_idx = luni_idx  # base (Chaitra-reckoned) month for the year boundary
         diff = (moon_long - sun_long) % 360.0
         tithi_num = math.floor(diff / 12.0) + 1
         tithi_num = min(tithi_num, 30)
-        
+
         if diff >= 180.0:  # Krishna Paksha
             luni_idx = (luni_idx + 1) % 12
             luni_day = tithi_num - 15
         else:  # Sukla Paksha
             luni_day = 15 + tithi_num
-            
+
         luni_month = LUNI_SOLAR_MONTHS[luni_idx]
-        
-        # Vikrama Samvat Year
-        vs_year = gregorian_year + 57
+
+        # Vikrama Samvat Year (rolls over at Chaitra, not Jan 1)
+        vs_year = chaitradi_year(gregorian_year + 57, amanta_idx)
         panch["tamil_month"] = luni_month
         panch["tamil_date"] = f"{luni_month} {luni_day}"
         panch["tamil_year"] = f"Vikrama Samvat {vs_year}"
         
     elif lang_code in ["te", "kn"]:
         # Telugu / Kannada Lunar Calendar (Amanta)
-        luni_month = calculate_luni_solar_month(sun_long, moon_long)
-        
+        amanta_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+        luni_month = LUNI_SOLAR_MONTHS[amanta_idx]
+
         # Calculate Amanta Lunar Day (1 to 30)
         diff = (moon_long - sun_long) % 360.0
         tithi_num = math.floor(diff / 12.0) + 1
         tithi_num = min(tithi_num, 30)
         luni_day = tithi_num
-        
-        # Shalivahana Shaka Year
-        shaka_year = gregorian_year - 78
+
+        # Shalivahana Shaka Year (rolls over at Chaitra, not Jan 1)
+        shaka_year = chaitradi_year(gregorian_year - 78, amanta_idx)
         panch["tamil_month"] = luni_month
         panch["tamil_date"] = f"{luni_month} {luni_day}"
         panch["tamil_year"] = f"Shalivahana Shaka {shaka_year}"
@@ -704,6 +719,9 @@ def format_deg_to_dms(deg):
     """Format decimal degrees to DD°MM' format"""
     d = math.floor(deg)
     m = round((deg - d) * 60)
+    if m == 60:  # minutes rounded up a whole degree -> carry
+        d += 1
+        m = 0
     return f"{d}°{m:02d}'"
 
 def get_timezone_offset(longitude, latitude):
@@ -1833,6 +1851,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     day_nazhikai_decimal = day_duration_minutes / 24.0
     day_nazh_int = math.floor(day_nazhikai_decimal)
     day_vigh_int = round((day_nazhikai_decimal - day_nazh_int) * 60.0)
+    if day_vigh_int == 60:  # vighatika rounded up a whole nazhikai -> carry
+        day_nazh_int += 1
+        day_vigh_int = 0
     ahas_str = f"{day_nazh_int:02d}:{day_vigh_int:02d} நா.வி"
     
     # Calculate elapsed Nazhikai since Sunrise (Udayadhi Nazhikai)
@@ -1844,6 +1865,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     nazhikai_decimal = time_elapsed_minutes / 24.0
     nazh_int = math.floor(nazhikai_decimal)
     vigh_int = round((nazhikai_decimal - nazh_int) * 60.0)
+    if vigh_int == 60:  # vighatika rounded up a whole nazhikai -> carry
+        nazh_int += 1
+        vigh_int = 0
     udayadhi_nazhikai_str = f"{nazh_int:02d}:{vigh_int:02d} நா.வி"
     
     # Calculate LMT (சுதேச மணி)
@@ -1852,6 +1876,12 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     lmt_hour = math.floor(lmt_minutes / 60) % 24
     lmt_minute = math.floor(lmt_minutes % 60)
     lmt_second = round((lmt_minutes % 1) * 60)
+    if lmt_second == 60:  # seconds rounded up a whole minute -> carry
+        lmt_second = 0
+        lmt_minute += 1
+        if lmt_minute == 60:
+            lmt_minute = 0
+            lmt_hour = (lmt_hour + 1) % 24
     lmt_str = f"{lmt_hour:02d}:{lmt_minute:02d}:{lmt_second:02d}"
     
     # Kali Yuga Year
@@ -1945,9 +1975,12 @@ def calculate_marriage_compatibility(male_chart, female_chart):
     f_rasi_name = female_chart["placements"].get("Moon", {}).get("rasi_name", "")
     
     def get_rasi_idx(name):
-        for i, r in enumerate(RASIS):
-            if name.split()[0].lower() in r.lower():
-                return i
+        parts = name.split() if name else []
+        if parts:
+            first = parts[0].lower()
+            for i, r in enumerate(RASIS):
+                if first in r.lower():
+                    return i
         return 0
         
     m_rasi_idx = get_rasi_idx(m_rasi_name)
