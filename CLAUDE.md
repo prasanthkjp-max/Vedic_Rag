@@ -32,7 +32,7 @@ disk). Typical restart of a detached instance:
 
 ### Tests
 
-Tests are **Playwright browser scripts**, not unit tests — each is standalone and
+Most tests are **Playwright browser scripts**, not unit tests — each is standalone and
 drives the live UI at a hardcoded `BASE_URL = "http://localhost:8008"` using
 system Chrome (`executable_path="/usr/bin/google-chrome"`, the bundled browser
 version is mismatched). They require the server already running.
@@ -44,6 +44,13 @@ python3 test_panchangam_translation.py   # run one suite (this is "run a single 
 Most `test_*translation*.py` verify that per-language UI **label IDs** translate
 (and that English values don't leak into other languages). They pass through the
 API-key gate because the frontend auto-bootstraps the key on localhost — see Auth.
+
+Exception: `test_amruthathi_yoga.py` is a **pure-engine** regression test (imports
+`astro_engine` directly — no server, no browser). It locks in the Amruthathi yoga
+lookup: table invariants (27 nakshatras × 7 weekdays, valid codes), the
+`AMRUTHATHI_YOGA_TABLE[nakshatra][weekday]` index orientation, known dates through
+`get_astrological_chart()`, and direct cell lookups for the rarer codes. Run it
+standalone (`python3 test_amruthathi_yoga.py`, exits 0/1) without a running server.
 
 ## Architecture (the parts that span files)
 
