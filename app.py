@@ -822,7 +822,7 @@ A precise computational analysis of the chart is given below. You MUST reason fr
 
 --- BIRTH PANCHANGAM ---
 - Nakshatram: {chart['panchangam']['nakshatra']} | Tithi: {chart['panchangam']['tithi']} | Yogam: {chart['panchangam']['yogam']}
-- Tamil Dina Yoga (Siddha/Amirtha/Marana): {chart['panchangam']['anandadi_yoga']} ({chart['panchangam']['anandadi_quality']})
+- Amruthathi Yoga (birth nakshatra x weekday): {chart['panchangam']['amruthathi_yoga']} ({chart['panchangam']['amruthathi_quality']})
 
 --- CLASSICAL TEXT REFERENCES (retrieved from Brihat Parasara Hora Sastra, Phaladeepika, Saravali, Jataka Parijata, etc.) ---
 {rag_context}
