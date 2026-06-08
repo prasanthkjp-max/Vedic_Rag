@@ -7721,11 +7721,10 @@
                 if (btnCancelSub) btnCancelSub.style.display = 'none';
             }
 
-            // Populate preferred location and newsletter preferences
+            // Populate preferred location
             document.getElementById('profile-pref-city').value = currentUser.location_name || "Chennai, India";
             document.getElementById('profile-pref-lat').value = currentUser.latitude !== undefined ? currentUser.latitude : 13.0827;
             document.getElementById('profile-pref-lon').value = currentUser.longitude !== undefined ? currentUser.longitude : 80.2707;
-            document.getElementById('profile-pref-newsletter').checked = currentUser.wants_newsletter !== false;
         }
         function closeProfileModal() {
             document.getElementById('profile-modal').style.display = 'none';
@@ -7736,7 +7735,6 @@
             const location_name = document.getElementById('profile-pref-city').value.trim();
             const latitude = parseFloat(document.getElementById('profile-pref-lat').value);
             const longitude = parseFloat(document.getElementById('profile-pref-lon').value);
-            const wants_newsletter = document.getElementById('profile-pref-newsletter').checked ? 1 : 0;
             
             if (isNaN(latitude) || isNaN(longitude)) {
                 alert("Please enter valid numeric latitude and longitude coordinates.");
@@ -7754,7 +7752,6 @@
                         location_name,
                         latitude,
                         longitude,
-                        wants_newsletter,
                         language: currentLang
                     })
                 });
@@ -7763,7 +7760,6 @@
                     currentUser.location_name = location_name;
                     currentUser.latitude = latitude;
                     currentUser.longitude = longitude;
-                    currentUser.wants_newsletter = wants_newsletter === 1;
                 } else {
                     const data = await res.json();
                     alert("Failed to save preferences: " + data.detail);
@@ -7834,7 +7830,7 @@
 
         async function handleSocialLogin(provider) {
             const defaultEmail = provider === 'google' ? 'google_user@gmail.com' : 'fb_user@facebook.com';
-            const mockEmail = prompt(`Enter mock ${provider} account email for testing newsletters:`, defaultEmail);
+            const mockEmail = prompt(`Enter mock ${provider} account email:`, defaultEmail);
             if (!mockEmail) return;
             const defaultName = provider === 'google' ? 'Google Cosmic User' : 'Facebook Astro Fan';
             const mockName = prompt(`Enter mock name for this account:`, defaultName);
@@ -8033,8 +8029,8 @@
                 </div>
             </div>
             
-            <!-- Location & Newsletter Preferences -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Cosmic Subscriptions & Location</h4>
+            <!-- Location Preferences -->
+            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Location Preferences</h4>
             <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label style="font-size: 10px; color: var(--text-secondary);">Preferred City Name:</label>
@@ -8049,12 +8045,6 @@
                         <label style="font-size: 10px; color: var(--text-secondary);">Longitude:</label>
                         <input type="number" step="0.0001" id="profile-pref-lon" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11.5px; color: #fff;" value="80.2707">
                     </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                    <label style="font-size: 11px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="profile-pref-newsletter" checked style="accent-color: var(--accent-gold);">
-                        Receive Daily Panchangam Newsletters
-                    </label>
                 </div>
                 <button class="calculate-btn" onclick="saveProfilePreferences()" style="margin-top: 5px; padding: 8px; font-size: 11px; display: flex; justify-content: center; gap: 5px; align-items: center;">
                     <i class="fa-solid fa-floppy-disk"></i> Save Preferences
