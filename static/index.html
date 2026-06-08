@@ -763,6 +763,66 @@
             cursor: pointer;
         }
 
+        /* Calendar Dropdown Popover */
+        .calendar-month-title {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s, color 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .calendar-month-title:hover {
+            background-color: rgba(217, 119, 6, 0.08);
+            color: var(--accent-gold) !important;
+        }
+        .calendar-popover-menu {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-gold) !important;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(67, 20, 7, 0.15);
+            padding: 12px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-sizing: border-box;
+        }
+        .mini-calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+        .mini-calendar-day:hover {
+            background: rgba(217, 119, 6, 0.18) !important;
+            color: var(--accent-gold) !important;
+            border-color: rgba(217, 119, 6, 0.45) !important;
+        }
+        .mini-calendar-day.active {
+            background: var(--accent-gold) !important;
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+        .mini-calendar-day.today {
+            border: 1.5px solid var(--accent-gold);
+        }
+        .mini-calendar-day.empty {
+            cursor: default;
+        }
+        .mini-calendar-day.empty:hover {
+            background: none !important;
+            border-color: transparent !important;
+        }
+
         /* Date headline */
         .panch-date-header, .panchangam-date {
             font-family: var(--font-heading);
@@ -2056,10 +2116,20 @@
                                 <i class="fa-solid fa-calendar-days" style="color: var(--accent-gold);"></i> 
                                 <span id="lbl-home-calendar" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Astronomical Panchangam Calendar</span>
                             </div>
-                            <div class="calendar-header-nav" style="display: flex; align-items: center; gap: 12px;">
+                            <div class="calendar-header-nav" style="display: flex; align-items: center; gap: 12px; position: relative;">
                                 <button class="calendar-nav-btn" onclick="navigateMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                                <div class="calendar-month-title" id="calendar-title-label" style="font-family: var(--font-heading); font-size: 14px; font-weight: bold; color: var(--text-primary);">May 2026</div>
+                                <div class="calendar-month-title" id="calendar-title-label" style="font-family: var(--font-heading); font-size: 14px; font-weight: bold; color: var(--text-primary);" onclick="toggleCalendarPopover(event)">May 2026 <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--accent-gold); margin-left: 2px;"></i></div>
                                 <button class="calendar-nav-btn" onclick="navigateMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                                
+                                <!-- Popover dropdown with mini calendar -->
+                                <div id="calendar-popover" class="calendar-popover-menu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 280px; z-index: 1000;">
+                                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                        <select id="popover-month-select" class="calendar-input" style="flex: 1; padding: 4px 6px;" onchange="onPopoverMonthYearChange()"></select>
+                                        <select id="popover-year-select" class="calendar-input" style="width: 85px; padding: 4px 6px;" onchange="onPopoverMonthYearChange()"></select>
+                                    </div>
+                                    <div class="mini-calendar-weekdays" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 6px;"></div>
+                                    <div class="mini-calendar-days" id="mini-calendar-days-container" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;"></div>
+                                </div>
                             </div>
                         </div>
                         
@@ -2080,11 +2150,7 @@
                             <div class="astrology-data-left" style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
                                 <!-- Date selector and display -->
                                 <div class="date-picker-section" style="border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div class="date-display" id="gregorian-date-str" style="font-size: 14px; font-weight: bold; color: var(--accent-gold);">Loading...</div>
-                                    <div class="calendar-wrapper">
-                                        <i class="fa-solid fa-calendar-alt calendar-icon"></i>
-                                        <input type="date" class="calendar-input" id="calendar-date-picker" onchange="changePanchangamDate()">
-                                    </div>
+                                    <div class="date-display" id="gregorian-date-str" style="font-size: 14px; font-weight: bold; color: var(--accent-gold); margin-bottom: 0;">Loading...</div>
                                 </div>
                                 
                                 <!-- Core Astrological parameters (2 columns) -->
@@ -5055,10 +5121,7 @@
         }
 
         function changePanchangamDate() {
-            const picker = document.getElementById('calendar-date-picker');
-            if (picker.value) {
-                fetchDailyPanchangam(picker.value);
-            }
+            // Deprecated: Date picker removed from daily panchangam window
         }
 
         // Renders the Monthly Calendar
@@ -5075,7 +5138,7 @@
                 kn: ["ಜನವರಿ", "ಫೆಬ್ರವರಿ", "ಮಾರ್ಚ್", "ಏಪ್ರಿಲ್", "ಮೇ", "ಜೂನ್", "ಜುಲೈ", "ಆಗಸ್ಟ್", "ಸೆಪ್ಟೆಂಬರ್", "ಅಕ್ಟೋಬರ್", "ನವೆಂಬರ್", "ಡಿಸೆಂಬರ್"],
                 hi: ["जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"]
             };
-            document.getElementById('calendar-title-label').innerText = `${monthNames[currentLang][calendarMonth - 1]} ${calendarYear}`;
+            document.getElementById('calendar-title-label').innerHTML = `${monthNames[currentLang][calendarMonth - 1]} ${calendarYear} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--accent-gold); margin-left: 4px;"></i>`;
             
             container.innerHTML = '';
             
@@ -5139,6 +5202,7 @@
                     }
                     
                     cell.className = classes;
+                    cell.setAttribute('data-date', cellDateStr);
                     
                     // Choose moon icon for Pournami and Amavasya
                     let moonIconHtml = '';
@@ -5229,7 +5293,143 @@
                 calendarYear -= 1;
             }
             renderMonthlyCalendar();
+
+            const popover = document.getElementById('calendar-popover');
+            if (popover && popover.style.display === 'block') {
+                initPopoverSelects();
+                renderMiniCalendar(calendarMonth, calendarYear);
+            }
         }
+
+        // --- Custom calendar popover dropdown and mini calendar ---
+        function toggleCalendarPopover(event) {
+            if (event) event.stopPropagation();
+            const popover = document.getElementById('calendar-popover');
+            if (!popover) return;
+            
+            if (popover.style.display === 'block') {
+                popover.style.display = 'none';
+            } else {
+                popover.style.display = 'block';
+                initPopoverSelects();
+                renderMiniCalendar(calendarMonth, calendarYear);
+            }
+        }
+
+        function initPopoverSelects() {
+            const mSelect = document.getElementById('popover-month-select');
+            const ySelect = document.getElementById('popover-year-select');
+            if (!mSelect || !ySelect) return;
+            
+            const monthNames = {
+                en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+                ta: ["ஜனவரி", "பிப்ரவரி", "மார்ச்", "ஏப்ரல்", "மே", "ஜூன்", "ஜூலை", "ஆகஸ்ட்", "செப்டம்பர்", "அக்டோபர்", "நவம்பர்", "டிசம்பர்"],
+                te: ["జనవరి", "ఫిబ్రవరి", "మార్చి", "ఏప్రిల్", "మే", "జూన్", "జూలై", "ఆగస్టు", "సెప్టెంబరు", "అక్టోబరు", "నవంబరు", "డిసెంబరు"],
+                ml: ["ജനുവരി", "ഫെബ്രുവരി", "മാർച്ച്", "ഏപ്രിൽ", "മേയ്", "ജൂൺ", "ജൂലൈ", "ആഗസ്റ്റ്", "സെപ്റ്റംബർ", "ഒക്ടോബർ", "നവംബർ", "ഡിസംബർ"],
+                kn: ["ಜನವರಿ", "ಫೆಬ್ರವರಿ", "ಮಾರ್ಚ್", "ಏಪ್ರಿಲ್", "ಮೇ", "ಜೂನ್", "ಜುಲೈ", "ಆಗಸ್ಟ್", "ಸೆಪ್ಟೆಂಬರ್", "ಅಕ್ಟೋಬರ್", "ನವೆಂಬರ್", "ಡಿಸೆಂಬರ್"],
+                hi: ["जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"]
+            };
+            const currentMonths = monthNames[currentLang] || monthNames.en;
+            
+            mSelect.innerHTML = '';
+            for (let m = 0; m < 12; m++) {
+                const opt = document.createElement('option');
+                opt.value = m + 1;
+                opt.innerText = currentMonths[m];
+                if (m + 1 === calendarMonth) opt.selected = true;
+                mSelect.appendChild(opt);
+            }
+            
+            ySelect.innerHTML = '';
+            for (let y = 1900; y <= 2100; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.innerText = y;
+                if (y === calendarYear) opt.selected = true;
+                ySelect.appendChild(opt);
+            }
+        }
+
+        function onPopoverMonthYearChange() {
+            const mSelect = document.getElementById('popover-month-select');
+            const ySelect = document.getElementById('popover-year-select');
+            if (!mSelect || !ySelect) return;
+            
+            const popoverMonth = parseInt(mSelect.value);
+            const popoverYear = parseInt(ySelect.value);
+            renderMiniCalendar(popoverMonth, popoverYear);
+        }
+
+        function renderMiniCalendar(popoverMonth, popoverYear) {
+            const miniDaysContainer = document.getElementById('mini-calendar-days-container');
+            const popoverWeekdays = document.querySelector('.mini-calendar-weekdays');
+            if (!miniDaysContainer || !popoverWeekdays) return;
+            
+            miniDaysContainer.innerHTML = '';
+            
+            // Set weekday labels
+            const weekdayLabels = {
+                en: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+                ta: ["ஞா", "தி", "செ", "பு", "வி", "வெ", "ச"],
+                te: ["ఆ", "సో", "మం", "బు", "గు", "శు", "శ"],
+                ml: ["ஞാ", "തി", "ചൊ", "ബു", "വ്യാ", "വെ", "ശ"],
+                kn: ["ಭಾ", "ಸೋ", "ಮಂ", "ಬು", "ಗು", "ಶు", "ಶ"],
+                hi: ["र", "सो", "म", "बु", "गु", "शु", "श"]
+            };
+            const labels = weekdayLabels[currentLang] || weekdayLabels.en;
+            popoverWeekdays.innerHTML = labels.map(l => `<div style="padding: 2px 0; color: var(--text-muted);">${l}</div>`).join('');
+            
+            const daysInMonth = new Date(popoverYear, popoverMonth, 0).getDate();
+            const firstDay = new Date(popoverYear, popoverMonth - 1, 1).getDay();
+            
+            // Empty padded cells
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'mini-calendar-day empty';
+                miniDaysContainer.appendChild(emptyCell);
+            }
+            
+            // Render days
+            const todayStr = new Date().toISOString().split('T')[0];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.createElement('div');
+                cell.className = 'mini-calendar-day';
+                cell.innerText = d;
+                
+                const cellDateStr = `${popoverYear}-${String(popoverMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                if (cellDateStr === selectedPanchangamDate) {
+                    cell.classList.add('active');
+                }
+                if (cellDateStr === todayStr) {
+                    cell.classList.add('today');
+                }
+                
+                cell.onclick = async function(e) {
+                    e.stopPropagation();
+                    calendarMonth = popoverMonth;
+                    calendarYear = popoverYear;
+                    selectedPanchangamDate = cellDateStr;
+                    
+                    document.getElementById('calendar-popover').style.display = 'none';
+                    
+                    await fetchDailyPanchangam(cellDateStr);
+                    await renderMonthlyCalendar();
+                };
+                
+                miniDaysContainer.appendChild(cell);
+            }
+        }
+
+        // Close popover when clicking outside
+        document.addEventListener('click', function(event) {
+            const popover = document.getElementById('calendar-popover');
+            const titleLabel = document.getElementById('calendar-title-label');
+            if (popover && popover.style.display === 'block') {
+                if (!popover.contains(event.target) && !titleLabel.contains(event.target)) {
+                    popover.style.display = 'none';
+                }
+            }
+        });
 
         function getDChartRasiIndex(planet, info, dType) {
             const longVal = info.longitude;
