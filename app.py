@@ -1453,20 +1453,20 @@ def translate_nakshatra_name(naks_str: str, lang: str) -> str:
 
 # Cleaned up day panchangam and festival computer
 def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float, lat: float, lang: str, added_festivals_prev: set = None):
-    chart_sunrise = get_astrological_chart(year, month, day, 5, 30, lon, lat, "Lahiri")
+    chart_sunrise = get_astrological_chart(year, month, day, 5, 30, lon, lat, "Lahiri", light=True)
     localized_panch = get_regional_panchangam(chart_sunrise, lang)
     tithi_sunrise = chart_sunrise["panchangam"]["tithi"]
     
-    chart_midday = get_astrological_chart(year, month, day, 13, 0, lon, lat, "Lahiri")
+    chart_midday = get_astrological_chart(year, month, day, 13, 0, lon, lat, "Lahiri", light=True)
     tithi_midday = chart_midday["panchangam"]["tithi"]
-    
-    chart_sunset = get_astrological_chart(year, month, day, 18, 30, lon, lat, "Lahiri")
+
+    chart_sunset = get_astrological_chart(year, month, day, 18, 30, lon, lat, "Lahiri", light=True)
     tithi_sunset = chart_sunset["panchangam"]["tithi"]
-    
-    chart_night = get_astrological_chart(year, month, day, 21, 0, lon, lat, "Lahiri")
+
+    chart_night = get_astrological_chart(year, month, day, 21, 0, lon, lat, "Lahiri", light=True)
     tithi_night = chart_night["panchangam"]["tithi"]
-    
-    chart_midnight = get_astrological_chart(year, month, day, 0, 0, lon, lat, "Lahiri")
+
+    chart_midnight = get_astrological_chart(year, month, day, 0, 0, lon, lat, "Lahiri", light=True)
     tithi_midnight = chart_midnight["panchangam"]["tithi"]
     
     tithi_tomorrow_sunrise = ""
@@ -1474,7 +1474,7 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         from datetime import date, timedelta
         dt = date(year, month, day)
         dt_tomorrow = dt + timedelta(days=1)
-        chart_tomorrow = get_astrological_chart(dt_tomorrow.year, dt_tomorrow.month, dt_tomorrow.day, 5, 30, lon, lat, "Lahiri")
+        chart_tomorrow = get_astrological_chart(dt_tomorrow.year, dt_tomorrow.month, dt_tomorrow.day, 5, 30, lon, lat, "Lahiri", light=True)
         tithi_tomorrow_sunrise = chart_tomorrow["panchangam"]["tithi"]
     except Exception:
         pass
@@ -1501,11 +1501,11 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
             from datetime import date, timedelta
             dt = date(year, month, day)
             dt_yesterday = dt - timedelta(days=1)
-            chart_yesterday = get_astrological_chart(dt_yesterday.year, dt_yesterday.month, dt_yesterday.day, 5, 30, lon, lat, "Lahiri")
+            chart_yesterday = get_astrological_chart(dt_yesterday.year, dt_yesterday.month, dt_yesterday.day, 5, 30, lon, lat, "Lahiri", light=True)
             tithi_yesterday_sunrise = chart_yesterday["panchangam"]["tithi"]
             if "Tithi 11" in tithi_yesterday_sunrise:
                 dt_day_before = dt - timedelta(days=2)
-                chart_day_before = get_astrological_chart(dt_day_before.year, dt_day_before.month, dt_day_before.day, 5, 30, lon, lat, "Lahiri")
+                chart_day_before = get_astrological_chart(dt_day_before.year, dt_day_before.month, dt_day_before.day, 5, 30, lon, lat, "Lahiri", light=True)
                 tithi_day_before_sunrise = chart_day_before["panchangam"]["tithi"]
                 if "Tithi 11" not in tithi_day_before_sunrise:
                     specialities.append("Ekadashi")

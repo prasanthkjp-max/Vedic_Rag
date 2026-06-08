@@ -1612,10 +1612,17 @@ def calculate_precise_rise_set(jd_sunrise, longitude, latitude, timezone_offset=
         
     return sr, ss, mr, ms
 
-def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male"):
+def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male", light=False):
     """
     Master function to calculate the complete Sidereal astrological chart
     with Thirukanitha panchangam planet coordinates and 120-year Dasas.
+
+    light=True skips the Vimshottari dasa tree, panchangam transitions (end
+    times), ashtakavarga and shadbala. These are the heaviest computations and
+    are unused by the month-calendar path, which only reads placements + the
+    core panchangam (tithi/nakshatra/yogam/karanam). The returned dict keeps the
+    same shape, with those fields emptied. Do NOT use light mode for the
+    astrology tab (/api/calculate-chart) — it renders dasas/ashtakavarga/shadbala.
     """
     # 0. Validate inputs so out-of-range values fail loudly instead of silently
     #    producing a garbage chart (e.g. month=13 -> "1990-13-15").
@@ -1896,8 +1903,8 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     tamil_day = math.floor(sidereal_positions["Sun"] % 30.0) + 1
     tamil_date = f"{tamil_month} {tamil_day}"
     
-    # 8. Compute 120-Year Vimshottari Dasas
-    dasa_table = calculate_vimshottari_dasa(JD, sidereal_positions["Moon"], birth_naks_idx)
+    # 8. Compute 120-Year Vimshottari Dasas (skipped in light mode)
+    dasa_table = [] if light else calculate_vimshottari_dasa(JD, sidereal_positions["Moon"], birth_naks_idx)
     
     # --- Additional astronomical calculations for birth details ---
     # Calculate sunrise/sunset, moonrise/moonset precisely using Swiss Ephemeris.
@@ -1924,8 +1931,17 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     except Exception:
         sunset_hours = 18.0
         
-    # Calculate Tithi, Nakshatra, Yoga, Karana transitions
-    transitions = calculate_panchangam_transitions(JD, timezone_offset, ayanamsa_name=ayanamsa_name)
+    # Calculate Tithi, Nakshatra, Yoga, Karana transitions (skipped in light mode;
+    # the calendar shows the panchangam names, not their end times)
+    if light:
+        transitions = {
+            "tithi_end_time": "", "tithi_next_idx": None,
+            "nakshatra_end_time": "", "nakshatra_next_idx": None,
+            "yogam_end_time": "", "yogam_next_idx": None,
+            "karanam_end_time": "", "karanam_next_idx": None,
+        }
+    else:
+        transitions = calculate_panchangam_transitions(JD, timezone_offset, ayanamsa_name=ayanamsa_name)
     
     # Calculate day duration (Ahas)
     day_duration_hours = sunset_hours - sunrise_hours
@@ -1988,13 +2004,16 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     ayana = calculate_ayana(sidereal_positions["Sun"])
     ritu = calculate_ritu(sidereal_positions["Sun"])
 
-    # Calculate Ashtakavarga
-    ashtakavarga = calculate_ashtakavarga(sidereal_positions, sidereal_lagna)
+    # Calculate Ashtakavarga (skipped in light mode)
+    ashtakavarga = {} if light else calculate_ashtakavarga(sidereal_positions, sidereal_lagna)
 
-    # Calculate Shadbala (Shatbalam) points
-    local_decimal_hour = hour + (minute / 60.0)
-    is_daytime = sunrise_hours <= local_decimal_hour <= sunset_hours
-    shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_decimal_hour, sunrise_hours, sunset_hours)
+    # Calculate Shadbala (Shatbalam) points (skipped in light mode)
+    if light:
+        shadbala = {}
+    else:
+        local_decimal_hour = hour + (minute / 60.0)
+        is_daytime = sunrise_hours <= local_decimal_hour <= sunset_hours
+        shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_decimal_hour, sunrise_hours, sunset_hours)
 
     return {
         "metadata": {
