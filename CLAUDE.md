@@ -120,3 +120,6 @@ these are deliberately distinct.
   `VEDIC_ALLOW_MOCK_OAUTH=1` — never enable in production.
 - **Git workflow:** branch off `master`, open a PR (the user reviews/merges); do
   not commit straight to `master`.
+- **Versioning:** bump `config.py:VERSION` (SemVer — patch for fixes, minor for
+  features, major for breaking changes) and add a `CHANGELOG.md` entry in the same
+  PR as the change. The version is surfaced via `/api/version` and `/api/health`.

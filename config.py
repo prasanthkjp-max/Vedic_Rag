@@ -10,7 +10,7 @@ import sqlite3
 import secrets
 
 # --- Version ---
-VERSION = "1.3.1"
+VERSION = "1.4.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
