@@ -25,6 +25,54 @@ NAKSHATRAS = [
     "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
 ]
 
+# Amruthathi yogas — the classical Tamil-panchangam birth-nakshatra x weekday
+# lookup table (27 nakshatras x 7 weekdays -> one of 7 yoga flags), per the
+# Srirangam Kovil Vaakkiya Panchangam "அம்ருதாதி யோகங்கள்" table. Each row is
+# the seven single-letter codes for Sun..Sat (matches day_idx 0=Sunday and the
+# nakshatra order of NAKSHATRAS, 0=Ashwini..26=Revati):
+#   S=Siddha, A=Amrita, U=Subha   (auspicious)
+#   V=Varjya, N=Nasha, D=Dagdha, M=Marana   (inauspicious)
+AMRUTHATHI_YOGA_TABLE = [
+    "VUSNAAU",  # Ashwini
+    "UUUNUUU",  # Bharani
+    "UUUSDUA",  # Krittika
+    "UAUUDNA",  # Rohini
+    "UAASDUU",  # Mrigashira
+    "UUNADUU",  # Ardra
+    "UAAAAUM",  # Punarvasu
+    "AUAAANU",  # Pushya
+    "UUAAUNM",  # Ashlesha
+    "VUAAANU",  # Magha
+    "UUASUAU",  # Purva Phalguni
+    "SNSSDSM",  # Uttara Phalguni
+    "SUAAUSM",  # Hasta
+    "UNAAUSM",  # Chitra
+    "UAAAASA",  # Swati
+    "VNNAUNU",  # Vishakha
+    "VUUSUSU",  # Anuradha
+    "VUUUUNU",  # Jyeshta
+    "SUUNUAU",  # Mula
+    "UNUSUSM",  # Purva Ashadha
+    "SNNSUSM",  # Uttara Ashadha
+    "SAUAUUU",  # Shravana
+    "UUNNUSU",  # Dhanishta
+    "UUNUDSA",  # Shatabhisha
+    "UUNSUSU",  # Purva Bhadrapada
+    "SNSUUSU",  # Uttara Bhadrapada
+    "SUSNUAM",  # Revati
+]
+
+# Yoga code -> (name, quality)
+AMRUTHATHI_YOGA_NAMES = {
+    "S": ("Siddha", "auspicious"),
+    "A": ("Amrita", "auspicious"),
+    "U": ("Subha", "auspicious"),
+    "V": ("Varjya", "inauspicious"),
+    "N": ("Nasha", "inauspicious"),
+    "D": ("Dagdha", "inauspicious"),
+    "M": ("Marana", "inauspicious"),
+}
+
 # Rasi (Zodiac Sign) Names
 RASIS = [
     "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)", "Karka (Cancer)",
@@ -411,6 +459,15 @@ def get_panchangam_details(sun_long, moon_long):
         karanam = KARANAS[(kar_num - 1) % 7 + 1]
         
     return tithi_name, nakshatra, yogam, karanam, naks_num
+
+def get_amruthathi_yoga(naks_idx, day_idx):
+    """
+    Tamil-panchangam Amruthathi yoga: a direct nakshatra x weekday lookup
+    into AMRUTHATHI_YOGA_TABLE, returning (name, quality) — one of Siddha/
+    Amrita/Subha (auspicious) or Varjya/Nasha/Dagdha/Marana (inauspicious).
+    """
+    code = AMRUTHATHI_YOGA_TABLE[naks_idx % 27][day_idx % 7]
+    return AMRUTHATHI_YOGA_NAMES[code]
 
 def jd_to_date_string(jd):
     """
@@ -1920,6 +1977,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     # Day of Week index (0 = Sunday, 1 = Monday, ...)
     day_idx = math.floor(JD + 1.5) % 7
     day_of_week_en = DAYS_OF_WEEK["en"][day_idx]
+
+    # Amruthathi yoga (birth-nakshatra x weekday: Siddha/Amrita/Subha/Varjya/Nasha/Dagdha/Marana)
+    amruthathi_name, amruthathi_quality = get_amruthathi_yoga(birth_naks_idx, day_idx)
     
     # Format Ayanamsa beautifully (DD°MM')
     ayanamsa_dms = format_deg_to_dms(ayanamsa)
@@ -1956,6 +2016,8 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "tithi": tithi,
             "nakshatra": nakshatra,
             "yogam": yogam,
+            "amruthathi_yoga": amruthathi_name,
+            "amruthathi_quality": amruthathi_quality,
             "karanam": karanam,
             "sunrise": sunrise_str,
             "sunset": sunset_str,
