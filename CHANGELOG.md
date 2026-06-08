@@ -11,6 +11,9 @@ All notable changes to this project are documented here. Versions follow
   Vimshottari dasa tree, panchangam transition end-times, ashtakavarga, and
   shadbala — none of which the calendar (or daily newsletter) renders. The
   astrology tab (`/api/calculate-chart`) still computes the full chart.
+- Calendar now caches each month's panchangam in the browser (keyed by
+  year+month+language), so revisiting or navigating back to a month is instant
+  with no refetch. Panchangam is deterministic, so cached months never go stale.
 
 ## [1.4.0]
 

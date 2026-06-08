@@ -4460,6 +4460,10 @@
         let selectedPanchangamDate = "";
         let calendarYear = 2026;
         let calendarMonth = 5; // May standard on load
+        // Session cache for month-panchangam responses, keyed by year-month-lang.
+        // Panchangam is deterministic, so cached months never go stale; the
+        // "today"/"active" highlights are recomputed from live state at render.
+        const monthPanchangamCache = {};
         let currentGocharaStyle = 'south';
 
         function setGocharaStyle(style) {
@@ -5092,16 +5096,21 @@
             });
             
             try {
-                // Fetch monthly panchangam from backend in batch!
-                const res = await apiFetch(`/api/month-panchangam?year=${calendarYear}&month=${calendarMonth}&lang=${currentLang}`);
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
+                // Fetch monthly panchangam from backend in batch (cached per month+lang)
+                const cacheKey = `${calendarYear}-${calendarMonth}-${currentLang}`;
+                let data = monthPanchangamCache[cacheKey];
+                if (!data) {
+                    const res = await apiFetch(`/api/month-panchangam?year=${calendarYear}&month=${calendarMonth}&lang=${currentLang}`);
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    data = await res.json();
+                    if (!data || !data.days) {
+                        throw new Error("Invalid month-panchangam data structure");
+                    }
+                    monthPanchangamCache[cacheKey] = data;
                 }
-                const data = await res.json();
-                if (!data || !data.days) {
-                    throw new Error("Invalid month-panchangam data structure");
-                }
-                
+
                 // Find day of the week for the 1st of the month
                 const firstDayDate = new Date(calendarYear, calendarMonth - 1, 1);
                 const startDayOfWeek = firstDayDate.getDay();
