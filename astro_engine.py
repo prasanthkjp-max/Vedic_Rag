@@ -25,6 +25,41 @@ NAKSHATRAS = [
     "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
 ]
 
+# Tamil-panchangam "Anandadi" day yogas — a simple Siddha / Amirtha / Marana
+# flag for the day (distinct from the 27 Nitya yogas in get_panchangam_details).
+# Sources differ by almanac; these follow the common Tamil reckoning:
+#   - Amirtha (auspicious):   weekday + nakshatra (one nakshatra per weekday).
+#   - Marana  (inauspicious): weekday + nakshatra (several per weekday).
+#   - Siddha  (auspicious):   weekday + tithi-group (element match).
+# Weekday indices are 0=Sunday..6=Saturday (matches day_idx); nakshatra indices
+# are 0=Ashwini (matches NAKSHATRAS). Edit these tables to match a specific panchangam.
+
+# Amirtha yoga: weekday index -> nakshatra index
+AMIRTHA_YOGA_NAKS = {
+    0: 12,  # Sunday    -> Hasta
+    1: 4,   # Monday    -> Mrigashira
+    2: 0,   # Tuesday   -> Ashwini
+    3: 16,  # Wednesday -> Anuradha
+    4: 7,   # Thursday  -> Pushya
+    5: 26,  # Friday    -> Revati
+    6: 3,   # Saturday  -> Rohini
+}
+
+# Marana yoga: weekday index -> set of nakshatra indices
+MARANA_YOGA_NAKS = {
+    0: {22, 2},             # Sunday    -> Dhanishta, Krittika
+    1: {0, 20},             # Monday    -> Ashwini, Uttara Ashadha
+    2: {3, 15, 5},          # Tuesday   -> Rohini, Vishakha, Ardra
+    3: {12},                # Wednesday -> Hasta
+    4: {23, 2, 16, 11, 5},  # Thursday  -> Shatabhisha, Krittika, Anuradha, Uttara Phalguni, Ardra
+    5: {3, 9, 21, 8},       # Friday    -> Rohini, Magha, Shravana, Ashlesha
+    6: {8, 13, 11},         # Saturday  -> Ashlesha, Chitra, Uttara Phalguni
+}
+
+# Siddha yoga: tithi-group ((tithi-1) % 5) -> weekday index
+#   0 Nanda+Fri, 1 Bhadra+Wed, 2 Jaya+Tue, 3 Rikta+Sat, 4 Purna+Thu
+SIDDHA_YOGA_DAY = [5, 3, 2, 6, 4]
+
 # Rasi (Zodiac Sign) Names
 RASIS = [
     "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)", "Karka (Cancer)",
@@ -410,7 +445,23 @@ def get_panchangam_details(sun_long, moon_long):
     else:
         karanam = KARANAS[(kar_num - 1) % 7 + 1]
         
-    return tithi_name, nakshatra, yogam, karanam, naks_num
+    return tithi_name, nakshatra, yogam, karanam, naks_num, tithi_num
+
+def get_anandadi_yoga(naks_idx, day_idx, tithi_num):
+    """
+    Tamil-panchangam day yoga flag: Marana (inauspicious), Amirtha or Siddha
+    (auspicious), else None. Returns (name, quality).
+    Marana/Amirtha use weekday + nakshatra; Siddha uses weekday + tithi-group.
+    Priority Marana > Amirtha > Siddha (Marana is the 'avoid' warning).
+    """
+    day = day_idx % 7
+    if naks_idx in MARANA_YOGA_NAKS.get(day, ()):
+        return ("Marana", "inauspicious")
+    if AMIRTHA_YOGA_NAKS.get(day) == naks_idx:
+        return ("Amirtha", "auspicious")
+    if SIDDHA_YOGA_DAY[(tithi_num - 1) % 5] == day:
+        return ("Siddha", "auspicious")
+    return ("None", "neutral")
 
 def jd_to_date_string(jd):
     """
@@ -1831,7 +1882,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     }
     
     # 7. Compute Panchangam Details
-    tithi, nakshatra, yogam, karanam, birth_naks_idx = get_panchangam_details(
+    tithi, nakshatra, yogam, karanam, birth_naks_idx, birth_tithi_num = get_panchangam_details(
         sidereal_positions["Sun"], sidereal_positions["Moon"]
     )
     
@@ -1920,6 +1971,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     # Day of Week index (0 = Sunday, 1 = Monday, ...)
     day_idx = math.floor(JD + 1.5) % 7
     day_of_week_en = DAYS_OF_WEEK["en"][day_idx]
+
+    # Anandadi yoga (day-nakshatra yoga: Siddhi / Amrita / Mrityu etc.)
+    anandadi_name, anandadi_quality = get_anandadi_yoga(birth_naks_idx, day_idx, birth_tithi_num)
     
     # Format Ayanamsa beautifully (DD°MM')
     ayanamsa_dms = format_deg_to_dms(ayanamsa)
@@ -1956,6 +2010,8 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "tithi": tithi,
             "nakshatra": nakshatra,
             "yogam": yogam,
+            "anandadi_yoga": anandadi_name,
+            "anandadi_quality": anandadi_quality,
             "karanam": karanam,
             "sunrise": sunrise_str,
             "sunset": sunset_str,
