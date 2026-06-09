@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.6.1]
+
+### Fixed
+- Calendar festival detection. Ugadi previously appeared on ~12 wrong days a
+  month because `"Tithi 1"` substring-matched Tithi 10–15, and lunar festivals
+  were gated on the Gregorian month instead of the lunar month (so Ugadi/Rama
+  Navami also fired in adjacent lunar months). Festivals are now matched on the
+  exact tithi number and the correct `luni_month_idx`: Ugadi/Rama Navami/Hanuman
+  Jayanti = Chaitra, Ganesha Chaturthi = Bhadrapada, Janmashtami = Shravana,
+  Durga Ashtami = Ashvina. Ugadi also handles a skipped Chaitra Shukla Pratipada
+  (falls back to the Chaitra new-moon day). Verified single-fire on the published
+  dates for 2024–2028.
+- Festival name translations in the calendar: corrected 19 mixed-script entries
+  (e.g. Telugu glyphs in Kannada fields, Tamil in Malayalam) in the frontend
+  `translateSpeciality` map, plus 8 in the backend festival table.
+
 ## [1.6.0]
 
 ### Added
