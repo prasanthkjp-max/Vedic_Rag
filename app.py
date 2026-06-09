@@ -15,10 +15,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from io import BytesIO
 from search_engine import VedicSearchEngine
-from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility
+from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility, calculate_luni_solar_month_index
 from pdf_generator import generate_pdf_report
 from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
-from muhurtham_engine import calculate_muhurtham, calculate_luni_solar_month_index
+from muhurtham_engine import calculate_muhurtham
 from datetime import date
 from config import (
     VERSION,
@@ -1425,7 +1425,7 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
     # Calculate synodic month index
     sun_long = chart_sunset["placements"]["Sun"]["longitude"]
     moon_long = chart_sunset["placements"]["Moon"]["longitude"]
-    luni_month_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+    luni_month_idx = calculate_luni_solar_month_index(sun_long, moon_long, jd=chart_sunset["metadata"]["julian_date"])
     
     if is_pournami:
         specialities.append("Pournami")

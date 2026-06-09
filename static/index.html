@@ -3927,6 +3927,7 @@
                 "Hanuman Jayanti": { ta: "அனுமன் ஜெயந்தி", te: "హनुమాన్ జయంతి", hi: "हनुमान जयंती", ml: "ഹനുമാൻ ஜயന്തി", kn: "ಹನುಮ ಜಯಂತಿ" },
                 "Durga Ashtami": { ta: "துர்கா அஷ்டமி", te: "దుర్గాష్టమి", hi: "दुर्गा अष्टमी", ml: "ദുർഗ്ഗാഷ്ടമി", kn: "ದುರ್ಗಾష్టമി" },
                 "Diwali": { ta: "தீபாவளி", te: "దీపావళి", hi: "दीपावली", ml: "ദീപാവലി", kn: "ದೀపಾವಳಿ" },
+                "Deepavali / Diwali (Festival of Lights)": { ta: "தீபாவளி பண்டிகை", te: "దీపావళి (దివ్య దీపాల పండుగ)", hi: "दीपावली / दीवाली (प्रकाश पर्व)", ml: "ദീപാവലി", kn: "ದೀపಾವಳಿ (ಬෙళಕಿನ ಹಬ್ಬ)" },
                 "Pongal / Sankranti": { ta: "பொங்கல் திருநாள்", te: "మకర సంక్రాంతి", hi: "मकर संक्रांति", ml: "മകര സംക്രാന്തി", kn: "ಮಕರ ಸಂಕ್ರಾಂತಿ" },
                 "Vishu / Puthandu": { ta: "தமிழ்ப் புத்தாண்டு (விஷு)", te: "ವಿಷు / తమిళ నూతన సంవత్సరం", hi: "मेष संक्रांति (विषु / पुथंडू)", ml: "വിಷു", kn: "ವಿಷು / ತಮಿಳು ಹೊಸ ವರ್ಷ" },
                 "Ugadi": { ta: "யுகாதி", te: "యుగాది", hi: "युगादि", ml: "യുഗാദി", kn: "ಯುಗಾದಿ" },
@@ -5326,8 +5327,23 @@
                 festivals = festivals.filter(f => !f.includes("Regular Solar Day") && !f.includes("Regular Lunar Day") && !f.includes("சாதாரண") && !f.includes("సాధారణ") && !f.includes("सामान्य") && !f.includes("സാധാരണ") && !f.includes("ಸಾಮಾನ್ಯ"));
                 
                 dailyPanchangamData.specialities.forEach(spec => {
-                    const transSpec = translateSpeciality(spec);
-                    if (!festivals.includes(transSpec)) {
+                    let specToCheck = spec;
+                    if (spec === "Diwali") {
+                        specToCheck = "Deepavali / Diwali (Festival of Lights)";
+                    }
+                    const transSpec = translateSpeciality(specToCheck);
+                    
+                    let alreadyAdded = false;
+                    for (let f of festivals) {
+                        if (f === transSpec || 
+                            (transSpec.includes("Diwali") || transSpec.includes("தீபாவளி") || transSpec.includes("దీపావళి") || transSpec.includes("दीपावली") || transSpec.includes("ദീപാവലി") || transSpec.includes("ದೀపಾವಳಿ")) &&
+                            (f.includes("Diwali") || f.includes("Deepavali") || f.includes("தீபாவளி") || f.includes("దీపావళి") || f.includes("दीपावली") || f.includes("ദീപാവലി") || f.includes("ದೀపಾವಳಿ"))
+                        ) {
+                            alreadyAdded = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyAdded) {
                         festivals.unshift(transSpec);
                     }
                 });
@@ -5433,15 +5449,15 @@
                         moonIconHtml = '<span class="cell-moon" style="color: #64748b;">🌑</span>';
                     }
                     
-                    // Check for festival image
+                    // Check for Marriage Muhurtham to show couple image - hide other festivals from grid cells
                     let festivalImgHtml = '';
                     let specialityHtml = '';
-                    if (dayInfo.specialities && dayInfo.specialities.length > 0) {
-                        const imgPath = getFestivalImage(dayInfo.specialities[0], currentLang);
+                    if (dayInfo.specialities && dayInfo.specialities.includes("Marriage Muhurtham")) {
+                        const imgPath = getFestivalImage("Marriage Muhurtham", currentLang);
                         if (imgPath) {
-                            festivalImgHtml = `<img src="${imgPath}?v=2" alt="${dayInfo.specialities[0]}" class="cell-fest-img" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                            festivalImgHtml = `<img src="${imgPath}?v=2" alt="Marriage Muhurtham" class="cell-fest-img" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
                         }
-                        const translatedSpec = translateSpeciality(dayInfo.specialities[0]);
+                        const translatedSpec = translateSpeciality("Marriage Muhurtham");
                         specialityHtml = `<div class="cell-speciality">${translatedSpec}</div>`;
                     }
                     

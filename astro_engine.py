@@ -254,16 +254,63 @@ def calculate_ritu(sun_long):
     else:
         return "Shishira"
 
-def calculate_luni_solar_month_index(sun_long, moon_long):
+def calculate_luni_solar_month_index(sun_long, moon_long, jd=None, ayanamsa_name="Lahiri"):
     """
-    Astronomically computes the synodic Luni-Solar month index (0 to 11).
+    Synodic Luni-Solar month index 0–11
+    (0=Chaitra, 1=Vaisakha, …, 6=Ashvina, 7=Kartika, …)
+    If jd is provided, finds the exact preceding new moon to be 100% robust.
     """
+    if jd is not None:
+        try:
+            curr_jd = jd
+            step = 0.5
+            last_diff = None
+            for _ in range(70):  # scan up to 35 days back
+                T_jd = (curr_jd - 2451545.0) / 36525.0
+                ayan = get_ayanamsa(T_jd, ayanamsa_name, JD=curr_jd)
+                res_sun, _ = swe.calc_ut(curr_jd, swe.SUN)
+                res_moon, _ = swe.calc_ut(curr_jd, swe.MOON)
+                sun_l = (res_sun[0] - ayan) % 360.0
+                moon_l = (res_moon[0] - ayan) % 360.0
+                diff = (moon_l - sun_l) % 360.0
+                
+                if last_diff is not None:
+                    # Going backward, diff decreases. Look for wrap from small positive to large positive (~360)
+                    if last_diff < 15.0 and diff > 345.0:
+                        # Conjunction occurred between curr_jd and curr_jd + step
+                        low = curr_jd
+                        high = curr_jd + step
+                        for _ in range(15):
+                            mid = (low + high) / 2.0
+                            T_mid = (mid - 2451545.0) / 36525.0
+                            ayan_mid = get_ayanamsa(T_mid, ayanamsa_name, JD=mid)
+                            s_res, _ = swe.calc_ut(mid, swe.SUN)
+                            m_res, _ = swe.calc_ut(mid, swe.MOON)
+                            s_l = (s_res[0] - ayan_mid) % 360.0
+                            m_l = (m_res[0] - ayan_mid) % 360.0
+                            d_mid = (m_l - s_l) % 360.0
+                            if d_mid < 180.0:
+                                high = mid
+                            else:
+                                low = mid
+                        
+                        T_conj = (low - 2451545.0) / 36525.0
+                        ayan_conj = get_ayanamsa(T_conj, ayanamsa_name, JD=low)
+                        s_conj, _ = swe.calc_ut(low, swe.SUN)
+                        s_l_conj = (s_conj[0] - ayan_conj) % 360.0
+                        sign = math.floor(s_l_conj / 30.0) % 12
+                        return (sign + 1) % 12
+                
+                last_diff = diff
+                curr_jd -= step
+        except Exception:
+            pass  # Fallback to approximate if Swiss Ephemeris call fails
+
     diff = (moon_long - sun_long) % 360.0
     days_since_new_moon = diff / 12.2
-    sun_long_at_new_moon = (sun_long - (days_since_new_moon * 0.9856)) % 360.0
-    sun_sign_at_new_moon = math.floor(sun_long_at_new_moon / 30.0) % 12
-    luni_month_idx = (sun_sign_at_new_moon + 1) % 12
-    return luni_month_idx
+    sun_at_new_moon = (sun_long - days_since_new_moon * 0.9856) % 360.0
+    sign_at_new_moon = math.floor(sun_at_new_moon / 30.0) % 12
+    return (sign_at_new_moon + 1) % 12
 
 def get_regional_panchangam(chart, lang_code):
     """
@@ -345,7 +392,7 @@ def get_regional_panchangam(chart, lang_code):
     elif lang_code == "hi":
         # Hindi Luni-Solar Calendar (Purnimanta)
         # Months end on Full Moon (Pournami), shifting Krishna Paksha forward
-        luni_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+        luni_idx = calculate_luni_solar_month_index(sun_long, moon_long, JD)
         amanta_idx = luni_idx  # base (Chaitra-reckoned) month for the year boundary
         diff = (moon_long - sun_long) % 360.0
         tithi_num = math.floor(diff / 12.0) + 1
@@ -367,7 +414,7 @@ def get_regional_panchangam(chart, lang_code):
         
     elif lang_code in ["te", "kn"]:
         # Telugu / Kannada Lunar Calendar (Amanta)
-        amanta_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+        amanta_idx = calculate_luni_solar_month_index(sun_long, moon_long, JD)
         luni_month = LUNI_SOLAR_MONTHS[amanta_idx]
 
         # Calculate Amanta Lunar Day (1 to 30)

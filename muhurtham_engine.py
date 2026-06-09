@@ -103,16 +103,13 @@ def get_indices_at_jd(jd, ayanamsa_name="Lahiri"):
     return tithi_num, naks_num, yog_num, kar_num
 
 
-def calculate_luni_solar_month_index(sun_long, moon_long):
+def calculate_luni_solar_month_index(sun_long, moon_long, jd=None):
     """
     Synodic Luni-Solar month index 0–11
     (0=Chaitra, 1=Vaisakha, …, 6=Ashvina, 7=Kartika, …)
     """
-    diff = (moon_long - sun_long) % 360.0
-    days_since_new_moon = diff / 12.2
-    sun_at_new_moon = (sun_long - days_since_new_moon * 0.9856) % 360.0
-    sign_at_new_moon = math.floor(sun_at_new_moon / 30.0) % 12
-    return (sign_at_new_moon + 1) % 12
+    from astro_engine import calculate_luni_solar_month_index as calc_index
+    return calc_index(sun_long, moon_long, jd=jd)
 
 
 def get_yogam_name(yog_num):
@@ -225,21 +222,22 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
 
     if target_activity == "VIVAHA":
 
-        # ── 0. Kari Naal (Tamil-solar tradition) ────────────────────────────
-        # We need the Tamil solar month and day from the panchangam.
-        # The panchangam stores it as "Chithirai 7" / "Karthigai 1" etc.
-        tamil_date_str = panch.get("tamil_date", "")    # e.g. "Karthigai 1"
-        if tamil_date_str:
-            parts = tamil_date_str.split()
-            if len(parts) == 2:
-                t_month = parts[0]
-                try:
-                    t_day = int(parts[1])
-                    if t_month in KARI_NAAL and t_day in KARI_NAAL[t_month]:
-                        kari_naal_blocked = True
-                        active_doshams.append("Kari_Naal")
-                except ValueError:
-                    pass
+        # ── 0. Kari Naal (Tamil-solar tradition only) ────────────────────────────
+        if regional_paradigm == "TAMIL_SOLAR":
+            # We need the Tamil solar month and day from the panchangam.
+            # The panchangam stores it as "Chithirai 7" / "Karthigai 1" etc.
+            tamil_date_str = panch.get("tamil_date", "")    # e.g. "Karthigai 1"
+            if tamil_date_str:
+                parts = tamil_date_str.split()
+                if len(parts) == 2:
+                    t_month = parts[0]
+                    try:
+                        t_day = int(parts[1])
+                        if t_month in KARI_NAAL and t_day in KARI_NAAL[t_month]:
+                            kari_naal_blocked = True
+                            active_doshams.append("Kari_Naal")
+                    except ValueError:
+                        pass
 
         # ── 1. Forbidden Tithi ──────────────────────────────────────────────
         if tithi_num in VIVAHA_FORBIDDEN_TITHI_NUMS:
@@ -251,10 +249,18 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
             bhadra_blocked = True
             active_doshams.append("Bhadra_Vishti_Karana")
 
-        # ── 3. Forbidden Weekday (Tuesday) ──────────────────────────────────
-        if day_idx in VIVAHA_FORBIDDEN_WEEKDAYS:
-            weekday_blocked = True
-            active_doshams.append("Tuesday_Forbidden")
+        # ── 3. Forbidden Weekday ──────────────────────────────────
+        if regional_paradigm == "TAMIL_SOLAR":
+            if day_idx == 2:  # Tuesday
+                weekday_blocked = True
+                active_doshams.append("Tuesday_Forbidden")
+        else:  # TELUGU_KANNADA_AMANTA, NORTH_INDIAN_PURNIMANTA, KERALA_DRIG
+            if day_idx in (2, 6):  # Tuesday or Saturday
+                weekday_blocked = True
+                if day_idx == 2:
+                    active_doshams.append("Tuesday_Forbidden")
+                else:
+                    active_doshams.append("Saturday_Forbidden")
 
         # ── 4. Nakshatra Whitelist ───────────────────────────────────────────
         # Normalise nakshatra name for comparison
@@ -301,31 +307,84 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
             active_doshams.append("Nitya_Yogam_First_Ghati_Exclusion")
 
     # ════════════════════════════════════════════════════════════════════════
-    # ── 8 & 9. Seasonal / Chaturmas blocks ──────────────────────────────────
+    # ── 8 & 9. Seasonal / Lunar Month exclusions ─────────────────────────────
     # ════════════════════════════════════════════════════════════════════════
-    is_solar_paradigm = regional_paradigm in ("TAMIL_SOLAR", "KERALA_DRIG")
-    is_lunar_paradigm = regional_paradigm in ("TELUGU_KANNADA_AMANTA", "NORTH_INDIAN_PURNIMANTA")
-
     masa_varjyam_blocked = False
-    if target_activity == "VIVAHA" and is_solar_paradigm:
-        for lo, hi, label in MASA_VARJYAM_RANGES:
-            if lo <= sun_long <= hi:
-                masa_varjyam_blocked = True
-                active_doshams.append(label)
-                break
-
     chaturmas_blocked = False
-    if target_activity == "VIVAHA" and is_lunar_paradigm:
-        luni_month_idx = calculate_luni_solar_month_index(sun_long, moon_long)
-        if luni_month_idx == 3 and tithi_num >= 11:
-            chaturmas_blocked = True
-            active_doshams.append("Chaturmas_Block")
-        elif luni_month_idx in (4, 5, 6):
-            chaturmas_blocked = True
-            active_doshams.append("Chaturmas_Block")
-        elif luni_month_idx == 7 and tithi_num < 11:
-            chaturmas_blocked = True
-            active_doshams.append("Chaturmas_Block")
+    pitru_paksha_blocked = False
+    holashtak_blocked = False
+
+    if target_activity == "VIVAHA":
+        # Synodic month index (using Julian date for robust conjunction search)
+        luni_month_idx = calculate_luni_solar_month_index(sun_long, moon_long, jd=jd)
+
+        # ── Solar Month Exclusions (Masa Varjyam / Khar Maas) ───────────
+        if regional_paradigm == "TAMIL_SOLAR":
+            # Aadi (Cancer), Purattasi (Virgo), Margazhi (Sagittarius), Panguni (Pisces)
+            for lo, hi, label in MASA_VARJYAM_RANGES:
+                if lo <= sun_long <= hi:
+                    masa_varjyam_blocked = True
+                    active_doshams.append(label)
+                    break
+        elif regional_paradigm == "KERALA_DRIG":
+            # Karkidakam (Cancer 90-120), Kanni (Virgo 150-180), Dhanu (Sagittarius 240-270), Kumbham (Aquarius 300-330), Meenam (Pisces 330-360)
+            kerala_ranges = [
+                (90.0, 120.0, "Masa_Varjyam_Karkidakam"),
+                (150.0, 180.0, "Masa_Varjyam_Kanni"),
+                (240.0, 270.0, "Masa_Varjyam_Dhanu"),
+                (300.0, 330.0, "Masa_Varjyam_Kumbham"),
+                (330.0, 360.0, "Masa_Varjyam_Meenam"),
+            ]
+            for lo, hi, label in kerala_ranges:
+                if lo <= sun_long <= hi:
+                    masa_varjyam_blocked = True
+                    active_doshams.append(label)
+                    break
+        elif regional_paradigm == "TELUGU_KANNADA_AMANTA":
+            # Solar Dhanurmasam (Sagittarius 240-270)
+            if 240.0 <= sun_long <= 270.0:
+                masa_varjyam_blocked = True
+                active_doshams.append("Masa_Varjyam_Dhanurmasam")
+        elif regional_paradigm == "NORTH_INDIAN_PURNIMANTA":
+            # Khar Maas: Dhanu (Sagittarius 240-270) and Meena (Pisces 330-360)
+            if 240.0 <= sun_long <= 270.0:
+                masa_varjyam_blocked = True
+                active_doshams.append("Khar_Maas_Dhanu")
+            elif 330.0 <= sun_long <= 360.0:
+                masa_varjyam_blocked = True
+                active_doshams.append("Khar_Maas_Meena")
+
+        # ── Chaturmas & Lunar Exclusions ────────────────────────────────────
+        is_lunar_paradigm = regional_paradigm in ("TELUGU_KANNADA_AMANTA", "NORTH_INDIAN_PURNIMANTA")
+        if is_lunar_paradigm:
+            # Chaturmas Block: Ashada Shukla Ekadashi to Kartika Shukla Ekadashi/Dwadashi
+            # 3=Ashadha, 4=Shravana, 5=Bhadrapada, 6=Ashvina, 7=Kartika
+            if luni_month_idx == 3 and tithi_num >= 11:
+                chaturmas_blocked = True
+                active_doshams.append("Chaturmas_Block")
+            elif luni_month_idx in (4, 5, 6):
+                chaturmas_blocked = True
+                active_doshams.append("Chaturmas_Block")
+            elif luni_month_idx == 7 and tithi_num < 11:
+                chaturmas_blocked = True
+                active_doshams.append("Chaturmas_Block")
+
+            # Pitru Paksha Block: Bhadrapada Krishna Paksha (Amanta index 5, Krishna Paksha tithi_num > 15)
+            if luni_month_idx == 5 and tithi_num > 15:
+                pitru_paksha_blocked = True
+                active_doshams.append("Pitru_Paksha_Block")
+
+        if regional_paradigm == "TELUGU_KANNADA_AMANTA":
+            # Additional Lunar exclusions: Ashada (3), Bhadrapada (5), Pausha (9)
+            if luni_month_idx in (3, 5, 9):
+                masa_varjyam_blocked = True
+                active_doshams.append(f"Lunar_Masa_Varjyam_{luni_month_idx}")
+
+        if regional_paradigm == "NORTH_INDIAN_PURNIMANTA":
+            # Holashtak Block: 8 days before Holi (Phalguna Shukla Ashtami to Purnima: Amanta index 11, Shukla 8 to 15)
+            if luni_month_idx == 11 and 8 <= tithi_num <= 15:
+                holashtak_blocked = True
+                active_doshams.append("Holashtak_Block")
 
     # ════════════════════════════════════════════════════════════════════════
     # ── 10. Panchaka Rahita ──────────────────────────────────────────────────
@@ -374,7 +433,8 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
             if (kari_naal_blocked or tithi_blocked or bhadra_blocked
                     or weekday_blocked or nakshatra_blocked
                     or combustion_blocked or masa_varjyam_blocked
-                    or chaturmas_blocked or is_kartari):
+                    or chaturmas_blocked or pitru_paksha_blocked
+                    or holashtak_blocked or is_kartari):
                 compat = False
             if panchaka_class == "Asubha" and regional_paradigm == "TELUGU_KANNADA_AMANTA":
                 compat = False
