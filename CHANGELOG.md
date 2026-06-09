@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.6.0]
+
+### Added
+- Adaptive default language by detected region. When the location resolves
+  (GPS or IP), the UI language is chosen automatically: Tamil Nadu → Tamil,
+  Kerala → Malayalam, Karnataka → Kannada, Andhra Pradesh/Telangana → Telugu,
+  rest of India → Hindi, outside India → English. A manual language pick sets a
+  `vedic_lang_explicit` flag that permanently overrides the adaptive default.
+
 ## [1.5.2]
 
 ### Changed
