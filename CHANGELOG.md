@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.5.2]
+
+### Changed
+- The header location chip now shows the full **"City, State"** (first two parts
+  of the resolved place name) instead of just the city.
+
 ## [1.5.1]
 
 ### Changed
