@@ -2016,6 +2016,11 @@
             </nav>
 
             <div class="header-controls">
+                <!-- Location chip: detects the user's place (GPS / IP) for accurate Panchangam -->
+                <button class="lang-select-btn" id="btn-header-location" onclick="detectLocation()" title="Set your location for accurate Panchangam" style="margin-right: 8px;">
+                    <i class="fa-solid fa-location-dot" style="color: var(--accent-gold);"></i> <span id="header-location-name">Chennai</span>
+                </button>
+
                 <!-- User Profile / Session Control Widget -->
                 <div id="user-profile-widget" style="display: flex; align-items: center; gap: 8px; margin-right: 8px;">
                     <button class="lang-select-btn" id="btn-header-signin" onclick="openLoginModal()">
@@ -4587,9 +4592,107 @@
             }
         }
 
+        // --- User location (drives Panchangam accuracy) ---
+        // Defaults to Chennai; overridden by GPS (on tap) or IP geolocation.
+        let userLocation = { name: "Chennai, India", lat: 13.0827, lon: 80.2707 };
+
+        function updateLocationLabel() {
+            const el = document.getElementById('header-location-name');
+            if (el) el.innerText = (userLocation.name || "Location").split(',')[0].trim();
+        }
+
+        function loadStoredLocation() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('vedic_location'));
+                if (saved && typeof saved.lat === 'number' && typeof saved.lon === 'number') {
+                    userLocation = saved;
+                }
+            } catch (e) { /* ignore malformed storage */ }
+            updateLocationLabel();
+        }
+
+        // Persist the location, refresh the label + Panchangam views, and (when
+        // signed in) sync it to the user's saved preferences.
+        async function applyLocation(name, lat, lon) {
+            userLocation = { name, lat, lon };
+            localStorage.setItem('vedic_location', JSON.stringify(userLocation));
+            updateLocationLabel();
+
+            // Cached months were computed for the old location, so drop them.
+            for (const key in monthPanchangamCache) delete monthPanchangamCache[key];
+            await fetchDailyPanchangam(selectedPanchangamDate);
+            renderMonthlyCalendar();
+
+            if (currentUser) {
+                const token = localStorage.getItem('session_token');
+                try {
+                    await fetch('/api/auth/profile/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+                        body: JSON.stringify({ location_name: name, latitude: lat, longitude: lon, language: currentLang })
+                    });
+                    currentUser.location_name = name;
+                    currentUser.latitude = lat;
+                    currentUser.longitude = lon;
+                } catch (e) { /* non-fatal: location still applied locally */ }
+            }
+        }
+
+        async function reverseGeocode(lat, lon) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) return null;
+                const data = await res.json();
+                const a = data.address || {};
+                const place = a.city || a.town || a.village || a.county || data.display_name;
+                const region = a.state || a.country;
+                return place ? (region && region !== place ? `${place}, ${region}` : place) : null;
+            } catch (e) { return null; }
+        }
+
+        // IP-based lookup: no permission prompt, works on page load and as the
+        // GPS fallback. Used for "future phone apps and supported devices" too.
+        async function detectLocationByIP() {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                if (!res.ok) return false;
+                const d = await res.json();
+                if (typeof d.latitude !== 'number' || typeof d.longitude !== 'number') return false;
+                const name = [d.city, d.region || d.country_name].filter(Boolean).join(', ') || "Detected location";
+                await applyLocation(name, d.latitude, d.longitude);
+                return true;
+            } catch (e) { return false; }
+        }
+
+        // Tapping the header chip: ask for precise GPS (permission prompt), and
+        // gracefully fall back to IP geolocation if denied or unsupported.
+        async function detectLocation() {
+            const label = document.getElementById('header-location-name');
+            const prevText = label ? label.innerText : "";
+            if (label) label.innerText = "Locating…";
+
+            const finish = (ok) => { if (!ok && label) label.innerText = prevText; };
+
+            if (!navigator.geolocation) {
+                finish(await detectLocationByIP());
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+                    const name = (await reverseGeocode(lat, lon)) || `My location`;
+                    await applyLocation(name, lat, lon);
+                },
+                async () => { finish(await detectLocationByIP()); },
+                { timeout: 10000 }
+            );
+        }
+
         async function fetchDailyPanchangam(dateStr = "") {
             try {
-                const url = dateStr ? `/api/panchangam?date_str=${dateStr}&lang=${currentLang}` : `/api/panchangam?lang=${currentLang}`;
+                const loc = `&lat=${userLocation.lat}&lon=${userLocation.lon}`;
+                const url = dateStr ? `/api/panchangam?date_str=${dateStr}&lang=${currentLang}${loc}` : `/api/panchangam?lang=${currentLang}${loc}`;
                 const response = await apiFetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -5160,10 +5263,10 @@
             
             try {
                 // Fetch monthly panchangam from backend in batch (cached per month+lang)
-                const cacheKey = `${calendarYear}-${calendarMonth}-${currentLang}`;
+                const cacheKey = `${calendarYear}-${calendarMonth}-${currentLang}-${userLocation.lat},${userLocation.lon}`;
                 let data = monthPanchangamCache[cacheKey];
                 if (!data) {
-                    const res = await apiFetch(`/api/month-panchangam?year=${calendarYear}&month=${calendarMonth}&lang=${currentLang}`);
+                    const res = await apiFetch(`/api/month-panchangam?year=${calendarYear}&month=${calendarMonth}&lang=${currentLang}&lat=${userLocation.lat}&lon=${userLocation.lon}`);
                     if (!res.ok) {
                         throw new Error(`HTTP error! status: ${res.status}`);
                     }
@@ -7552,6 +7655,11 @@
             calendarYear = parseInt(parts[0]);
             calendarMonth = parseInt(parts[1]);
 
+            // Restore the saved location (or default Chennai) BEFORE fetching
+            // Panchangam so the first render uses the correct place.
+            const hadStoredLocation = !!localStorage.getItem('vedic_location');
+            loadStoredLocation();
+
             // Restore previously chosen language (persisted in localStorage).
             // changeLanguage() already calls fetchDailyPanchangam + renderMonthlyCalendar,
             // so skip the duplicate calls below when it runs.
@@ -7562,7 +7670,11 @@
                 fetchDailyPanchangam(today);
                 renderMonthlyCalendar();
             }
-            
+
+            // First-ever visit: silently approximate location by IP (no prompt).
+            // The user can tap the header chip later for precise GPS.
+            if (!hadStoredLocation) detectLocationByIP();
+
             // Add listener to D-chart dropdown select
             const dChartSelect = document.getElementById('d-chart-select');
             if (dChartSelect) {
@@ -7613,6 +7725,11 @@
                     if (res.ok) {
                         currentUser = await res.json();
                         updateAuthUI();
+                        // Prefer the account's saved location for cross-device consistency.
+                        if (typeof currentUser.latitude === 'number' && typeof currentUser.longitude === 'number'
+                            && (currentUser.latitude !== userLocation.lat || currentUser.longitude !== userLocation.lon)) {
+                            applyLocation(currentUser.location_name || userLocation.name, currentUser.latitude, currentUser.longitude);
+                        }
                     } else {
                         localStorage.removeItem('session_token');
                         currentUser = null;
@@ -7720,53 +7837,9 @@
                 subStatus.style.color = 'var(--text-secondary)';
                 if (btnCancelSub) btnCancelSub.style.display = 'none';
             }
-
-            // Populate preferred location
-            document.getElementById('profile-pref-city').value = currentUser.location_name || "Chennai, India";
-            document.getElementById('profile-pref-lat').value = currentUser.latitude !== undefined ? currentUser.latitude : 13.0827;
-            document.getElementById('profile-pref-lon').value = currentUser.longitude !== undefined ? currentUser.longitude : 80.2707;
         }
         function closeProfileModal() {
             document.getElementById('profile-modal').style.display = 'none';
-        }
-
-        async function saveProfilePreferences() {
-            const token = localStorage.getItem('session_token');
-            const location_name = document.getElementById('profile-pref-city').value.trim();
-            const latitude = parseFloat(document.getElementById('profile-pref-lat').value);
-            const longitude = parseFloat(document.getElementById('profile-pref-lon').value);
-            
-            if (isNaN(latitude) || isNaN(longitude)) {
-                alert("Please enter valid numeric latitude and longitude coordinates.");
-                return;
-            }
-            
-            try {
-                const res = await fetch('/api/auth/profile/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-session-token': token
-                    },
-                    body: JSON.stringify({
-                        location_name,
-                        latitude,
-                        longitude,
-                        language: currentLang
-                    })
-                });
-                if (res.ok) {
-                    alert("Preferences saved successfully!");
-                    currentUser.location_name = location_name;
-                    currentUser.latitude = latitude;
-                    currentUser.longitude = longitude;
-                } else {
-                    const data = await res.json();
-                    alert("Failed to save preferences: " + data.detail);
-                }
-            } catch (e) {
-                alert("Error saving preferences: " + e);
-            }
         }
 
         async function submitSignup() {
@@ -8027,28 +8100,6 @@
                     <span style="font-size: 11px; color: var(--text-secondary);">Subscription Status:</span>
                     <span id="profile-sub-status" style="font-size: 11px; font-weight: bold; color: #48BB78;">Free Tier</span>
                 </div>
-            </div>
-            
-            <!-- Location Preferences -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Location Preferences</h4>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Preferred City Name:</label>
-                    <input type="text" id="profile-pref-city" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11.5px; color: #fff;" value="Chennai, India">
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 10px; color: var(--text-secondary);">Latitude:</label>
-                        <input type="number" step="0.0001" id="profile-pref-lat" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11.5px; color: #fff;" value="13.0827">
-                    </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 10px; color: var(--text-secondary);">Longitude:</label>
-                        <input type="number" step="0.0001" id="profile-pref-lon" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11.5px; color: #fff;" value="80.2707">
-                    </div>
-                </div>
-                <button class="calculate-btn" onclick="saveProfilePreferences()" style="margin-top: 5px; padding: 8px; font-size: 11px; display: flex; justify-content: center; gap: 5px; align-items: center;">
-                    <i class="fa-solid fa-floppy-disk"></i> Save Preferences
-                </button>
             </div>
             
             <!-- Purchase Options -->
