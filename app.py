@@ -1310,11 +1310,11 @@ NAKSHATRA_TRANSLATIONS = {
 
 FESTIVAL_TRANSLATIONS = {
     "Pournami": {"ta": "பௌர்ணமி", "te": "పౌర్ణమి", "hi": "पूर्णिमा", "ml": "പൗർണ്ണമി", "kn": "ಪೌರ್ಣಮಿ"},
-    "Amavasya": {"ta": "அமாவாசை", "te": "అమావాస్య", "hi": "अमावस्या", "ml": "அമാവാസി", "kn": "അമಾವಾಸ്യെ"},
-    "Ekadashi": {"ta": "ஏகாதசி", "te": "ஏகாடசி", "ml": "ഏകാദശി", "kn": "ಏಕಾದಶಿ"},
+    "Amavasya": {"ta": "அமாவாசை", "te": "అమావాస్య", "hi": "अमावस्या", "ml": "അമാവാസി", "kn": "ಅಮಾವಾಸ್ಯೆ"},
+    "Ekadashi": {"ta": "ஏகாதசி", "te": "ఏకాదశి", "hi": "एकादशी", "ml": "ഏകാദശി", "kn": "ಏಕಾದಶಿ"},
     "Pradosham": {"ta": "பிரதோஷம்", "te": "ప్రదోషం", "hi": "प्रदोष", "ml": "പ്രദോഷം", "kn": "ಪ್ರದೋಷ"},
     "Ganesha Chaturthi": {"ta": "விநாயகர் சதுர்த்தி", "te": "వినాయక చవితి", "hi": "गणेश चतुर्थी", "ml": "ഗണേശ ചതുർത്ഥി", "kn": "ಗಣೇಶ ಚತುರ್ಥಿ"},
-    "Ashtami": {"ta": "அஷ்டமி", "te": "அஷ்டமி", "hi": "अष्टमी", "ml": "അഷ്ടമി", "kn": "அஷ்டமி"},
+    "Ashtami": {"ta": "அஷ்டமி", "te": "అష్టమి", "hi": "अष्टमी", "ml": "അഷ്ടമി", "kn": "ಅಷ್ಟಮಿ"},
     "Shivaratri": {"ta": "சிவராத்திரி", "te": "శివరాత్రి", "hi": "शिवरात्रि", "ml": "ശിവരാത്രി", "kn": "ಶಿವರಾತ್ರಿ"},
     "Sankranti": {"ta": "மாதப்பிறப்பு", "te": "సంక్రమణం", "hi": "संक्रांति", "ml": "സംക്രമം", "kn": "ಸಂಕ್ರಾಮಣ"},
     "Sukla Chaturthi": {"ta": "சுக்ல சதுர்த்தி", "te": "శుక్ల చవితి", "hi": "शुक्ल चतुर्थी", "ml": "ശുക്ല ചതുർത്ഥി", "kn": "ಶುಕ್ಲ ಚತುರ್ಥಿ"},
@@ -1330,8 +1330,8 @@ FESTIVAL_TRANSLATIONS = {
     "New Year's Day": {"ta": "புத்தாண்டு தினம்", "te": "నూతన సంవత్సర దినోత్సవం", "hi": "नव वर्ष दिवस", "ml": "പുതുവത്സര ദിനം", "kn": "ಹೊಸ ವರ್ಷದ ದಿನ"},
     "Republic Day": {"ta": "குடியரசு தினம்", "te": "గణతంత్ర దినోత్సవం", "hi": "गणतंत्र दिवस", "ml": "റിപ്പബ്ലിക് ദിനം", "kn": "ಗಣರಾಜ್ಯೋತ್ಸವ"},
     "May Day": {"ta": "மே தினம் (உழைப்பாளர் தினம்)", "te": "మే డే (కార్మిక దినోత్సవం)", "hi": "मई दिवस (मजदूर दिवस)", "ml": "മേയ് ദിനം (തൊഴിലാളി ദിനം)", "kn": "ಮೇ ದಿನ (ಕಾರ್ಮಿಕರ ದಿನ)"},
-    "Independence Day": {"ta": "சுதந்திர தினம்", "te": "స్వాతంత్ర్య దినోత్సవం", "hi": "स्वतंत्रता दिवस", "ml": "സ്വാതന്ത്ര്യദിനം", "kn": "ಸ್ವಾतಂತ್ರ್ಯ ದಿನಾಚರಣೆ"},
-    "Gandhi Jayanti": {"ta": "காந்தி ஜெயந்தி", "te": "గాంధీ జయంతి", "hi": "गांधी जयंती", "ml": "గాంధీ జയന്തി", "kn": "ಗಾಂಧಿ ಜಯಂತಿ"},
+    "Independence Day": {"ta": "சுதந்திர தினம்", "te": "స్వాతంత్ర్య దినోత్సవం", "hi": "स्वतंत्रता दिवस", "ml": "സ്വാതന്ത്ര്യദിനം", "kn": "ಸ್ವಾತಂತ್ರ್ಯ ದಿನಾಚರಣೆ"},
+    "Gandhi Jayanti": {"ta": "காந்தி ஜெயந்தி", "te": "గాంధీ జయంతి", "hi": "गांधी जयंती", "ml": "ഗാന്ധി ജയന്തി", "kn": "ಗಾಂಧಿ ಜಯಂತಿ"},
     "Christmas": {"ta": "கிறிஸ்துமஸ்", "te": "క్రిస్మస్", "hi": "क्रिसमस", "ml": "ക്രിസ്മസ്", "kn": "ಕ್ರಿಸ್ಮಸ್"},
     "Sankatahara Chaturthi": {"ta": "சங்கடஹர சதுர்த்தி", "te": "సంకష్టహర చవితి", "hi": "संकष्ट चतुर्थी", "ml": "സങ്കടഹര ചതുർത്ഥി", "kn": "ಸಂಕಷ್ಟಹರ ಚತುರ್ಥಿ"}
 }
@@ -1390,6 +1390,21 @@ def translate_nakshatra_name(naks_str: str, lang: str) -> str:
             return trans.get(lang, naks_str)
     return naks_str
 
+def _tithi_num(tithi_str: str) -> int:
+    """Exact tithi number (1–15) parsed from a panchangam tithi string, else 0.
+    Using the exact number avoids the substring trap where `"Tithi 1" in s`
+    also matches Tithi 10–15 (which previously mis-fired Ugadi on many days)."""
+    marker = "(Tithi "
+    i = tithi_str.find(marker) if tithi_str else -1
+    if i < 0:
+        return 0
+    j = i + len(marker)
+    digits = ""
+    while j < len(tithi_str) and tithi_str[j].isdigit():
+        digits += tithi_str[j]
+        j += 1
+    return int(digits) if digits else 0
+
 # Cleaned up day panchangam and festival computer
 def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float, lat: float, lang: str, added_festivals_prev: set = None):
     chart_sunrise = get_astrological_chart(year, month, day, 5, 30, lon, lat, "Lahiri", light=True)
@@ -1435,8 +1450,8 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         else:
             specialities.append("Amavasya")
     
-    if "Tithi 11" in tithi_sunrise:
-        if tithi_tomorrow_sunrise and "Tithi 11" in tithi_tomorrow_sunrise:
+    if _tithi_num(tithi_sunrise) == 11:
+        if tithi_tomorrow_sunrise and _tithi_num(tithi_tomorrow_sunrise) == 11:
             pass
         else:
             specialities.append("Ekadashi")
@@ -1447,46 +1462,59 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
             dt_yesterday = dt - timedelta(days=1)
             chart_yesterday = get_astrological_chart(dt_yesterday.year, dt_yesterday.month, dt_yesterday.day, 5, 30, lon, lat, "Lahiri", light=True)
             tithi_yesterday_sunrise = chart_yesterday["panchangam"]["tithi"]
-            if "Tithi 11" in tithi_yesterday_sunrise:
+            if _tithi_num(tithi_yesterday_sunrise) == 11:
                 dt_day_before = dt - timedelta(days=2)
                 chart_day_before = get_astrological_chart(dt_day_before.year, dt_day_before.month, dt_day_before.day, 5, 30, lon, lat, "Lahiri", light=True)
                 tithi_day_before_sunrise = chart_day_before["panchangam"]["tithi"]
-                if "Tithi 11" not in tithi_day_before_sunrise:
+                if _tithi_num(tithi_day_before_sunrise) != 11:
                     specialities.append("Ekadashi")
         except Exception:
             pass
-    
-    if "Tithi 13" in tithi_sunset:
+
+    if _tithi_num(tithi_sunset) == 13:
         specialities.append("Pradosham")
-        
-    if "Tithi 6" in tithi_midday and "Sukla" in tithi_midday:
+
+    if _tithi_num(tithi_midday) == 6 and "Sukla" in tithi_midday:
         specialities.append("Sashti")
-        
-    if "Tithi 4" in tithi_midday and "Sukla" in tithi_midday:
-        if month in [8, 9]:
+
+    # Ganesha Chaturthi = Bhadrapada (idx 5) Sukla Chaturthi; other Sukla
+    # Chaturthis are generic. Gated by lunar month, not the Gregorian month.
+    if _tithi_num(tithi_midday) == 4 and "Sukla" in tithi_midday:
+        if luni_month_idx == 5:
             specialities.append("Ganesha Chaturthi")
         else:
             specialities.append("Sukla Chaturthi")
-    elif "Tithi 4" in tithi_night and "Krishna" in tithi_night:
+    elif _tithi_num(tithi_night) == 4 and "Krishna" in tithi_night:
         specialities.append("Sankatahara Chaturthi")
-        
-    if "Tithi 8" in tithi_midnight and "Krishna" in tithi_midnight and month in [8, 9]:
+
+    # Janmashtami = Shravana (idx 4) Krishna Ashtami; Durga Ashtami = Ashvina
+    # (idx 6) Sukla Ashtami; otherwise a generic Ashtami.
+    if _tithi_num(tithi_midnight) == 8 and "Krishna" in tithi_midnight and luni_month_idx == 4:
         specialities.append("Janmashtami")
-    elif "Tithi 8" in tithi_midday and "Sukla" in tithi_midday and luni_month_idx == 6:
+    elif _tithi_num(tithi_midday) == 8 and "Sukla" in tithi_midday and luni_month_idx == 6:
         specialities.append("Durga Ashtami")
-    elif "Tithi 8" in tithi_midday:
+    elif _tithi_num(tithi_midday) == 8:
         specialities.append("Ashtami")
-        
-    if "Tithi 9" in tithi_midday and "Sukla" in tithi_midday and month in [3, 4]:
+
+    # Rama Navami = Chaitra (idx 0) Sukla Navami.
+    if _tithi_num(tithi_midday) == 9 and "Sukla" in tithi_midday and luni_month_idx == 0:
         specialities.append("Rama Navami")
-        
-    if "Tithi 15" in tithi_sunrise and month in [3, 4, 12, 1]:
+
+    # Hanuman Jayanti = Chaitra (idx 0) Pournami.
+    if is_pournami and luni_month_idx == 0:
         specialities.append("Hanuman Jayanti")
-        
-    if "Tithi 1" in tithi_sunrise and "Sukla" in tithi_sunrise and month in [3, 4]:
-        specialities.append("Ugadi")
-        
-    if "Tithi 14" in tithi_midnight and "Krishna" in tithi_midnight:
+
+    # Ugadi / Gudi Padwa = first day of Chaitra (idx 0) Sukla paksha. Normally
+    # Sukla Pratipada (Tithi 1) prevails at sunrise; but Pratipada can be skipped
+    # (begins after one sunrise and ends before the next), in which case Ugadi is
+    # the Chaitra new-moon day (Amavasya at sunrise, Dwitiya the next sunrise).
+    if luni_month_idx == 0:
+        if _tithi_num(tithi_sunrise) == 1 and "Sukla" in tithi_sunrise:
+            specialities.append("Ugadi")
+        elif "Amavasya" in tithi_sunrise and _tithi_num(tithi_tomorrow_sunrise) == 2:
+            specialities.append("Ugadi")
+
+    if _tithi_num(tithi_midnight) == 14 and "Krishna" in tithi_midnight:
         specialities.append("Masa Shivaratri")
         
     if month == 1 and day == 1:

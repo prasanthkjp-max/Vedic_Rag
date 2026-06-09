@@ -1,6 +1,6 @@
 # Vedic Astrology AI RAG Portal
 
-**Version 1.6.0** · see [`CHANGELOG.md`](CHANGELOG.md)
+**Version 1.6.1** · see [`CHANGELOG.md`](CHANGELOG.md)
 
 A self-hosted FastAPI portal for Vedic astrology: a sidereal (Thirukanitha)
 birth-chart + Panchangam engine, multilingual reports (Tamil/Telugu/Kannada/
