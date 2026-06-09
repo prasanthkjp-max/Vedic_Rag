@@ -685,9 +685,10 @@ class AIMarriagePredictRequest(BaseModel):
 
 
 @app.get("/api/panchangam")
-def get_daily_panchangam(date_str: str = None, lang: str = "en"):
+def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13.08, lon: float = 80.27):
     """
-    Get daily Gochara planetary transits and localized Panchangam details
+    Get daily Gochara planetary transits and localized Panchangam details.
+    lat/lon default to Chennai; the frontend supplies the user's detected location.
     """
     try:
         if date_str:
@@ -695,8 +696,8 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en"):
         else:
             from datetime import date
             dt = datetime.combine(date.today(), datetime.min.time())
-            
-        chart = get_astrological_chart(dt.year, dt.month, dt.day, 5, 30, 80.27, 13.08, "Lahiri")
+
+        chart = get_astrological_chart(dt.year, dt.month, dt.day, 5, 30, lon, lat, "Lahiri")
         
         # Localize Panchangam names based on lang preference
         localized_panch = get_regional_panchangam(chart, lang)
@@ -1312,13 +1313,13 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
     }
 
 @app.get("/api/month-panchangam")
-def get_month_panchangam(year: int, month: int, lang: str = "en"):
+def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 13.08, lon: float = 80.27):
     """
-    Get daily panchangam essentials for an entire month to populate the calendar
+    Get daily panchangam essentials for an entire month to populate the calendar.
+    lat/lon default to Chennai; the frontend supplies the user's detected location.
     """
     import calendar
     try:
-        lon, lat = 80.27, 13.08
         _, num_days = calendar.monthrange(year, month)
         
         days_data = []

@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.5.0]
+
+### Added
+- Location chip in the header (next to the user name) that sets the place used
+  for Panchangam accuracy. Tapping it requests precise GPS (with permission,
+  for future phone apps / supported devices) and falls back to IP-based
+  geolocation if denied or unavailable. On first visit the location is
+  approximated silently by IP; the choice is persisted in the browser and, when
+  signed in, synced to the account so it follows the user across devices.
+- `/api/panchangam` and `/api/month-panchangam` now accept `lat`/`lon` query
+  params (defaulting to Chennai) so the daily and monthly Panchangam are
+  computed for the user's actual location.
+
+### Changed
+- Removed the manual Latitude/Longitude/City "Location Preferences" form from the
+  user dashboard; location is now driven entirely by the header chip.
+
 ## [1.4.1]
 
 ### Performance
