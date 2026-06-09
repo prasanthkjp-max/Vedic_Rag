@@ -18,6 +18,7 @@ from search_engine import VedicSearchEngine
 from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility
 from pdf_generator import generate_pdf_report
 from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
+from muhurtham_engine import calculate_muhurtham
 from datetime import date
 from config import (
     VERSION,
@@ -799,6 +800,48 @@ class AIMarriagePredictRequest(BaseModel):
     female_place: str
     lang: str = "en"
     model: str = DEFAULT_LLM_MODEL
+
+
+class MuhurthamRequest(BaseModel):
+    timestamp: str
+    latitude: float
+    longitude: float
+    regional_paradigm: str
+    target_activity: str
+
+
+@app.post("/api/muhurtham")
+def post_muhurtham(req: MuhurthamRequest):
+    """
+    POST endpoint for Muhurtham logic & filtering engine.
+    """
+    try:
+        return calculate_muhurtham(
+            req.timestamp, req.latitude, req.longitude,
+            req.regional_paradigm, req.target_activity
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/muhurtham")
+def get_muhurtham(
+    timestamp: str,
+    latitude: float,
+    longitude: float,
+    regional_paradigm: str,
+    target_activity: str
+):
+    """
+    GET endpoint for Muhurtham logic & filtering engine.
+    """
+    try:
+        return calculate_muhurtham(
+            timestamp, latitude, longitude,
+            regional_paradigm, target_activity
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/api/panchangam")

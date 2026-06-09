@@ -2024,6 +2024,7 @@
                 <button class="nav-tab active" id="nav-btn-home" onclick="navigateToPage('home')">Home (Panchangam)</button>
                 <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Astrology</button>
                 <button class="nav-tab" id="nav-btn-marriage" onclick="navigateToPage('marriage')">Marriage Matching</button>
+                <button class="nav-tab" id="nav-btn-muhurtham" onclick="navigateToPage('muhurtham')">Muhurtham Finder</button>
                 <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Astro AI Chat</button>
             </nav>
 
@@ -2916,6 +2917,78 @@
                         <button class="chat-send-btn" id="chat-send-trigger" onclick="sendAIChatMessage()">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 5: MUHURTHAM FINDER -->
+        <div class="single-page-content" id="page-muhurtham" style="display:none;">
+            <div class="card card-hero">
+                <h1 class="hero-title"><i class="fa-solid fa-clock"></i> Cosmic Muhurtham Finder</h1>
+                <p class="hero-subtitle">Calculate and filter auspicious time windows (Muhurthams) based on physical coordinates, regional calendars, and astronomical alignments.</p>
+            </div>
+
+            <div class="two-column-layout">
+                <!-- Left panel: Configuration inputs -->
+                <div class="card" style="flex: 1; min-width: 320px;">
+                    <h2 class="card-section-title"><i class="fa-solid fa-sliders"></i> Muhurtham Parameters</h2>
+                    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 14px;">
+                        
+                        <div class="input-group">
+                            <label class="input-label" for="muh-activity">Target Auspicious Activity</label>
+                            <select class="input-field" id="muh-activity">
+                                <option value="GENERAL">General Auspiciousness (General)</option>
+                                <option value="VIVAHA">Vivaha (Wedding / Marriage)</option>
+                                <option value="GRAHAPRAVESHA">Grahapravesha (Housewarming)</option>
+                                <option value="AKSHARABHYASAM">Aksharabhyasam (Education)</option>
+                                <option value="VAHAN_KHARIDI">Vahan Kharidi (Vehicle Purchase)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label" for="muh-paradigm">Regional Astrological Paradigm</label>
+                            <select class="input-field" id="muh-paradigm">
+                                <option value="TAMIL_SOLAR">Tamil Solar Calendar (Thirukanitha)</option>
+                                <option value="TELUGU_KANNADA_AMANTA">Telugu / Kannada Amanta Luni-Solar</option>
+                                <option value="NORTH_INDIAN_PURNIMANTA">North Indian Purnimanta Luni-Solar</option>
+                                <option value="KERALA_DRIG">Kerala Drig Astronomical System</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label" for="muh-datetime">Date & Time (Local Timezone)</label>
+                            <input type="datetime-local" class="input-field" id="muh-datetime">
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <div class="input-group" style="flex: 1;">
+                                <label class="input-label" for="muh-lat">Latitude (°N)</label>
+                                <input type="number" step="any" class="input-field" id="muh-lat" value="13.08">
+                            </div>
+                            <div class="input-group" style="flex: 1;">
+                                <label class="input-label" for="muh-lon">Longitude (°E)</label>
+                                <input type="number" step="any" class="input-field" id="muh-lon" value="80.27">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="lang-select-btn" style="flex: 1; justify-content: center; padding: 10px; font-size: 11px;" onclick="useMyLocationForMuhurtham()">
+                                <i class="fa-solid fa-location-crosshairs"></i> Get Current Location
+                            </button>
+                        </div>
+
+                        <button class="calculate-btn" style="width: 100%; margin-top: 10px; justify-content: center;" onclick="calculateMuhurthamWindow()">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i> Compute Muhurtham
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right panel: Results Display -->
+                <div class="card" style="flex: 1.5; min-width: 320px;" id="muhurtham-results-panel">
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                        <i class="fa-solid fa-hourglass-start" style="font-size: 48px; margin-bottom: 16px; color: var(--accent-azure);"></i>
+                        <p>Configure parameters on the left and click <strong>Compute Muhurtham</strong> to view alignment results, dosham exclusions, and subha horai windows.</p>
                     </div>
                 </div>
             </div>
@@ -4250,16 +4323,23 @@
             document.getElementById('nav-btn-home').className = pageId === 'home' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-jyothisyam').className = pageId === 'jyothisyam' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-marriage').className = pageId === 'marriage' ? 'nav-tab active' : 'nav-tab';
+            document.getElementById('nav-btn-muhurtham').className = pageId === 'muhurtham' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-ai').className = pageId === 'ai' ? 'nav-tab active' : 'nav-tab';
             
             // Toggle page content blocks visibility
             document.getElementById('page-home').style.display = pageId === 'home' ? 'block' : 'none';
             document.getElementById('page-jyothisyam').style.display = pageId === 'jyothisyam' ? 'block' : 'none';
             document.getElementById('page-marriage').style.display = pageId === 'marriage' ? 'block' : 'none';
+            document.getElementById('page-muhurtham').style.display = pageId === 'muhurtham' ? 'block' : 'none';
             document.getElementById('page-ai').style.display = pageId === 'ai' ? 'block' : 'none';
             
             if (pageId === 'home') {
                 renderMonthlyCalendar();
+            }
+            if (pageId === 'muhurtham') {
+                const now = new Date();
+                const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('muh-datetime').value = localISO;
             }
         }
 
@@ -8500,6 +8580,235 @@
             } catch (e) {
                 alert("Error saving chart: " + e);
             }
+        }
+
+        // --- MUHURTHAM FINDER PAGE JS ---
+        function useMyLocationForMuhurtham() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('muh-lat').value = position.coords.latitude.toFixed(4);
+                        document.getElementById('muh-lon').value = position.coords.longitude.toFixed(4);
+                        alert("Location updated successfully!");
+                    },
+                    (error) => {
+                        console.error("Error getting location:", error);
+                        alert("Could not retrieve location automatically. Please type it in.");
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        async function calculateMuhurthamWindow() {
+            const activity = document.getElementById('muh-activity').value;
+            const paradigm = document.getElementById('muh-paradigm').value;
+            const datetimeVal = document.getElementById('muh-datetime').value;
+            const lat = parseFloat(document.getElementById('muh-lat').value);
+            const lon = parseFloat(document.getElementById('muh-lon').value);
+
+            if (!datetimeVal || isNaN(lat) || isNaN(lon)) {
+                alert("Please fill in all parameters, including a valid date, time, and coordinates.");
+                return;
+            }
+
+            const resultsPanel = document.getElementById('muhurtham-results-panel');
+            resultsPanel.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 16px; color: var(--accent-cosmic);"></i>
+                    <p>Calculating auspicious alignments and evaluating seasonal doshams...</p>
+                </div>
+            `;
+
+            const localDate = new Date(datetimeVal);
+            const utcTimestamp = localDate.toISOString();
+
+            try {
+                const response = await apiFetch('/api/muhurtham', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        timestamp: utcTimestamp,
+                        latitude: lat,
+                        longitude: lon,
+                        regional_paradigm: paradigm,
+                        target_activity: activity
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderMuhurthamResults(data);
+            } catch (err) {
+                console.error("Muhurtham calculation failed:", err);
+                resultsPanel.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #ef4444;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 48px; margin-bottom: 16px;"></i>
+                        <p>Failed to calculate Muhurtham: ${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderMuhurthamResults(data) {
+            const resultsPanel = document.getElementById('muhurtham-results-panel');
+            
+            const status = data.muhurtham_status;
+            const attrs = data.base_attributes;
+            const compat = status.activity_compatibility;
+            const activeActivity = document.getElementById('muh-activity').value;
+            
+            const isTargetAuspicious = compat[activeActivity];
+            
+            const cardBg = isTargetAuspicious 
+                ? 'background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.25);'
+                : 'background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.25);';
+            const badgeBg = isTargetAuspicious ? '#22c55e' : '#ef4444';
+            const badgeText = isTargetAuspicious ? 'Auspicious Alignment' : 'Inauspicious Alignment';
+            
+            let doshamsHtml = "";
+            if (status.active_doshams_detected.length === 0) {
+                doshamsHtml = `
+                    <div style="display: flex; align-items: center; gap: 8px; color: #22c55e; font-size: 13px; font-weight: 500; background: rgba(34, 197, 94, 0.08); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.15);">
+                        <i class="fa-solid fa-circle-check"></i> No Major Astronomical Doshams Detected (Clear Day)
+                    </div>
+                `;
+            } else {
+                doshamsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+                status.active_doshams_detected.forEach(dosham => {
+                    const pretty = dosham.replace(/_/g, ' ');
+                    doshamsHtml += `
+                        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 4px 8px; border-radius: 6px; font-weight: 600;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> ${pretty}
+                        </span>
+                    `;
+                });
+                doshamsHtml += `</div>`;
+            }
+
+            const activityNames = {
+                "GENERAL": "General Activities",
+                "VIVAHA": "Wedding (Vivaha)",
+                "GRAHAPRAVESHA": "Housewarming (Grahapravesha)",
+                "AKSHARABHYASAM": "Education Start",
+                "VAHAN_KHARIDI": "Vehicle Purchase"
+            };
+
+            let compatHtml = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 10px;">`;
+            for (const [act, val] of Object.entries(compat)) {
+                const label = activityNames[act] || act;
+                const statusColor = val ? '#22c55e' : '#ef4444';
+                const statusBg = val ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+                const statusBorder = val ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                const icon = val ? 'fa-circle-check' : 'fa-circle-xmark';
+                
+                compatHtml += `
+                    <div style="background: ${statusBg}; border: 1px solid ${statusBorder}; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 11px; font-weight: 500; color: var(--text-primary);">${label}</span>
+                        <span style="color: ${statusColor}; font-size: 12px; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                            <i class="fa-solid ${icon}"></i> ${val ? 'Yes' : 'No'}
+                        </span>
+                    </div>
+                `;
+            }
+            compatHtml += `</div>`;
+
+            let horaiHtml = "";
+            if (data.recommended_subha_horai_windows.length === 0) {
+                horaiHtml = `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">No subha horai windows recommended for this day.</p>`;
+            } else {
+                horaiHtml = `<div style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+                data.recommended_subha_horai_windows.forEach(w => {
+                    let planetIcon = "fa-circle";
+                    if (w.planet === "Jupiter") planetIcon = "fa-hand-holding-dollar";
+                    else if (w.planet === "Venus") planetIcon = "fa-heart";
+                    else if (w.planet === "Mercury") planetIcon = "fa-brain";
+                    
+                    horaiHtml += `
+                        <div style="background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 10px; font-weight: bold; color: var(--accent-gold); text-transform: uppercase;">
+                                <i class="fa-solid ${planetIcon}"></i> ${w.planet}
+                            </span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--text-primary);">${w.start} - ${w.end}</span>
+                        </div>
+                    `;
+                });
+                horaiHtml += `</div>`;
+            }
+
+            const panchColor = status.panchaka_classification === "Subha" ? '#22c55e' : '#ef4444';
+            const panchBg = status.panchaka_classification === "Subha" ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+            const panchBorder = status.panchaka_classification === "Subha" ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+
+            resultsPanel.innerHTML = `
+                <h2 class="card-section-title"><i class="fa-solid fa-chart-pie"></i> Muhurtham Calculation Results</h2>
+                
+                <div style="margin-top: 14px; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; ${cardBg}">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <span style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--text-primary);">
+                            Target: ${activityNames[activeActivity]}
+                        </span>
+                        <span style="background: ${badgeBg}; color: #fff; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 4px 8px; border-radius: 20px;">
+                            ${badgeText}
+                        </span>
+                    </div>
+                    <p style="font-size: 12px; line-height: 1.5; margin: 0; color: var(--text-secondary);">
+                        Evaluated for <strong>${data.timestamp_evaluated.replace('Z', '').replace('T', ' ')}</strong> at local timezone coordinates.
+                    </p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
+                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Tithi</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-moon"></i> ${attrs.tithi}</span>
+                    </div>
+                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
+                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nakshatram</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-star"></i> ${attrs.nakshatram}</span>
+                    </div>
+                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
+                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nitya Yogam</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-circle-nodes"></i> ${attrs.nitya_yogam}</span>
+                    </div>
+                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
+                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Anandadi Yogam</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-sun"></i> ${attrs.anandadi_yogam}</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Panchaka Rahita</h3>
+                    <div style="background: ${panchBg}; border: 1px solid ${panchBorder}; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Panchaka Value: ${status.panchaka_value}</span>
+                            <p style="font-size: 10px; margin: 2px 0 0 0; color: var(--text-secondary);">Computed from Tithi + Day + Star + Lagna modulo 9.</p>
+                        </div>
+                        <span style="color: ${panchColor}; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+                            ${status.panchaka_classification} Panchakam
+                        </span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Exclusion Doshams Detected</h3>
+                    ${doshamsHtml}
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Activity Suitability Matrix</h3>
+                    ${compatHtml}
+                </div>
+
+                <div style="margin-top: 18px;">
+                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Recommended Subha Horai Windows</h3>
+                    ${horaiHtml}
+                </div>
+            `;
         }
     </script>
 
