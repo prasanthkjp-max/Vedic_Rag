@@ -157,6 +157,9 @@ def init_user_db():
     add_col("phone_number", "TEXT")
     add_col("stripe_customer_id", "TEXT")
     add_col("updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    add_col("dob", "TEXT")
+    add_col("tob", "TEXT")
+    add_col("gender", "TEXT DEFAULT 'male'")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
@@ -268,6 +271,25 @@ def init_user_db():
     )
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_charts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        dob TEXT NOT NULL,
+        tob TEXT NOT NULL,
+        pob TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        gender TEXT DEFAULT 'male',
+        ayanamsa TEXT DEFAULT 'Lahiri',
+        chart_style TEXT DEFAULT 'south',
+        is_saved INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
     # Seed default subscription plans if empty
     cursor.execute("SELECT count(*) FROM subscription_plans")
     if cursor.fetchone()[0] == 0:
@@ -316,7 +338,8 @@ def get_user_by_session(token: str):
     cursor = conn.cursor()
     cursor.execute("""
         SELECT u.id, u.email, u.full_name, u.credit_balance, s.expires_at,
-               u.latitude, u.longitude, u.timezone, u.language, u.wants_newsletter, u.location_name
+               u.latitude, u.longitude, u.timezone, u.language, u.wants_newsletter, u.location_name,
+               u.dob, u.tob, u.gender
         FROM sessions s 
         JOIN users u ON s.user_id = u.id 
         WHERE s.session_token = ?
@@ -324,7 +347,7 @@ def get_user_by_session(token: str):
     row = cursor.fetchone()
     conn.close()
     if row:
-        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name = row
+        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender = row
         try:
             expires_at = datetime.fromisoformat(expires_str)
         except ValueError:
@@ -349,7 +372,10 @@ def get_user_by_session(token: str):
                 "timezone": tz,
                 "language": lang,
                 "wants_newsletter": bool(wants_news),
-                "location_name": loc_name
+                "location_name": loc_name,
+                "dob": dob,
+                "tob": tob,
+                "gender": gender
             }
         else:
             # Session has expired — drop the row so stale tokens don't accumulate.
@@ -811,6 +837,33 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
             req.year, req.month, req.day, req.hour, req.minute,
             req.longitude, req.latitude, req.ayanamsa, gender=req.gender
         )
+        
+        # Save to user history if logged in
+        user = get_user_by_session(token)
+        if user:
+            dob_str = f"{req.year:04d}-{req.month:02d}-{req.day:02d}"
+            tob_str = f"{req.hour:02d}:{req.minute:02d}"
+            
+            conn = connect_db(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            """, (user["id"], req.name, dob_str, tob_str, req.place_name, req.latitude, req.longitude, req.gender, req.ayanamsa, req.visual_style))
+            
+            # Enforce max 50 history details
+            cursor.execute("""
+                SELECT id FROM user_charts 
+                WHERE user_id = ? AND is_saved = 0
+                ORDER BY created_at DESC
+            """, (user["id"],))
+            histories = cursor.fetchall()
+            if len(histories) > 50:
+                to_delete = [h[0] for h in histories[50:]]
+                cursor.execute(f"DELETE FROM user_charts WHERE id IN ({','.join('?' * len(to_delete))})", to_delete)
+            conn.commit()
+            conn.close()
+            
         return chart
     except HTTPException:
         raise
@@ -1916,6 +1969,157 @@ def billing_cancel(request: Request):
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("UPDATE subscriptions SET status = 'cancelled' WHERE user_id = ?", (user["id"],))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+
+# --- User Profile & Personal Astrology Details Models & Routes ---
+
+class BirthProfileUpdate(BaseModel):
+    full_name: str
+    dob: str
+    tob: str
+    location_name: str
+    latitude: float
+    longitude: float
+    gender: str
+
+class UserChartSave(BaseModel):
+    id: int = None
+    name: str
+    dob: str
+    tob: str
+    pob: str
+    latitude: float
+    longitude: float
+    gender: str = "male"
+    ayanamsa: str = "Lahiri"
+    chart_style: str = "south"
+    is_saved: int = 0
+
+@app.post("/api/user/profile/birth-info")
+def update_profile_birth_info(req: BirthProfileUpdate, request: Request):
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    conn = connect_db(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE users 
+        SET full_name = ?, dob = ?, tob = ?, location_name = ?, latitude = ?, longitude = ?, gender = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (req.full_name, req.dob, req.tob, req.location_name, req.latitude, req.longitude, req.gender, user["id"]))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.get("/api/user/charts")
+def get_user_charts(request: Request, saved: int = 0):
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    conn = connect_db(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved, created_at
+        FROM user_charts
+        WHERE user_id = ? AND is_saved = ?
+        ORDER BY created_at DESC
+    """, (user["id"], saved))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    charts = []
+    for r in rows:
+        charts.append({
+            "id": r[0],
+            "name": r[1],
+            "dob": r[2],
+            "tob": r[3],
+            "pob": r[4],
+            "latitude": r[5],
+            "longitude": r[6],
+            "gender": r[7],
+            "ayanamsa": r[8],
+            "chart_style": r[9],
+            "is_saved": r[10],
+            "created_at": r[11]
+        })
+    return charts
+
+@app.post("/api/user/charts")
+def save_user_chart(req: UserChartSave, request: Request):
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    conn = connect_db(DB_PATH)
+    cursor = conn.cursor()
+    
+    if req.id:
+        # Update existing
+        cursor.execute("""
+            UPDATE user_charts
+            SET name = ?, dob = ?, tob = ?, pob = ?, latitude = ?, longitude = ?, gender = ?, ayanamsa = ?, chart_style = ?, is_saved = ?
+            WHERE id = ? AND user_id = ?
+        """, (req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved, req.id, user["id"]))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "id": req.id}
+    else:
+        # Insert new
+        cursor.execute("""
+            INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (user["id"], req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved))
+        new_id = cursor.lastrowid
+        
+        # Enforce max 50 history (is_saved = 0) details
+        if req.is_saved == 0:
+            cursor.execute("""
+                SELECT id FROM user_charts 
+                WHERE user_id = ? AND is_saved = 0
+                ORDER BY created_at DESC
+            """)
+            histories = cursor.fetchall()
+            if len(histories) > 50:
+                to_delete = [h[0] for h in histories[50:]]
+                cursor.execute(f"DELETE FROM user_charts WHERE id IN ({','.join('?' * len(to_delete))})", to_delete)
+        
+        conn.commit()
+        conn.close()
+        return {"status": "success", "id": new_id}
+
+@app.delete("/api/user/charts/{chart_id}")
+def delete_user_chart(chart_id: int, request: Request):
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    conn = connect_db(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM user_charts WHERE id = ? AND user_id = ?", (chart_id, user["id"]))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.post("/api/user/charts/{chart_id}/save")
+def mark_chart_saved(chart_id: int, request: Request):
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    conn = connect_db(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE user_charts SET is_saved = 1 WHERE id = ? AND user_id = ?", (chart_id, user["id"]))
     conn.commit()
     conn.close()
     return {"status": "success"}

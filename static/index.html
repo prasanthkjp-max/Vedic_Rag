@@ -2374,86 +2374,112 @@
                     <i class="fa-solid fa-circle-user"></i> <span id="lbl-jyothisyam-title">Jyothisyam (Birth Chart Calculator)</span>
                 </div>
 
-                <!-- Config subtabs basic vs advanced -->
+                <!-- Config subtabs basic vs advanced vs saved vs history -->
                 <div class="sub-tab-bar">
                     <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic">Basic Configuration</span></button>
                     <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced">Advanced Features</span></button>
+                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span>Saved Charts</span></button>
+                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span>Chart History</span></button>
                 </div>
 
-                <!-- Birth details Form -->
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label id="lbl-name">Native Full Name</label>
-                        <input type="text" id="in-name" placeholder="e.g. Name" value="Name">
+                <div id="jyothisyam-form-container">
+                    <!-- Birth details Form -->
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label id="lbl-name">Native Full Name</label>
+                            <input type="text" id="in-name" placeholder="e.g. Name" value="Name">
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-dob">Date of Birth</label>
+                            <input type="date" id="in-dob" value="1995-12-15">
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-tob">Time of Birth</label>
+                            <input type="time" id="in-tob" value="14:30">
+                        </div>
+                        <div class="input-group" style="position: relative;">
+                            <label id="lbl-pob">Place of Birth Name</label>
+                            <input type="text" id="in-pob" placeholder="e.g. Chennai, India" value="Chennai, India" autocomplete="off" oninput="debounceLookupPlace()">
+                            <div id="pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-lon">Longitude (Degrees East)</label>
+                            <input type="number" step="0.0001" id="in-lon" value="80.2707">
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-lat">Latitude (Degrees North)</label>
+                            <input type="number" step="0.0001" id="in-lat" value="13.0827">
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-gender">Gender</label>
+                            <select id="in-gender">
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-chart-style">Visual Chart Style</label>
+                            <select id="in-style">
+                                <option value="south">South Indian Chart Style (Rasi Grid)</option>
+                                <option value="north">North Indian Chart Style (Diamond Grid)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Advanced selection dropdowns -->
+                        <div class="input-group advanced-only" style="display: none;">
+                            <label>Ayanamsa Sidereal Offset</label>
+                            <select id="in-ayanamsa">
+                                <option value="Lahiri">Lahiri (Thirukanitha standard) - Default</option>
+                                <option value="Raman">Raman (Dr. B.V. Raman offset)</option>
+                                <option value="KP">KP (Krishnamurti Paddhati)</option>
+                                <option value="DP">DP (Dasa Paddhati)</option>
+                                <option value="Tropical">Tropical (Western Coordinates)</option>
+                            </select>
+                        </div>
+                        <div class="input-group advanced-only" style="display: none;">
+                            <label id="lbl-astro-system">Astrological System</label>
+                            <select id="in-system">
+                                <option value="Parashara">Parashara (Vedic Classical) - Default</option>
+                                <option value="KP">KP System (Stellar Sub-lords)</option>
+                                <option value="Nadi">Nadi Astrology (Placements)</option>
+                                <option value="Jaimini">Jaimini Astrology (Karaka/Sutras)</option>
+                            </select>
+                        </div>
+                        <div class="input-group advanced-only" style="display: none;">
+                            <label id="lbl-timing-system">Timing Period System (Dasa)</label>
+                            <select id="in-timing">
+                                <option value="Vimshottari">Vimshottari Dasa (120 Year Cycle) - Default</option>
+                                <option value="Chara">Chara Dasa (Sign-based planetary periods)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label id="lbl-dob">Date of Birth</label>
-                        <input type="date" id="in-dob" value="1995-12-15">
+
+                    <button class="btn-primary" onclick="generateBirthChart()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-btn-generate">Draft Birth Chart Report</span>
+                    </button>
+                </div>
+
+                <!-- Saved Charts List Container -->
+                <div id="saved-charts-container" style="display: none; padding-top: 15px;">
+                    <div id="saved-charts-auth-callout" style="display: none; text-align: center; padding: 30px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-gold); border-radius: 12px; margin-bottom: 20px;">
+                        <p style="color: var(--text-secondary); margin-bottom: 15px;">Please Sign In to save charts and view your cloud-saved birth details.</p>
+                        <button class="calculate-btn" onclick="openLoginModal()" style="display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;"><i class="fa-solid fa-sign-in"></i> Sign In / Sign Up</button>
                     </div>
-                    <div class="input-group">
-                        <label id="lbl-tob">Time of Birth</label>
-                        <input type="time" id="in-tob" value="14:30">
-                    </div>
-                    <div class="input-group" style="position: relative;">
-                        <label id="lbl-pob">Place of Birth Name</label>
-                        <input type="text" id="in-pob" placeholder="e.g. Chennai, India" value="Chennai, India" autocomplete="off" oninput="debounceLookupPlace()">
-                        <div id="pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
-                    </div>
-                    <div class="input-group">
-                        <label id="lbl-lon">Longitude (Degrees East)</label>
-                        <input type="number" step="0.0001" id="in-lon" value="80.2707">
-                    </div>
-                    <div class="input-group">
-                        <label id="lbl-lat">Latitude (Degrees North)</label>
-                        <input type="number" step="0.0001" id="in-lat" value="13.0827">
-                    </div>
-                    <div class="input-group">
-                        <label id="lbl-gender">Gender</label>
-                        <select id="in-gender">
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label id="lbl-chart-style">Visual Chart Style</label>
-                        <select id="in-style">
-                            <option value="south">South Indian Chart Style (Rasi Grid)</option>
-                            <option value="north">North Indian Chart Style (Diamond Grid)</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Advanced selection dropdowns -->
-                    <div class="input-group advanced-only" style="display: none;">
-                        <label>Ayanamsa Sidereal Offset</label>
-                        <select id="in-ayanamsa">
-                            <option value="Lahiri">Lahiri (Thirukanitha standard) - Default</option>
-                            <option value="Raman">Raman (Dr. B.V. Raman offset)</option>
-                            <option value="KP">KP (Krishnamurti Paddhati)</option>
-                            <option value="DP">DP (Dasa Paddhati)</option>
-                            <option value="Tropical">Tropical (Western Coordinates)</option>
-                        </select>
-                    </div>
-                    <div class="input-group advanced-only" style="display: none;">
-                        <label id="lbl-astro-system">Astrological System</label>
-                        <select id="in-system">
-                            <option value="Parashara">Parashara (Vedic Classical) - Default</option>
-                            <option value="KP">KP System (Stellar Sub-lords)</option>
-                            <option value="Nadi">Nadi Astrology (Placements)</option>
-                            <option value="Jaimini">Jaimini Astrology (Karaka/Sutras)</option>
-                        </select>
-                    </div>
-                    <div class="input-group advanced-only" style="display: none;">
-                        <label id="lbl-timing-system">Timing Period System (Dasa)</label>
-                        <select id="in-timing">
-                            <option value="Vimshottari">Vimshottari Dasa (120 Year Cycle) - Default</option>
-                            <option value="Chara">Chara Dasa (Sign-based planetary periods)</option>
-                        </select>
+                    <div id="saved-charts-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- Populated dynamically -->
                     </div>
                 </div>
 
-                <button class="btn-primary" onclick="generateBirthChart()">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-btn-generate">Draft Birth Chart Report</span>
-                </button>
+                <!-- Chart History List Container -->
+                <div id="chart-history-container" style="display: none; padding-top: 15px;">
+                    <div id="chart-history-auth-callout" style="display: none; text-align: center; padding: 30px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-gold); border-radius: 12px; margin-bottom: 20px;">
+                        <p style="color: var(--text-secondary); margin-bottom: 15px;">Please Sign In to track your chart calculations and history.</p>
+                        <button class="calculate-btn" onclick="openLoginModal()" style="display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;"><i class="fa-solid fa-sign-in"></i> Sign In / Sign Up</button>
+                    </div>
+                    <div id="chart-history-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
 
                 <!-- Dynamic Birth output layout -->
                 <div class="chart-output-container" id="birth-report-output" style="display: none;">
@@ -2462,6 +2488,9 @@
                             <i class="fa-solid fa-award"></i> <span id="lbl-report-success">Astrological Report Generated Successfully</span>
                         </h3>
                         <div style="display: flex; gap: 10px;">
+                            <button class="lang-select-btn" id="btn-save-chart-cloud" onclick="saveCurrentChartToCloud()" style="color: var(--accent-gold); border-color: var(--accent-gold); display: none;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> <span>Save Chart</span>
+                            </button>
                             <button class="lang-select-btn" id="btn-jyothi-ai-reading" onclick="generateJyothiAIReading()" style="color: var(--accent-gold); border-color: var(--accent-gold);">
                                 <i class="fa-solid fa-brain"></i> <span id="lbl-btn-astro-ai">Astro-AI Reading</span>
                             </button>
@@ -4506,16 +4535,35 @@
             setGocharaStyle(currentGocharaStyle);
         }
 
-        // Switch config sub-tabs (Basic vs Advanced)
+        // Switch config sub-tabs (Basic vs Advanced vs Saved vs History)
         function switchSubTab(subtab) {
             activeSubTab = subtab;
             document.getElementById('subtab-basic').className = subtab === 'basic' ? 'sub-tab-btn active' : 'sub-tab-btn';
             document.getElementById('subtab-advanced').className = subtab === 'advanced' ? 'sub-tab-btn active' : 'sub-tab-btn';
+            document.getElementById('subtab-saved-charts').className = subtab === 'saved-charts' ? 'sub-tab-btn active' : 'sub-tab-btn';
+            document.getElementById('subtab-chart-history').className = subtab === 'chart-history' ? 'sub-tab-btn active' : 'sub-tab-btn';
             
-            const advancedFields = document.querySelectorAll('.advanced-only');
-            advancedFields.forEach(el => {
-                el.style.display = subtab === 'advanced' ? 'flex' : 'none';
-            });
+            // Show / hide main form vs saved lists
+            if (subtab === 'basic' || subtab === 'advanced') {
+                document.getElementById('jyothisyam-form-container').style.display = 'block';
+                document.getElementById('saved-charts-container').style.display = 'none';
+                document.getElementById('chart-history-container').style.display = 'none';
+                
+                const advancedFields = document.querySelectorAll('.advanced-only');
+                advancedFields.forEach(el => {
+                    el.style.display = subtab === 'advanced' ? 'flex' : 'none';
+                });
+            } else if (subtab === 'saved-charts') {
+                document.getElementById('jyothisyam-form-container').style.display = 'none';
+                document.getElementById('saved-charts-container').style.display = 'block';
+                document.getElementById('chart-history-container').style.display = 'none';
+                loadSavedChartsList();
+            } else if (subtab === 'chart-history') {
+                document.getElementById('jyothisyam-form-container').style.display = 'none';
+                document.getElementById('saved-charts-container').style.display = 'none';
+                document.getElementById('chart-history-container').style.display = 'block';
+                loadChartHistoryList();
+            }
         }
 
         // Close dropdown when clicking outside
@@ -4524,7 +4572,10 @@
                 document.getElementById('lang-menu').style.display = 'none';
             }
             if (!e.target.closest('.input-group')) {
-                document.getElementById('pob-suggestions').style.display = 'none';
+                const pobSug = document.getElementById('pob-suggestions');
+                if (pobSug) pobSug.style.display = 'none';
+                const profilePobSug = document.getElementById('profile-pob-suggestions');
+                if (profilePobSug) profilePobSug.style.display = 'none';
             }
         });
 
@@ -5900,6 +5951,12 @@
 
                 // Display outputs block
                 document.getElementById('birth-report-output').style.display = 'flex';
+                
+                // Toggle display of "Save Chart" to cloud button
+                const btnSave = document.getElementById('btn-save-chart-cloud');
+                if (btnSave) {
+                    btnSave.style.display = currentUser ? 'inline-flex' : 'none';
+                }
                 
                 // Hide general tip, show birth-data summary in AI chat tab
                 document.getElementById('lbl-ai-p1').style.display = 'none';
@@ -7801,9 +7858,31 @@
                 if (userCreditsCount) {
                     userCreditsCount.innerText = currentUser.subscription_active ? "UNLIMITED" : currentUser.credit_balance;
                 }
+                
+                // Pre-fill birth details from profile if present
+                if (currentUser.dob && !document.getElementById('in-dob').dataset.userPrefilled) {
+                    if (currentUser.full_name) document.getElementById('in-name').value = currentUser.full_name;
+                    if (currentUser.dob) document.getElementById('in-dob').value = currentUser.dob;
+                    if (currentUser.tob) document.getElementById('in-tob').value = currentUser.tob;
+                    if (currentUser.location_name) document.getElementById('in-pob').value = currentUser.location_name;
+                    if (currentUser.latitude) document.getElementById('in-lat').value = currentUser.latitude;
+                    if (currentUser.longitude) document.getElementById('in-lon').value = currentUser.longitude;
+                    if (currentUser.gender) document.getElementById('in-gender').value = currentUser.gender;
+                    // Mark as prefilled so we don't overwrite user changes dynamically in session
+                    document.getElementById('in-dob').dataset.userPrefilled = "true";
+                }
+                
+                document.getElementById('saved-charts-auth-callout').style.display = 'none';
+                document.getElementById('chart-history-auth-callout').style.display = 'none';
             } else {
                 if (btnSignIn) btnSignIn.style.display = 'flex';
                 if (widgetLoggedIn) widgetLoggedIn.style.display = 'none';
+                
+                document.getElementById('saved-charts-auth-callout').style.display = 'block';
+                document.getElementById('chart-history-auth-callout').style.display = 'block';
+                document.getElementById('saved-charts-list').innerHTML = '';
+                document.getElementById('chart-history-list').innerHTML = '';
+                delete document.getElementById('in-dob').dataset.userPrefilled;
             }
             
             updateTabLockStates();
@@ -7876,6 +7955,15 @@
                 subStatus.style.color = 'var(--text-secondary)';
                 if (btnCancelSub) btnCancelSub.style.display = 'none';
             }
+
+            // Populate birth details form fields in the user profile dashboard
+            document.getElementById('profile-in-name').value = currentUser.full_name || "";
+            document.getElementById('profile-in-dob').value = currentUser.dob || "";
+            document.getElementById('profile-in-tob').value = currentUser.tob || "";
+            document.getElementById('profile-in-pob').value = currentUser.location_name || "";
+            document.getElementById('profile-in-lon').value = currentUser.longitude || "";
+            document.getElementById('profile-in-lat').value = currentUser.latitude || "";
+            document.getElementById('profile-in-gender').value = currentUser.gender || "male";
         }
         function closeProfileModal() {
             document.getElementById('profile-modal').style.display = 'none';
@@ -8058,6 +8146,290 @@
                 alert("Error during cancellation: " + e);
             }
         }
+
+        async function saveProfileBirthInfo() {
+            const name = document.getElementById('profile-in-name').value.trim();
+            const dob = document.getElementById('profile-in-dob').value.trim();
+            const tob = document.getElementById('profile-in-tob').value.trim();
+            const pob = document.getElementById('profile-in-pob').value.trim();
+            const lon = parseFloat(document.getElementById('profile-in-lon').value);
+            const lat = parseFloat(document.getElementById('profile-in-lat').value);
+            const gender = document.getElementById('profile-in-gender').value;
+
+            if (!name || !dob || !tob || !pob || isNaN(lon) || isNaN(lat)) {
+                alert("Please fill all birth info fields.");
+                return;
+            }
+
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch('/api/user/profile/birth-info', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-session-token': token
+                    },
+                    body: JSON.stringify({
+                        full_name: name,
+                        dob: dob,
+                        tob: tob,
+                        location_name: pob,
+                        latitude: lat,
+                        longitude: lon,
+                        gender: gender
+                    })
+                });
+                if (res.ok) {
+                    alert("Birth details saved successfully!");
+                    // Refresh session
+                    await initAuth();
+                } else {
+                    alert("Failed to save birth details.");
+                }
+            } catch (e) {
+                alert("Error saving details: " + e);
+            }
+        }
+
+        let profilePobTimeout = null;
+        function debounceLookupPlaceProfile() {
+            clearTimeout(profilePobTimeout);
+            profilePobTimeout = setTimeout(async () => {
+                const query = document.getElementById('profile-in-pob').value.trim();
+                const suggestionsDiv = document.getElementById('profile-pob-suggestions');
+                if (query.length < 3) {
+                    suggestionsDiv.style.display = 'none';
+                    return;
+                }
+                try {
+                    const res = await fetch(`/api/search-places?q=${encodeURIComponent(query)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        suggestionsDiv.innerHTML = '';
+                        if (data.length === 0) {
+                            suggestionsDiv.style.display = 'none';
+                            return;
+                        }
+                        data.forEach(item => {
+                            const btn = document.createElement('button');
+                            btn.className = 'suggestion-item';
+                            btn.style.width = '100%';
+                            btn.style.textAlign = 'left';
+                            btn.innerText = item.display_name;
+                            btn.onclick = () => {
+                                document.getElementById('profile-in-pob').value = item.display_name;
+                                document.getElementById('profile-in-lat').value = parseFloat(item.lat).toFixed(4);
+                                document.getElementById('profile-in-lon').value = parseFloat(item.lon).toFixed(4);
+                                suggestionsDiv.style.display = 'none';
+                            };
+                            suggestionsDiv.appendChild(btn);
+                        });
+                        suggestionsDiv.style.display = 'block';
+                    }
+                } catch (e) {
+                    console.error("Place lookup error:", e);
+                }
+            }, 350);
+        }
+
+        async function loadSavedChartsList() {
+            if (!currentUser) return;
+            const token = localStorage.getItem('session_token');
+            const listDiv = document.getElementById('saved-charts-list');
+            listDiv.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1;">Loading saved charts...</p>';
+            
+            try {
+                const res = await fetch('/api/user/charts?saved=1', {
+                    headers: { 'x-session-token': token }
+                });
+                if (res.ok) {
+                    const charts = await res.json();
+                    listDiv.innerHTML = '';
+                    if (charts.length === 0) {
+                        listDiv.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">No saved charts yet.</p>';
+                        return;
+                    }
+                    charts.forEach(c => {
+                        const card = document.createElement('div');
+                        card.className = 'panchangam-widget';
+                        card.style.padding = '15px';
+                        card.style.border = '1px solid var(--border-gold)';
+                        card.style.background = 'rgba(255,255,255,0.01)';
+                        card.style.borderRadius = '10px';
+                        card.style.display = 'flex';
+                        card.style.flexDirection = 'column';
+                        card.style.gap = '8px';
+                        
+                        card.innerHTML = `
+                            <div style="font-weight: bold; color: var(--accent-gold); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                                <span><i class="fa-solid fa-user"></i> ${c.name}</span>
+                                <span style="font-size: 9px; color: var(--text-muted);">${c.gender.toUpperCase()}</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">
+                                <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
+                                <div>📍 ${c.pob}</div>
+                                <div style="font-size: 9px; margin-top: 3px; color: var(--text-muted);">Ayanamsa: ${c.ayanamsa} | Style: ${c.chart_style}</div>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 5px;">
+                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
+                                <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'saved')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        `;
+                        listDiv.appendChild(card);
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading saved charts:", e);
+                listDiv.innerHTML = '<p style="color: #e53e3e; grid-column: 1/-1;">Error loading saved charts.</p>';
+            }
+        }
+
+        async function loadChartHistoryList() {
+            if (!currentUser) return;
+            const token = localStorage.getItem('session_token');
+            const listDiv = document.getElementById('chart-history-list');
+            listDiv.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1;">Loading history...</p>';
+            
+            try {
+                const res = await fetch('/api/user/charts?saved=0', {
+                    headers: { 'x-session-token': token }
+                });
+                if (res.ok) {
+                    const charts = await res.json();
+                    listDiv.innerHTML = '';
+                    if (charts.length === 0) {
+                        listDiv.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">No calculation history found.</p>';
+                        return;
+                    }
+                    charts.forEach(c => {
+                        const card = document.createElement('div');
+                        card.className = 'panchangam-widget';
+                        card.style.padding = '15px';
+                        card.style.border = '1px solid var(--border-glass)';
+                        card.style.background = 'rgba(255,255,255,0.01)';
+                        card.style.borderRadius = '10px';
+                        card.style.display = 'flex';
+                        card.style.flexDirection = 'column';
+                        card.style.gap = '8px';
+                        
+                        card.innerHTML = `
+                            <div style="font-weight: bold; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                                <span><i class="fa-solid fa-clock-rotate-left"></i> ${c.name}</span>
+                                <span style="font-size: 9px; color: var(--text-muted);">${c.gender.toUpperCase()}</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">
+                                <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
+                                <div>📍 ${c.pob}</div>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 5px;">
+                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
+                                <button class="calculate-btn" onclick="saveHistoryChartToCloud(${c.id})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center; background: linear-gradient(135deg, var(--accent-gold), #b7791f); border: none; color: #000;">Save</button>
+                                <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'history')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        `;
+                        listDiv.appendChild(card);
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading history:", e);
+                listDiv.innerHTML = '<p style="color: #e53e3e; grid-column: 1/-1;">Error loading history.</p>';
+            }
+        }
+
+        function loadSavedChartDetails(c) {
+            document.getElementById('in-name').value = c.name;
+            document.getElementById('in-dob').value = c.dob;
+            document.getElementById('in-tob').value = c.tob;
+            document.getElementById('in-pob').value = c.pob;
+            document.getElementById('in-lon').value = c.longitude;
+            document.getElementById('in-lat').value = c.latitude;
+            document.getElementById('in-gender').value = c.gender;
+            
+            // Set optional fields if element is present
+            const ayanSelector = document.getElementById('in-ayanamsa');
+            if (ayanSelector) ayanSelector.value = c.ayanamsa || "Lahiri";
+            const styleSelector = document.getElementById('in-style');
+            if (styleSelector) styleSelector.value = c.chart_style || "south";
+            
+            // Switch back to configuration and calculate
+            switchSubTab('basic');
+            generateBirthChart();
+        }
+
+        async function saveHistoryChartToCloud(chartId) {
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch(`/api/user/charts/${chartId}/save`, {
+                    method: 'POST',
+                    headers: { 'x-session-token': token }
+                });
+                if (res.ok) {
+                    alert("Chart saved permanently!");
+                    loadChartHistoryList();
+                } else {
+                    alert("Failed to save chart.");
+                }
+            } catch (e) {
+                alert("Error saving chart: " + e);
+            }
+        }
+
+        async function deleteSavedChart(chartId, type) {
+            if (!confirm("Are you sure you want to delete this chart record?")) return;
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch(`/api/user/charts/${chartId}`, {
+                    method: 'DELETE',
+                    headers: { 'x-session-token': token }
+                });
+                if (res.ok) {
+                    alert("Record deleted successfully.");
+                    if (type === 'saved') {
+                        loadSavedChartsList();
+                    } else {
+                        loadChartHistoryList();
+                    }
+                } else {
+                    alert("Failed to delete record.");
+                }
+            } catch (e) {
+                alert("Error deleting record: " + e);
+            }
+        }
+
+        async function saveCurrentChartToCloud() {
+            if (!currentUser) return;
+            const name = document.getElementById('in-name').value.trim();
+            const dob = document.getElementById('in-dob').value.trim();
+            const tob = document.getElementById('in-tob').value.trim();
+            const pob = document.getElementById('in-pob').value.trim();
+            const lon = parseFloat(document.getElementById('in-lon').value);
+            const lat = parseFloat(document.getElementById('in-lat').value);
+            const gender = document.getElementById('in-gender').value;
+            const ayanamsa = document.getElementById('in-ayanamsa').value;
+            const style = document.getElementById('in-style').value;
+            
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch('/api/user/charts', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-session-token': token
+                    },
+                    body: JSON.stringify({
+                        name, dob, tob, pob, latitude: lat, longitude: lon, gender, ayanamsa, chart_style: style, is_saved: 1
+                    })
+                });
+                if (res.ok) {
+                    alert("Chart saved successfully to your cloud profile!");
+                } else {
+                    alert("Failed to save chart to cloud.");
+                }
+            } catch (e) {
+                alert("Error saving chart: " + e);
+            }
+        }
     </script>
 
     <!-- Sign In / Sign Up Modal -->
@@ -8139,6 +8511,48 @@
                     <span style="font-size: 11px; color: var(--text-secondary);">Subscription Status:</span>
                     <span id="profile-sub-status" style="font-size: 11px; font-weight: bold; color: #48BB78;">Free Tier</span>
                 </div>
+            </div>
+            
+            <!-- Astrology Personal Info Settings -->
+            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Personal Birth Info (For Auto-Chart Predictions)</h4>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="input-group">
+                    <label style="font-size: 10px; color: var(--text-secondary);">Full Name</label>
+                    <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Birth Date</label>
+                        <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Birth Time</label>
+                        <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                    </div>
+                </div>
+                <div class="input-group" style="position: relative;">
+                    <label style="font-size: 10px; color: var(--text-secondary);">Place of Birth</label>
+                    <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                    <div id="profile-pob-suggestions" class="suggestions-dropdown" style="display: none; top: 100%;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Longitude</label>
+                        <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Latitude</label>
+                        <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 10px; color: var(--text-secondary);">Gender</label>
+                    <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <button class="calculate-btn" onclick="saveProfileBirthInfo()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Birth Info</button>
             </div>
             
             <!-- Purchase Options -->
