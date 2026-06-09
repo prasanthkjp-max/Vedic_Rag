@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.5.1]
+
+### Changed
+- The header location chip now requests **precise GPS on page load** (prompting
+  for permission), overriding the stored/IP location, and only falls back to
+  IP geolocation when GPS is denied or unavailable. Previously IP was used
+  silently on load and GPS only on tap. Browsers remember the grant, so repeat
+  loads don't re-prompt.
+
 ## [1.5.0]
 
 ### Added
