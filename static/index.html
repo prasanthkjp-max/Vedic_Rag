@@ -4229,9 +4229,11 @@
         }
 
         // Change website language in real-time
-        async function changeLanguage(langCode) {
+        async function changeLanguage(langCode, userInitiated = true) {
             currentLang = langCode;
             localStorage.setItem('vedic_lang', langCode);
+            // A manual pick locks the language so adaptive-by-region won't override it.
+            if (userInitiated) localStorage.setItem('vedic_lang_explicit', '1');
             document.documentElement.setAttribute('lang', langCode);
             document.getElementById('lang-menu').style.display = 'none';
             
@@ -4612,17 +4614,47 @@
             updateLocationLabel();
         }
 
-        // Persist the location, refresh the label + Panchangam views, and (when
-        // signed in) sync it to the user's saved preferences.
-        async function applyLocation(name, lat, lon) {
+        // Adaptive default language by region: South-Indian states map to their
+        // language, the rest of India to Hindi, elsewhere to English. Returns
+        // null when the region is unknown (leave the language unchanged).
+        function adaptiveLanguageFor(state, country) {
+            const c = (country || "").toUpperCase();
+            if (c && c !== "IN") return "en";
+            const s = (state || "").toLowerCase();
+            if (s.includes("tamil")) return "ta";
+            if (s.includes("kerala")) return "ml";
+            if (s.includes("karnataka")) return "kn";
+            if (s.includes("andhra") || s.includes("telangana")) return "te";
+            if (c === "IN") return "hi";
+            return null;
+        }
+
+        // Persist the location, refresh the label + Panchangam views, adapt the
+        // language to the region (unless the user picked one), and (when signed
+        // in) sync it to the user's saved preferences. `meta` carries the raw
+        // state/country used for language adaptation.
+        async function applyLocation(name, lat, lon, meta) {
             userLocation = { name, lat, lon };
             localStorage.setItem('vedic_location', JSON.stringify(userLocation));
             updateLocationLabel();
 
             // Cached months were computed for the old location, so drop them.
             for (const key in monthPanchangamCache) delete monthPanchangamCache[key];
-            await fetchDailyPanchangam(selectedPanchangamDate);
-            renderMonthlyCalendar();
+
+            // Adaptive language unless the user explicitly chose one. changeLanguage
+            // re-fetches the Panchangam, so only fetch separately when it doesn't run.
+            let langApplied = false;
+            if (meta && !localStorage.getItem('vedic_lang_explicit')) {
+                const lang = adaptiveLanguageFor(meta.state, meta.country);
+                if (lang && lang !== currentLang) {
+                    await changeLanguage(lang, false);
+                    langApplied = true;
+                }
+            }
+            if (!langApplied) {
+                await fetchDailyPanchangam(selectedPanchangamDate);
+                renderMonthlyCalendar();
+            }
 
             if (currentUser) {
                 const token = localStorage.getItem('session_token');
@@ -4639,6 +4671,7 @@
             }
         }
 
+        // Returns { name: "City, State", state, country } or null on failure.
         async function reverseGeocode(lat, lon) {
             try {
                 const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
@@ -4648,7 +4681,8 @@
                 const a = data.address || {};
                 const place = a.city || a.town || a.village || a.county || data.display_name;
                 const region = a.state || a.country;
-                return place ? (region && region !== place ? `${place}, ${region}` : place) : null;
+                const name = place ? (region && region !== place ? `${place}, ${region}` : place) : null;
+                return { name, state: a.state, country: a.country_code };
             } catch (e) { return null; }
         }
 
@@ -4661,7 +4695,7 @@
                 const d = await res.json();
                 if (typeof d.latitude !== 'number' || typeof d.longitude !== 'number') return false;
                 const name = [d.city, d.region || d.country_name].filter(Boolean).join(', ') || "Detected location";
-                await applyLocation(name, d.latitude, d.longitude);
+                await applyLocation(name, d.latitude, d.longitude, { state: d.region, country: d.country_code });
                 return true;
             } catch (e) { return false; }
         }
@@ -4682,8 +4716,9 @@
             navigator.geolocation.getCurrentPosition(
                 async (pos) => {
                     const lat = pos.coords.latitude, lon = pos.coords.longitude;
-                    const name = (await reverseGeocode(lat, lon)) || `My location`;
-                    await applyLocation(name, lat, lon);
+                    const geo = await reverseGeocode(lat, lon);
+                    const name = (geo && geo.name) || `My location`;
+                    await applyLocation(name, lat, lon, geo ? { state: geo.state, country: geo.country } : null);
                 },
                 async () => { finish(await detectLocationByIP()); },
                 { timeout: 10000 }
@@ -7663,9 +7698,12 @@
             // Restore previously chosen language (persisted in localStorage).
             // changeLanguage() already calls fetchDailyPanchangam + renderMonthlyCalendar,
             // so skip the duplicate calls below when it runs.
+            // Restore the last-used language (without re-marking it as an explicit
+            // pick). Adaptive-by-region in detectLocation() may override it below
+            // unless the user previously chose a language manually.
             const savedLang = localStorage.getItem('vedic_lang');
             if (savedLang && savedLang !== 'en') {
-                await changeLanguage(savedLang);
+                await changeLanguage(savedLang, false);
             } else {
                 fetchDailyPanchangam(today);
                 renderMonthlyCalendar();
