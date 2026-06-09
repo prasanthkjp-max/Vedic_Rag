@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  vedic-rag-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vedic-rag-portal
+    restart: unless-stopped
+    ports:
+      - "8008:8008"
+    volumes:
+      # Mount the sqlite database file persistently
+      - ./data:/app/data
+      # Mount the books directory for RAG page rendering
+      - ./books:/app/books
+      # Mount the static frontend assets
+      - ./static:/app/static
+    environment:
+      # Path overrides inside the container
+      - VEDIC_DB_PATH=/app/data/vedic_astrology_rag.db
+      - VEDIC_BOOKS_DIR=/app/books
+      
+      # Ollama backend connection details
+      - OLLAMA_HOST=http://ollama:11434
+      - VEDIC_EMBED_MODEL=${VEDIC_EMBED_MODEL:-nomic-embed-text}
+      - VEDIC_EMBED_DIM=${VEDIC_EMBED_DIM:-768}
+      - VEDIC_LLM_MODEL=${VEDIC_LLM_MODEL:-gemma4:31b-cloud}
+      - VEDIC_EMBED_TIMEOUT=${VEDIC_EMBED_TIMEOUT:-15}
+      - VEDIC_LLM_TIMEOUT=${VEDIC_LLM_TIMEOUT:-300}
+      
+      # App Security Key (Ensure you set this to a secure random string in production)
+      - VEDIC_API_KEY=${VEDIC_API_KEY:-}
+      
+      # CORS Allowed Origins
+      - VEDIC_CORS_ORIGINS=${VEDIC_CORS_ORIGINS:-*}
+      
+      # Administrative/Billing Credit Exemptions
+      - VEDIC_UNLIMITED_EMAILS=${VEDIC_UNLIMITED_EMAILS:-}
+      
+      # Payment and Stripe setup
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - VEDIC_ALLOW_SIMULATED_PAYMENTS=${VEDIC_ALLOW_SIMULATED_PAYMENTS:-0}
+      
+      # OAuth Authentication Credentials
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID:-}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}
+      - VEDIC_ALLOW_MOCK_OAUTH=${VEDIC_ALLOW_MOCK_OAUTH:-0}
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # NOTE: If your VPS has GPU support (highly recommended), uncomment the deployment
+    # block below to pass your NVIDIA GPU through to Ollama.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama-data:
+    driver: local
