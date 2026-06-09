@@ -1486,6 +1486,18 @@
             color: var(--text-primary);
         }
 
+        .chat-message.system {
+            background: rgba(254, 242, 242, 0.9);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            align-self: center;
+            border-radius: 8px;
+            color: #b91c1c;
+            font-style: italic;
+            text-align: center;
+            max-width: 90%;
+            padding: 8px 16px;
+        }
+
         .chat-message-meta {
             display: block;
             font-size: 10px; font-weight: 700;
@@ -6625,9 +6637,24 @@
         // ------------------ PAGE 3: COSMIC ASTROLOGY AI predictions chat engine ------------------
         let isChatResponding = false;
         let aiChatHistory = [];
+        let lastMessageTime = null;
+        let sessionTokenCount = 0;
+
+        function estimateTokens(text) {
+            if (!text) return 0;
+            return Math.ceil(text.length / 3.5);
+        }
+
+        window.addEventListener('beforeunload', function() {
+            aiChatHistory = [];
+            sessionTokenCount = 0;
+            lastMessageTime = null;
+        });
 
         function preloadCosmicWelcomeMessage(name, pob, dob, tob) {
             aiChatHistory = [];
+            sessionTokenCount = 0;
+            lastMessageTime = null;
             const chatMessages = document.getElementById('chat-messages-container');
             
             const mantras = {
@@ -6713,6 +6740,33 @@
 
             const chatContainer = document.getElementById('chat-messages-container');
 
+            // Session check: Inactive for 20 minutes or consumed > 100k tokens per session
+            const IDLE_TIMEOUT = 20 * 60 * 1000; // 20 minutes in ms
+            const TOKEN_LIMIT = 100000;
+            const now = Date.now();
+            let sessionReset = false;
+            let resetReason = "";
+
+            if (lastMessageTime !== null && (now - lastMessageTime) > IDLE_TIMEOUT) {
+                sessionReset = true;
+                resetReason = "Session ended due to inactivity (idle for more than 20 minutes). Chat history cleared.";
+            } else if (sessionTokenCount >= TOKEN_LIMIT) {
+                sessionReset = true;
+                resetReason = `Session ended because token consumption exceeded 100k limit (${sessionTokenCount} tokens used). Chat history cleared.`;
+            }
+
+            if (sessionReset) {
+                aiChatHistory = [];
+                sessionTokenCount = 0;
+                lastMessageTime = null;
+
+                const sysMsgDiv = document.createElement('div');
+                sysMsgDiv.className = 'chat-message system';
+                sysMsgDiv.innerHTML = `<span class="chat-message-meta" style="color: #be123c;">System Notice</span><div>${resetReason}</div>`;
+                chatContainer.appendChild(sysMsgDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
             // 1. Render User Message bubble
             const userMsgDiv = document.createElement('div');
             userMsgDiv.className = 'chat-message user';
@@ -6782,6 +6836,14 @@
 
                 outputPane.innerHTML = formatMarkdown(accumulatedText);
                 outputPane.id = '';
+
+                // Calculate and update session tokens
+                const requestTokens = 5000 + estimateTokens(messageText) + estimateTokens(JSON.stringify(aiChatHistory));
+                const responseTokens = estimateTokens(accumulatedText);
+                const totalMessageTokens = requestTokens + responseTokens;
+                sessionTokenCount += totalMessageTokens;
+                lastMessageTime = Date.now();
+                console.log(`[Session Token Count] Current message: ${totalMessageTokens} tokens (Req: ${requestTokens}, Resp: ${responseTokens}). Total Session: ${sessionTokenCount} tokens.`);
 
                 // Save to session memory
                 if (calculatedChartData) {
