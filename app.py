@@ -142,9 +142,9 @@ def init_user_db():
     """)
     
     # Safely add columns if they don't exist (backward compatibility)
-    def add_col(col_name, col_type):
+    def add_col(col_name, col_type, table_name="users"):
         try:
-            cursor.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}")
         except Exception:
             pass
 
@@ -154,6 +154,9 @@ def init_user_db():
     add_col("language", "TEXT DEFAULT 'en'")
     add_col("wants_newsletter", "INTEGER DEFAULT 1")
     add_col("location_name", "TEXT DEFAULT 'Chennai, India'")
+    add_col("phone_number", "TEXT")
+    add_col("stripe_customer_id", "TEXT")
+    add_col("updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
@@ -163,6 +166,9 @@ def init_user_db():
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+    add_col("platform", "TEXT DEFAULT 'web'", "sessions")
+    add_col("device_id", "INTEGER", "sessions")
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS subscriptions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -174,6 +180,14 @@ def init_user_db():
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+    add_col("plan_id", "INTEGER", "subscriptions")
+    add_col("platform", "TEXT DEFAULT 'web'", "subscriptions")
+    add_col("platform_subscription_id", "TEXT", "subscriptions")
+    add_col("billing_interval", "TEXT DEFAULT 'monthly'", "subscriptions")
+    add_col("price_cents", "INTEGER DEFAULT 0", "subscriptions")
+    add_col("cancel_at_period_end", "INTEGER DEFAULT 0", "subscriptions")
+    add_col("updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", "subscriptions")
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS credit_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -185,6 +199,7 @@ def init_user_db():
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,6 +212,82 @@ def init_user_db():
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+    add_col("payment_gateway", "TEXT DEFAULT 'stripe'", "transactions")
+    add_col("gateway_transaction_id", "TEXT", "transactions")
+
+    # New tables for advanced multi-method logins, plans, wallets, and devices
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS subscription_plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        tier TEXT NOT NULL,
+        billing_interval TEXT NOT NULL,
+        price_cents INTEGER NOT NULL,
+        currency TEXT DEFAULT 'USD',
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_authentications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        provider TEXT NOT NULL,
+        provider_user_id TEXT NOT NULL,
+        credential_hash TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(provider, provider_user_id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_wallets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE NOT NULL,
+        balance INTEGER DEFAULT 0,
+        currency TEXT DEFAULT 'USD',
+        last_topped_up TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_devices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        platform TEXT NOT NULL,
+        device_token TEXT,
+        app_version TEXT,
+        last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Seed default subscription plans if empty
+    cursor.execute("SELECT count(*) FROM subscription_plans")
+    if cursor.fetchone()[0] == 0:
+        plans = [
+            ("Basic Monthly", "basic", "monthly", 999, "USD"),
+            ("Basic Annual", "basic", "annual", 9999, "USD"),
+            ("Premium Monthly", "premium", "monthly", 1999, "USD"),
+            ("Premium Annual", "premium", "annual", 19999, "USD"),
+        ]
+        cursor.executemany("""
+        INSERT INTO subscription_plans (name, tier, billing_interval, price_cents, currency)
+        VALUES (?, ?, ?, ?, ?)
+        """, plans)
+
+    # Migrate/Initialize wallets for users who do not have one
+    cursor.execute("""
+    INSERT OR IGNORE INTO user_wallets (user_id, balance)
+    SELECT id, credit_balance FROM users
+    """)
+
     conn.commit()
     conn.close()
 
