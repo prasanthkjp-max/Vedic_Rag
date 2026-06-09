@@ -4598,7 +4598,8 @@
 
         function updateLocationLabel() {
             const el = document.getElementById('header-location-name');
-            if (el) el.innerText = (userLocation.name || "Location").split(',')[0].trim();
+            // Show "City, State" (first two parts); names are built as place+region.
+            if (el) el.innerText = (userLocation.name || "Location").split(',').slice(0, 2).map(s => s.trim()).join(', ');
         }
 
         function loadStoredLocation() {
