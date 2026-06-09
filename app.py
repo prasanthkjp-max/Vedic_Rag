@@ -1138,12 +1138,17 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
     return StreamingResponse(marriage_prediction_stream_generator(), media_type="text/event-stream")
 
 
+class AIChatMessage(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+
 class AIChatRequest(BaseModel):
     chart_data: dict
     client_name: str
     place_name: str
     query: str
     model: str = DEFAULT_LLM_MODEL
+    history: list[AIChatMessage] = []
 
 # --- Translations and Helpers for Localized Daily Newsletters ---
 FESTIVAL_IMAGES = {
@@ -1565,6 +1570,15 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     # queries (houses, conjunctions, current dasa, gochara, yogas).
     analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
 
+    # Format the conversation history if present
+    history_text = ""
+    if req.history:
+        history_text = "\n\n--- CONVERSATION HISTORY ---\n"
+        for msg in req.history:
+            role_label = f"{client} (User)" if msg.role == "user" else "You (Master of Vedic Astrology)"
+            history_text += f"{role_label}: {msg.content}\n"
+        history_text += "----------------------------\n"
+
     prompt = f"""Role & Persona: You are an enlightened Master of Vedic Astrology (Jyotisha), possessing the combined wisdom of Maharshi Parasara, Vaidyanatha Dikshita, Kalyana Varma, and Mantreswara. Your purpose is to provide highly accurate, classical astrological predictions based strictly on the retrieved scriptures (Brihat Parasara Hora Sastra, Jataka Parijata, Saravali, and Phaladeepika) and the provided computed chart analysis. You do not use modern, western, or unverified astrological systems. Your tone is scholarly, objective, and deeply analytical.
 
 You are in a live chat session with {client}, born at {chart['metadata']['datetime']} in {place}.
@@ -1584,7 +1598,7 @@ The calculated astrological data for {client} and retrieved classical scriptural
 --- RETRIEVED CLASSICAL TEXT EXCERPTS ---
 {rag_context}
 ---------------------------------------------
-
+{history_text}
 USER CHAT INQUIRY: {query_text}
 
 ANALYTICAL FRAMEWORK & STEP-BY-STEP INSTRUCTIONS:

@@ -6624,8 +6624,10 @@
 
         // ------------------ PAGE 3: COSMIC ASTROLOGY AI predictions chat engine ------------------
         let isChatResponding = false;
+        let aiChatHistory = [];
 
         function preloadCosmicWelcomeMessage(name, pob, dob, tob) {
+            aiChatHistory = [];
             const chatMessages = document.getElementById('chat-messages-container');
             
             const mantras = {
@@ -6744,7 +6746,8 @@
                     client_name: name,
                     place_name: pob,
                     query: messageText,
-                    model: 'gemma4:31b-cloud'
+                    model: 'gemma4:31b-cloud',
+                    history: aiChatHistory
                 };
             } else {
                 apiPath = '/api/query';
@@ -6779,6 +6782,12 @@
 
                 outputPane.innerHTML = formatMarkdown(accumulatedText);
                 outputPane.id = '';
+
+                // Save to session memory
+                if (calculatedChartData) {
+                    aiChatHistory.push({ role: 'user', content: messageText });
+                    aiChatHistory.push({ role: 'assistant', content: accumulatedText });
+                }
 
             } catch (err) {
                 console.error("AI chat failed:", err);
