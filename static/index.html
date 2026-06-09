@@ -7657,7 +7657,6 @@
 
             // Restore the saved location (or default Chennai) BEFORE fetching
             // Panchangam so the first render uses the correct place.
-            const hadStoredLocation = !!localStorage.getItem('vedic_location');
             loadStoredLocation();
 
             // Restore previously chosen language (persisted in localStorage).
@@ -7671,9 +7670,10 @@
                 renderMonthlyCalendar();
             }
 
-            // First-ever visit: silently approximate location by IP (no prompt).
-            // The user can tap the header chip later for precise GPS.
-            if (!hadStoredLocation) detectLocationByIP();
+            // Force precise GPS on load (prompts for permission, overriding any
+            // stored/IP location); falls back to IP if denied or unavailable.
+            // Browsers remember the grant, so repeat loads won't re-prompt.
+            detectLocation();
 
             // Add listener to D-chart dropdown select
             const dChartSelect = document.getElementById('d-chart-select');
