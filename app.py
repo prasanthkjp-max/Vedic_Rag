@@ -18,7 +18,7 @@ from search_engine import VedicSearchEngine
 from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility
 from pdf_generator import generate_pdf_report
 from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
-from muhurtham_engine import calculate_muhurtham
+from muhurtham_engine import calculate_muhurtham, calculate_luni_solar_month_index
 from datetime import date
 from config import (
     VERSION,
@@ -862,10 +862,29 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
         # Localize Panchangam names based on lang preference
         localized_panch = get_regional_panchangam(chart, lang)
         
+        # Calculate daily specialities and Marriage Muhurtham
+        day_specialities = []
+        try:
+            res_fest = get_day_panchangam_and_festivals(dt.year, dt.month, dt.day, lon, lat, lang)
+            day_specialities = list(res_fest["specialities"])
+        except Exception as e:
+            print(f"Failed to calculate festivals for {dt.strftime('%Y-%m-%d')}: {e}")
+
+        paradigm = get_paradigm_from_lang(lang)
+        try:
+            muh_res = calculate_muhurtham(
+                f"{dt.year}-{dt.month:02d}-{dt.day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
+            )
+            if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+                day_specialities.insert(0, "Marriage Muhurtham")
+        except Exception as e:
+            print(f"Failed to calculate marriage muhurtham for {dt.year}-{dt.month:02d}-{dt.day:02d}: {e}")
+
         return {
             "date": dt.strftime("%Y-%m-%d"),
             "panchangam": localized_panch,
-            "placements": chart["placements"]
+            "placements": chart["placements"],
+            "specialities": day_specialities
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1195,7 +1214,7 @@ class AIChatRequest(BaseModel):
 
 # --- Translations and Helpers for Localized Daily Newsletters ---
 FESTIVAL_IMAGES = {
-    "Ekadashi": "lord_venkateswara.png",
+    "Ekadashi": "venkateswara_symbols.png",
     "Pradosham": "lord_shiva.png",
     "Shivaratri": "lord_shiva.png",
     "Ganesha Chaturthi": "lord_vinayaka.png",
@@ -1205,7 +1224,8 @@ FESTIVAL_IMAGES = {
     "Rama Navami": "lord_rama.png",
     "Hanuman Jayanti": "lord_hanuman.png",
     "Durga Ashtami": "goddess_durga.png",
-    "Diwali": "diya_lamp.png",
+    "Diwali": "diya.png",
+    "Marriage Muhurtham": "hindu_marriage_couple.png",
     "Pongal / Sankranti": "pongal_pot.png",
     "Vishu / Puthandu": "kalasam.png",
     "Ugadi": "kalasam.png",
@@ -1402,10 +1422,15 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
     is_pournami = "Pournami" in tithi_sunset
     is_amavasya = "Amavasya" in tithi_sunset
     
+    # Calculate synodic month index
+    sun_long = chart_sunset["placements"]["Sun"]["longitude"]
+    moon_long = chart_sunset["placements"]["Moon"]["longitude"]
+    luni_month_idx = calculate_luni_solar_month_index(sun_long, moon_long)
+    
     if is_pournami:
         specialities.append("Pournami")
     elif is_amavasya:
-        if month in [10, 11]:
+        if luni_month_idx == 6:  # Ashvina Amavasya
             specialities.append("Diwali")
         else:
             specialities.append("Amavasya")
@@ -1447,7 +1472,7 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         
     if "Tithi 8" in tithi_midnight and "Krishna" in tithi_midnight and month in [8, 9]:
         specialities.append("Janmashtami")
-    elif "Tithi 8" in tithi_midday and "Sukla" in tithi_midday and month in [9, 10]:
+    elif "Tithi 8" in tithi_midday and "Sukla" in tithi_midday and luni_month_idx == 6:
         specialities.append("Durga Ashtami")
     elif "Tithi 8" in tithi_midday:
         specialities.append("Ashtami")
@@ -1504,6 +1529,19 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         "chart_sunrise": chart_sunrise
     }
 
+def get_paradigm_from_lang(lang_code):
+    if lang_code == "ta":
+        return "TAMIL_SOLAR"
+    elif lang_code in ["te", "kn"]:
+        return "TELUGU_KANNADA_AMANTA"
+    elif lang_code == "hi":
+        return "NORTH_INDIAN_PURNIMANTA"
+    elif lang_code == "ml":
+        return "KERALA_DRIG"
+    else:
+        return "TAMIL_SOLAR"
+
+
 @app.get("/api/month-panchangam")
 def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 13.08, lon: float = 80.27):
     """
@@ -1516,10 +1554,22 @@ def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 1
         
         days_data = []
         added_festivals_prev = set()
+        paradigm = get_paradigm_from_lang(lang)
         
         for day in range(1, num_days + 1):
             res = get_day_panchangam_and_festivals(year, month, day, lon, lat, lang, added_festivals_prev)
             added_festivals_prev.update(res["specialities"])
+            
+            day_specialities = list(res["specialities"])
+            # Compute Marriage Muhurtham for this day at 06:00 AM local time
+            try:
+                muh_res = calculate_muhurtham(
+                    f"{year}-{month:02d}-{day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
+                )
+                if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+                    day_specialities.insert(0, "Marriage Muhurtham")
+            except Exception as e:
+                print(f"Failed to calculate marriage muhurtham for {year}-{month:02d}-{day:02d}: {e}")
             
             days_data.append({
                 "day": day,
@@ -1532,7 +1582,7 @@ def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 1
                 "tamil_month": res["panchangam"]["tamil_month"],
                 "tamil_year": res["panchangam"]["tamil_year"],
                 "tamil_date": res["panchangam"]["tamil_date"],
-                "specialities": res["specialities"]
+                "specialities": day_specialities
             })
             
         return {

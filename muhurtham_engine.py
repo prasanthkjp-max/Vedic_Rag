@@ -122,7 +122,7 @@ def calculate_muhurtham(timestamp_str, latitude, longitude, regional_paradigm, t
     # Compute Sidereal astrological chart
     chart = get_astrological_chart(
         local_dt.year, local_dt.month, local_dt.day, local_dt.hour, local_dt.minute,
-        longitude, latitude, "Lahiri", timezone_offset=tz_offset
+        longitude, latitude, "Lahiri", timezone_offset=tz_offset, light=True
     )
 
     tithi_num, naks_idx, yog_idx, kar_idx = get_indices_at_jd(jd, "Lahiri")

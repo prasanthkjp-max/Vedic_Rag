@@ -2024,7 +2024,6 @@
                 <button class="nav-tab active" id="nav-btn-home" onclick="navigateToPage('home')">Home (Panchangam)</button>
                 <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Astrology</button>
                 <button class="nav-tab" id="nav-btn-marriage" onclick="navigateToPage('marriage')">Marriage Matching</button>
-                <button class="nav-tab" id="nav-btn-muhurtham" onclick="navigateToPage('muhurtham')">Muhurtham Finder</button>
                 <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Astro AI Chat</button>
             </nav>
 
@@ -2917,78 +2916,6 @@
                         <button class="chat-send-btn" id="chat-send-trigger" onclick="sendAIChatMessage()">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PAGE 5: MUHURTHAM FINDER -->
-        <div class="single-page-content" id="page-muhurtham" style="display:none;">
-            <div class="card card-hero">
-                <h1 class="hero-title"><i class="fa-solid fa-clock"></i> Cosmic Muhurtham Finder</h1>
-                <p class="hero-subtitle">Calculate and filter auspicious time windows (Muhurthams) based on physical coordinates, regional calendars, and astronomical alignments.</p>
-            </div>
-
-            <div class="two-column-layout">
-                <!-- Left panel: Configuration inputs -->
-                <div class="card" style="flex: 1; min-width: 320px;">
-                    <h2 class="card-section-title"><i class="fa-solid fa-sliders"></i> Muhurtham Parameters</h2>
-                    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 14px;">
-                        
-                        <div class="input-group">
-                            <label class="input-label" for="muh-activity">Target Auspicious Activity</label>
-                            <select class="input-field" id="muh-activity">
-                                <option value="GENERAL">General Auspiciousness (General)</option>
-                                <option value="VIVAHA">Vivaha (Wedding / Marriage)</option>
-                                <option value="GRAHAPRAVESHA">Grahapravesha (Housewarming)</option>
-                                <option value="AKSHARABHYASAM">Aksharabhyasam (Education)</option>
-                                <option value="VAHAN_KHARIDI">Vahan Kharidi (Vehicle Purchase)</option>
-                            </select>
-                        </div>
-
-                        <div class="input-group">
-                            <label class="input-label" for="muh-paradigm">Regional Astrological Paradigm</label>
-                            <select class="input-field" id="muh-paradigm">
-                                <option value="TAMIL_SOLAR">Tamil Solar Calendar (Thirukanitha)</option>
-                                <option value="TELUGU_KANNADA_AMANTA">Telugu / Kannada Amanta Luni-Solar</option>
-                                <option value="NORTH_INDIAN_PURNIMANTA">North Indian Purnimanta Luni-Solar</option>
-                                <option value="KERALA_DRIG">Kerala Drig Astronomical System</option>
-                            </select>
-                        </div>
-
-                        <div class="input-group">
-                            <label class="input-label" for="muh-datetime">Date & Time (Local Timezone)</label>
-                            <input type="datetime-local" class="input-field" id="muh-datetime">
-                        </div>
-
-                        <div style="display: flex; gap: 12px;">
-                            <div class="input-group" style="flex: 1;">
-                                <label class="input-label" for="muh-lat">Latitude (°N)</label>
-                                <input type="number" step="any" class="input-field" id="muh-lat" value="13.08">
-                            </div>
-                            <div class="input-group" style="flex: 1;">
-                                <label class="input-label" for="muh-lon">Longitude (°E)</label>
-                                <input type="number" step="any" class="input-field" id="muh-lon" value="80.27">
-                            </div>
-                        </div>
-
-                        <div style="display: flex; gap: 10px;">
-                            <button class="lang-select-btn" style="flex: 1; justify-content: center; padding: 10px; font-size: 11px;" onclick="useMyLocationForMuhurtham()">
-                                <i class="fa-solid fa-location-crosshairs"></i> Get Current Location
-                            </button>
-                        </div>
-
-                        <button class="calculate-btn" style="width: 100%; margin-top: 10px; justify-content: center;" onclick="calculateMuhurthamWindow()">
-                            <i class="fa-solid fa-magnifying-glass-chart"></i> Compute Muhurtham
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Right panel: Results Display -->
-                <div class="card" style="flex: 1.5; min-width: 320px;" id="muhurtham-results-panel">
-                    <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-                        <i class="fa-solid fa-hourglass-start" style="font-size: 48px; margin-bottom: 16px; color: var(--accent-azure);"></i>
-                        <p>Configure parameters on the left and click <strong>Compute Muhurtham</strong> to view alignment results, dosham exclusions, and subha horai windows.</p>
                     </div>
                 </div>
             </div>
@@ -3979,6 +3906,10 @@
 
         function translateSpeciality(specStr) {
             if (!specStr) return "";
+            if (specStr === "Marriage Muhurtham") {
+                const trans = { ta: "திருமண முஹூர்த்தம்", te: "వివాహ ముహూర్తం", hi: "विवाह मुहूर्त", ml: "വിവാഹ മുഹൂർത്തം", kn: "ವಿವಾಹ ಮುಹೂರ್ತ" };
+                return trans[currentLang] || specStr;
+            }
             if (currentLang === 'en' && !specStr.includes("Sankranti")) return specStr;
             const translations = {
                 Pournami: { ta: "பௌர்ணமி", te: "పౌర్ణమి", hi: "पूर्णिमा", ml: "പൗർണ്ണമി", kn: "ಪೌರ್ಣಮಿ" },
@@ -4050,7 +3981,7 @@
                 return "/assets/lord_murugar.png";
             }
             const mapping = {
-                "Ekadashi": "/assets/lord_venkateswara.png",
+                "Ekadashi": "/assets/venkateswara_symbols.png",
                 "Pradosham": "/assets/lord_shiva.png",
                 "Shivaratri": "/assets/lord_shiva.png",
                 "Ganesha Chaturthi": "/assets/lord_vinayaka.png",
@@ -4060,7 +3991,8 @@
                 "Rama Navami": "/assets/lord_rama.png",
                 "Hanuman Jayanti": "/assets/lord_hanuman.png",
                 "Durga Ashtami": "/assets/goddess_durga.png",
-                "Diwali": "/assets/diya_lamp.png",
+                "Diwali": "/assets/diya.png",
+                "Marriage Muhurtham": "/assets/hindu_marriage_couple.png",
                 "Pongal / Sankranti": "/assets/pongal_pot.png",
                 "Vishu / Puthandu": "/assets/kalasam.png",
                 "Ugadi": "/assets/kalasam.png",
@@ -4323,23 +4255,16 @@
             document.getElementById('nav-btn-home').className = pageId === 'home' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-jyothisyam').className = pageId === 'jyothisyam' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-marriage').className = pageId === 'marriage' ? 'nav-tab active' : 'nav-tab';
-            document.getElementById('nav-btn-muhurtham').className = pageId === 'muhurtham' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-ai').className = pageId === 'ai' ? 'nav-tab active' : 'nav-tab';
             
             // Toggle page content blocks visibility
             document.getElementById('page-home').style.display = pageId === 'home' ? 'block' : 'none';
             document.getElementById('page-jyothisyam').style.display = pageId === 'jyothisyam' ? 'block' : 'none';
             document.getElementById('page-marriage').style.display = pageId === 'marriage' ? 'block' : 'none';
-            document.getElementById('page-muhurtham').style.display = pageId === 'muhurtham' ? 'block' : 'none';
             document.getElementById('page-ai').style.display = pageId === 'ai' ? 'block' : 'none';
             
             if (pageId === 'home') {
                 renderMonthlyCalendar();
-            }
-            if (pageId === 'muhurtham') {
-                const now = new Date();
-                const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                document.getElementById('muh-datetime').value = localISO;
             }
         }
 
@@ -4932,32 +4857,33 @@
                 const isPournami = tithi.includes("Pournami");
                 const isAmavasya = tithi.includes("Amavasya");
                 
-                if (lunarMonth === "Chaitra") {
+                const lm = (lunarMonth || "").toLowerCase().trim();
+                if (lm === "chaitra") {
                     if (isSukla && tithiNum === 1) festivals.push("Ugadi / Gudi Padwa (Telugu & Kannada New Year)");
                     if (isSukla && tithiNum === 9) festivals.push("Sri Rama Navami");
                 }
-                if (lunarMonth === "Vaisakha" && isSukla && tithiNum === 3) {
+                if ((lm === "vaisakha" || lm === "vaishakha") && isSukla && tithiNum === 3) {
                     festivals.push("Akshaya Tritiya (Auspicious day for abundance)");
                 }
-                if (lunarMonth === "Ashadha" && isPournami) {
+                if (lm === "ashadha" && isPournami) {
                     festivals.push("Guru Purnima / Vyasa Purnima");
                 }
-                if (lunarMonth === "Sravana") {
+                if (lm === "sravana" || lm === "shravana") {
                     if (!isSukla && tithiNum === 8) festivals.push("Sri Krishna Janmashtami");
                     if (isSukla && tithiNum === 15) festivals.push("Raksha Bandhan / Avani Avittam");
                 }
-                if (lunarMonth === "Bhadrapada") {
+                if (lm === "bhadrapada") {
                     if (isSukla && tithiNum === 4) festivals.push("Ganesh Chaturthi / Vinayaka Chavithi");
                 }
-                if (lunarMonth === "Asvina") {
+                if (lm === "asvina" || lm === "ashvina") {
                     if (isSukla && tithiNum === 1) festivals.push("Sharad Navratri Commencement");
                     if (isSukla && tithiNum === 9) festivals.push("Mahanavami / Ayudha Puja");
                     if (isSukla && tithiNum === 10) festivals.push("Vijayadashami / Dussehra");
                 }
-                if (lunarMonth === "Kartika") {
+                if (lm === "kartika") {
                     if (isAmavasya) festivals.push("Deepavali / Diwali (Festival of Lights)");
                 }
-                if (lunarMonth === "Phalguna" && !isSukla && tithiNum === 14) {
+                if (lm === "phalguna" && !isSukla && tithiNum === 14) {
                     festivals.push("Maha Shivaratri (The Great Night of Lord Shiva)");
                 }
                 if (festivals.length === 0) {
@@ -5392,11 +5318,24 @@
             const sysSelect = document.getElementById('panch-system-select');
             const system = sysSelect ? sysSelect.value : 'sauramana';
             
-            const festivals = getRegionalFestivals(dailyPanchangamData.panchangam, dailyPanchangamData.placements, system);
+            let festivals = getRegionalFestivals(dailyPanchangamData.panchangam, dailyPanchangamData.placements, system);
+            
+            // Append daily specialities (like Marriage Muhurtham) to the list
+            if (dailyPanchangamData.specialities && dailyPanchangamData.specialities.length > 0) {
+                // If there are actual specialities, filter out the default "Regular Lunar/Solar Day" message
+                festivals = festivals.filter(f => !f.includes("Regular Solar Day") && !f.includes("Regular Lunar Day") && !f.includes("சாதாரண") && !f.includes("సాధారణ") && !f.includes("सामान्य") && !f.includes("സാധാരണ") && !f.includes("ಸಾಮಾನ್ಯ"));
+                
+                dailyPanchangamData.specialities.forEach(spec => {
+                    const transSpec = translateSpeciality(spec);
+                    if (!festivals.includes(transSpec)) {
+                        festivals.unshift(transSpec);
+                    }
+                });
+            }
             
             let festHtml = "";
             festivals.forEach(f => {
-                const bulletColor = f.includes("No major") ? "#64748b" : "var(--accent-gold)";
+                const bulletColor = f.includes("No major") || f.includes("Regular") ? "#64748b" : "var(--accent-gold)";
                 festHtml += `<div style="margin-bottom: 6px; display: flex; align-items: start; gap: 6px;"><span style="color: ${bulletColor}; font-weight: bold;">•</span><span>${f}</span></div>`;
             });
             document.getElementById('panch-festivals-list').innerHTML = festHtml;
