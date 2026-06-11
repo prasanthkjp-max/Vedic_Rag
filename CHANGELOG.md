@@ -3,6 +3,133 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.6.2]
+
+Full-codebase audit: calculation, security, billing, prompt, and UI fixes.
+
+### Fixed — astronomy/engine (`astro_engine.py`, `muhurtham_engine.py`)
+- **Local→UT day rollover (critical).** The `% 24` wrap in the local→UT
+  conversion dropped the calendar-day borrow, so every chart born before the
+  timezone offset past midnight (e.g. before 05:30 IST) was computed a full
+  day late — wrong Moon/nakshatra/lagna/panchangam/dasa tree. The muhurtham
+  engine had the same bug (any UTC time 18:30–24:00 evaluated the next day).
+- **Weekday (vara)** is now reckoned from the local civil day and rolls back
+  before local sunrise (was UT-midnight based — wrong for evening births in
+  negative-UTC zones and feeding the Amruthathi yoga + shadbala day lords).
+- **Tamil/Malayalam solar day** now counts civil days since the sankranti
+  (with the after-sunset rule) instead of mapping the Sun's in-sign degree
+  1:1 to the day number (off by 1–2 near month end). Verified against
+  published Thai 1/Chithirai 1 dates.
+- **Shadbala**: cheshta bala elongation folded to ≤180° (values could exceed
+  the 60-virupa max); masa/varsha lords convert the Sun's degrees to elapsed
+  days (÷0.9856); Moon's paksha bala and Sun's ayana bala doubled per BPHS;
+  tribhaga bala added; saptavargiya values corrected to the BPHS series
+  (22.5/15/7.5/3.75/1.875) and moolatrikona (45) restricted to D1; Mercury
+  moolatrikona starts at 16° Virgo.
+- **Combustion** limits tighten when retrograde (Mercury 12°, Venus 8°).
+- `format_jd_to_local_time` handles negative timezone offsets (Americas) and
+  flags "(Next Day)" by comparing local civil dates.
+- `get_julian_date` applies the Gregorian correction only from 1582-10-15.
+- Kuja dosha check no longer crashes when Lagna/Moon/Venus placements are
+  missing.
+- Muhurtham: VIVAHA blockers are computed unconditionally so the
+  `activity_compatibility` matrix no longer reports a Tuesday/Bharani/Vishti
+  day as marriage-compatible when queried for another activity; Krishna
+  Prathama (tithi 16) added to the forbidden set.
+
+### Fixed — prediction layer (`prediction_engine.py`)
+- "Yoga Karaka" was declared for the Lagna lord in **every** chart (house 1
+  satisfied both the kendra and trikona condition); now requires a real
+  kendra (4/7/10) and trikona (5/9) lordship.
+- Kemadruma yoga could never fire (the Moon counted itself as its own kendra
+  occupant).
+- RAG fusion ranks dense and sparse hits within their own lists (proper RRF)
+  instead of concatenated positions that always buried sparse hits.
+- Prompt text ordinals ("1th"/"2th" from natal Moon) fixed; unparseable
+  reference dates fall back to today instead of crashing.
+
+### Fixed — security & billing (`app.py`, `config.py`)
+- `/api/local-key` rejects requests carrying forwarding headers — behind a
+  reverse proxy every request arrives from 127.0.0.1, which previously handed
+  the shared API key to any remote client.
+- Subscriptions now expire: `current_period_end` is enforced (one 30-day
+  subscription previously granted unlimited usage forever).
+- Credit check+debit is a single atomic conditional UPDATE (two concurrent
+  requests could both pass the balance check); the `MAX(0,…)` clamp that
+  silently corrupted the ledger is gone; failed operations (bad chart data,
+  PDF errors, dead AI backend before any output) **refund** the debited
+  credits.
+- `buy-credits` accepts only the advertised packages (any integer, including
+  negative, was previously priced at 799¢); transaction log + credit grant
+  are now one DB transaction.
+- Session expiry fails closed on malformed timestamps (was: +1 day grace).
+- Mock OAuth (dev mode) can no longer log into accounts created via real
+  provider verification; mock-created accounts are tagged `mock-<provider>`.
+- Signup validates email format and password length and relies on the UNIQUE
+  constraint instead of a racy check-then-insert.
+- `.api_key` is written with 0600 permissions and only a key prefix is
+  printed (stdout is typically redirected to a log).
+- `POST /api/user/charts` was broken for history charts (SQL placeholders
+  with no bindings → 500 + rolled-back insert).
+- Input validation: lat/lon/date/time ranges on chart and muhurtham requests
+  (422), bad `date_str` → 400, month-panchangam bounds (CPU-DoS guard);
+  PDF temp files are deleted after download; chat history is capped at 20
+  turns and unknown roles render as user content; the hardcoded "°N/°E"
+  hemisphere labels in prompts and the PDF derive from the sign; the 403
+  response no longer overrides a restrictive CORS configuration; several
+  handlers close their SQLite connections on error paths.
+
+### Fixed — AI streaming (`app.py`)
+- The four copy-pasted Ollama generators are one shared helper that sends the
+  `OLLAMA_API_KEY` Authorization header (cloud models previously failed only
+  on the generate path), surfaces mid-stream `{"error": …}` chunks instead of
+  silently truncating, and refunds credits when the stream dies before any
+  content.
+
+### Fixed — calendar (`app.py`)
+- Month-calendar dedup now compares against the previous day only — a
+  month-running set suppressed the Krishna-paksha Ekadashi/Pradosham/Ashtami
+  that legitimately recur ~15 days after the Sukla ones.
+- The daily endpoint double-fired every Ekadashi on the following day; the
+  follow-day rule now detects the genuine skipped-Ekadashi case (sunrise
+  tithi 10 → 12) and observes it on the Dwadashi.
+- Janmashtami / Masa Shivaratri sample the midnight **following** the civil
+  day (nishita), not the midnight at its start.
+
+### Fixed — frontend (`static/index.html`)
+- XSS: the marriage-AI stream was inserted into `innerHTML` unescaped
+  (chat/Jyothi paths already escaped); it now escapes before markdown
+  formatting.
+- "Load individual chart" from marriage results referenced non-existent
+  `in-year/month/day/hour/minute` inputs and threw before navigating; it now
+  copies `in-dob`/`in-tob`.
+- A failed chat stream left the `active-ai-typing-stream` id on the dead
+  bubble, so the next reply rendered into the previous message.
+- `calculate-chart` responses are checked for `response.ok` before being
+  treated as chart data (an error body previously poisoned
+  `calculatedChartData`).
+- Malayalam yogam list was missing Shobhana/Atiganda (all later yogas shifted
+  by two and the last two fell back to English); Malayalam Dhanu rasi was in
+  Kannada script.
+- Weekday in the birth report uses the engine's sunrise-aware vara instead of
+  a UT-midnight JD formula.
+- Italic markdown no longer pairs lone bullet asterisks across a line; the
+  language dropdown stacks vertically; missing CSS added for the
+  place-autocomplete dropdown, the typing cursor, and the `--accent-indigo` /
+  `--bg-glass-hover` variables; Kali-year prefix localized for all languages
+  in the daily panel; the dead client-supplied `model` field is no longer
+  sent.
+
+### Fixed — search/ingest (`search_engine.py`, `ingest.py`, `config.py`)
+- Searches snapshot the index under the lock (a concurrent reload could swap
+  `page_map` mid-search); one corrupt embedding BLOB no longer aborts the
+  whole index load; wrong-dimension embeddings are rejected at ingest (they
+  were stored, then silently unsearchable forever); ingest closes its DB/PDF
+  handles on error paths, sends the Ollama auth header, and honours
+  `VEDIC_EMBED_TIMEOUT`; the FTS index rebuilds when its row count diverges
+  from `pages`; the query-embedding cache and batch-embed timeout are
+  bounded.
+
 ## [1.6.1]
 
 ### Fixed

@@ -116,8 +116,10 @@
             --accent-saffron: #f97316; /* Saffron */
             --accent-violet:  #7c3aed; /* Keep violet for transits/dasas but warm it */
             --accent-purple:  #8b5cf6;
+            --accent-indigo:  #6366f1; /* referenced by tips/FAQ markup */
             --accent-teal:    #0f766e;
             --accent-ruby:    #be123c;
+            --bg-glass-hover: rgba(254, 243, 199, 0.55); /* referenced by FAQ accordion */
 
             /* ── Glow layers ── */
             --glow-blue:   rgba(234, 88, 12, 0.25);
@@ -540,6 +542,40 @@
         }
 
         .lang-dropdown.open { display: block; }
+
+        /* Place-autocomplete results (pob/m-pob/f-pob/profile-pob) — without
+           this they rendered as unstyled inline text overlapping the form. */
+        .suggestions-dropdown {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(217, 119, 6, 0.35);
+            border-radius: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 600;
+            box-shadow: 0 10px 40px rgba(217, 119, 6, 0.15);
+        }
+        .suggestions-dropdown > div {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .suggestions-dropdown > div:hover {
+            background: rgba(245, 158, 11, 0.12);
+            color: #ea580c;
+        }
+
+        /* Blinking caret shown while an AI response streams in. */
+        .typing-cursor::after {
+            content: "▌";
+            color: var(--accent-gold);
+            animation: typing-blink 1s steps(1) infinite;
+        }
+        @keyframes typing-blink { 50% { opacity: 0; } }
 
         .lang-option {
             display: block;
@@ -3711,7 +3747,7 @@
             te: ["మేషం", "వృషభం", "మిథునం", "కర్కాటకం", "సింహం", "కన్య", "తులా", "వృశ్చికం", "ధనుస్సు", "మకరం", "కుంభం", "మీన"],
             hi: ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"],
             kn: ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕಾಟಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನುಸ್ಸು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"],
-            ml: ["മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം", "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ಧനു", "മകരം", "കുംഭം", "മീനം"]
+            ml: ["മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം", "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ധനു", "മകരം", "കുംഭം", "മീനം"]
         };
 
         const NAKSHATRAS_LST = [
@@ -3861,7 +3897,7 @@
                 ta: ["விஷ்கம்பம்", "பிரீதி", "ஆயுஷ்மான்", "சௌபாக்கியம்", "சோபனம்", "அதிகண்டம்", "சுகர்மம்", "திருதி", "சூலம்", "கண்டம்", "விருத்தி", "துருவம்", "வியாகாதம்", "ஹர்ஷணம்", "வஜிரம", "சித்தி", "வியதீபாதம்", "வரியான்", "பரிகம்", "சிவம்", "சித்தம்", "சாத்தியம்", "சுபம்", "சுக்லம்", "பிரம்மா", "இந்திரன்", "வைதிருதி"],
                 te: ["విష్కంభం", "ప్రీతి", "ఆయుష్మాన్", "సౌభాగ్యం", "శోభనం", "అతిగండం", "సుకర్మం", "ధృతి", "శూలం", "గండం", "వృద్ధి", "ధ్రువం", "వ్యాఘాతం", "హర్షణం", "వజ్రం", "సిద్ధి", "వ్యతీపాతం", "వరీయాన్", "పరిఘ", "శివం", "సిద్ధ", "సాధ్యం", "శుభం", "శుక్లం", "బ్రహ్మం", "ఇంద్రం", "వైధృతి"],
                 hi: ["विष्कम्भ", "प्रीति", "आयूष्मान", "सौभाग्य", "शोभन", "अतिगण्ड", "सुकर्मा", "धृति", "शूल", "गण्ड", "वृद्धि", "ध्रुव", "व्याघात", "हर्षण", "वज्र", "सिद्धि", "व्यतीपात", "वरीयान", "परिघ", "शिव", "सिद्ध", "साध्य", "शुभ", "शुक्ल", "ब्रह्म", "इन्द्र", "वैधृति"],
-                ml: ["വിഷ്കംഭം", "പ്രീതി", "ആയുഷ്മാൻ", "സൗഭാഗ്യം", "സുകർമ്മം", "ധൃതി", "ശൂലം", "ഗണ്ഡം", "വൃദ്ധി", "ധ്രുവം", "വ്യാഘാതം", "ഹർഷണം", "വജ്രം", "സിദ്ധി", "വ്യതീപാതം", "വരിയാൻ", "പരിഘം", "ശിവം", "സിദ്ധം", "സാധ്യം", "ശുഭം", "ശുക്ലം", "ബ്രഹ്മം", "ഇന്ദ്രൻ", "വൈധൃതി"],
+                ml: ["വിഷ്കംഭം", "പ്രീതി", "ആയുഷ്മാൻ", "സൗഭാഗ്യം", "ശോഭനം", "അതിഗണ്ഡം", "സുകർമ്മം", "ധൃതി", "ശൂലം", "ഗണ്ഡം", "വൃദ്ധി", "ധ്രുവം", "വ്യാഘാതം", "ഹർഷണം", "വജ്രം", "സിദ്ധി", "വ്യതീപാതം", "വരിയാൻ", "പരിഘം", "ശിവം", "സിദ്ധം", "സാധ്യം", "ശുഭം", "ശുക്ലം", "ബ്രഹ്മം", "ഇന്ദ്രൻ", "വൈധൃതി"],
                 kn: ["ವಿಷ್ಕಂಭ", "ಪ್ರೀತಿ", "ಆಯುಷ್ಮಾನ್", "ಸೌಭಾಗ್ಯ", "ಶೋಭನ", "ಅತಿಗಂಡ", "ಸುಕರ್ಮ", "ಧೃತಿ", "ಶೂಲ", "ಗಂಡ", "ವೃದ್ಧಿ", "ಧ್ರುವ", "ವ್ಯಾಘಾತ", "ಹರ್ಷಣ", "ವಜ್ರ", "ಸಿದ್ಧಿ", "ವ್ಯತೀಪಾತ", "ವರೀಯಾನ್", "ಪರಿಘ", "ಶಿವ", "ಸಿದ್ಧ", "ಸಾಧ್ಯ", "ಶುಭ", "ಶುಕ್ಲ", "ಬ್ರಹ್ಮ", "ಇಂದ್ರ", "ವೈಧೃತಿ"]
             };
             const lower = yogStr.toLowerCase();
@@ -4272,7 +4308,9 @@
         // Language Dropdown toggles
         function toggleLangDropdown() {
             const menu = document.getElementById('lang-menu');
-            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+            // 'block' stacks the language options vertically (flex laid them
+            // out as an unintended horizontal row).
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
 
         // Change website language in real-time
@@ -5095,8 +5133,8 @@
             document.getElementById('panch-ahas').innerText = dailyPanchangamData.panchangam.ahas || "--";
             document.getElementById('panch-udayadhi').innerText = dailyPanchangamData.panchangam.udayadhi_nazhikai || "--";
             
-            const isTa = currentLang === 'ta';
-            const kPrefix = isTa ? "கலி-" : "Kali ";
+            const kPrefixesDaily = { en: "Kali ", ta: "கலி-", te: "కలి-", ml: "കലി-", kn: "ಕಲಿ-", hi: "कलि-" };
+            const kPrefix = kPrefixesDaily[currentLang] || "Kali ";
             document.getElementById('panch-kali-year').innerText = dailyPanchangamData.panchangam.kali_yuga_year ? (kPrefix + dailyPanchangamData.panchangam.kali_yuga_year) : "--";
 
             // Set Ayana and Ritu
@@ -5990,7 +6028,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
+
+                if (!response.ok) {
+                    // Don't let an error body ({detail: ...}) overwrite the
+                    // chart data — that breaks every later render with a
+                    // misleading "check coordinates" alert.
+                    let detail = `HTTP ${response.status}`;
+                    try { detail = (await response.json()).detail || detail; } catch (e) {}
+                    throw new Error(detail);
+                }
+
                 calculatedChartData = await response.json();
                 
                 // Renders table and SVG outputs with localized values!
@@ -6043,8 +6090,12 @@
             // Render Birth Metadata Grid dynamically
             const metaGrid = document.getElementById('birth-metadata-grid-rendered');
             if (metaGrid) {
-                // Determine day of week in selected language
-                const dayIdx = Math.floor(calculatedChartData.metadata.julian_date + 1.5) % 7;
+                // Determine day of week in selected language. Prefer the
+                // engine's vara (local-day + sunrise aware); the JD formula is
+                // UT-midnight based and shifts a day for pre-dawn/US births.
+                const enDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                let dayIdx = enDays.indexOf(calculatedChartData.panchangam && calculatedChartData.panchangam.day_of_week);
+                if (dayIdx < 0) dayIdx = Math.floor(calculatedChartData.metadata.julian_date + 1.5) % 7;
                 const localizedDay = weekdayLabelsFull[currentLang][dayIdx];
                 const genderVal = (calculatedChartData.metadata.gender || 'male').toLowerCase();
                 const genderTranslations = genderVal === 'female' ? {
@@ -6835,7 +6886,6 @@
                     client_name: name,
                     place_name: pob,
                     query: messageText,
-                    model: 'gemma4:31b-cloud',
                     history: aiChatHistory
                 };
             } else {
@@ -6870,7 +6920,6 @@
                 }
 
                 outputPane.innerHTML = formatMarkdown(accumulatedText);
-                outputPane.id = '';
 
                 // Calculate and update session tokens
                 const requestTokens = 5000 + estimateTokens(messageText) + estimateTokens(JSON.stringify(aiChatHistory));
@@ -6890,6 +6939,9 @@
                 console.error("AI chat failed:", err);
                 outputPane.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error communicating with Vedic RAG AI: ${err.message}</p>`;
             } finally {
+                // Always release the streaming id, even on error — otherwise
+                // the next message streams into this stale bubble.
+                outputPane.id = '';
                 isChatResponding = false;
             }
         }
@@ -6916,7 +6968,6 @@
                         chart_data: calculatedChartData,
                         client_name: name,
                         place_name: pob,
-                        model: 'gemma4:31b-cloud',
                         lang: currentLang
                     })
                 });
@@ -6953,8 +7004,10 @@
             // Format Bold (**text**)
             formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             
-            // Format Italic (*text*)
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Format Italic (*text*) — require non-space boundaries so a lone
+            // bullet asterisk ("* item") can't pair with a later one and wrap
+            // unrelated text in <em>.
+            formatted = formatted.replace(/(^|[^*])\*(?!\s)([^*\n]+?)(?<!\s)\*(?!\*)/g, '$1<em>$2</em>');
             
             // Format blockquotes / Sanskrit verses
             const lines = formatted.split('\n');
@@ -7215,21 +7268,12 @@
             const prefix = gender === 'male' ? 'm-' : 'f-';
             document.getElementById('in-name').value = document.getElementById(`in-${prefix}name`).value;
             
-            const dob = document.getElementById(`in-${prefix}dob`).value;
-            if (dob) {
-                const parts = dob.split('-');
-                document.getElementById('in-year').value = parseInt(parts[0]);
-                document.getElementById('in-month').value = parseInt(parts[1]);
-                document.getElementById('in-day').value = parseInt(parts[2]);
-            }
-            
-            const tob = document.getElementById(`in-${prefix}tob`).value;
-            if (tob) {
-                const parts = tob.split(':');
-                document.getElementById('in-hour').value = parseInt(parts[0]);
-                document.getElementById('in-minute').value = parseInt(parts[1]);
-            }
-            
+            // The birth form uses single in-dob / in-tob inputs (there are no
+            // in-year/month/day/hour/minute elements — referencing them threw
+            // and aborted this function before navigation).
+            document.getElementById('in-dob').value = document.getElementById(`in-${prefix}dob`).value;
+            document.getElementById('in-tob').value = document.getElementById(`in-${prefix}tob`).value;
+
             document.getElementById('in-lon').value = document.getElementById(`in-${prefix}lon`).value;
             document.getElementById('in-lat').value = document.getElementById(`in-${prefix}lat`).value;
             document.getElementById('in-pob').value = document.getElementById(`in-${prefix}pob`).value;
@@ -7483,8 +7527,10 @@
                         cleanText = cleanText.replace(/###\s*(Frequently Asked Questions|FAQ|அடிக்கடி கேட்கப்படும் கேள்விகள்|తరచుగా అడిగే ప్రశ్నలు|പതിവായി ചോദിക്കുന്ന ചോദ്യങ്ങൾ|ಪದೇ ಪದೇ ಕೇಳಲಾಗುವ ಪ್ರಶ್ನೆಗಳು|अक्सर पूछे जाने वाले प्रश्न).*$/i, "").trim();
                     }
                     
-                    // Render the markdown analysis text
-                    let htmlContent = cleanText
+                    // Render the markdown analysis text. Escape FIRST — the
+                    // stream is LLM output grounded in user-supplied names and
+                    // OCR text, so raw insertion into innerHTML is an XSS hole.
+                    let htmlContent = escapeHtml(cleanText)
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
                         .replace(/\n/g, '<br>');

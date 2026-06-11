@@ -10,7 +10,7 @@ import sqlite3
 import secrets
 
 # --- Version ---
-VERSION = "1.6.1"
+VERSION = "1.6.2"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,7 +91,8 @@ def connect_db(path=DB_PATH, timeout=30):
     """
     conn = sqlite3.connect(path, timeout=timeout)
     conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA busy_timeout=10000;")
+    # Keep the SQLite-level lock wait aligned with the Python-level timeout.
+    conn.execute(f"PRAGMA busy_timeout={int(timeout * 1000)};")
     conn.execute("PRAGMA synchronous=NORMAL;")
     return conn
 
@@ -137,12 +138,23 @@ def ensure_fts(conn):
         END;
         """
     )
-    if not already_existed:
-        # Populate the freshly created index from the content table. A manual
-        # INSERT..SELECT cannot be guarded for external-content tables (their
-        # rowid enumeration reflects the content table, not the index), so use
+    needs_rebuild = not already_existed
+    if already_existed:
+        # Safety net: if rows were ever inserted while the triggers were
+        # missing, the index row count diverges from the content table —
+        # rebuild to repair (cheap no-op check otherwise).
+        try:
+            n_pages = cur.execute("SELECT count(*) FROM pages").fetchone()[0]
+            n_fts = cur.execute("SELECT count(*) FROM pages_fts").fetchone()[0]
+            needs_rebuild = n_pages != n_fts
+        except Exception:
+            needs_rebuild = True
+    if needs_rebuild:
+        # Populate the index from the content table. A manual INSERT..SELECT
+        # cannot be guarded for external-content tables (their rowid
+        # enumeration reflects the content table, not the index), so use
         # FTS5's own 'rebuild' command — the canonical backfill. Thereafter the
-        # triggers keep it in sync incrementally, so this runs only once.
+        # triggers keep it in sync incrementally.
         cur.execute("INSERT INTO pages_fts(pages_fts) VALUES('rebuild')")
     conn.commit()
 
@@ -166,9 +178,12 @@ def _load_api_key():
             if existing:
                 return existing
         new_key = secrets.token_urlsafe(24)
-        with open(key_file, "w", encoding="utf-8") as f:
+        # 0600: the key must not be readable by other local users.
+        fd = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(new_key + "\n")
-        print(f"[config] Generated new API key (saved to {key_file}): {new_key}")
+        # Don't print the full secret (stdout is often redirected to a log file).
+        print(f"[config] Generated new API key (prefix {new_key[:6]}…) saved to {key_file}")
         return new_key
     except Exception:
         # Last resort: an ephemeral key. Auth stays enforced for this process.

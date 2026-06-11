@@ -152,7 +152,9 @@ def get_current_dasa(dasa_table, ref_date=None):
     elif isinstance(ref_date, datetime):
         ref_date = ref_date.date()
     elif isinstance(ref_date, str):
-        ref_date = _parse(ref_date)
+        # Fall back to today on an unparseable string rather than crashing
+        # downstream comparisons/isoformat calls with None.
+        ref_date = _parse(ref_date) or date.today()
 
     current = {
         "mahadasa": None, "antardasa": None, "pratyantardasa": None,
@@ -231,7 +233,7 @@ def analyze_gochara(natal_placements, transit_placements, ref_date=None):
         if hfm in (12, 1, 2):
             phase = {12: "rising (first 2½ years)", 1: "peak (middle 2½ years)",
                      2: "setting (last 2½ years)"}[hfm]
-            notes.append(f"Sade Sati is ACTIVE — Saturn transits the {hfm}th from natal Moon ({phase}).")
+            notes.append(f"Sade Sati is ACTIVE — Saturn transits the {_ord(hfm)} from natal Moon ({phase}).")
         elif hfm == 8:
             notes.append("Ashtama Shani — Saturn transits the 8th from natal Moon (a testing period).")
         elif hfm == 4:
@@ -241,7 +243,7 @@ def analyze_gochara(natal_placements, transit_placements, ref_date=None):
     jup = transits.get("Jupiter")
     if jup:
         if jup["house_from_moon"] in (2, 5, 7, 9, 11):
-            notes.append(f"Jupiter transits the {jup['house_from_moon']}th from natal Moon — generally favourable (Guru Bala).")
+            notes.append(f"Jupiter transits the {_ord(jup['house_from_moon'])} from natal Moon — generally favourable (Guru Bala).")
 
     return {"transits": transits, "notes": notes}
 
@@ -272,7 +274,7 @@ def detect_yogas(placements, houses):
         jm = ((placements["Jupiter"]["rasi_index"] - placements["Moon"]["rasi_index"]) % 12) + 1
         if jm in (1, 4, 7, 10):
             yogas.append({"name": "Gajakesari Yoga",
-                          "detail": f"Jupiter is in the {jm}th from the Moon (a kendra)"})
+                          "detail": f"Jupiter is in the {_ord(jm)} from the Moon (a kendra)"})
 
     # Budha-Aditya: Sun + Mercury in the same sign
     if "Sun" in placements and "Mercury" in placements:
@@ -310,11 +312,15 @@ def detect_yogas(placements, houses):
                                       "detail": f"{a} and {b} exchange signs ({RASI_SHORT[a_sign]} / {RASI_SHORT[b_sign]})"})
 
     # --- Expanded Yogas ---
-    # 1. Yoga Karaka (planet ruling both a Kendra and Trikona)
+    # 1. Yoga Karaka (planet ruling both a Kendra and Trikona). House 1 is both
+    # a kendra and a trikona, so it must not satisfy both roles by itself —
+    # otherwise every Lagna lord is falsely declared a Yoga Karaka. The classic
+    # cases (Saturn for Libra/Taurus, Mars for Cancer/Leo, Venus for Cap/Aqu)
+    # all pair a NON-lagna kendra with a trikona (or the lagna with 4/7/10).
     for planet in ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]:
         ruled_houses = [h for h, lord in lords.items() if lord == planet]
-        is_kendra = any(h in {1, 4, 7, 10} for h in ruled_houses)
-        is_trikona = any(h in {1, 5, 9} for h in ruled_houses)
+        is_kendra = any(h in {4, 7, 10} for h in ruled_houses)
+        is_trikona = any(h in {5, 9} for h in ruled_houses)
         if is_kendra and is_trikona:
             yogas.append({
                 "name": "Yoga Karaka",
@@ -466,7 +472,10 @@ def detect_yogas(placements, houses):
                 "detail": f"Planets occupy the 12th house ({', '.join(planets_12th_moon)}) from the Moon."
             })
         else:
-            kendra_planets = [p for p in GRAHAS if p in placements and p not in {"Rahu", "Ketu"} and (houses[p] in {1, 4, 7, 10} or ((placements[p]["rasi_index"] - m_rasi) % 12 + 1) in {1, 4, 7, 10})]
+            # The Moon must not count as its own kendra occupant (it is always
+            # in the 1st from itself, which made this cancellation always fire
+            # and Kemadruma unreachable).
+            kendra_planets = [p for p in GRAHAS if p in placements and p not in {"Moon", "Rahu", "Ketu"} and (houses[p] in {1, 4, 7, 10} or ((placements[p]["rasi_index"] - m_rasi) % 12 + 1) in {1, 4, 7, 10})]
             if not kendra_planets:
                 yogas.append({
                     "name": "Kemadruma Yoga",
@@ -513,7 +522,9 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
     elif isinstance(ref_date, datetime):
         ref_date = ref_date.date()
     elif isinstance(ref_date, str):
-        ref_date = _parse(ref_date)
+        # Fall back to today on an unparseable string rather than crashing
+        # downstream comparisons/isoformat calls with None.
+        ref_date = _parse(ref_date) or date.today()
     placements = chart["placements"]
     lagna_idx, houses = compute_houses(placements)
     lords = house_lords(lagna_idx)
@@ -753,19 +764,23 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
 
     scored = {}  # (book_id, page_num) -> {res, score}
     for q, vec in zip(queries, query_vectors):
-        results = []
+        dense_results, sparse_results = [], []
         try:
             if vec:
-                results.extend(search_engine.dense_search_with_vector(vec, top_k=per_query, category=category))
-            results.extend(search_engine.sparse_search(q, top_k=per_query, category=category))
+                dense_results = search_engine.dense_search_with_vector(vec, top_k=per_query, category=category)
+            sparse_results = search_engine.sparse_search(q, top_k=per_query, category=category)
         except Exception:
             continue
-        # Dedupe within a single query's combined results, keeping best rank
+        # Dedupe within a single query's results, keeping best rank. Rank dense
+        # and sparse hits within their OWN lists (proper RRF): the concatenated
+        # position would otherwise let the worst dense hit always outrank the
+        # best sparse hit.
         best_rank = {}
-        for rank, res in enumerate(results):
-            key = (res["book_id"], res["page_num"])
-            if key not in best_rank:
-                best_rank[key] = (rank, res)
+        for res_list in (dense_results, sparse_results):
+            for rank, res in enumerate(res_list):
+                key = (res["book_id"], res["page_num"])
+                if key not in best_rank or rank < best_rank[key][0]:
+                    best_rank[key] = (rank, res)
         for key, (rank, res) in best_rank.items():
             contribution = 1.0 / (1 + rank)
             if key in scored:

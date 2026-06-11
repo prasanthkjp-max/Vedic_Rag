@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import secrets
+import sqlite3
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -12,7 +13,15 @@ from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from starlette.background import BackgroundTask
+from pydantic import BaseModel, Field
+
+
+def _remove_quietly(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
 from io import BytesIO
 from search_engine import VedicSearchEngine
 from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility, calculate_luni_solar_month_index
@@ -27,6 +36,7 @@ from config import (
     STATIC_DIR,
     DEFAULT_LLM_MODEL,
     OLLAMA_HOST,
+    OLLAMA_API_KEY,
     OLLAMA_GENERATE_URL,
     LLM_STREAM_TIMEOUT,
     EMBEDDING_DIM,
@@ -107,10 +117,18 @@ async def api_key_guard(request: Request, call_next):
     ):
         supplied = request.headers.get("x-api-key") or request.query_params.get("api_key")
         if not supplied or not secrets.compare_digest(supplied, API_KEY):
+            # Echo the Origin only when it is actually allowed, instead of a
+            # blanket "*" that would override a restrictive VEDIC_CORS_ORIGINS.
+            headers = {"X-API-Key-Required": "1"}
+            origin = request.headers.get("origin")
+            if CORS_ALLOW_ORIGINS == ["*"]:
+                headers["Access-Control-Allow-Origin"] = "*"
+            elif origin and origin in CORS_ALLOW_ORIGINS:
+                headers["Access-Control-Allow-Origin"] = origin
             return JSONResponse(
                 {"detail": "Invalid or missing API key"},
                 status_code=403,
-                headers={"X-API-Key-Required": "1", "Access-Control-Allow-Origin": "*"},
+                headers=headers,
             )
     return await call_next(request)
 
@@ -351,12 +369,19 @@ def get_user_by_session(token: str):
         user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender = row
         try:
             expires_at = datetime.fromisoformat(expires_str)
-        except ValueError:
-            expires_at = datetime.utcnow() + timedelta(days=1)
+        except (ValueError, TypeError):
+            # Fail CLOSED: an unparsable expiry must not grant another day.
+            expires_at = datetime.min
         if expires_at > datetime.utcnow():
             conn = connect_db(DB_PATH)
             cursor = conn.cursor()
-            cursor.execute("SELECT status, tier FROM subscriptions WHERE user_id = ? AND status = 'active'", (user_id,))
+            # A subscription is only active while its paid period lasts —
+            # without the period check one 30-day subscription was unlimited.
+            cursor.execute(
+                "SELECT status, tier FROM subscriptions "
+                "WHERE user_id = ? AND status = 'active' AND current_period_end > ?",
+                (user_id, datetime.utcnow().isoformat()),
+            )
             sub_row = cursor.fetchone()
             conn.close()
             sub_active = bool(sub_row)
@@ -387,24 +412,40 @@ def get_user_by_session(token: str):
     return None
 
 def debit_user_credits(user_id: int, amount: int, action_type: str, details: str = None):
+    """Apply a credit delta (positive = grant/refund, negative = debit) and log it.
+
+    No MAX(0,...) clamp: clamping a debit silently corrupted the ledger (the
+    log recorded a full debit while the balance lost less). Debits should go
+    through check_credits_or_raise, which is atomic and cannot overdraw.
+    """
     conn = connect_db(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO credit_logs (user_id, amount, action_type, details)
-        VALUES (?, ?, ?, ?)
-    """, (user_id, amount, action_type, details))
-    cursor.execute("""
-        UPDATE users 
-        SET credit_balance = MAX(0, credit_balance + ?) 
-        WHERE id = ?
-    """, (amount, user_id))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO credit_logs (user_id, amount, action_type, details)
+            VALUES (?, ?, ?, ?)
+        """, (user_id, amount, action_type, details))
+        cursor.execute("""
+            UPDATE users
+            SET credit_balance = credit_balance + ?
+            WHERE id = ?
+        """, (amount, user_id))
+        conn.commit()
+    finally:
+        conn.close()
 
 def check_credits_or_raise(token: str, cost: int, action_type: str):
+    """Authenticate, then atomically check-and-debit `cost` credits.
+
+    The conditional UPDATE makes check+debit a single statement, so two
+    concurrent requests can no longer both pass a read-then-write balance
+    check (TOCTOU) and overdraw. The returned user dict carries `charged`
+    so endpoints can refund via refund_user_credits() if the work fails.
+    """
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
+    user["charged"] = 0
 
     # Allowlisted (e.g. operator) accounts skip metering entirely.
     if (user.get("email") or "").lower() in UNLIMITED_EMAILS:
@@ -413,14 +454,47 @@ def check_credits_or_raise(token: str, cost: int, action_type: str):
     if user["subscription_active"]:
         return user
 
-    if user["credit_balance"] < cost:
-        raise HTTPException(
-            status_code=402, 
-            detail=f"Insufficient credits. This operation requires {cost} credits, but you only have {user['credit_balance']} credits. Please buy more credits or subscribe."
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE users SET credit_balance = credit_balance - ? "
+            "WHERE id = ? AND credit_balance >= ?",
+            (cost, user["id"], cost),
         )
-    
-    debit_user_credits(user["id"], -cost, action_type, f"Debited {cost} credits for {action_type}")
+        if cursor.rowcount == 0:
+            conn.rollback()
+            raise HTTPException(
+                status_code=402,
+                detail=f"Insufficient credits. This operation requires {cost} credits, but you only have {user['credit_balance']} credits. Please buy more credits or subscribe."
+            )
+        cursor.execute("""
+            INSERT INTO credit_logs (user_id, amount, action_type, details)
+            VALUES (?, ?, ?, ?)
+        """, (user["id"], -cost, action_type, f"Debited {cost} credits for {action_type}"))
+        conn.commit()
+    finally:
+        conn.close()
+    user["credit_balance"] -= cost
+    user["charged"] = cost
     return user
+
+
+def refund_user_credits(user: dict, action_type: str):
+    """Return the credits debited by check_credits_or_raise after a failure.
+
+    No-op for unlimited/subscribed users (nothing was charged). Safe to call
+    multiple times: `charged` is zeroed after the refund.
+    """
+    cost = (user or {}).get("charged") or 0
+    if cost <= 0:
+        return
+    try:
+        debit_user_credits(user["id"], cost, "refund", f"Refunded {cost} credits after failed {action_type}")
+        user["charged"] = 0
+        user["credit_balance"] += cost
+    except Exception as e:
+        print(f"Failed to refund {cost} credits to user {user.get('id')}: {e}")
 
 # Pydantic Schemas for Auth/Billing
 class SignupRequest(BaseModel):
@@ -501,13 +575,65 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
 
 
 
+def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: str = "ai"):
+    """Shared streaming generator for all Ollama-backed AI endpoints.
+
+    - Sends the Authorization header when OLLAMA_API_KEY is configured (cloud
+      models), matching the search-engine embed calls.
+    - Surfaces Ollama mid-stream {"error": ...} chunks instead of silently
+      truncating the answer.
+    - Refunds the caller's debited credits if the stream fails before any
+      content was produced (the response status is already 200 by then, so a
+      refund is the only useful remediation).
+    """
+    def generator():
+        headers = {"Content-Type": "application/json"}
+        if OLLAMA_API_KEY:
+            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
+        req = urllib.request.Request(
+            OLLAMA_GENERATE_URL,
+            data=json.dumps({"model": model_name, "prompt": prompt, "stream": True}).encode("utf-8"),
+            headers=headers,
+        )
+        produced_content = False
+        try:
+            with urllib.request.urlopen(req, timeout=LLM_STREAM_TIMEOUT) as response:
+                for line in response:
+                    if not line:
+                        continue
+                    chunk = json.loads(line.decode("utf-8"))
+                    if chunk.get("error"):
+                        if not produced_content and user:
+                            refund_user_credits(user, action_type)
+                        yield f"\n\n*AI backend error: {chunk['error']}*"
+                        return
+                    text_chunk = chunk.get("response", "")
+                    if text_chunk:
+                        produced_content = True
+                        yield text_chunk
+        except Exception as e:
+            if not produced_content and user:
+                refund_user_credits(user, action_type)
+            yield f"\n\n*Error streaming from local AI backend: {e}*"
+    return generator()
+
+
 class QueryRequest(BaseModel):
     query: str
     model: str = DEFAULT_LLM_MODEL
 
 @app.get("/api/local-key")
 def get_local_key(request: Request):
-    """Get the API key if requested by a loopback client"""
+    """Get the API key if requested by a loopback client.
+
+    Behind a reverse proxy on the same machine EVERY request arrives from
+    127.0.0.1, which would hand the key to the whole internet — so any request
+    carrying a forwarding header (set by all common proxies) is rejected too.
+    """
+    if (request.headers.get("x-forwarded-for")
+            or request.headers.get("forwarded")
+            or request.headers.get("x-real-ip")):
+        raise HTTPException(status_code=403, detail="Forbidden: Local access only")
     client_host = request.client.host if request.client else ""
     if client_host not in ("127.0.0.1", "::1", "localhost"):
         raise HTTPException(status_code=403, detail="Forbidden: Local access only")
@@ -686,16 +812,20 @@ def query_rag(request: QueryRequest, raw_req: Request):
     Retrieves relevant pages and streams the AI-generated astrological answer.
     """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 25, "query")
-    
+    user = check_credits_or_raise(token, 25, "query")
+
     query_text = request.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
-    
-    # Reload engine to get latest pages
-    search_engine.reload()
-    
-    # Retrieve top 3 matching pages
-    results = search_engine.hybrid_search(query_text, top_k=3)
+
+    try:
+        # Reload engine to get latest pages
+        search_engine.reload()
+
+        # Retrieve top 3 matching pages
+        results = search_engine.hybrid_search(query_text, top_k=3)
+    except Exception as e:
+        refund_user_credits(user, "query")
+        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
     
     if not results:
         # Fallback if DB is empty
@@ -728,41 +858,19 @@ USER QUERY: {query_text}
 Provide an elegant, authoritative, and helpful answer. Start directly with the answer:
 """
 
-    def ollama_stream_generator():
-        url = OLLAMA_GENERATE_URL
-        data = {
-            "model": model_name,
-            "prompt": prompt,
-            "stream": True
-        }
-        req = urllib.request.Request(
-            url, 
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=LLM_STREAM_TIMEOUT) as response:
-                for line in response:
-                    if line:
-                        chunk = json.loads(line.decode("utf-8"))
-                        text_chunk = chunk.get("response", "")
-                        yield text_chunk
-        except Exception as e:
-            yield f"\n\n*Error streaming from local AI backend: {e}*"
-            
-    return StreamingResponse(ollama_stream_generator(), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt, model_name, user, "query"), media_type="text/event-stream")
 
 # --- Astrological & Thirukanitha Panchangam Models & Routes ---
 
 class BirthChartRequest(BaseModel):
     name: str
-    year: int
-    month: int
-    day: int
-    hour: int
-    minute: int
-    longitude: float
-    latitude: float
+    year: int = Field(ge=1, le=3000)
+    month: int = Field(ge=1, le=12)
+    day: int = Field(ge=1, le=31)
+    hour: int = Field(ge=0, le=23)
+    minute: int = Field(ge=0, le=59)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    latitude: float = Field(ge=-90.0, le=90.0)
     place_name: str
     gender: str = "male"
     ayanamsa: str = "Lahiri"
@@ -804,8 +912,8 @@ class AIMarriagePredictRequest(BaseModel):
 
 class MuhurthamRequest(BaseModel):
     timestamp: str
-    latitude: float
-    longitude: float
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
     regional_paradigm: str
     target_activity: str
 
@@ -850,13 +958,15 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
     Get daily Gochara planetary transits and localized Panchangam details.
     lat/lon default to Chennai; the frontend supplies the user's detected location.
     """
-    try:
-        if date_str:
+    if date_str:
+        try:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
-        else:
-            from datetime import date
-            dt = datetime.combine(date.today(), datetime.min.time())
-
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid date '{date_str}': use YYYY-MM-DD")
+    else:
+        from datetime import date
+        dt = datetime.combine(date.today(), datetime.min.time())
+    try:
         chart = get_astrological_chart(dt.year, dt.month, dt.day, 5, 30, lon, lat, "Lahiri")
         
         # Localize Panchangam names based on lang preference
@@ -886,6 +996,10 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
             "placements": chart["placements"],
             "specialities": day_specialities
         }
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -893,15 +1007,14 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
 def calculate_chart(req: BirthChartRequest, raw_req: Request):
     """Calculate Sidereal chart with Thirukanitha positions and 120-year Dasas"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 50, "calculate_chart")
+    user = check_credits_or_raise(token, 50, "calculate_chart")
     try:
         chart = get_astrological_chart(
             req.year, req.month, req.day, req.hour, req.minute,
             req.longitude, req.latitude, req.ayanamsa, gender=req.gender
         )
-        
+
         # Save to user history if logged in
-        user = get_user_by_session(token)
         if user:
             dob_str = f"{req.year:04d}-{req.month:02d}-{req.day:02d}"
             tob_str = f"{req.hour:02d}:{req.minute:02d}"
@@ -929,7 +1042,11 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
         return chart
     except HTTPException:
         raise
+    except ValueError as e:
+        refund_user_credits(user, "calculate_chart")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        refund_user_credits(user, "calculate_chart")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -937,7 +1054,7 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
 def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
     """Calculate and compare charts for male and female natives for marriage compatibility"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 50, "calculate_marriage")
+    user = check_credits_or_raise(token, 50, "calculate_marriage")
     try:
         male_chart = get_astrological_chart(
             req.male.year, req.male.month, req.male.day, req.male.hour, req.male.minute,
@@ -956,7 +1073,11 @@ def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
         }
     except HTTPException:
         raise
+    except ValueError as e:
+        refund_user_credits(user, "calculate_marriage")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        refund_user_credits(user, "calculate_marriage")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -964,7 +1085,7 @@ def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
 def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     """Generate ReportLab PDF and stream it for download"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 50, "download_pdf")
+    user = check_credits_or_raise(token, 50, "download_pdf")
     try:
         # Create a secure temporary file path. The client name is slugified so a
         # crafted value (e.g. "../../etc/foo") cannot escape the temp directory,
@@ -984,22 +1105,25 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
             lang=req.lang
         )
         
-        # Return the file response
+        # Return the file response; delete the temp file after it is sent so
+        # downloads don't permanently leak PDFs into /tmp.
         return FileResponse(
-            pdf_path, 
-            media_type="application/pdf", 
-            filename=f"Birth_Chart_Report_{safe_name}.pdf"
+            pdf_path,
+            media_type="application/pdf",
+            filename=f"Birth_Chart_Report_{safe_name}.pdf",
+            background=BackgroundTask(_remove_quietly, pdf_path)
         )
     except HTTPException:
         raise
     except Exception as e:
+        refund_user_credits(user, "download_pdf")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ai-predict")
 def ai_predict(req: AIPredictRequest, raw_req: Request):
     """Stream real-time Lord Ganesha Jyotishyam prediction based on chart coordinates"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 25, "ai_predict")
+    user = check_credits_or_raise(token, 25, "ai_predict")
     chart = req.chart_data
     client = req.client_name
     place = req.place_name
@@ -1017,10 +1141,24 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
 
     # Derive full interpretive analysis (houses, conjunctions, aspects, current
     # dasa/bhukti, gochara, yogas) and retrieve grounding passages from the RAG.
-    analysis_text, rag_context = build_prediction_context(chart)
+    # chart_data is client-supplied: refund + 400 on a malformed dict rather
+    # than a 500 with the 25 credits already gone.
+    try:
+        analysis_text, rag_context = build_prediction_context(chart)
+        lat_val = float(chart['metadata']['latitude'])
+        lon_val = float(chart['metadata']['longitude'])
+        coords = f"{abs(lat_val)}°{'N' if lat_val >= 0 else 'S'}, {abs(lon_val)}°{'E' if lon_val >= 0 else 'W'}"
+        birth_dt = chart['metadata']['datetime']
+        ayanamsa_name = chart['metadata']['ayanamsa_name']
+        panch = chart['panchangam']
+    except HTTPException:
+        raise
+    except Exception as e:
+        refund_user_credits(user, "ai_predict")
+        raise HTTPException(status_code=400, detail=f"Invalid chart_data: {e}")
 
     prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and master scholar.
-You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {chart['metadata']['datetime']} in {place} (Coordinates: {chart['metadata']['latitude']}°N, {chart['metadata']['longitude']}°E), using high-precision Thirukanitha sidereal coordinates with {chart['metadata']['ayanamsa_name']} Ayanamsa.
+You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {birth_dt} in {place} (Coordinates: {coords}), using high-precision Thirukanitha sidereal coordinates with {ayanamsa_name} Ayanamsa.
 
 A precise computational analysis of the chart is given below. You MUST reason from it as a real astrologer does — never from planet signs alone. Specifically: read each planet by its BHAVA (house) and house-lordship, its DIGNITY/strength (exalted, debilitated, own, combust, retrograde), its CONJUNCTIONS (combined effects of planets together), the ASPECTS (graha drishti) it gives and receives, the YOGAS formed, the CURRENT running Mahadasa & Antardasa, and the GOCHARA (current transits incl. Sade Sati). Synthesise these factors together; a result is the NET effect of all of them, not any single placement.
 
@@ -1028,8 +1166,8 @@ A precise computational analysis of the chart is given below. You MUST reason fr
 {analysis_text}
 
 --- BIRTH PANCHANGAM ---
-- Nakshatram: {chart['panchangam']['nakshatra']} | Tithi: {chart['panchangam']['tithi']} | Yogam: {chart['panchangam']['yogam']}
-- Amruthathi Yoga (birth nakshatra x weekday): {chart['panchangam']['amruthathi_yoga']} ({chart['panchangam']['amruthathi_quality']})
+- Nakshatram: {panch.get('nakshatra')} | Tithi: {panch.get('tithi')} | Yogam: {panch.get('yogam')}
+- Amruthathi Yoga (birth nakshatra x weekday): {panch.get('amruthathi_yoga')} ({panch.get('amruthathi_quality')})
 
 --- CLASSICAL TEXT REFERENCES (retrieved from Brihat Parasara Hora Sastra, Phaladeepika, Saravali, Jataka Parijata, etc.) ---
 {rag_context}
@@ -1055,36 +1193,14 @@ Using the classical rules from the retrieved texts AND standard Jyotish techniqu
 Be authoritative, compassionate, and precise. Start directly with the invocation in {target_lang}:
 """
 
-    def prediction_stream_generator():
-        url = OLLAMA_GENERATE_URL
-        data = {
-            "model": model_name,
-            "prompt": prompt,
-            "stream": True
-        }
-        req_api = urllib.request.Request(
-            url, 
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        try:
-            with urllib.request.urlopen(req_api, timeout=LLM_STREAM_TIMEOUT) as response:
-                for line in response:
-                    if line:
-                        chunk = json.loads(line.decode("utf-8"))
-                        text_chunk = chunk.get("response", "")
-                        yield text_chunk
-        except Exception as e:
-            yield f"\n\n*Error streaming from local AI backend: {e}*"
-            
-    return StreamingResponse(prediction_stream_generator(), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt, model_name, user, "ai_predict"), media_type="text/event-stream")
 
 
 @app.post("/api/ai-predict-marriage")
 def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
     """Stream real-time Lord Ganesha Jyotishyam marriage prediction using targeted marriage RAG database"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 25, "ai_predict_marriage")
+    user = check_credits_or_raise(token, 25, "ai_predict_marriage")
     male_chart = req.male_chart
     female_chart = req.female_chart
     comp = req.compatibility
@@ -1104,19 +1220,21 @@ def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
     }
     target_lang = lang_map.get(req.lang, "English")
 
-    # Build targeted marriage RAG context
-    rag_context = build_marriage_prediction_context(male_chart, female_chart, comp)
+    # Build targeted marriage RAG context. Both charts and the compatibility
+    # dict are client-supplied: refund + 400 on malformed input.
+    try:
+        rag_context = build_marriage_prediction_context(male_chart, female_chart, comp)
 
-    # Render a clean text-based comparison of both charts for prompt grounding
-    m_plac = male_chart["placements"]
-    f_plac = female_chart["placements"]
-    
-    m_lagna = m_plac["Lagna"]
-    f_lagna = f_plac["Lagna"]
-    m_moon = m_plac["Moon"]
-    f_moon = f_plac["Moon"]
-    
-    analysis_text = f"""
+        # Render a clean text-based comparison of both charts for prompt grounding
+        m_plac = male_chart["placements"]
+        f_plac = female_chart["placements"]
+
+        m_lagna = m_plac["Lagna"]
+        f_lagna = f_plac["Lagna"]
+        m_moon = m_plac["Moon"]
+        f_moon = f_plac["Moon"]
+
+        analysis_text = f"""
 --- NATIVE DETAILS ---
 Male Native: {male_name} born at {male_chart['metadata']['datetime']} in {male_place}
 Female Native: {female_name} born at {female_chart['metadata']['datetime']} in {female_place}
@@ -1133,8 +1251,13 @@ Moon Nakshatra: {female_chart['panchangam']['nakshatra']}
 
 --- VEDIC KOOTA AGREEMENT DETAILS (Score: {comp['score']}/{comp['max_score']} - {comp['percentage']}%) ---
 """
-    for key, detail in comp["details"].items():
-        analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']})\n"
+        for key, detail in comp["details"].items():
+            analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']})\n"
+    except HTTPException:
+        raise
+    except Exception as e:
+        refund_user_credits(user, "ai_predict_marriage")
+        raise HTTPException(status_code=400, detail=f"Invalid chart/compatibility data: {e}")
 
     prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and relationship matchmaker.
 You provide deep, accurate, and authoritative marriage compatibility (Vivaha Melapaka/Porutham) predictions for {male_name} and {female_name}, utilizing high-precision Thirukanitha sidereal coordinates and classical Vedic scriptures from our Vedic astrology RAG database.
@@ -1175,29 +1298,7 @@ Structure your analysis as follows:
 Be authoritative, compassionate, and precise. Start directly with the invocation:
 """
 
-    def marriage_prediction_stream_generator():
-        url = OLLAMA_GENERATE_URL
-        data = {
-            "model": model_name,
-            "prompt": prompt,
-            "stream": True
-        }
-        req_api = urllib.request.Request(
-            url, 
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        try:
-            with urllib.request.urlopen(req_api, timeout=LLM_STREAM_TIMEOUT) as response:
-                for line in response:
-                    if line:
-                        chunk = json.loads(line.decode("utf-8"))
-                        text_chunk = chunk.get("response", "")
-                        yield text_chunk
-        except Exception as e:
-            yield f"\n\n*Error streaming marriage prediction: {e}*"
-            
-    return StreamingResponse(marriage_prediction_stream_generator(), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
 
 
 class AIChatMessage(BaseModel):
@@ -1420,12 +1521,16 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
     chart_night = get_astrological_chart(year, month, day, 21, 0, lon, lat, "Lahiri", light=True)
     tithi_night = chart_night["panchangam"]["tithi"]
 
-    chart_midnight = get_astrological_chart(year, month, day, 0, 0, lon, lat, "Lahiri", light=True)
+    # "Midnight" festivals (Janmashtami's nishita, Masa Shivaratri) are defined
+    # by the tithi at the midnight FOLLOWING this day (i.e. day+1 00:00), not
+    # the midnight at the start of the civil day.
+    from datetime import date, timedelta
+    _dt_next = date(year, month, day) + timedelta(days=1)
+    chart_midnight = get_astrological_chart(_dt_next.year, _dt_next.month, _dt_next.day, 0, 0, lon, lat, "Lahiri", light=True)
     tithi_midnight = chart_midnight["panchangam"]["tithi"]
-    
+
     tithi_tomorrow_sunrise = ""
     try:
-        from datetime import date, timedelta
         dt = date(year, month, day)
         dt_tomorrow = dt + timedelta(days=1)
         chart_tomorrow = get_astrological_chart(dt_tomorrow.year, dt_tomorrow.month, dt_tomorrow.day, 5, 30, lon, lat, "Lahiri", light=True)
@@ -1452,22 +1557,20 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
     
     if _tithi_num(tithi_sunrise) == 11:
         if tithi_tomorrow_sunrise and _tithi_num(tithi_tomorrow_sunrise) == 11:
-            pass
+            pass  # two sunrises in tithi 11 — celebrate on the second day
         else:
             specialities.append("Ekadashi")
-    else:
+    elif _tithi_num(tithi_sunrise) == 12:
+        # Skipped-Ekadashi case: tithi 11 began after yesterday's sunrise and
+        # ended before today's (yesterday's sunrise tithi was 10) — observe on
+        # the Dwadashi day. (The previous rule fired when YESTERDAY's sunrise
+        # was 11, i.e. exactly when yesterday had already been marked Ekadashi,
+        # double-counting every Ekadashi on the daily endpoint.)
         try:
-            from datetime import date, timedelta
-            dt = date(year, month, day)
-            dt_yesterday = dt - timedelta(days=1)
+            dt_yesterday = date(year, month, day) - timedelta(days=1)
             chart_yesterday = get_astrological_chart(dt_yesterday.year, dt_yesterday.month, dt_yesterday.day, 5, 30, lon, lat, "Lahiri", light=True)
-            tithi_yesterday_sunrise = chart_yesterday["panchangam"]["tithi"]
-            if _tithi_num(tithi_yesterday_sunrise) == 11:
-                dt_day_before = dt - timedelta(days=2)
-                chart_day_before = get_astrological_chart(dt_day_before.year, dt_day_before.month, dt_day_before.day, 5, 30, lon, lat, "Lahiri", light=True)
-                tithi_day_before_sunrise = chart_day_before["panchangam"]["tithi"]
-                if _tithi_num(tithi_day_before_sunrise) != 11:
-                    specialities.append("Ekadashi")
+            if _tithi_num(chart_yesterday["panchangam"]["tithi"]) == 10:
+                specialities.append("Ekadashi")
         except Exception:
             pass
 
@@ -1540,6 +1643,10 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         else:
             specialities.append(f"{sun_rasi} Sankranti")
     
+    # Dedup is only meant to stop the SAME observance spilling onto two
+    # consecutive civil days, so callers should pass just the previous day's
+    # specialities. (A month-running set wrongly suppressed the second
+    # fortnight's Ekadashi/Pradosham/Ashtami ~15 days later.)
     dedup_specialities = []
     if added_festivals_prev is not None:
         for spec in specialities:
@@ -1547,10 +1654,11 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
                 dedup_specialities.append(spec)
     else:
         dedup_specialities = specialities
-        
+
     return {
         "panchangam": localized_panch,
         "specialities": dedup_specialities,
+        "specialities_all": specialities,
         "is_pournami": is_pournami,
         "is_amavasya": is_amavasya,
         "tithi_sunrise": tithi_sunrise,
@@ -1577,16 +1685,25 @@ def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 1
     lat/lon default to Chennai; the frontend supplies the user's detected location.
     """
     import calendar
+    # Bounds check: each day costs ~8 chart computations, so an absurd year or
+    # month must not become a CPU sink (or a 500 from monthrange).
+    if not (1 <= month <= 12):
+        raise HTTPException(status_code=400, detail=f"month must be 1-12, got {month}")
+    if not (1900 <= year <= 2100):
+        raise HTTPException(status_code=400, detail=f"year must be 1900-2100, got {year}")
     try:
         _, num_days = calendar.monthrange(year, month)
         
         days_data = []
+        # Only the PREVIOUS day's specialities are used for dedup — a
+        # month-running set suppressed the Krishna-paksha Ekadashi/Pradosham/
+        # Ashtami that legitimately recur ~15 days after the Sukla ones.
         added_festivals_prev = set()
         paradigm = get_paradigm_from_lang(lang)
-        
+
         for day in range(1, num_days + 1):
             res = get_day_panchangam_and_festivals(year, month, day, lon, lat, lang, added_festivals_prev)
-            added_festivals_prev.update(res["specialities"])
+            added_festivals_prev = set(res["specialities_all"])
             
             day_specialities = list(res["specialities"])
             # Compute Marriage Muhurtham for this day at 06:00 AM local time
@@ -1636,9 +1753,6 @@ def profile_update(req: ProfileUpdateRequest, request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    conn = connect_db(DB_PATH)
-    cursor = conn.cursor()
-    
     updates = []
     params = []
     if req.full_name is not None:
@@ -1663,10 +1777,13 @@ def profile_update(req: ProfileUpdateRequest, request: Request):
     if updates:
         params.append(user["id"])
         query = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
-        cursor.execute(query, tuple(params))
-        conn.commit()
-        
-    conn.close()
+        conn = connect_db(DB_PATH)
+        try:
+            conn.execute(query, tuple(params))
+            conn.commit()
+        finally:
+            conn.close()
+
     return {"status": "success"}
 
 
@@ -1678,7 +1795,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     retrieval and birth placements.
     """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    check_credits_or_raise(token, 25, "ai_predict_chat")
+    user = check_credits_or_raise(token, 25, "ai_predict_chat")
     chart = req.chart_data
     client = req.client_name
     place = req.place_name
@@ -1689,20 +1806,31 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     # user's own question is added as the first RAG query so the most relevant
     # classical rules for their inquiry are surfaced alongside the chart-derived
     # queries (houses, conjunctions, current dasa, gochara, yogas).
-    analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
+    # chart_data is client-supplied: refund + 400 on a malformed dict.
+    try:
+        analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
+        birth_dt = chart['metadata']['datetime']
+    except HTTPException:
+        raise
+    except Exception as e:
+        refund_user_credits(user, "ai_predict_chat")
+        raise HTTPException(status_code=400, detail=f"Invalid chart_data: {e}")
 
-    # Format the conversation history if present
+    # Format the conversation history if present. Cap it (most recent turns)
+    # so a client cannot grow the prompt without bound, and only honour the
+    # two known roles — anything else is rendered as user content, so a forged
+    # "assistant" variant cannot impersonate the model's own prior guidance.
     history_text = ""
     if req.history:
         history_text = "\n\n--- CONVERSATION HISTORY ---\n"
-        for msg in req.history:
-            role_label = f"{client} (User)" if msg.role == "user" else "You (Master of Vedic Astrology)"
+        for msg in req.history[-20:]:
+            role_label = "You (Master of Vedic Astrology)" if msg.role == "assistant" else f"{client} (User)"
             history_text += f"{role_label}: {msg.content}\n"
         history_text += "----------------------------\n"
 
     prompt = f"""Role & Persona: You are an enlightened Master of Vedic Astrology (Jyotisha), possessing the combined wisdom of Maharshi Parasara, Vaidyanatha Dikshita, Kalyana Varma, and Mantreswara. Your purpose is to provide highly accurate, classical astrological predictions based strictly on the retrieved scriptures (Brihat Parasara Hora Sastra, Jataka Parijata, Saravali, and Phaladeepika) and the provided computed chart analysis. You do not use modern, western, or unverified astrological systems. Your tone is scholarly, objective, and deeply analytical.
 
-You are in a live chat session with {client}, born at {chart['metadata']['datetime']} in {place}.
+You are in a live chat session with {client}, born at {birth_dt} in {place}.
 
 Input Variables Required from User: To perform this analysis, assume the user has provided the following calculated astrological data (or prompt the user for it if missing):
 - Rasi Chart (Lagna and planetary degrees).
@@ -1773,55 +1901,42 @@ OUTPUT GENERATION RULES:
 Start directly with the chat response:
 """
 
-    def chat_stream_generator():
-        url = OLLAMA_GENERATE_URL
-        data = {
-            "model": model_name,
-            "prompt": prompt,
-            "stream": True
-        }
-        req_api = urllib.request.Request(
-            url, 
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        try:
-            with urllib.request.urlopen(req_api, timeout=LLM_STREAM_TIMEOUT) as response:
-                for line in response:
-                    if line:
-                        chunk = json.loads(line.decode("utf-8"))
-                        text_chunk = chunk.get("response", "")
-                        yield text_chunk
-        except Exception as e:
-            yield f"\n\n*Error streaming chat prediction: {e}*"
+    return StreamingResponse(ollama_stream(prompt, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
 
-    return StreamingResponse(chat_stream_generator(), media_type="text/event-stream")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 @app.post("/api/auth/signup")
 def auth_signup(req: SignupRequest):
+    email = (req.email or "").strip()
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail="Invalid email address")
+    if len(req.password or "") < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
     conn = connect_db(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM users WHERE email = ?", (req.email,))
-    if cursor.fetchone():
+    try:
+        cursor = conn.cursor()
+        hashed = hash_password(req.password)
+        # create user with 100 free credits. Rely on the UNIQUE(email)
+        # constraint rather than a racy check-then-insert.
+        try:
+            cursor.execute("""
+                INSERT INTO users (email, password_hash, full_name, credit_balance, latitude, longitude, timezone, language, wants_newsletter, location_name)
+                VALUES (?, ?, ?, 100, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
+            """, (email, hashed, req.full_name))
+        except sqlite3.IntegrityError:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        user_id = cursor.lastrowid
+
+        # Log the signup bonus
+        cursor.execute("""
+            INSERT INTO credit_logs (user_id, amount, action_type, details)
+            VALUES (?, 100, 'signup_bonus', 'Initial registration credit bonus')
+        """, (user_id,))
+
+        conn.commit()
+    finally:
         conn.close()
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    hashed = hash_password(req.password)
-    # create user with 100 free credits
-    cursor.execute("""
-        INSERT INTO users (email, password_hash, full_name, credit_balance, latitude, longitude, timezone, language, wants_newsletter, location_name)
-        VALUES (?, ?, ?, 100, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
-    """, (req.email, hashed, req.full_name))
-    user_id = cursor.lastrowid
-    
-    # Log the signup bonus
-    cursor.execute("""
-        INSERT INTO credit_logs (user_id, amount, action_type, details)
-        VALUES (?, 100, 'signup_bonus', 'Initial registration credit bonus')
-    """, (user_id,))
-    
-    conn.commit()
-    conn.close()
     return {"status": "success", "message": "User registered successfully"}
 
 @app.post("/api/auth/login")
@@ -1915,9 +2030,11 @@ def _verify_facebook_token(token: str):
 
 def _mock_oauth_identity(req: "OAuthRequest"):
     """Dev-only fallback (config.ALLOW_MOCK_OAUTH). Trusts the supplied email but
-    REFUSES to log into an account that has a password or a different OAuth
-    provider — so it can never take over a real user, only create/login a
-    mock OAuth account. Off by default."""
+    REFUSES to log into any pre-existing account that wasn't itself created via
+    mock OAuth (accounts created here carry a 'mock-' provider prefix). This
+    closes the hole where a real Google-created account (oauth_provider=
+    'google', no password) could be hijacked by sending provider='google' with
+    a bogus token while mock mode is on. Off by default."""
     email = (req.email or "").strip()
     if not email:
         return None
@@ -1931,8 +2048,8 @@ def _mock_oauth_identity(req: "OAuthRequest"):
         password_hash, existing_provider = row
         if password_hash:
             return None  # real password account — never hijack via mock
-        if existing_provider and existing_provider != req.provider:
-            return None  # belongs to a different provider
+        if not (existing_provider or "").startswith("mock-"):
+            return None  # real (provider-verified) OAuth account — never hijack
     return email, req.name or email.split("@")[0]
 
 
@@ -1952,6 +2069,10 @@ def auth_oauth(req: OAuthRequest):
 
     if identity is None and ALLOW_MOCK_OAUTH:
         identity = _mock_oauth_identity(req)
+        if identity is not None:
+            # Tag mock-created accounts so they can never shadow (or later be
+            # confused with) accounts created via real provider verification.
+            provider = f"mock-{provider}"
 
     if identity is None:
         raise HTTPException(
@@ -2040,22 +2161,35 @@ def buy_credits(req: BuyCreditsRequest, request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     _require_payments_enabled()
 
+    # Only the advertised packages may be purchased — an arbitrary client
+    # integer must not set its own credit amount (or a negative one).
+    CREDIT_PACKAGES = {50: 199, 250: 799}  # amount -> price in cents
+    if req.amount not in CREDIT_PACKAGES:
+        raise HTTPException(status_code=400, detail=f"Unknown credit package: {req.amount}")
+
     # Simulate Stripe transaction
     payment_intent = "pi_" + secrets.token_hex(16)
-    cents = 199 if req.amount == 50 else 799
-    
+    cents = CREDIT_PACKAGES[req.amount]
+
+    # Log the transaction and grant the credits in ONE transaction so a crash
+    # cannot leave a paid-but-uncredited (or credited-but-unlogged) record.
     conn = connect_db(DB_PATH)
-    cursor = conn.cursor()
-    # Log transaction
-    cursor.execute("""
-        INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status)
-        VALUES (?, ?, ?, 'usd', 'succeeded')
-    """, (user["id"], payment_intent, cents))
-    conn.commit()
-    conn.close()
-    
-    debit_user_credits(user["id"], req.amount, "purchase", f"Purchased {req.amount} credits via simulated payment")
-    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status)
+            VALUES (?, ?, ?, 'usd', 'succeeded')
+        """, (user["id"], payment_intent, cents))
+        cursor.execute("""
+            INSERT INTO credit_logs (user_id, amount, action_type, details)
+            VALUES (?, ?, 'purchase', ?)
+        """, (user["id"], req.amount, f"Purchased {req.amount} credits via simulated payment"))
+        cursor.execute("UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+                       (req.amount, user["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+
     return {"status": "success", "added_credits": req.amount}
 
 @app.post("/api/billing/subscribe")
@@ -2141,14 +2275,15 @@ def update_profile_birth_info(req: BirthProfileUpdate, request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     conn = connect_db(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE users 
-        SET full_name = ?, dob = ?, tob = ?, location_name = ?, latitude = ?, longitude = ?, gender = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """, (req.full_name, req.dob, req.tob, req.location_name, req.latitude, req.longitude, req.gender, user["id"]))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("""
+            UPDATE users
+            SET full_name = ?, dob = ?, tob = ?, location_name = ?, latitude = ?, longitude = ?, gender = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (req.full_name, req.dob, req.tob, req.location_name, req.latitude, req.longitude, req.gender, user["id"]))
+        conn.commit()
+    finally:
+        conn.close()
     return {"status": "success"}
 
 @app.get("/api/user/charts")
@@ -2195,19 +2330,18 @@ def save_user_chart(req: UserChartSave, request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     conn = connect_db(DB_PATH)
-    cursor = conn.cursor()
-    
-    if req.id:
-        # Update existing
-        cursor.execute("""
-            UPDATE user_charts
-            SET name = ?, dob = ?, tob = ?, pob = ?, latitude = ?, longitude = ?, gender = ?, ayanamsa = ?, chart_style = ?, is_saved = ?
-            WHERE id = ? AND user_id = ?
-        """, (req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved, req.id, user["id"]))
-        conn.commit()
-        conn.close()
-        return {"status": "success", "id": req.id}
-    else:
+    try:
+        cursor = conn.cursor()
+
+        if req.id:
+            # Update existing
+            cursor.execute("""
+                UPDATE user_charts
+                SET name = ?, dob = ?, tob = ?, pob = ?, latitude = ?, longitude = ?, gender = ?, ayanamsa = ?, chart_style = ?, is_saved = ?
+                WHERE id = ? AND user_id = ?
+            """, (req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved, req.id, user["id"]))
+            conn.commit()
+            return {"status": "success", "id": req.id}
         # Insert new
         cursor.execute("""
             INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved)
@@ -2218,18 +2352,19 @@ def save_user_chart(req: UserChartSave, request: Request):
         # Enforce max 50 history (is_saved = 0) details
         if req.is_saved == 0:
             cursor.execute("""
-                SELECT id FROM user_charts 
+                SELECT id FROM user_charts
                 WHERE user_id = ? AND is_saved = 0
                 ORDER BY created_at DESC
-            """)
+            """, (user["id"],))
             histories = cursor.fetchall()
             if len(histories) > 50:
                 to_delete = [h[0] for h in histories[50:]]
                 cursor.execute(f"DELETE FROM user_charts WHERE id IN ({','.join('?' * len(to_delete))})", to_delete)
         
         conn.commit()
-        conn.close()
         return {"status": "success", "id": new_id}
+    finally:
+        conn.close()
 
 @app.delete("/api/user/charts/{chart_id}")
 def delete_user_chart(chart_id: int, request: Request):

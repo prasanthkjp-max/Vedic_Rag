@@ -35,7 +35,7 @@ VIVAHA_APPROVED_NAKSHATRAS = {
 # ── Tithis that are *always* forbidden for Vivaha ─────────────────────────────
 # Riktha Tithis: 4, 9, 14 (both Paksha); also Amavasya(30), Prathama(1), Ashtami(8/23)
 VIVAHA_FORBIDDEN_TITHI_NUMS = {
-    1,          # Prathama (1st) – inauspicious start energy
+    1, 16,      # Prathama (1st) of both pakshas – inauspicious start energy
     4, 19,      # Chaturthi Riktha (Sukla 4 = 4, Krishna 4 = 19)
     8, 23,      # Ashtami – challenging energy
     9, 24,      # Navami Riktha
@@ -46,7 +46,9 @@ VIVAHA_FORBIDDEN_TITHI_NUMS = {
 
 # ── Bhadra / Vishti Karana index list ─────────────────────────────────────────
 # Vishti (Bhadra) Karana indices: in the 60-karana cycle, Vishti occurs at
-# positions 7,14,21,28,35,42,49 (0-indexed) — i.e. every 7th beginning from 7.
+# positions 7,14,21,28,35,42,49 AND 56 (0-indexed) — every 7th beginning from 7.
+# Index 56 IS Vishti per the engine's karana mapping (KARANAS[(n-1)%7+1]); the
+# four fixed karanas occupy 0 and 57-59 only.
 def is_vishti_karana(kar_idx: int) -> bool:
     """Return True when the current Karana is Vishti (Bhadra)."""
     return (kar_idx % 7) == 0 and kar_idx != 0
@@ -181,9 +183,11 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
     # ── Localise ────────────────────────────────────────────────────────────
     tz_offset  = get_timezone_offset(longitude, latitude)
     local_dt   = utc_dt + timedelta(hours=tz_offset)
-    dec_hour   = local_dt.hour + local_dt.minute / 60.0 + local_dt.second / 3600.0
-    ut_hour    = (dec_hour - tz_offset) % 24.0
-    jd         = get_julian_date(local_dt.year, local_dt.month, local_dt.day, ut_hour)
+    # Build the JD straight from the UTC datetime. (Reconstructing it from the
+    # localised date with a %24-wrapped hour shifted the JD a full day whenever
+    # the local civil date differed from the UTC date.)
+    dec_hour_ut = utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0
+    jd          = get_julian_date(utc_dt.year, utc_dt.month, utc_dt.day, dec_hour_ut)
 
     # ── Sidereal chart (light mode) ─────────────────────────────────────────
     chart = get_astrological_chart(
@@ -206,7 +210,8 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
     sun_long         = placements["Sun"]["longitude"]
     moon_long        = placements["Moon"]["longitude"]
     lagna_rasi_idx   = placements["Lagna"]["rasi_index"]
-    day_idx          = math.floor(jd + 1.5) % 7   # 0=Sun … 6=Sat
+    # 0=Sun … 6=Sat — weekday of the LOCAL civil day (jd is UT-based)
+    day_idx          = math.floor(jd + tz_offset / 24.0 + 1.5) % 7
 
     active_doshams   = []
 
@@ -220,7 +225,12 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
     nakshatra_blocked     = False
     combustion_blocked    = False
 
-    if target_activity == "VIVAHA":
+    # The VIVAHA blockers are computed UNCONDITIONALLY (they are cheap) so the
+    # activity_compatibility matrix below reports a truthful VIVAHA verdict even
+    # when the caller asked about a different activity. Previously these flags
+    # stayed False unless target_activity == "VIVAHA", so e.g. a GENERAL query
+    # reported a Tuesday/Bharani/Vishti day as VIVAHA-compatible.
+    if True:
 
         # ── 0. Kari Naal (Tamil-solar tradition only) ────────────────────────────
         if regional_paradigm == "TAMIL_SOLAR":
@@ -314,7 +324,7 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
     pitru_paksha_blocked = False
     holashtak_blocked = False
 
-    if target_activity == "VIVAHA":
+    if True:  # computed unconditionally so the VIVAHA matrix entry is truthful
         # Synodic month index (using Julian date for robust conjunction search)
         luni_month_idx = calculate_luni_solar_month_index(sun_long, moon_long, jd=jd)
 

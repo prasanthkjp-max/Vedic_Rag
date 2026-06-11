@@ -1079,7 +1079,10 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         (gender_label, gender_local),
         (labels["day_of_week"], day_local),
         (labels["place"], translated_place),
-        (labels["coords"], f"{chart_data['metadata']['latitude']}\u00b0N, {chart_data['metadata']['longitude']}\u00b0E"),
+        # Derive hemisphere letters from the sign (a hardcoded N/E printed
+        # "-33.86\u00b0N" for southern/western charts).
+        (labels["coords"], f"{abs(chart_data['metadata']['latitude'])}\u00b0{'N' if chart_data['metadata']['latitude'] >= 0 else 'S'}, "
+                           f"{abs(chart_data['metadata']['longitude'])}\u00b0{'E' if chart_data['metadata']['longitude'] >= 0 else 'W'}"),
         (lmt_label, chart_data['panchangam']['lmt']),
         (offset_label, f"GMT {chart_data['metadata']['timezone']}"),
         (labels["ayanamsa"], f"{chart_data['metadata']['ayanamsa_name']} ({chart_data['metadata']['ayanamsa_dms']})")
