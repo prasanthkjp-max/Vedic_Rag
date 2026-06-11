@@ -21,6 +21,8 @@ from config import (
     DB_PATH,
     EMBEDDING_MODEL,
     EMBEDDING_DIM,
+    EMBED_TIMEOUT,
+    OLLAMA_API_KEY,
     OLLAMA_EMBED_URL as OLLAMA_URL,
     connect_db,
     ensure_fts,
@@ -69,23 +71,30 @@ def get_ollama_embedding(text):
         "model": EMBEDDING_MODEL,
         "prompt": text
     }
+    headers = {"Content-Type": "application/json"}
+    if OLLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
     req = urllib.request.Request(
-        OLLAMA_URL, 
+        OLLAMA_URL,
         data=json.dumps(data).encode("utf-8"),
-        headers={"Content-Type": "application/json"}
+        headers=headers
     )
-    
+
     # Retry logic
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with urllib.request.urlopen(req, timeout=EMBED_TIMEOUT) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
                 embedding = res_data.get("embedding", [])
-                if embedding:
+                # A wrong-dimension vector would be stored, then silently
+                # dropped by the search index forever — treat it as a failure.
+                if embedding and len(embedding) == EMBEDDING_DIM:
                     return embedding
+                print(f"Embedding has wrong dimension ({len(embedding)} != {EMBEDDING_DIM})")
         except Exception as e:
             if attempt == 2:
                 print(f"Error calling Ollama embedding API: {e}")
+        if attempt < 2:
             time.sleep(1)
 
     # Signal failure so the page is left unindexed and retried next run, rather
@@ -101,6 +110,8 @@ def process_page(book_id, pdf_path, page_num):
     """
     Worker function to render, OCR, and embed a single page
     """
+    conn = None
+    doc = None
     try:
         # Connect to DB locally in thread to avoid threading issues
         conn = connect_db(DB_PATH)
@@ -109,9 +120,8 @@ def process_page(book_id, pdf_path, page_num):
         # Check if page is already indexed (Resume Support)
         cursor.execute("SELECT id FROM pages WHERE book_id = ? AND page_num = ?", (book_id, page_num))
         if cursor.fetchone() is not None:
-            conn.close()
             return page_num, "SKIPPED", 0
-            
+
         # 1. Render page to high-res image
         doc = fitz.open(pdf_path)
         page = doc.load_page(page_num)
@@ -119,19 +129,15 @@ def process_page(book_id, pdf_path, page_num):
         mat = fitz.Matrix(zoom, zoom)
         pix = page.get_pixmap(matrix=mat)
         img = Image.open(BytesIO(pix.tobytes("png")))
-        
+
         # 2. Run Tesseract OCR (Sanskrit + English)
         config = "--oem 3 --psm 3"
         raw_text = pytesseract.image_to_string(img, lang="san+eng", config=config)
-        doc.close()
-        
+
         if not raw_text.strip():
-            # If OCR returned empty, check if we can fall back to embedded text layer
-            doc = fitz.open(pdf_path)
-            page = doc.load_page(page_num)
+            # If OCR returned empty, fall back to the embedded text layer
             raw_text = page.get_text()
-            doc.close()
-            
+
         # 3. Generate Vector Embedding
         # If the page is empty, embed a simple placeholder to prevent errors
         embed_prompt = raw_text.strip() if raw_text.strip() else f"Book page {page_num}"
@@ -140,7 +146,6 @@ def process_page(book_id, pdf_path, page_num):
         # If embedding failed, leave the page unindexed so it is retried on the
         # next run instead of being permanently stored as a zero vector.
         if embedding is None:
-            conn.close()
             return page_num, "ERROR: embedding failed (will retry next run)", 0
 
         # 4. Save to Database
@@ -149,13 +154,19 @@ def process_page(book_id, pdf_path, page_num):
         INSERT INTO pages (book_id, page_num, raw_text, embedding)
         VALUES (?, ?, ?, ?)
         """, (book_id, page_num, raw_text, blob))
-        
+
         conn.commit()
-        conn.close()
-        
+
         return page_num, "OK", len(raw_text)
     except Exception as e:
         return page_num, f"ERROR: {e}", 0
+    finally:
+        # Always release the WAL connection and PDF handle, even on error paths
+        # — leaked connections from worker threads can keep the DB busy.
+        if doc is not None:
+            doc.close()
+        if conn is not None:
+            conn.close()
 
 def ingest_book(book_filename):
     print(f"\n==================================================")
@@ -235,7 +246,9 @@ def main():
         print(f"Books directory not found: {BOOKS_DIR}")
         sys.exit(1)
         
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:  # DB_PATH may be a bare filename (cwd)
+        os.makedirs(db_dir, exist_ok=True)
     init_db()
     
     books = [f for f in os.listdir(BOOKS_DIR) if f.endswith(".pdf")]

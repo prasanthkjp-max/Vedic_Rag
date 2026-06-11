@@ -31,6 +31,7 @@ class VedicSearchEngine:
         # caching makes repeated/identical queries (common across predictions)
         # effectively free.
         self._embed_cache = {}
+        self._embed_cache_max = 512  # bound memory across the process lifetime
         self.load_index()
         # Build/sync the FTS5 keyword index once at startup (idempotent).
         try:
@@ -41,6 +42,13 @@ class VedicSearchEngine:
                 conn.close()
         except Exception as e:
             print(f"FTS index setup skipped: {e}")
+
+    def _cache_embedding(self, text, embedding):
+        """Insert into the query-embedding cache, evicting oldest entries when full."""
+        if len(self._embed_cache) >= self._embed_cache_max:
+            # dicts preserve insertion order; drop the oldest entry (approx. FIFO).
+            self._embed_cache.pop(next(iter(self._embed_cache)))
+        self._embed_cache[text] = embedding
 
     def get_ollama_embedding(self, text):
         """Generate an embedding using the local Ollama instance.
@@ -69,8 +77,10 @@ class VedicSearchEngine:
                 res_data = json.loads(response.read().decode("utf-8"))
                 embedding = res_data.get("embedding", [])
                 if embedding and len(embedding) == EMBEDDING_DIM:
-                    self._embed_cache[text] = embedding
-                return embedding if embedding else None
+                    self._cache_embedding(text, embedding)
+                    return embedding
+                # Wrong-dimension vectors are failures too, per the docstring.
+                return None
         except Exception as e:
             print(f"Error generating embedding in search engine: {e}")
             return None
@@ -105,8 +115,9 @@ class VedicSearchEngine:
             headers=headers,
         )
         try:
-            # Scale the timeout with batch size (serial CPU embedding).
-            timeout = EMBED_TIMEOUT * max(1, len(to_embed))
+            # Scale the timeout with batch size (serial CPU embedding), but cap
+            # it so a huge batch can't block a request thread indefinitely.
+            timeout = min(EMBED_TIMEOUT * max(1, len(to_embed)), 120)
             with urllib.request.urlopen(req, timeout=timeout) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
                 embeddings = res_data.get("embeddings", []) or []
@@ -114,7 +125,7 @@ class VedicSearchEngine:
                 if emb and len(emb) == EMBEDDING_DIM:
                     pos = to_embed_idx[j]
                     results[pos] = emb
-                    self._embed_cache[to_embed[j]] = emb
+                    self._cache_embedding(to_embed[j], emb)
         except Exception as e:
             print(f"Error generating batch embeddings: {e}")
             # Leave the uncached entries as None; callers fall back to sparse.
@@ -157,10 +168,16 @@ class VedicSearchEngine:
                 for row in rows:
                     book_id, page_num, raw_text, emb_blob = row
 
-                    # Deserialization of binary float BLOB
+                    # Deserialization of binary float BLOB. Guard per row so one
+                    # corrupt/truncated blob skips that page instead of aborting
+                    # the whole index load.
                     if emb_blob:
-                        num_floats = len(emb_blob) // 4  # float is 4 bytes
-                        embedding = list(struct.unpack(f"{num_floats}f", emb_blob))
+                        try:
+                            num_floats = len(emb_blob) // 4  # float is 4 bytes
+                            embedding = list(struct.unpack(f"{num_floats}f", emb_blob[: num_floats * 4]))
+                        except struct.error as e:
+                            print(f"Skipping corrupt embedding (book {book_id}, page {page_num}): {e}")
+                            continue
 
                         # Ensure embedding has the expected dimensions
                         if len(embedding) == EMBEDDING_DIM:
@@ -219,7 +236,12 @@ class VedicSearchEngine:
 
     def dense_search_with_vector(self, query_vector, top_k=10, category=None):
         """Cosine-similarity search from a precomputed query embedding."""
-        if self.embeddings is None or len(self.page_map) == 0:
+        # Snapshot the index under the lock so a concurrent reload() can't swap
+        # page_map out from under the similarity matrix mid-search.
+        with self._lock:
+            embeddings = self.embeddings
+            page_map = self.page_map
+        if embeddings is None or len(page_map) == 0:
             return []
         if not query_vector or len(query_vector) != EMBEDDING_DIM:
             return []
@@ -230,10 +252,10 @@ class VedicSearchEngine:
             query_np = query_np / query_norm
 
         # Calculate dot product (cosine similarity of normalized vectors)
-        similarities = np.dot(self.embeddings, query_np)
+        similarities = np.dot(embeddings, query_np)
 
         if category == "marriage":
-            for idx, page in enumerate(self.page_map):
+            for idx, page in enumerate(page_map):
                 if not page.get("is_marriage"):
                     similarities[idx] = -1.0
 
@@ -243,9 +265,9 @@ class VedicSearchEngine:
         results = []
         for idx in top_indices:
             score = float(similarities[idx])
-            if category == "marriage" and not self.page_map[idx].get("is_marriage"):
+            if category == "marriage" and not page_map[idx].get("is_marriage"):
                 continue
-            page_info = self.page_map[idx].copy()
+            page_info = page_map[idx].copy()
             page_info["score"] = score
             page_info["type"] = "dense"
             results.append(page_info)

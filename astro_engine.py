@@ -95,12 +95,20 @@ NAKSHATRA_DASA_LORDS = [
 ]
 
 def get_julian_date(year, month, day, hour):
-    """Calculate Julian Date (JD) from Gregorian Date/Time in Universal Time (UT)"""
+    """Calculate Julian Date (JD) from Calendar Date/Time in Universal Time (UT).
+
+    Applies the Gregorian correction only from 1582-10-15 onward; earlier dates
+    are treated as Julian-calendar dates (Meeus), matching jd_to_date_string.
+    """
+    is_gregorian = (year, month, day) >= (1582, 10, 15)
     if month <= 2:
         year -= 1
         month += 12
-    A = math.floor(year / 100)
-    B = 2 - A + math.floor(A / 4)
+    if is_gregorian:
+        A = math.floor(year / 100)
+        B = 2 - A + math.floor(A / 4)
+    else:
+        B = 0
     JD = math.floor(365.25 * (year + 4716)) + math.floor(30.6001 * (month + 1)) + day + B - 1524.5
     JD += hour / 24.0
     return JD
@@ -311,6 +319,44 @@ def calculate_luni_solar_month_index(sun_long, moon_long, jd=None, ayanamsa_name
     sun_at_new_moon = (sun_long - days_since_new_moon * 0.9856) % 360.0
     sign_at_new_moon = math.floor(sun_at_new_moon / 30.0) % 12
     return (sign_at_new_moon + 1) % 12
+
+def calculate_solar_month_day(JD, sun_sidereal_long, timezone_offset=5.5, ayanamsa_name="Lahiri"):
+    """
+    Civil day number (1-based) within the sidereal solar month: the count of
+    local calendar days since the sankranti (the instant the Sun entered the
+    current sign). Solar months run 29-32 civil days, so the Sun's in-sign
+    degree is NOT a 1:1 proxy for the day number (off by 1-2 near month end).
+    Falls back to the degree approximation if Swiss Ephemeris is unavailable.
+    """
+    target = math.floor(sun_sidereal_long / 30.0) * 30.0
+    deg_into = (sun_sidereal_long - target) % 30.0
+    try:
+        lo = JD - (deg_into / 0.9856) - 2.0  # safely before the sankranti
+        hi = JD
+        for _ in range(40):
+            mid = (lo + hi) / 2.0
+            T_mid = (mid - 2451545.0) / 36525.0
+            ayan = get_ayanamsa(T_mid, ayanamsa_name, JD=mid)
+            s_res, _ = swe.calc_ut(mid, swe.SUN)
+            s_long = (s_res[0] - ayan) % 360.0
+            if (s_long - target) % 360.0 < 180.0:
+                hi = mid  # already past the crossing
+            else:
+                lo = mid
+        sankranti_jd = hi
+        # Compare local civil day numbers (+0.5 aligns noon-based JD to midnight)
+        day_now = math.floor(JD + timezone_offset / 24.0 + 0.5)
+        sank_local = sankranti_jd + timezone_offset / 24.0
+        day_sankranti = math.floor(sank_local + 0.5)
+        sank_hour = ((sank_local + 0.5) % 1.0) * 24.0
+        # Tamil sankramana rule: if the Sun enters the sign after sunset (~18h),
+        # the month begins on the following civil day.
+        if sank_hour >= 18.0:
+            day_sankranti += 1
+        return max(1, int(day_now - day_sankranti) + 1)
+    except Exception:
+        return math.floor(deg_into) + 1
+
 
 def get_regional_panchangam(chart, lang_code):
     """
@@ -1104,7 +1150,7 @@ def calculate_ashtakavarga(sidereal_positions, sidereal_lagna):
         "prastara": prastara
     }
 
-def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_hour, sunrise_hours, sunset_hours):
+def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_hour, sunrise_hours, sunset_hours, timezone_offset=0.0):
     """
     Calculate the 6-fold planetary strength (Shadbala / Shatbalam) for the 7 classical planets
     with 100% precision according to the Brihat Parashara Hora Shastra (BPHS).
@@ -1214,7 +1260,7 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         if p == "Sun" and sign_idx == 4 and deg <= 20.0: return True
         if p == "Moon" and sign_idx == 1 and 3.0 <= deg <= 30.0: return True
         if p == "Mars" and sign_idx == 0 and deg <= 12.0: return True
-        if p == "Mercury" and sign_idx == 5 and 15.0 <= deg <= 20.0: return True
+        if p == "Mercury" and sign_idx == 5 and 16.0 <= deg <= 20.0: return True
         if p == "Jupiter" and sign_idx == 8 and deg <= 10.0: return True
         if p == "Venus" and sign_idx == 6 and deg <= 15.0: return True
         if p == "Saturn" and sign_idx == 10 and deg <= 20.0: return True
@@ -1231,8 +1277,12 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
     moon_sun_diff = (moon_long - sun_long) % 360.0
     is_shukla_paksha = moon_sun_diff < 180.0
     
-    # Classify weekday lords and horadhipati
-    day_idx = math.floor(JD + 1.5) % 7
+    # Classify weekday lords and horadhipati. The vara follows the LOCAL civil
+    # day (JD is UT-based) and rolls back before local sunrise, matching the
+    # main chart's day_of_week.
+    day_idx = math.floor(JD + timezone_offset / 24.0 + 1.5) % 7
+    if local_hour < sunrise_hours:
+        day_idx = (day_idx - 1) % 7
     dina_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[day_idx]
     
     # Hora Lord
@@ -1243,16 +1293,21 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
     hora_lord_idx = seq[(start_seq_idx + hora_idx) % 7]
     hora_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[hora_lord_idx]
     
-    # Month Lord (Masa Lord) and Year Lord (Varsha Lord)
-    masa_day_idx = math.floor(JD - (sun_long % 30.0) + 1.5) % 7
-    varsha_day_idx = math.floor(JD - (sun_long % 360.0) + 1.5) % 7
+    # Month Lord (Masa Lord) and Year Lord (Varsha Lord): weekday lord of the
+    # day the solar month/year began. The Sun moves ~0.9856°/day, so its
+    # progress in degrees must be converted to elapsed DAYS before subtracting.
+    MEAN_SOLAR_MOTION = 0.9856  # degrees per day
+    local_jd = JD + timezone_offset / 24.0
+    masa_day_idx = math.floor(local_jd - (sun_long % 30.0) / MEAN_SOLAR_MOTION + 1.5) % 7
+    varsha_day_idx = math.floor(local_jd - (sun_long % 360.0) / MEAN_SOLAR_MOTION + 1.5) % 7
     masa_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[masa_day_idx]
     varsha_lord_name = {0: "Sun", 1: "Moon", 2: "Mars", 3: "Mercury", 4: "Jupiter", 5: "Venus", 6: "Saturn"}[varsha_day_idx]
 
-    # Helper to calculate Panchadha Sambandha points
-    def get_relation_points(p1, p2, sign_idx, deg):
+    # Helper to calculate Panchadha Sambandha points. Moolatrikona (45) applies
+    # only in the Rasi (D1) chart per BPHS; vargas score own-sign (30).
+    def get_relation_points(p1, p2, sign_idx, deg, in_rasi=False):
         if p1 == p2:
-            return 45.0 if is_moolatrikona(p1, sign_idx, deg) else 30.0
+            return 45.0 if (in_rasi and is_moolatrikona(p1, sign_idx, deg)) else 30.0
             
         nat = NATURAL_RELATIONS[p1].get(p2, "Neutral")
         
@@ -1268,12 +1323,13 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         else: # Enemy
             rel = "Sama" if is_temp_friend else "Adhi Shatru"
             
+        # Standard BPHS Saptavargaja values (virupas)
         return {
-            "Adhi Mitra": 20.0,
+            "Adhi Mitra": 22.5,
             "Mitra": 15.0,
-            "Sama": 10.0,
-            "Shatru": 4.0,
-            "Adhi Shatru": 2.0
+            "Sama": 7.5,
+            "Shatru": 3.75,
+            "Adhi Shatru": 1.875
         }[rel]
 
     # Compute Saptavargiya Bala
@@ -1286,7 +1342,7 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
             v_sign = planet_vargas[p][d]
             v_lord = SIGN_LORDS[v_sign]
             d_deg = deg_d1 if d == 0 else 0.0
-            points = get_relation_points(p, v_lord, v_sign, d_deg)
+            points = get_relation_points(p, v_lord, v_sign, d_deg, in_rasi=(d == 0))
             total_sv += points
         saptavargiya_bala[p] = total_sv
 
@@ -1397,12 +1453,29 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         ratio = moon_sun_diff / 180.0 if is_shukla_paksha else (360.0 - moon_sun_diff) / 180.0
         pak_val = ratio * 60.0
         paksha_bala = pak_val if is_benefic else (60.0 - pak_val)
-        
+        if p == "Moon":
+            paksha_bala *= 2.0  # BPHS: the Moon's paksha bala is doubled
+
         varsha_points = 15.0 if p == varsha_lord_name else 0.0
         masa_points = 30.0 if p == masa_lord_name else 0.0
         dina_points = 45.0 if p == dina_lord_name else 0.0
         hora_points = 60.0 if p == hora_lord_name else 0.0
-        
+
+        # Tribhaga bala: lord of the current third of the day (Mercury/Sun/
+        # Saturn) or night (Moon/Venus/Mars) gets 60; Jupiter always gets 60.
+        tribhaga_points = 60.0 if p == "Jupiter" else 0.0
+        day_len = (sunset_hours - sunrise_hours) % 24.0 or 12.0
+        night_len = 24.0 - day_len
+        if sunrise_hours <= local_hour < sunset_hours:
+            third = min(int((local_hour - sunrise_hours) / (day_len / 3.0)), 2)
+            tribhaga_lord = ["Mercury", "Sun", "Saturn"][third]
+        else:
+            since_sunset = (local_hour - sunset_hours) % 24.0
+            third = min(int(since_sunset / (night_len / 3.0)), 2)
+            tribhaga_lord = ["Moon", "Venus", "Mars"][third]
+        if p == tribhaga_lord:
+            tribhaga_points = 60.0
+
         kranti_rad = math.asin(math.sin(math.radians(pos)) * math.sin(math.radians(E)))
         kranti_deg = math.degrees(kranti_rad)
         if p in ["Sun", "Mars", "Jupiter", "Venus"]:
@@ -1412,14 +1485,18 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
         else: # Mercury
             ayana_val = 30.0 + 1.28 * abs(kranti_deg)
         ayana_bala = max(0.0, min(60.0, ayana_val))
-        
-        kala_bala = day_night_bala + paksha_bala + varsha_points + masa_points + dina_points + hora_points + ayana_bala
-        
+        if p == "Sun":
+            ayana_bala *= 2.0  # BPHS: the Sun's ayana bala is doubled
+
+        kala_bala = day_night_bala + paksha_bala + tribhaga_points + varsha_points + masa_points + dina_points + hora_points + ayana_bala
+
         # --- D. Cheshta Bala (Motional) ---
         if p in ["Sun", "Moon"]:
             cheshta_bala = 45.0
         else:
             diff_sun = abs(pos - sun_long) % 360.0
+            if diff_sun > 180.0:
+                diff_sun = 360.0 - diff_sun  # fold elongation to 0..180
             if p in ["Mercury", "Venus"]:
                 cheshta_bala = 60.0 if is_retro else 30.0
             else:
@@ -1499,12 +1576,13 @@ def calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_plac
     return shadbala_result
 
 def format_jd_to_local_time(jd, jd_sunrise, timezone_offset=5.5):
-    hour_ut = ((jd + 0.5) % 1.0) * 24.0
-    hour_local = hour_ut + timezone_offset
-    
-    is_next_day = (jd - jd_sunrise >= 1.0) or (hour_local >= 24.0)
-    
-    hour_local = hour_local % 24.0
+    # Work in local-time day numbers so negative offsets (Americas) borrow the
+    # date correctly; +0.5 aligns the JD (noon-based) to local midnight.
+    local = jd + timezone_offset / 24.0
+    local_ref = jd_sunrise + timezone_offset / 24.0
+    is_next_day = math.floor(local + 0.5) > math.floor(local_ref + 0.5)
+
+    hour_local = ((local + 0.5) % 1.0) * 24.0
     h = math.floor(hour_local)
     m = math.floor((hour_local - h) * 60)
     
@@ -1690,8 +1768,11 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     if timezone_offset is None:
         timezone_offset = get_timezone_offset(longitude, latitude)
     local_decimal_hour = hour + (minute / 60.0)
-    ut_hour = (local_decimal_hour - timezone_offset) % 24.0
-    
+    # Do NOT wrap with % 24: when the local->UT conversion crosses midnight the
+    # calendar day must shift too. get_julian_date handles negative/overflowing
+    # hours via JD += hour/24, so passing e.g. -4.5 lands on the previous UT day.
+    ut_hour = local_decimal_hour - timezone_offset
+
     # Compute Julian Date
     JD = get_julian_date(year, month, day, ut_hour)
     T = (JD - 2451545.0) / 36525.0
@@ -1751,7 +1832,13 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
                 "Venus": 10.0,
                 "Saturn": 15.0
             }
-            if angular_distance <= combustion_limits[planet]:
+            limit = combustion_limits[planet]
+            # Classical limits tighten when retrograde: Mercury 12°, Venus 8°.
+            if is_retrograde and planet == "Mercury":
+                limit = 12.0
+            elif is_retrograde and planet == "Venus":
+                limit = 8.0
+            if angular_distance <= limit:
                 is_combust = True
         
         # D9 Navamsha calculation
@@ -1947,7 +2034,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     )
     
     tamil_year, tamil_month = get_tamil_year_month(JD, sidereal_positions["Sun"], gregorian_year=year)
-    tamil_day = math.floor(sidereal_positions["Sun"] % 30.0) + 1
+    tamil_day = calculate_solar_month_day(JD, sidereal_positions["Sun"], timezone_offset, ayanamsa_name)
     tamil_date = f"{tamil_month} {tamil_day}"
     
     # 8. Compute 120-Year Vimshottari Dasas (skipped in light mode)
@@ -2037,8 +2124,14 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     # Kali Yuga Year
     kali_yuga_year = year + 3101
     
-    # Day of Week index (0 = Sunday, 1 = Monday, ...)
-    day_idx = math.floor(JD + 1.5) % 7
+    # Day of Week index (0 = Sunday, 1 = Monday, ...). The vara is reckoned from
+    # the LOCAL civil date (JD is UT-based, so shift by the timezone), and rolls
+    # back one day for births before local sunrise (the Vedic day runs
+    # sunrise-to-sunrise, not midnight-to-midnight).
+    local_civil_decimal_hour = hour + (minute / 60.0)
+    day_idx = math.floor(JD + timezone_offset / 24.0 + 1.5) % 7
+    if local_civil_decimal_hour < sunrise_hours:
+        day_idx = (day_idx - 1) % 7
     day_of_week_en = DAYS_OF_WEEK["en"][day_idx]
 
     # Amruthathi yoga (birth-nakshatra x weekday: Siddha/Amrita/Subha/Varjya/Nasha/Dagdha/Marana)
@@ -2060,7 +2153,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     else:
         local_decimal_hour = hour + (minute / 60.0)
         is_daytime = sunrise_hours <= local_decimal_hour <= sunset_hours
-        shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_decimal_hour, sunrise_hours, sunset_hours)
+        shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_decimal_hour, sunrise_hours, sunset_hours, timezone_offset=timezone_offset)
 
     return {
         "metadata": {
@@ -2507,9 +2600,9 @@ def calculate_marriage_compatibility(male_chart, female_chart):
         moon_rasi = placements.get("Moon", {}).get("rasi_index")
         venus_rasi = placements.get("Venus", {}).get("rasi_index")
         
-        if mars_rasi is None:
-            return {"has_dosha": False, "details": "No Mars position data", "points": {}}
-            
+        if None in (mars_rasi, lagna_rasi, moon_rasi, venus_rasi):
+            return {"has_dosha": False, "details": "Incomplete placement data", "points": {}}
+
         h_lagna = (mars_rasi - lagna_rasi) % 12 + 1
         h_moon = (mars_rasi - moon_rasi) % 12 + 1
         h_venus = (mars_rasi - venus_rasi) % 12 + 1
