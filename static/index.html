@@ -3776,7 +3776,7 @@
             ta: { upto: "வரை", then: "பிறகு" },
             te: { upto: "వరకు", then: "ఆపై" },
             ml: { upto: "വരെ", then: "പിന്നീട്" },
-            kn: { upto: "ವರೆಗೆ", then: "ನन्तर" },
+            kn: { upto: "ವರೆಗೆ", then: "ನಂತರ" },
             hi: { upto: "तक", then: "फिर" }
         };
 
@@ -3821,6 +3821,21 @@
         }
 
         // Real-time on-the-fly translations for astrological terms
+        // Longest-substring match of a canonical English name within `value`.
+        // Longest wins so "Vaidhriti" maps to itself instead of being swallowed
+        // by the substring "dhriti" (and "Atiganda" over "ganda", etc.).
+        // Shared by the panchangam value translators below. Returns -1 if none.
+        function matchCanonIndex(names, value) {
+            const lower = (value || '').toLowerCase();
+            let idx = -1, best = 0;
+            for (let i = 0; i < names.length; i++) {
+                if (names[i] && names[i].length > best && lower.includes(names[i])) {
+                    best = names[i].length; idx = i;
+                }
+            }
+            return idx;
+        }
+
         function translateTithi(tithiStr) {
             if (!tithiStr) return "";
             if (currentLang === 'en') return tithiStr;
@@ -3874,14 +3889,8 @@
                 ml: ["അശ്വതി", "ഭരണി", "കാർത്തിക", "രോഹണി", "മകയിരം", "തിരുവാതിര", "പുണർതം", "പൂയം", "ആയില്യം", "മകം", "പൂരം", "ഉത്രം", "അത്തം", "ചിത്ര", "ചോതി", "വിശാഖം", "അനിഴം", "തൃക്കേട്ട", "മൂലം", "പൂരാടം", "ഉത്രാടം", "തിരുവോണം", "അവിട്ടം", "ചതയം", "പൂരുരുട്ടാതി", "ഉത്രട്ടാതി", "രേവതി"],
                 kn: ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಖಾ", "ಪೂರ್ವಾಫಾಲ್ಗುಣಿ", "ಉತ್ತರಾಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖಾ", "ಅನುರಾಧಾ", "ಜ್ಯೇಷ್ಠಾ", "ಮೂಲಾ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠಾ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರಪದ", "ಉತ್ತರಾಭಾದ್ರಪದ", "ರೇವತಿ"]
             };
-            const lower = nakStr.toLowerCase();
-            let idx = enNaks.findIndex(name => lower.includes(name));
-            if (idx === -1) {
-                if (lower.includes("chitra")) idx = 13;
-                else if (lower.includes("mula")) idx = 18;
-                else if (lower.includes("swati")) idx = 14;
-                else return nakStr;
-            }
+            const idx = matchCanonIndex(enNaks, nakStr);
+            if (idx === -1) return nakStr;
             return (translations[currentLang] && translations[currentLang][idx]) || nakStr;
         }
 
@@ -3900,8 +3909,7 @@
                 ml: ["വിഷ്കംഭം", "പ്രീതി", "ആയുഷ്മാൻ", "സൗഭാഗ്യം", "ശോഭനം", "അതിഗണ്ഡം", "സുകർമ്മം", "ധൃതി", "ശൂലം", "ഗണ്ഡം", "വൃദ്ധി", "ധ്രുവം", "വ്യാഘാതം", "ഹർഷണം", "വജ്രം", "സിദ്ധി", "വ്യതീപാതം", "വരിയാൻ", "പരിഘം", "ശിവം", "സിദ്ധം", "സാധ്യം", "ശുഭം", "ശുക്ലം", "ബ്രഹ്മം", "ഇന്ദ്രൻ", "വൈധൃതി"],
                 kn: ["ವಿಷ್ಕಂಭ", "ಪ್ರೀತಿ", "ಆಯುಷ್ಮಾನ್", "ಸೌಭಾಗ್ಯ", "ಶೋಭನ", "ಅತಿಗಂಡ", "ಸುಕರ್ಮ", "ಧೃತಿ", "ಶೂಲ", "ಗಂಡ", "ವೃದ್ಧಿ", "ಧ್ರುವ", "ವ್ಯಾಘಾತ", "ಹರ್ಷಣ", "ವಜ್ರ", "ಸಿದ್ಧಿ", "ವ್ಯತೀಪಾತ", "ವರೀಯಾನ್", "ಪರಿಘ", "ಶಿವ", "ಸಿದ್ಧ", "ಸಾಧ್ಯ", "ಶುಭ", "ಶುಕ್ಲ", "ಬ್ರಹ್ಮ", "ಇಂದ್ರ", "ವೈಧೃತಿ"]
             };
-            const lower = yogStr.toLowerCase();
-            const idx = enYogams.findIndex(name => lower.includes(name));
+            const idx = matchCanonIndex(enYogams, yogStr);
             if (idx === -1) return yogStr;
             return (translations[currentLang] && translations[currentLang][idx]) || yogStr;
         }
@@ -3934,8 +3942,7 @@
                 ml: ["കിംസ്തുഘ്നം", "ബവം", "ബാലവം", "കൗലവം", "തൈതിലം", "ഗരജം", "വണിജം", "വിഷ്ടി", "ശകുനി", "ചതുഷ്പാദം", "നാഗം"],
                 kn: ["ಕಿಂಸ್ತುಘ್ನ", "ಬವ", "ಬಾಲವ", "ಕೌಲವ", "ತೈತಿಲ", "ಗರ", "ವಣಿಜ", "ವಿಷ್ಟಿ", "ಶಕುನಿ", "ಚತುಷ್ಪಾದ", "ನಾಗ"]
             };
-            const lower = karStr.toLowerCase();
-            const idx = enKaranas.findIndex(name => lower.includes(name));
+            const idx = matchCanonIndex(enKaranas, karStr);
             if (idx === -1) return karStr;
             return (translations[currentLang] && translations[currentLang][idx]) || karStr;
         }
@@ -5647,8 +5654,8 @@
                 en: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
                 ta: ["ஞா", "தி", "செ", "பு", "வி", "வெ", "ச"],
                 te: ["ఆ", "సో", "మం", "బు", "గు", "శు", "శ"],
-                ml: ["ஞാ", "തി", "ചൊ", "ബു", "വ്യാ", "വെ", "ശ"],
-                kn: ["ಭಾ", "ಸೋ", "ಮಂ", "ಬು", "ಗು", "ಶు", "ಶ"],
+                ml: ["ഞാ", "തി", "ചൊ", "ബു", "വ്യാ", "വെ", "ശ"],
+                kn: ["ಭಾ", "ಸೋ", "ಮಂ", "ಬು", "ಗು", "ಶು", "ಶ"],
                 hi: ["र", "सो", "म", "बु", "गु", "शु", "श"]
             };
             const labels = weekdayLabels[currentLang] || weekdayLabels.en;
@@ -7196,7 +7203,7 @@
             const planets = {
                 en: { Sun: "Sun", Moon: "Moon", Mars: "Mars", Mercury: "Mercury", Jupiter: "Jupiter", Venus: "Venus", Saturn: "Saturn" },
                 ta: { Sun: "சூரியன்", Moon: "சந்திரன்", Mars: "செவ்வாய்", Mercury: "புதன்", Jupiter: "குரு", Venus: "சுக்கிரன்", Saturn: "சனி" },
-                te: { Sun: "సూర్యుడు", Moon: "చంద్రుడు", Mars: "కుజుడు", Mercury: "బుధుడు", Jupiter: "గురుడు", Venus: "शुక్రుడు", Saturn: "శని" },
+                te: { Sun: "సూర్యుడు", Moon: "చంద్రుడు", Mars: "కుజుడు", Mercury: "బుధుడు", Jupiter: "గురుడు", Venus: "శుక్రుడు", Saturn: "శని" },
                 ml: { Sun: "സൂര്യൻ", Moon: "ചന്ദ്രൻ", Mars: "ചൊവ്വ", Mercury: "ബുധൻ", Jupiter: "വ്യാഴം", Venus: "ശുക്രൻ", Saturn: "ശനി" },
                 kn: { Sun: "ಸೂರ್ಯ", Moon: "ಚಂದ್ರ", Mars: "ಮಂಗಳ", Mercury: "ಬುಧ", Jupiter: "ಗುರು", Venus: "ಶುಕ್ರ", Saturn: "ಶನಿ" },
                 hi: { Sun: "सूर्य", Moon: "चन्द्र", Mars: "मंगल", Mercury: "बुध", Jupiter: "बृहस्पति", Venus: "शुक्र", Saturn: "शनि" }
