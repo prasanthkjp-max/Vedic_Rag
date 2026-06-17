@@ -48,14 +48,14 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.8.4"
+VERSION = "1.8.5"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("VEDIC_DB_PATH", os.path.join(BASE_DIR, "vedic_astrology_rag.db"))
-BOOKS_DIR = os.environ.get(
-    "VEDIC_BOOKS_DIR", "/home/prasanth/.openclaw/workspace/vedic_astrology_books"
-)
+# Repo-relative default so a fresh checkout works without a foreign absolute
+# path; override with VEDIC_BOOKS_DIR for a real corpus location.
+BOOKS_DIR = os.environ.get("VEDIC_BOOKS_DIR", os.path.join(BASE_DIR, "books"))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # --- Ollama ---

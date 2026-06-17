@@ -86,6 +86,9 @@ check("match: unknown -> -1", _match_canon_idx(YOGAM["en"], "Nonsense") == -1)
 import app
 from config import connect_db
 
+check("liveness: /api/live reports alive (no deps)", app.liveness_probe()["status"] == "alive")
+check("liveness: /api/live is an open (no-key) path", "/api/live" in app._OPEN_API_PATHS)
+
 check("safe_slug: neutralises traversal", ".." not in app._safe_slug("../../etc/foo"))
 check("safe_slug: empty -> fallback", app._safe_slug("") == "chart")
 check("tithi_num: exact parse", app._tithi_num("Sukla Paksha Prathama (Tithi 1)") == 1)

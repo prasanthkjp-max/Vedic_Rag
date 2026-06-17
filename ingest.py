@@ -27,11 +27,14 @@ from config import (
     OLLAMA_EMBED_URL as OLLAMA_URL,
     connect_db,
     ensure_fts,
+    _env_int,
 )
 
 logger = logging.getLogger("vedic.ingest")
 
-NUM_THREADS = 4  # Matches the 4 CPU cores
+# Default to the host's core count (the original hardcoded 4 was wrong on any
+# other machine); override with VEDIC_INGEST_THREADS.
+NUM_THREADS = _env_int("VEDIC_INGEST_THREADS", os.cpu_count() or 4)
 
 def init_db():
     conn = connect_db(DB_PATH)
