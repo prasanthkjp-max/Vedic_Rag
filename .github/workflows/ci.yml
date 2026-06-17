@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # Keep test output clean and isolate the DB from anything real.
+      VEDIC_LOG_LEVEL: ERROR
+      VEDIC_DB_PATH: /tmp/ci_vedic.db
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Import check (the whole app loads)
+        run: python -c "import app; print('import OK')"
+
+      - name: Deterministic unit tests
+        run: python test_unit.py
+
+      - name: Muhurtham engine rules
+        run: python test_muhurtham_engine.py
+
+      - name: i18n single-source sync guard
+        run: python test_i18n_sync.py
+
+      - name: Frontend JS syntax check
+        run: python tools/check_js.py

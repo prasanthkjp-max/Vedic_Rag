@@ -45,9 +45,14 @@ Most `test_*translation*.py` verify that per-language UI **label IDs** translate
 (and that English values don't leak into other languages). They pass through the
 API-key gate because the frontend auto-bootstraps the key on localhost — see Auth.
 
-Pure-engine (no server/browser) checks: `test_muhurtham_engine.py` (marriage
-muhurtham rules) and `test_i18n_sync.py` (the `translations.py` single-source
-guard). Run them standalone (`python3 test_<name>.py`, exit 0/1).
+Pure-engine (no server/browser) checks: `test_unit.py` (dasa boundaries,
+muhurtham guards, longest-match value lookup, `_safe_slug`/`_tithi_num`, and the
+credit debit→refund round-trip against an isolated temp DB), `test_muhurtham_engine.py`
+(marriage muhurtham rules) and `test_i18n_sync.py` (the `translations.py`
+single-source guard). Run them standalone (`python3 test_<name>.py`, exit 0/1).
+**CI** (`.github/workflows/ci.yml`) runs these three plus an `import app` check
+and `tools/check_js.py` (node `--check` over the inline `<script>` blocks) on
+every push/PR — no browser needed.
 
 The panchangam exposes the **27 nitya yogas** (Sun+Moon `yogam`) only; the older
 Tamil Amruthathi/Anandadi day-yoga (nakshatra × weekday) has been removed

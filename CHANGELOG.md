@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.4]
+
+Robustness — CI & deterministic tests (Group D).
+
+### Added
+- **`.github/workflows/ci.yml`** — runs on every push/PR (no browser/Chrome
+  needed): installs `requirements.txt`, an `import app` smoke check, the three
+  pure-Python suites (`test_unit.py`, `test_muhurtham_engine.py`,
+  `test_i18n_sync.py`), and `tools/check_js.py`.
+- **`test_unit.py`** — 28 deterministic assertions over the high-risk pure
+  logic: `get_current_dasa` window/boundary/fallback behaviour, the muhurtham
+  `is_vishti_karana` edges and unknown-paradigm/activity guards, the
+  longest-match value lookup (the Vaidhriti regression and Atiganda/ganda
+  collision), `_safe_slug`/`_tithi_num`, and the credit debit→refund round-trip
+  (including the 402 out-of-credits path) against an isolated temp DB.
+- **`tools/check_js.py`** — `node --check` over the inline `<script>` blocks in
+  `static/index.html`; the cheap guard that a frontend edit didn't break JS
+  syntax.
+
 ## [1.8.3]
 
 Robustness — frontend resilience (Group C, `static/index.html`).
