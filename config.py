@@ -9,8 +9,26 @@ import os
 import sqlite3
 import secrets
 
+
+def _env_int(name, default):
+    """Parse an int env var, falling back to `default` on a missing/bad value.
+
+    A bare int(os.environ[...]) would raise ValueError at import time for a typo
+    like VEDIC_EMBED_DIM=768x and take the whole app (and ingest) down with a
+    raw traceback. Degrade gracefully and warn instead.
+    """
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        print(f"[config] WARNING: {name}={raw!r} is not an integer; using default {default}")
+        return default
+
+
 # --- Version ---
-VERSION = "1.8.0"
+VERSION = "1.8.1"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,14 +47,14 @@ OLLAMA_GENERATE_URL = f"{OLLAMA_HOST}/api/generate"
 
 # --- Models ---
 EMBEDDING_MODEL = os.environ.get("VEDIC_EMBED_MODEL", "nomic-embed-text")
-EMBEDDING_DIM = int(os.environ.get("VEDIC_EMBED_DIM", "768"))
+EMBEDDING_DIM = _env_int("VEDIC_EMBED_DIM", 768)
 DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", "gemma4:31b-cloud")
 
 # --- Timeouts (seconds) ---
 # Embedding calls are quick; LLM generation streams can run for minutes,
 # especially on a cold cloud model, so keep that generous.
-EMBED_TIMEOUT = int(os.environ.get("VEDIC_EMBED_TIMEOUT", "15"))
-LLM_STREAM_TIMEOUT = int(os.environ.get("VEDIC_LLM_TIMEOUT", "300"))
+EMBED_TIMEOUT = _env_int("VEDIC_EMBED_TIMEOUT", 15)
+LLM_STREAM_TIMEOUT = _env_int("VEDIC_LLM_TIMEOUT", 300)
 
 # --- OAuth / social login ---
 # The /api/auth/oauth endpoint verifies the provider token server-side and
