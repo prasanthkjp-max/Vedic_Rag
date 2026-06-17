@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.1]
+
+Robustness — input validation & config resilience (Group A of the robustness pass).
+
+### Fixed
+- **Config no longer crashes the app on a bad env var.** `VEDIC_EMBED_DIM`,
+  `VEDIC_EMBED_TIMEOUT`, `VEDIC_LLM_TIMEOUT` are parsed via a new `_env_int`
+  helper that warns and falls back to the default instead of raising
+  `ValueError` at import (which previously took down the server, ingest, and
+  diagnostics with a raw traceback).
+- **Categorical inputs are now allow-listed** with `typing.Literal`, so a bad
+  value gets a clean 422 instead of a downstream 500 — or, for the muhurtham
+  paradigm, a silently *permissive* verdict. Constrained: `ayanamsa`, `gender`,
+  `visual_style`/`chart_style`, `lang`, `regional_paradigm`, `target_activity`,
+  `tier`, and the chat message `role`, across the request bodies and the GET
+  `/api/muhurtham` query params.
+- **Defense in depth in the engine:** `calculate_muhurtham` now raises
+  `ValueError` on an unknown `regional_paradigm`/`target_activity` (previously
+  they fell through every `if/elif` with no `else` and returned
+  `VIVAHA: true`). The muhurtham API handlers already map that to 400.
+- **String length caps** (`Field(max_length=…)`) on prompt- and DB-bound
+  free-text fields (`name`, `place_name`, `client_name`, `query`, chat
+  `content`, `full_name`, `location_name`, tokens, …) and a 50-item cap on chat
+  `history`, bounding prompt size, memory, and stored data.
+
 ## [1.8.0]
 
 Removed the Amruthathi (Anandadi) day-yoga entirely; the panchangam now exposes

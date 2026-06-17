@@ -9,6 +9,14 @@ from astro_engine import (
     NAKSHATRAS
 )
 
+# ── Accepted categorical inputs (validated at the top of calculate_muhurtham) ──
+VALID_PARADIGMS = {
+    "TAMIL_SOLAR", "TELUGU_KANNADA_AMANTA", "NORTH_INDIAN_PURNIMANTA", "KERALA_DRIG",
+}
+VALID_ACTIVITIES = {
+    "GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI",
+}
+
 # ── Nitya Yogam first-ghati blocks (9 malefic yogams) ──────────────────────────
 MALEFIC_YOGAS_GHATIS = {
     "Vishkumbha": 5,    # 2 hrs
@@ -165,6 +173,19 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
      10.  Panchaka Rahita classification
      11.  Agni Kartari (scissor Lagna affliction)
     """
+    # ── Validate categorical inputs ─────────────────────────────────────────
+    # Defense in depth: an unrecognised paradigm/activity would otherwise fall
+    # through every `if/elif` block (no `else`) and yield a FALSELY auspicious
+    # verdict. Reject loudly so the API layer returns 400 instead.
+    if regional_paradigm not in VALID_PARADIGMS:
+        raise ValueError(
+            f"Unknown regional_paradigm {regional_paradigm!r}; expected one of {sorted(VALID_PARADIGMS)}"
+        )
+    if target_activity not in VALID_ACTIVITIES:
+        raise ValueError(
+            f"Unknown target_activity {target_activity!r}; expected one of {sorted(VALID_ACTIVITIES)}"
+        )
+
     # ── Timestamp parsing ───────────────────────────────────────────────────
     orig_ts = timestamp_str
     ts = timestamp_str.rstrip("Z")

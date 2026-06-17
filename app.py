@@ -15,6 +15,21 @@ from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
+from typing import Literal
+
+# --- Allowed categorical values (clean 422 instead of a downstream 500 or, for
+# the muhurtham paradigm, a silently permissive verdict) ---
+LangCode = Literal["en", "ta", "te", "ml", "kn", "hi"]
+AyanamsaName = Literal["Lahiri", "Raman", "KP", "DP", "Tropical"]
+VisualStyle = Literal["south", "north"]
+Gender = Literal["male", "female"]
+RegionalParadigm = Literal[
+    "TAMIL_SOLAR", "TELUGU_KANNADA_AMANTA", "NORTH_INDIAN_PURNIMANTA", "KERALA_DRIG"
+]
+TargetActivity = Literal[
+    "GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI"
+]
+Tier = Literal["monthly", "annual"]
 
 
 def _remove_quietly(path):
@@ -498,25 +513,25 @@ def refund_user_credits(user: dict, action_type: str):
 
 # Pydantic Schemas for Auth/Billing
 class SignupRequest(BaseModel):
-    email: str
-    password: str
-    full_name: str
+    email: str = Field(max_length=320)
+    password: str = Field(max_length=512)
+    full_name: str = Field(max_length=200)
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: str = Field(max_length=320)
+    password: str = Field(max_length=512)
 
 class OAuthRequest(BaseModel):
-    provider: str
-    email: str
-    name: str
-    token: str
+    provider: str = Field(max_length=32)
+    email: str = Field(max_length=320)
+    name: str = Field(max_length=200)
+    token: str = Field(max_length=8192)
 
 class BuyCreditsRequest(BaseModel):
     amount: int
 
 class SubscribeRequest(BaseModel):
-    tier: str
+    tier: Tier
 
 
 # Initialize Search Engine
@@ -619,7 +634,7 @@ def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: 
 
 
 class QueryRequest(BaseModel):
-    query: str
+    query: str = Field(max_length=4000)
     model: str = DEFAULT_LLM_MODEL
 
 @app.get("/api/local-key")
@@ -863,7 +878,7 @@ Provide an elegant, authoritative, and helpful answer. Start directly with the a
 # --- Astrological & Thirukanitha Panchangam Models & Routes ---
 
 class BirthChartRequest(BaseModel):
-    name: str
+    name: str = Field(max_length=200)
     year: int = Field(ge=1, le=3000)
     month: int = Field(ge=1, le=12)
     day: int = Field(ge=1, le=31)
@@ -871,26 +886,28 @@ class BirthChartRequest(BaseModel):
     minute: int = Field(ge=0, le=59)
     longitude: float = Field(ge=-180.0, le=180.0)
     latitude: float = Field(ge=-90.0, le=90.0)
-    place_name: str
-    gender: str = "male"
-    ayanamsa: str = "Lahiri"
-    system: str = "Parashara"
-    timing: str = "Vimshottari"
-    visual_style: str = "south"
+    place_name: str = Field(max_length=200)
+    gender: Gender = "male"
+    ayanamsa: AyanamsaName = "Lahiri"
+    # system/timing are accepted for forward-compat but unused by the backend
+    # (the chart is always Parashara/Vimshottari); cap length, don't constrain.
+    system: str = Field(default="Parashara", max_length=40)
+    timing: str = Field(default="Vimshottari", max_length=40)
+    visual_style: VisualStyle = "south"
 
 class PdfDownloadRequest(BaseModel):
     chart_data: dict
-    client_name: str
-    place_name: str
-    visual_style: str = "south"
-    lang: str = "en"
+    client_name: str = Field(max_length=200)
+    place_name: str = Field(max_length=200)
+    visual_style: VisualStyle = "south"
+    lang: LangCode = "en"
 
 class AIPredictRequest(BaseModel):
     chart_data: dict
-    client_name: str
-    place_name: str
+    client_name: str = Field(max_length=200)
+    place_name: str = Field(max_length=200)
     model: str = DEFAULT_LLM_MODEL
-    lang: str = "en"
+    lang: LangCode = "en"
 
 
 class MarriageChartRequest(BaseModel):
@@ -902,20 +919,20 @@ class AIMarriagePredictRequest(BaseModel):
     male_chart: dict
     female_chart: dict
     compatibility: dict
-    male_name: str
-    female_name: str
-    male_place: str
-    female_place: str
-    lang: str = "en"
+    male_name: str = Field(max_length=200)
+    female_name: str = Field(max_length=200)
+    male_place: str = Field(max_length=200)
+    female_place: str = Field(max_length=200)
+    lang: LangCode = "en"
     model: str = DEFAULT_LLM_MODEL
 
 
 class MuhurthamRequest(BaseModel):
-    timestamp: str
+    timestamp: str = Field(max_length=40)
     latitude: float = Field(ge=-90.0, le=90.0)
     longitude: float = Field(ge=-180.0, le=180.0)
-    regional_paradigm: str
-    target_activity: str
+    regional_paradigm: RegionalParadigm
+    target_activity: TargetActivity
 
 
 @app.post("/api/muhurtham")
@@ -935,10 +952,10 @@ def post_muhurtham(req: MuhurthamRequest):
 @app.get("/api/muhurtham")
 def get_muhurtham(
     timestamp: str,
-    latitude: float,
-    longitude: float,
-    regional_paradigm: str,
-    target_activity: str
+    latitude: float = Query(ge=-90.0, le=90.0),
+    longitude: float = Query(ge=-180.0, le=180.0),
+    regional_paradigm: RegionalParadigm = "TAMIL_SOLAR",
+    target_activity: TargetActivity = "VIVAHA",
 ):
     """
     GET endpoint for Muhurtham logic & filtering engine.
@@ -1301,16 +1318,16 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
 
 
 class AIChatMessage(BaseModel):
-    role: str  # 'user' or 'assistant'
-    content: str
+    role: Literal["user", "assistant"] = "user"
+    content: str = Field(max_length=4000)
 
 class AIChatRequest(BaseModel):
     chart_data: dict
-    client_name: str
-    place_name: str
-    query: str
+    client_name: str = Field(max_length=200)
+    place_name: str = Field(max_length=200)
+    query: str = Field(max_length=4000)
     model: str = DEFAULT_LLM_MODEL
-    history: list[AIChatMessage] = []
+    history: list[AIChatMessage] = Field(default=[], max_length=50)
 
 # --- Translations and Helpers for Localized Daily Newsletters ---
 FESTIVAL_IMAGES = {
@@ -1738,12 +1755,12 @@ def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 1
         raise HTTPException(status_code=500, detail=str(e))
 
 class ProfileUpdateRequest(BaseModel):
-    full_name: str = None
-    latitude: float = None
-    longitude: float = None
-    timezone: str = None
-    language: str = None
-    location_name: str = None
+    full_name: str = Field(default=None, max_length=200)
+    latitude: float = Field(default=None, ge=-90.0, le=90.0)
+    longitude: float = Field(default=None, ge=-180.0, le=180.0)
+    timezone: str = Field(default=None, max_length=64)
+    language: LangCode = None
+    location_name: str = Field(default=None, max_length=200)
 
 @app.post("/api/auth/profile/update")
 def profile_update(req: ProfileUpdateRequest, request: Request):
@@ -2245,26 +2262,26 @@ def billing_cancel(request: Request):
 # --- User Profile & Personal Astrology Details Models & Routes ---
 
 class BirthProfileUpdate(BaseModel):
-    full_name: str
-    dob: str
-    tob: str
-    location_name: str
-    latitude: float
-    longitude: float
-    gender: str
+    full_name: str = Field(max_length=200)
+    dob: str = Field(max_length=32)
+    tob: str = Field(max_length=16)
+    location_name: str = Field(max_length=200)
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    gender: Gender
 
 class UserChartSave(BaseModel):
     id: int = None
-    name: str
-    dob: str
-    tob: str
-    pob: str
-    latitude: float
-    longitude: float
-    gender: str = "male"
-    ayanamsa: str = "Lahiri"
-    chart_style: str = "south"
-    is_saved: int = 0
+    name: str = Field(max_length=200)
+    dob: str = Field(max_length=32)
+    tob: str = Field(max_length=16)
+    pob: str = Field(max_length=200)
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    gender: Gender = "male"
+    ayanamsa: AyanamsaName = "Lahiri"
+    chart_style: VisualStyle = "south"
+    is_saved: int = Field(default=0, ge=0, le=1)
 
 @app.post("/api/user/profile/birth-info")
 def update_profile_birth_info(req: BirthProfileUpdate, request: Request):
