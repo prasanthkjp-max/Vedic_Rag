@@ -2229,13 +2229,6 @@
                                             <span class="panch-compact-val" id="panch-yogam">--</span>
                                         </div>
                                     </div>
-                                    <div class="panch-compact-item" id="item-amruthathi">
-                                        <div class="panch-compact-icon"><i class="fa-solid fa-hand-sparkles"></i></div>
-                                        <div class="panch-compact-content">
-                                            <span class="panch-compact-label" id="lbl-amruthathi">Amruthathi Yoga</span>
-                                            <span class="panch-compact-val" id="panch-amruthathi">--</span>
-                                        </div>
-                                    </div>
                                     <div class="panch-compact-item" id="item-karanam">
                                         <div class="panch-compact-icon"><i class="fa-solid fa-yin-yang"></i></div>
                                         <div class="panch-compact-content">
@@ -3027,7 +3020,6 @@
                 tithi: "Tithi (Phases)",
                 naks: "Nakshatram",
                 yogam: "Yogam",
-                amruthathi: "Amruthathi Yoga",
                 karanam: "Karanam",
                 name: "Native Full Name",
                 dob: "Date of Birth",
@@ -3142,7 +3134,6 @@
                 tithi: "திதி",
                 naks: "நட்சத்திரம்",
                 yogam: "யோகம்",
-                amruthathi: "அம்ருதாதி யோகம்",
                 karanam: "கரணம்",
                 name: "ஜாதகர் முழு பெயர்",
                 dob: "பிறந்த தேதி",
@@ -3257,7 +3248,6 @@
                 tithi: "తిథి",
                 naks: "నక్షత్రం",
                 yogam: "యోగం",
-                amruthathi: "అమృతాది యోగం",
                 karanam: "కరణం",
                 name: "జాతకుని పూర్తి పేరు",
                 dob: "పుట్టిన తేదీ",
@@ -3372,7 +3362,6 @@
                 tithi: "തിഥി",
                 naks: "നക്ഷത്രം",
                 yogam: "യോഗം",
-                amruthathi: "അമൃതാദി യോഗം",
                 karanam: "കരണം",
                 name: "ജാതകന്റെ പൂർണ്ണ നാമം",
                 dob: "ജനന തീയതി",
@@ -3487,7 +3476,6 @@
                 tithi: "ತಿಥಿ",
                 naks: "ನಕ್ಷತ್ರ",
                 yogam: "ಯೋಗ",
-                amruthathi: "ಅಮೃತಾದಿ ಯೋಗ",
                 karanam: "ಕರಣ",
                 name: "ಜಾತಕನ ಪೂರ್ಣ ಹೆಸರು",
                 dob: "ಹುಟ್ಟಿದ ದಿನಾಂಕ",
@@ -3602,7 +3590,6 @@
                 tithi: "तिथि",
                 naks: "नक्षत्र",
                 yogam: "योग",
-                amruthathi: "अमृतादि योग",
                 karanam: "करण",
                 name: "जातक का पूरा नाम",
                 dob: "जन्म तिथि",
@@ -3925,23 +3912,6 @@
 
         function translateYogam(yogStr) {
             return translateValue('yogam', yogStr);
-        }
-
-        function translateAmruthathiYoga(name, quality) {
-            // Amruthathi yoga (birth nakshatra x weekday lookup): Siddha/Amrita/Subha
-            // (auspicious) or Varjya/Nasha/Dagdha/Marana (inauspicious).
-            if (!name) return "—";
-            const yogaNames = {
-                Siddha: { en: "Siddha", ta: "சித்த", te: "సిద్ధ", ml: "സിദ്ധ", kn: "ಸಿದ್ಧ", hi: "सिद्ध" },
-                Amrita: { en: "Amrita", ta: "அம்ருத", te: "అమృత", ml: "അമൃത", kn: "ಅಮೃತ", hi: "अमृत" },
-                Subha:  { en: "Subha", ta: "சுப", te: "శుభ", ml: "ശുഭ", kn: "ಶುಭ", hi: "शुभ" },
-                Varjya: { en: "Varjya", ta: "வர்ஜ்ய", te: "వర్జ్య", ml: "വർജ്യ", kn: "ವರ್ಜ್ಯ", hi: "वर्ज्य" },
-                Nasha:  { en: "Nasha", ta: "நாச", te: "నాశ", ml: "നാശ", kn: "ನಾಶ", hi: "नाश" },
-                Dagdha: { en: "Dagdha", ta: "தக்த", te: "దగ్ధ", ml: "ദഗ്ധ", kn: "ದಗ್ಧ", hi: "दग्ध" },
-                Marana: { en: "Marana", ta: "மரண", te: "మరణ", ml: "മരണ", kn: "ಮರಣ", hi: "मरण" }
-            };
-            const nm = yogaNames[name];
-            return nm ? (nm[currentLang] || nm.en) : name;
         }
 
         function translateKaranam(karStr) {
@@ -4442,7 +4412,6 @@
             document.getElementById('lbl-tithi').innerText = dict.tithi;
             document.getElementById('lbl-naks').innerText = dict.naks;
             document.getElementById('lbl-yogam').innerText = dict.yogam;
-            document.getElementById('lbl-amruthathi').innerText = dict.amruthathi;
             document.getElementById('lbl-karanam').innerText = dict.karanam;
             
             // Localize new labels
@@ -5130,7 +5099,6 @@
             document.getElementById('panch-tithi').innerText = formatTransitionText(currentTithiTrans, dailyPanchangamData.panchangam.tithi_end_time, nextTithiTrans);
             document.getElementById('panch-naks').innerText = formatTransitionText(currentNaksTrans, dailyPanchangamData.panchangam.nakshatra_end_time, nextNaksTrans);
             document.getElementById('panch-yogam').innerText = formatTransitionText(currentYogamTrans, dailyPanchangamData.panchangam.yogam_end_time, nextYogamTrans);
-            document.getElementById('panch-amruthathi').innerText = translateAmruthathiYoga(dailyPanchangamData.panchangam.amruthathi_yoga, dailyPanchangamData.panchangam.amruthathi_quality);
             document.getElementById('panch-karanam').innerText = formatTransitionText(currentKaranamTrans, dailyPanchangamData.panchangam.karanam_end_time, nextKaranamTrans);
             
             // Set new astronomical fields
@@ -6143,41 +6111,37 @@
                     calculatedChartData.panchangam.karanam_end_time,
                     translateKaranam(getKaranamName(calculatedChartData.panchangam.karanam_next_idx % 60))
                 );
-                const amruthathiLocal = translateAmruthathiYoga(
-                    calculatedChartData.panchangam.amruthathi_yoga,
-                    calculatedChartData.panchangam.amruthathi_quality
-                );
                 
                 // Labels localized dynamically
                 const lbls = {
                     en: {
                         name: "Native Name", dob: "Birth Date", tob: "Birth Time", gender: "Gender", day: "Day of Week", LMT: "Local Mean Time (LMT)", offset: "Standard Time Offset", POB: "Birth Place", lat: "Latitude", lon: "Longitude",
-                        t_year: "Tamil Year", t_date: "Tamil Date", kali: "Kali Yuga Year", tithi: "Tithi (Phases)", naks: "Nakshatram", yogam: "Yogam", amruthathi: "Amruthathi Yoga", karanam: "Karanam",
+                        t_year: "Tamil Year", t_date: "Tamil Date", kali: "Kali Yuga Year", tithi: "Tithi (Phases)", naks: "Nakshatram", yogam: "Yogam", karanam: "Karanam",
                         sunrise: "Sunrise Time", sunset: "Sunset Time", moonrise: "Moonrise Time", moonset: "Moonset Time", ahas: "Day Duration (Ahas)", udayadhi: "Udayadhi Nazhikai", ayanamsa: "Ayanamsa"
                     },
                     ta: {
                         name: "ஜாதகர் பெயர்", dob: "பிறந்த தேதி", tob: "பிறந்த நேரம்", gender: "பாலினம்", day: "பிறந்த கிழமை", LMT: "சுதேச மணி (LMT)", offset: "பொதுநேரம், திருத்தம்", POB: "பிறந்த ஊர்", lat: "அட்சாம்சம்", lon: "தீர்க்கரேகை",
-                        t_year: "தமிழ் வருடம்", t_date: "தமிழ் தேதி", kali: "கலி வருடம்", tithi: "திதி", naks: "நட்சத்திரம்", yogam: "யோகம்", amruthathi: "அம்ருதாதி யோகம்", karanam: "கரணம்",
+                        t_year: "தமிழ் வருடம்", t_date: "தமிழ் தேதி", kali: "கலி வருடம்", tithi: "திதி", naks: "நட்சத்திரம்", yogam: "யோகம்", karanam: "கரணம்",
                         sunrise: "சூரிய உதயம்", sunset: "சூரிய அஸ்தமனம்", moonrise: "சந்திர உதயம்", moonset: "சந்திர அஸ்தமனம்", ahas: "பகலின் அளவு (அகஸ்)", udayadhi: "உதயாதி நாழிகை", ayanamsa: "அயனாம்சம்"
                     },
                     te: {
                         name: "జాతకుని పేరు", dob: "పుట్టిన తేదీ", tob: "పుట్టిన సమయం", gender: "లింగము", day: "పుట్టిన వారం", LMT: "స్థానిక సమయం (LMT)", offset: "ప్రామాణిక కాల వ్యత్యాసం", POB: "పుట్టిన స్థలం", lat: "అక్షాంశం", lon: "రేఖాంశం",
-                        t_year: "సంవత్సరం", t_date: "తేదీ", kali: "కలి యుగ వర్షం", tithi: "తిథి", naks: "నక్షత్రం", yogam: "యోగం", amruthathi: "అమృతాది యోగం", karanam: "కరణం",
+                        t_year: "సంవత్సరం", t_date: "తేదీ", kali: "కలి యుగ వర్షం", tithi: "తిథి", naks: "నక్షత్రం", yogam: "యోగం", karanam: "కరణం",
                         sunrise: "సూర్యోదయం", sunset: "సూర్యాస్తమయం", moonrise: "చంద్రోదయం", moonset: "చంద్రాస్తమయం", ahas: "పగటి ప్రమాణం (అహస్సు)", udayadhi: "ఉదయాది ఘడియలు", ayanamsa: "అయనాంశం"
                     },
                     ml: {
                         name: "ജാതകന്റെ പേര്", dob: "ജനന തീയതി", tob: "ജനന സമയം", gender: "ലിംഗം", day: "ജനന ദിവസം", LMT: "പ്രദേശിക സമയം (LMT)", offset: "പ്രദേശിക സമയ വ്യത്യാസം", POB: "ജനന സ്ഥലം", lat: "അക്ഷാംശം", lon: "രേഖാംശം",
-                        t_year: "വർഷം", t_date: "തീയതി", kali: "കലി വർഷം", tithi: "തിഥി", naks: "നക്ഷത്രം", yogam: "യോഗം", amruthathi: "അമൃതാദി യോഗം", karanam: "കരണം",
+                        t_year: "വർഷം", t_date: "തീയതി", kali: "കലി വർഷം", tithi: "തിഥി", naks: "നക്ഷത്രം", yogam: "യോഗം", karanam: "കരണം",
                         sunrise: "സൂര്യോദയം", sunset: "സൂര്യാസ്തമയം", moonrise: "ചന്ദ്രോദയം", moonset: "ചന്ദ്രാസ്തമയം", ahas: "പകൽ ദൈർഘ്യം (അഹസ്സ്)", udayadhi: "ഉദയാദി നാഴിക", ayanamsa: "അയനാംശം"
                     },
                     kn: {
                         name: "ಜಾತಕನ ಹೆಸರು", dob: "ಹುಟ್ಟಿದ ದಿನಾಂಕ", tob: "ಹುಟ್ಟಿದ ಸಮಯ", gender: "ಲಿಂಗ", day: "ಹುಟ್ಟಿದ ವಾರ", LMT: "ಸ್ಥಳೀಯ ಸಮಯ (LMT)", offset: "ಪ್ರಮಾಣಿತ ಸಮಯದ ವ್ಯತ್ಯಾಸ", POB: "ಹುಟ್ಟಿದ ಸ್ಥಳ", lat: "ಅಕ್ಷಾಂಶ", lon: "ರೇಖಾಂಶ",
-                        t_year: "ವರ್ಷ", t_date: "ದಿನಾಂಕ", kali: "ಕಲಿ ವರ್ಷ", tithi: "ತಿಥಿ", naks: "ನಕ್ಷತ್ರ", yogam: "ಯೋಗ", amruthathi: "ಅಮೃತಾದಿ ಯೋಗ", karanam: "ಕರಣ",
+                        t_year: "ವರ್ಷ", t_date: "ದಿನಾಂಕ", kali: "ಕಲಿ ವರ್ಷ", tithi: "ತಿಥಿ", naks: "ನಕ್ಷತ್ರ", yogam: "ಯೋಗ", karanam: "ಕರಣ",
                         sunrise: "ಸೂರ್ಯೋದಯ", sunset: "ಸೂರ್ಯಾಸ್ತ", moonrise: "ಚಂದ್ರೋದಯ", moonset: "ಚಂದ್ರಾಸ್ತ", ahas: "ಹಗಲಿನ ಅವಧಿ (ಅಹಸ್)", udayadhi: "ಉದಯಾದಿ ಘಳಿಗೆ", ayanamsa: "ಅಯನಾಂಶ"
                     },
                     hi: {
                         name: "जातक का नाम", dob: "जन्म तिथि", tob: "जन्म समय", gender: "लिंग", day: "जन्म वार", LMT: "स्थानीय समय (LMT)", offset: "मानक समय अंतर", POB: "जन्म स्थान", lat: "अक्षांश", lon: "रेखांश",
-                        t_year: "वर्ष", t_date: "तिथि/दिनांक", kali: "कलि युग वर्ष", tithi: "तिथि", naks: "नक्षत्र", yogam: "योग", amruthathi: "अमृतादि योग", karanam: "करण",
+                        t_year: "वर्ष", t_date: "तिथि/दिनांक", kali: "कलि युग वर्ष", tithi: "तिथि", naks: "नक्षत्र", yogam: "योग", karanam: "करण",
                         sunrise: "सूर्योदय", sunset: "सूर्यास्त", moonrise: "चन्द्रोदय", moonset: "चन्द्रास्त", ahas: "दिनमान (अहस)", udayadhi: "उदयादि घटी", ayanamsa: "अयनांश"
                     }
                 };
@@ -6270,10 +6234,6 @@
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.yogam}</span>
                         <span class="panch-value">${yogLocal}</span>
-                    </div>
-                    <div class="panch-item">
-                        <span class="panch-label">${activeLbl.amruthathi}</span>
-                        <span class="panch-value">${amruthathiLocal}</span>
                     </div>
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.karanam}</span>
@@ -8783,10 +8743,6 @@
                     <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
                         <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nitya Yogam</span>
                         <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-circle-nodes"></i> ${attrs.nitya_yogam}</span>
-                    </div>
-                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
-                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Anandadi Yogam</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-sun"></i> ${attrs.anandadi_yogam}</span>
                     </div>
                 </div>
 
