@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.7.0]
+
+Single source of truth for panchangam value translations.
+
+### Added
+- `translations.py` — the canonical nakshatra / yogam / karana localization
+  tables (English canonical order + the five Indic languages), with an
+  import-time validator that rejects misaligned arrays.
+- `tools/gen_frontend_i18n.py` — code-gens the `I18N_VALUES` block in
+  `static/index.html` from `translations.py` (`--check` mode for CI).
+- `test_i18n_sync.py` — pure-Python guard (no browser): asserts the tables are
+  length-aligned, the frontend block is in sync with `translations.py`, every
+  entry is script-consistent (no wrong-block glyphs), the canonical order
+  matches the engine, longest-match resolves every name (the Vaidhriti/Dhriti
+  regression), and the PDF routes through the same source.
+
+### Changed
+- `pdf_generator.py` now imports its nakshatra/yogam/karana tables from
+  `translations.py` instead of carrying its own copies; the three translate
+  functions collapse to one-line wrappers over a shared `_translate_value`.
+- `static/index.html`'s `translateNakshatra` / `translateYogam` /
+  `translateKaranam` now read from the generated `I18N_VALUES` block via a
+  shared `translateValue` helper — the inline per-language arrays are gone.
+
+This removes the duplication that caused every prior translation drift bug
+(the Malayalam-yogam-missing-two, the wrong-script glyphs, the Vaidhriti
+mislabel). While reconciling the two former copies into one canonical set, four
+genuine spelling disagreements between the frontend and PDF were resolved to the
+correct form (Hindi Ashwini/Mrigashira/Ayushman, Tamil Vajra).
+
 ## [1.6.3]
 
 Translation audit and fixes.

@@ -108,12 +108,20 @@ these are deliberately distinct.
   (Moon − Sun) so they are ayanamsa-independent; Nakshatra/Yoga are not. Pass the
   TRUE calendar year into the calendar helpers (`get_tamil_year_month`,
   `get_regional_panchangam`) — approximating it from JD is off by one near Jan 1.
-- **Translations:** localized term dicts live in both `app.py` (newsletters) and
-  `pdf_generator.py`. Lookup keys must match the engine's canonical spellings
-  (module-level `astro_engine.NAKSHATRAS`/`RASIS`, plus the Yoga/Karana name
-  lists inside `get_panchangam_details`) — mismatched spellings silently fail to
-  translate, and list ordering/length must stay aligned across all languages. Translation tests assert by **label ID**, so don't rename existing
-  `id="lbl-..."` / `id="panch-..."` elements in `static/index.html`.
+- **Translations:** the panchangam **value** tables (nakshatra / yogam / karana)
+  have a single source of truth in `translations.py`, imported directly by
+  `pdf_generator.py` and code-genned into `static/index.html`'s `I18N_VALUES`
+  block via `tools/gen_frontend_i18n.py`. **Edit translations there, then run
+  `python3 tools/gen_frontend_i18n.py` and commit** — `test_i18n_sync.py` fails
+  if the frontend block drifts (or a wrong-script glyph / misalignment creeps
+  in). Other localized dicts (tithi names, planet/rasi/dignity, newsletter
+  terms) still live inline in `pdf_generator.py`/`app.py`; lookup keys must
+  match the engine's canonical spellings (module-level
+  `astro_engine.NAKSHATRAS`/`RASIS`, plus the Yoga/Karana name lists inside
+  `get_panchangam_details`) — mismatched spellings silently fail to translate,
+  and list ordering/length must stay aligned across all languages. Translation
+  tests assert by **label ID**, so don't rename existing `id="lbl-..."` /
+  `id="panch-..."` elements in `static/index.html`.
 - **Billing & social login are gated off by default** and fail closed (no real
   Stripe; OAuth verifies the provider token and never trusts a client-supplied
   email). Dev-only escape hatches: `VEDIC_ALLOW_SIMULATED_PAYMENTS=1`,
