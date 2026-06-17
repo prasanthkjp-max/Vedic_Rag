@@ -1,6 +1,8 @@
 import os
 import json
 import uuid
+import time
+import logging
 import secrets
 import sqlite3
 import urllib.request
@@ -67,6 +69,10 @@ from config import (
     connect_db,
 )
 import re
+
+# The config import above ran setup_logging(), so this module logger inherits
+# the shared timestamped, level-filterable format.
+logger = logging.getLogger("vedic.app")
 
 
 def _safe_slug(name, fallback="chart"):
@@ -509,7 +515,7 @@ def refund_user_credits(user: dict, action_type: str):
         user["charged"] = 0
         user["credit_balance"] += cost
     except Exception as e:
-        print(f"Failed to refund {cost} credits to user {user.get('id')}: {e}")
+        logger.error("Failed to refund %s credits to user %s: %s", cost, user.get('id'), e)
 
 # Pydantic Schemas for Auth/Billing
 class SignupRequest(BaseModel):
@@ -555,7 +561,7 @@ def build_prediction_context(chart, extra_queries=None):
         lat = float(meta.get("latitude"))
         transit_chart = get_astrological_chart(today.year, today.month, today.day, 12, 0, lon, lat)
     except Exception as e:
-        print(f"Gochara computation skipped: {e}")
+        logger.warning("Gochara computation skipped: %s", e)
 
     analysis = build_analysis(chart, transit_chart=transit_chart, ref_date=today)
 
@@ -601,23 +607,38 @@ def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: 
       content was produced (the response status is already 200 by then, so a
       refund is the only useful remediation).
     """
-    def generator():
+    def _open_stream():
+        """Open the generate connection, retrying once on a transient
+        connection error (a cold cloud model often refuses the first connect).
+        Returns the open response, or raises after the final attempt."""
         headers = {"Content-Type": "application/json"}
         if OLLAMA_API_KEY:
             headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-        req = urllib.request.Request(
-            OLLAMA_GENERATE_URL,
-            data=json.dumps({"model": model_name, "prompt": prompt, "stream": True}).encode("utf-8"),
-            headers=headers,
-        )
+        body = json.dumps({"model": model_name, "prompt": prompt, "stream": True}).encode("utf-8")
+        last = None
+        for attempt in range(2):
+            try:
+                req = urllib.request.Request(OLLAMA_GENERATE_URL, data=body, headers=headers)
+                return urllib.request.urlopen(req, timeout=LLM_STREAM_TIMEOUT)
+            except urllib.error.HTTPError:
+                raise  # a real HTTP error response — don't retry blindly
+            except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+                last = e
+                if attempt == 0:
+                    time.sleep(0.5)
+        raise last
+
+    def generator():
         produced_content = False
         try:
-            with urllib.request.urlopen(req, timeout=LLM_STREAM_TIMEOUT) as response:
+            response = _open_stream()
+            with response:
                 for line in response:
                     if not line:
                         continue
                     chunk = json.loads(line.decode("utf-8"))
                     if chunk.get("error"):
+                        logger.warning("Ollama mid-stream error (%s): %s", action_type, chunk["error"])
                         if not produced_content and user:
                             refund_user_credits(user, action_type)
                         yield f"\n\n*AI backend error: {chunk['error']}*"
@@ -627,6 +648,7 @@ def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: 
                         produced_content = True
                         yield text_chunk
         except Exception as e:
+            logger.error("AI stream failed (%s): %s", action_type, e)
             if not produced_content and user:
                 refund_user_credits(user, action_type)
             yield f"\n\n*Error streaming from local AI backend: {e}*"
@@ -995,7 +1017,7 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
             res_fest = get_day_panchangam_and_festivals(dt.year, dt.month, dt.day, lon, lat, lang)
             day_specialities = list(res_fest["specialities"])
         except Exception as e:
-            print(f"Failed to calculate festivals for {dt.strftime('%Y-%m-%d')}: {e}")
+            logger.warning("Failed to calculate festivals for %s: %s", dt.strftime('%Y-%m-%d'), e)
 
         paradigm = get_paradigm_from_lang(lang)
         try:
@@ -1005,7 +1027,7 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
             if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
                 day_specialities.insert(0, "Marriage Muhurtham")
         except Exception as e:
-            print(f"Failed to calculate marriage muhurtham for {dt.year}-{dt.month:02d}-{dt.day:02d}: {e}")
+            logger.warning("Failed to calculate marriage muhurtham for %d-%02d-%02d: %s", dt.year, dt.month, dt.day, e)
 
         return {
             "date": dt.strftime("%Y-%m-%d"),
@@ -1730,7 +1752,7 @@ def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 1
                 if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
                     day_specialities.insert(0, "Marriage Muhurtham")
             except Exception as e:
-                print(f"Failed to calculate marriage muhurtham for {year}-{month:02d}-{day:02d}: {e}")
+                logger.warning("Failed to calculate marriage muhurtham for %d-%02d-%02d: %s", year, month, day, e)
             
             days_data.append({
                 "day": day,

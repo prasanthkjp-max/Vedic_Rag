@@ -8,6 +8,26 @@ an environment variable for portability (e.g. running on a different machine).
 import os
 import sqlite3
 import secrets
+import logging
+
+
+def setup_logging():
+    """Configure root logging once (idempotent). Level via VEDIC_LOG_LEVEL.
+
+    config.py is the foundational module imported by every other module and the
+    two entrypoints (app.py, ingest.py), so configuring logging here guarantees
+    a consistent, level-filterable, timestamped format is in place before any
+    log call — replacing the bare print()s scattered across the codebase.
+    """
+    level_name = os.environ.get("VEDIC_LOG_LEVEL", "INFO").upper()
+    logging.basicConfig(
+        level=getattr(logging, level_name, logging.INFO),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+
+setup_logging()
+logger = logging.getLogger("vedic.config")
 
 
 def _env_int(name, default):
@@ -23,12 +43,12 @@ def _env_int(name, default):
     try:
         return int(raw)
     except (ValueError, TypeError):
-        print(f"[config] WARNING: {name}={raw!r} is not an integer; using default {default}")
+        logger.warning("%s=%r is not an integer; using default %s", name, raw, default)
         return default
 
 
 # --- Version ---
-VERSION = "1.8.1"
+VERSION = "1.8.2"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -200,11 +220,12 @@ def _load_api_key():
         fd = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(new_key + "\n")
-        # Don't print the full secret (stdout is often redirected to a log file).
-        print(f"[config] Generated new API key (prefix {new_key[:6]}…) saved to {key_file}")
+        # Don't log the full secret (logs are often persisted/redirected).
+        logger.info("Generated new API key (prefix %s…) saved to %s", new_key[:6], key_file)
         return new_key
-    except Exception:
+    except Exception as e:
         # Last resort: an ephemeral key. Auth stays enforced for this process.
+        logger.warning("Could not persist API key (%s); using an ephemeral key", e)
         return secrets.token_urlsafe(24)
 
 

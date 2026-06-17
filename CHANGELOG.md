@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.2]
+
+Robustness — observability & dependency resilience (Group B).
+
+### Added
+- **Structured logging.** `config.setup_logging()` configures the root logger
+  once (level via `VEDIC_LOG_LEVEL`, timestamped `levelname name: message`
+  format). Error/degradation paths across `config`, `search_engine`,
+  `prediction_engine`, `app`, `ingest`, and `pdf_generator` now log at
+  WARNING/ERROR instead of bare `print()` — so a silent quality drop (embed
+  failure, RAG-search error, credit-refund failure, font-registration failure)
+  is greppable and severity-filterable. (CLI progress output in `ingest.py` and
+  the `astro_engine` `__main__` diagnostic stay as `print`.)
+- **`EMBEDDING_DIM` startup probe** (`search_engine._probe_embedding_dim`):
+  logs a loud ERROR if the embed model's real output dimension differs from
+  `EMBEDDING_DIM` — previously every vector was silently dropped and the index
+  loaded zero pages with no signal.
+
+### Changed
+- **One retry with backoff on transient Ollama failures** on the request-time
+  paths: a shared `_http_json_post` for the embed/batch calls and an
+  `_open_stream` for the generate stream retry once on a connection error (the
+  blip a cold cloud model throws) but never on an HTTP 4xx. Mid-stream errors
+  and stream failures are now logged.
+
 ## [1.8.1]
 
 Robustness — input validation & config resilience (Group A of the robustness pass).

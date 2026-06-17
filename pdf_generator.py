@@ -1,5 +1,6 @@
 import os
 import math
+import logging
 from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -13,6 +14,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 # frontend via tools/gen_frontend_i18n.py). See translations.py.
 from translations import NAKSHATRA, YOGAM, KARANA
 
+logger = logging.getLogger("vedic.pdf")
+
 # Set of successfully registered fonts (with standard fallback cores always available)
 REGISTERED_FONTS = set(['Helvetica', 'Helvetica-Bold', 'Times-Roman', 'Times-Bold', 'Courier', 'Courier-Bold'])
 
@@ -24,7 +27,7 @@ def safe_register_font(name, path):
             return True
         return False
     except Exception as e:
-        print(f"Error registering font {name} from {path}: {e}")
+        logger.warning("Error registering font %s from %s: %s", name, path, e)
         return False
 
 # Register NotoSans
@@ -1572,7 +1575,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     
     # Save Canvas Document
     c.save()
-    print(f"Astrology PDF Report successfully generated at {output_path}!")
+    logger.info("Astrology PDF report generated at %s", output_path)
 
 if __name__ == "__main__":
     # Test generation
