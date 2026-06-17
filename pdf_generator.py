@@ -9,6 +9,10 @@ from reportlab.platypus import SimpleDocTemplate
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+# Single source of truth for panchangam value translations (shared with the
+# frontend via tools/gen_frontend_i18n.py). See translations.py.
+from translations import NAKSHATRA, YOGAM, KARANA
+
 # Set of successfully registered fonts (with standard fallback cores always available)
 REGISTERED_FONTS = set(['Helvetica', 'Helvetica-Bold', 'Times-Roman', 'Times-Bold', 'Courier', 'Courier-Bold'])
 
@@ -158,6 +162,21 @@ INVOCATION_SHLOKA_LOCAL = {
     "hi": "जननी जन्मसौख्यानां वर्धनी कुलसम्पदाम्। पदवी पूर्वपुण्यानां लिख्यते जन्मपत्रिका॥"
 }
 
+def _match_canon_idx(names, value):
+    """Longest-substring match of a canonical English name within `value`.
+
+    The longest match wins so "Vaidhriti" maps to itself rather than being
+    swallowed by the substring "dhriti" (and "Atiganda" over "ganda", etc.).
+    Returns the index, or -1 if nothing matches.
+    """
+    lower = (value or "").lower()
+    found, best = -1, 0
+    for i, name in enumerate(names):
+        if name and len(name) > best and name in lower:
+            found, best = i, len(name)
+    return found
+
+
 def translate_tithi(tithi_str, lang):
     if not tithi_str or lang == 'en':
         return tithi_str
@@ -202,58 +221,27 @@ def translate_tithi(tithi_str, lang):
     tithi_name = tithi_names.get(lang, [""] * 15)[tithi_num] if lang in tithi_names and tithi_num < 15 else f"Tithi {tithi_num}"
     return f"{paksha} - {tithi_name}"
 
+def _translate_value(table, value, lang):
+    """Translate a panchangam value via a translations.py table (single source).
+
+    `table` is one of NAKSHATRA / YOGAM / KARANA: a dict of parallel per-language
+    arrays whose index i is the i-th canonical entry. Longest-substring match on
+    the canonical 'en' array, then index the requested language.
+    """
+    if not value or lang == 'en':
+        return value
+    idx = _match_canon_idx(table["en"], value)
+    if idx == -1 or lang not in table:
+        return value
+    return table[lang][idx]
+
+
 def translate_nakshatra(nak_str, lang):
-    if not nak_str or lang == 'en':
-        return nak_str
-    en_naks = [
-        "ashwini", "bharani", "krittika", "rohini", "mrigashira", "ardra", "punarvasu", "pushya", "ashlesha",
-        "magha", "purva phalguni", "uttara phalguni", "hasta", "chitra", "swati", "vishakha", "anuradha", "jyeshtha", "mula",
-        "purva ashadha", "uttara ashadha", "shravana", "dhanishta", "shatabhisha", "purva bhadrapada", "uttara bhadrapada", "revati"
-    ]
-    translations = {
-        "ta": ["அஸ்வினி", "பரணி", "கார்த்திகை", "ரோகிணி", "மிருகசீரிடம்", "திருவாதிரை", "புனர்பூசம்", "பூசம்", "ஆயில்யம்", "மகம்", "பூரம்", "உத்திரம்", "ஹஸ்தம்", "சித்திரை", "சுவாதி", "விசாகம்", "அனுஷம்", "கேட்டை", "மூலம்", "பூராடம்", "உத்திராடம்", "திருவோணம்", "அவிட்டம்", "சதயம்", "பூரட்டாதி", "உத்திரட்டாதி", "ரேவதி"],
-        "te": ["అశ్విని", "భరణి", "కృత్తిక", "రోహిణి", "మృగశిర", "ఆరుద్ర", "పునర్వసు", "పుష్యమి", "ఆశ్లేష", "మఖ", "పూర్వాఫల్గుణి", "ఉత్తరాఫల్గుణి", "హస్త", "చిత్త", "స్వాతి", "విశాఖ", "అనూరాధ", "జ్యేష్ఠ", "మూల", "పూర్వాషాఢ", "ఉత్తరాషాఢ", "శ్రవణం", "ధనిష్ఠ", "శతభిషం", "పూర్వాభాద్ర", "ఉత్తరాభాద్ర", "రేవతి"],
-        "hi": ["अश्विनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशीरा", "आर्द्रा", "पुनर्वसु", "पुष्य", "श्लेषा", "मघा", "पूर्वाफाल्गुनी", "उत्तराफाल्गुनी", "हस्त", "चित्रा", "स्वाति", "विशाखा", "अनुराधा", "ज्येष्ठा", "मूल", "पूर्वाषाढ़ा", "उत्तराषाढ़ा", "श्रवण", "धनिष्ठा", "शतभीषा", "पूर्वाभाद्रपद", "उत्तराभाद्रपद", "रेवती"],
-        "ml": ["അശ്വതി", "ഭരണി", "കാർത്തിക", "രോഹണി", "മകയിരം", "തിരുവാതിര", "പുണർതം", "പൂയം", "ആയില്യം", "മകം", "പൂരം", "ഉത്രം", "അത്തം", "ചിത്ര", "ചോതി", "വിശാഖം", "അനിഴം", "തൃക്കേട്ട", "മൂലം", "പൂരാടം", "ഉത്രാടം", "തിരുവോണം", "അവിട്ടം", "ചതയം", "പൂരുരുട്ടാതി", "ഉത്രട്ടാതി", "രേവതി"],
-        "kn": ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಖಾ", "ಪೂರ್ವಾಫಾಲ್ಗುಣಿ", "ಉತ್ತರಾಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖಾ", "ಅನುರಾಧಾ", "ಜ್ಯೇಷ್ಠಾ", "ಮೂಲಾ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠಾ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರಪದ", "ಉತ್ತರಾಭಾದ್ರಪದ", "ರೇವತಿ"]
-    }
-    lower = nak_str.lower()
-    found_idx = -1
-    for i, name in enumerate(en_naks):
-        if name in lower:
-            found_idx = i
-            break
-    if found_idx == -1:
-        if "chitra" in lower: found_idx = 13
-        elif "mula" in lower: found_idx = 18
-        elif "swati" in lower: found_idx = 14
-        else: return nak_str
-    return translations.get(lang, translations["ta"])[found_idx] if lang in translations else nak_str
+    return _translate_value(NAKSHATRA, nak_str, lang)
+
 
 def translate_yogam(yog_str, lang):
-    if not yog_str or lang == 'en':
-        return yog_str
-    en_yogams = [
-        "vishkumbha", "priti", "ayushman", "saubhagya", "sobhana", "atiganda", "sukarma", "dhriti", "shula",
-        "ganda", "vriddhi", "dhruva", "vyaghata", "harshana", "vajra", "siddhi", "vyatipata", "variyan", "parigha",
-        "shiva", "siddha", "sadhya", "subha", "sukla", "brahma", "indra", "vaidhriti"
-    ]
-    translations = {
-        "ta": ["விஷ்கம்பம்", "பிரீதி", "ஆயுஷ்மான்", "சௌபாக்கியம்", "சோபனம்", "அதிகண்டம்", "சுகர்மம்", "திருதி", "சூலம்", "கண்டம்", "விருத்தி", "துருவம்", "வியாகாதம்", "ஹர்ஷணம்", "வஜ்ரம்", "சித்தி", "வியதீபாதம்", "வரியான்", "பரிகம்", "சிவம்", "சித்தம்", "சாத்தியம்", "சுபம்", "சுக்லம்", "பிரம்மா", "இந்திரன்", "வைதிருதி"],
-        "te": ["విష్కంభం", "ప్రీతి", "ఆయుష్మాన్", "సౌభాగ్యం", "శోభనం", "అతిగండం", "సుకర్మం", "ధృతి", "శూలం", "గండం", "వృద్ధి", "ధ్రువం", "వ్యాఘాతం", "హర్షణం", "వజ్రం", "సిద్ధి", "వ్యతీపాతం", "వరీయాన్", "పరిఘ", "శివం", "సిద్ధ", "సాధ్యం", "శుభం", "శుక్లం", "బ్రహ్మం", "ఇంద్రం", "వైధృతి"],
-        "hi": ["विष्कम्भ", "प्रीति", "आयुष्मान", "सौभाग्य", "शोभन", "अतिगण्ड", "सुकर्मा", "धृति", "शूल", "गण्ड", "वृद्धि", "ध्रुव", "व्याघात", "हर्षण", "वज्र", "सिद्धि", "व्यतीपात", "वरीयान", "परिघ", "शिव", "सिद्ध", "साध्य", "शुभ", "शुक्ल", "ब्रह्म", "इन्द्र", "वैधृति"],
-        "ml": ["വിഷ്കംഭം", "പ്രീതി", "ആയുഷ്മാൻ", "സൗഭാഗ്യം", "ശോഭനം", "അതിഗണ്ഡം", "സുകർമ്മം", "ധൃതി", "ശൂലം", "ഗണ്ഡം", "വൃദ്ധി", "ധ്രുവം", "വ്യാഘാതം", "ഹർഷണം", "വജ്രം", "സിദ്ധി", "വ്യതീപാതം", "വരിയാൻ", "പരിഘം", "ശിവം", "സിദ്ധം", "സാധ്യം", "ശുഭം", "ശുക്ലം", "ബ്രഹ്മം", "ഇംദ്രൻ", "വൈധൃതി"],
-        "kn": ["ವಿಷ್ಕಂಭ", "ಪ್ರೀತಿ", "ಆಯುಷ್ಮಾನ್", "ಸೌಭಾಗ್ಯ", "ಶೋಭನ", "ಅತಿಗಂಡ", "ಸುಕರ್ಮ", "ಧೃತಿ", "ಶೂಲ", "ಗಂಡ", "ವೃದ್ಧಿ", "ಧ್ರುವ", "ವ್ಯಾಘಾತ", "ಹರ್ಷಣ", "ವಜ್ರ", "ಸಿದ್ಧಿ", "ವ್ಯತೀಪಾತ", "ವರೀಯಾನ್", "ಪರಿಘ", "ಶಿವ", "ಸಿದ್ಧ", "ಸಾಧ್ಯ", "ಶುಭ", "ಶುಕ್ಲ", "ಬ್ರಹ್ಮ", "ಇಂದ್ರ", "ವೈಧೃತಿ"]
-    }
-    lower = yog_str.lower()
-    found_idx = -1
-    for i, name in enumerate(en_yogams):
-        if name in lower:
-            found_idx = i
-            break
-    if found_idx == -1:
-        return yog_str
-    return translations.get(lang, translations["ta"])[found_idx] if lang in translations else yog_str
+    return _translate_value(YOGAM, yog_str, lang)
 
 def translate_amruthathi_yoga(name, quality, lang):
     # Amruthathi yoga (birth nakshatra x weekday): Siddha/Amrita/Subha
@@ -272,25 +260,7 @@ def translate_amruthathi_yoga(name, quality, lang):
     return yoga_names.get(name, {}).get(lang) or yoga_names.get(name, {}).get("en") or name
 
 def translate_karanam(kar_str, lang):
-    if not kar_str or lang == 'en':
-        return kar_str
-    en_karanas = ["kintughna", "bava", "balava", "kaulava", "taitila", "gara", "vanija", "vishti", "shakuni", "chatushpada", "naga"]
-    translations = {
-        "ta": ["கிம்ஸ்துக்னம்", "பவம்", "பாலவம்", "கௌலவம்", "சைதிலம்", "கரசை", "வனசை", "பத்திரை (விஷ்டி)", "சகுனி", "சதுஷ்பாதம்", "நாகவம்"],
-        "te": ["కింస్తుఘ్నం", "బవ", "బాలవ", "కౌలవ", "తైతిల", "గరజ", "వణిజ", "భద్ర (విష్టి)", "శకుని", "చతుష్పాదం", "నాగవం"],
-        "hi": ["किंस्तुघ्न", "बव", "बालव", "कौलव", "तैतिल", "गर", "वणिज", "विष्टि (भद्रा)", "शकुनि", "चतुषपाद", "नाग"],
-        "ml": ["കിംസ്തുഘ്നം", "ബവം", "ബാലവം", "കൗലവം", "തൈതിലം", "ഗരജം", "വണിജം", "വിഷ്ടി", "ശകുനി", "ചതുഷ്പാദം", "നാഗം"],
-        "kn": ["ಕಿಂಸ್ತುಘ್ನ", "ಬವ", "ಬಾಲವ", "ಕೌಲವ", "ತೈತಿಲ", "ಗರ", "ವಣಿಜ", "ವಿಷ್ಟಿ", "ಶಕುನಿ", "ಚತುಷ್ಪಾದ", "ನಾಗ"]
-    }
-    lower = kar_str.lower()
-    found_idx = -1
-    for i, name in enumerate(en_karanas):
-        if name in lower:
-            found_idx = i
-            break
-    if found_idx == -1:
-        return kar_str
-    return translations.get(lang, translations["ta"])[found_idx] if lang in translations else kar_str
+    return _translate_value(KARANA, kar_str, lang)
 
 def translate_month(month_str, lang):
     if not month_str or lang == 'en':
@@ -520,7 +490,7 @@ LABEL_LOCALIZATION = {
         "dasa_title": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಭುಕ್ತಿ ಕಾಲಪಟ್ಟಿ (120 ವರ್ಷಗಳು)",
         "dasa_subtitle": "ಜನ್ಮ ನಕ್ಷತ್ರ ದಶಾ ಅಧಿಪತಿ: {}",
         "dasa_header": "ವಿಂಶೋತ್ತರಿ ದಶಾ ಅವಧಿಗಳು ಮತ್ತು ಭುಕ್ತಿಗಳು",
-        "mahadasa": "ಮಹಾ ದಶ: {} ({} ವರ್ಷ)", "from_to": "ಪ್ರಾರಂಭ: {} ಮುಕ್ತಾಯ: {}", "rasi_lord": "ರాಶ್ಯಾಧಿಪತಿ", "nakshatra": "ನಕ್ಷತ್ರ", "pada": "ಪಾದ"
+        "mahadasa": "ಮಹಾ ದಶ: {} ({} ವರ್ಷ)", "from_to": "ಪ್ರಾರಂಭ: {} ಮುಕ್ತಾಯ: {}", "rasi_lord": "ರಾಶ್ಯಾಧಿಪತಿ", "nakshatra": "ನಕ್ಷತ್ರ", "pada": "ಪಾದ"
     },
     "hi": {
         "title": "वैदिक ज्योतिष AI पोर्टल",

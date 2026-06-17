@@ -3,6 +3,68 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.7.0]
+
+Single source of truth for panchangam value translations.
+
+### Added
+- `translations.py` — the canonical nakshatra / yogam / karana localization
+  tables (English canonical order + the five Indic languages), with an
+  import-time validator that rejects misaligned arrays.
+- `tools/gen_frontend_i18n.py` — code-gens the `I18N_VALUES` block in
+  `static/index.html` from `translations.py` (`--check` mode for CI).
+- `test_i18n_sync.py` — pure-Python guard (no browser): asserts the tables are
+  length-aligned, the frontend block is in sync with `translations.py`, every
+  entry is script-consistent (no wrong-block glyphs), the canonical order
+  matches the engine, longest-match resolves every name (the Vaidhriti/Dhriti
+  regression), and the PDF routes through the same source.
+
+### Changed
+- `pdf_generator.py` now imports its nakshatra/yogam/karana tables from
+  `translations.py` instead of carrying its own copies; the three translate
+  functions collapse to one-line wrappers over a shared `_translate_value`.
+- `static/index.html`'s `translateNakshatra` / `translateYogam` /
+  `translateKaranam` now read from the generated `I18N_VALUES` block via a
+  shared `translateValue` helper — the inline per-language arrays are gone.
+
+This removes the duplication that caused every prior translation drift bug
+(the Malayalam-yogam-missing-two, the wrong-script glyphs, the Vaidhriti
+mislabel). While reconciling the two former copies into one canonical set, four
+genuine spelling disagreements between the frontend and PDF were resolved to the
+correct form (Hindi Ashwini/Mrigashira/Ayushman, Tamil Vajra).
+
+## [1.6.3]
+
+Translation audit and fixes.
+
+### Fixed
+- **Yogam "Vaidhriti" mistranslated as "Dhriti"** in all five Indic languages
+  (both the daily Panchangam UI and the PDF). The lookup matched the first
+  English name found as a substring, so "vaidhriti" was swallowed by "dhriti"
+  (index 7) before reaching its own entry (index 26). The matchers now pick the
+  **longest** substring match, shared via a single helper
+  (`matchCanonIndex` in the frontend, `_match_canon_idx` in `pdf_generator`),
+  which also removes the triplicated lookup loops.
+- **Wrong-script glyphs** (a character from one Indic block embedded in
+  another language's string — invisible to the eye, e.g. a Telugu vowel sign
+  in a Kannada word). Fixed five: the Kannada weekday "Shukravara" abbrev and
+  the Kannada "Rasi Lord" label both carried a Telugu vowel sign; the Telugu
+  "Venus" planet name began with Devanagari "शु"; the Malayalam Sunday abbrev
+  was Tamil "ஞா"; and the Kannada "after/then" label was half Devanagari. A
+  Unicode-block consistency scan over every per-language table now reports
+  clean.
+- Malayalam "Indra" yogam in the PDF used the anusvara form ഇംദ്രൻ; aligned to
+  the standard conjunct ഇന്ദ്രൻ used elsewhere.
+- Removed dead nakshatra fallbacks (chitra/mula/swati) that the longest-match
+  lookup already covers.
+
+### Notes
+- The localized nakshatra/yoga/karana/tithi tables are still duplicated between
+  `static/index.html` and `pdf_generator.py`; every table is now verified
+  length-aligned (16/16 frontend blocks) and script-consistent, but a future
+  single-source-of-truth refactor (serving the tables from one place) would
+  prevent the class of drift bug entirely.
+
 ## [1.6.2]
 
 Full-codebase audit: calculation, security, billing, prompt, and UI fixes.
