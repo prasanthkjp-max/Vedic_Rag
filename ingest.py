@@ -14,6 +14,7 @@ import urllib.request
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+import logging
 from io import BytesIO
 
 from config import (
@@ -27,6 +28,8 @@ from config import (
     connect_db,
     ensure_fts,
 )
+
+logger = logging.getLogger("vedic.ingest")
 
 NUM_THREADS = 4  # Matches the 4 CPU cores
 
@@ -90,10 +93,10 @@ def get_ollama_embedding(text):
                 # dropped by the search index forever — treat it as a failure.
                 if embedding and len(embedding) == EMBEDDING_DIM:
                     return embedding
-                print(f"Embedding has wrong dimension ({len(embedding)} != {EMBEDDING_DIM})")
+                logger.warning("Embedding has wrong dimension (%d != %d)", len(embedding), EMBEDDING_DIM)
         except Exception as e:
             if attempt == 2:
-                print(f"Error calling Ollama embedding API: {e}")
+                logger.warning("Error calling Ollama embedding API: %s", e)
         if attempt < 2:
             time.sleep(1)
 
@@ -175,7 +178,7 @@ def ingest_book(book_filename):
     
     pdf_path = os.path.join(BOOKS_DIR, book_filename)
     if not os.path.exists(pdf_path):
-        print(f"File not found: {pdf_path}")
+        logger.error("File not found: %s", pdf_path)
         return
         
     doc = fitz.open(pdf_path)
@@ -236,14 +239,14 @@ def ingest_book(book_filename):
                 else:
                     print(f"[{completed}/{total_to_process}] Page {page_num+1}/{total_pages} - FAILED: {status}")
             except Exception as exc:
-                print(f"Page {p_num+1} generated an exception: {exc}")
+                logger.warning("Page %d generated an exception: %s", p_num + 1, exc)
                 
     elapsed = time.time() - start_time
     print(f"Finished Book Ingestion in {elapsed:.2f} seconds.")
 
 def main():
     if not os.path.exists(BOOKS_DIR):
-        print(f"Books directory not found: {BOOKS_DIR}")
+        logger.error("Books directory not found: %s", BOOKS_DIR)
         sys.exit(1)
         
     db_dir = os.path.dirname(DB_PATH)

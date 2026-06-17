@@ -1,7 +1,10 @@
 import struct
 import numpy as np
 import json
+import time
+import logging
 import urllib.request
+import urllib.error
 import re
 import threading
 
@@ -16,6 +19,11 @@ from config import (
     connect_db,
     ensure_fts,
 )
+
+logger = logging.getLogger("vedic.search")
+
+# Transient errors worth one retry (connection refused/reset, DNS, 5xx).
+_RETRYABLE = (urllib.error.URLError, ConnectionError, TimeoutError)
 
 class VedicSearchEngine:
     def __init__(self, db_path=DB_PATH):
@@ -41,7 +49,33 @@ class VedicSearchEngine:
             finally:
                 conn.close()
         except Exception as e:
-            print(f"FTS index setup skipped: {e}")
+            logger.warning("FTS index setup skipped: %s", e)
+        self._probe_embedding_dim()
+
+    def _probe_embedding_dim(self):
+        """Warn loudly if the embed model's output dim != configured EMBEDDING_DIM.
+
+        A mismatch is otherwise silent: every vector fails the len()==DIM guard
+        and is dropped, so the index loads zero pages and search dies quietly.
+        Best-effort — skipped if Ollama is unreachable at startup.
+        """
+        try:
+            # Use the RAW post (get_ollama_embedding would filter a mismatch to
+            # None, hiding the very thing we're probing for).
+            res = self._http_json_post(
+                OLLAMA_EMBED_URL, {"model": EMBEDDING_MODEL, "prompt": "dimension probe"},
+                EMBED_TIMEOUT, retries=0,
+            )
+            vec = (res or {}).get("embedding") or []
+            if vec and len(vec) != EMBEDDING_DIM:
+                logger.error(
+                    "Embedding model %r returns %d dims but EMBEDDING_DIM=%d — "
+                    "every embedding will be DROPPED and search will return nothing. "
+                    "Set VEDIC_EMBED_DIM=%d.",
+                    EMBEDDING_MODEL, len(vec), EMBEDDING_DIM, len(vec),
+                )
+        except Exception:
+            pass  # Ollama down at startup; not fatal, dim is re-checked per call.
 
     def _cache_embedding(self, text, embedding):
         """Insert into the query-embedding cache, evicting oldest entries when full."""
@@ -49,6 +83,35 @@ class VedicSearchEngine:
             # dicts preserve insertion order; drop the oldest entry (approx. FIFO).
             self._embed_cache.pop(next(iter(self._embed_cache)))
         self._embed_cache[text] = embedding
+
+    @staticmethod
+    def _http_json_post(url, payload, timeout, retries=1):
+        """POST JSON to Ollama, parse the JSON reply. Retries once (short
+        backoff) on a transient connection error — exactly the blip a cold
+        cloud model throws — but NOT on an HTTP 4xx (a permanent error).
+        Returns the parsed dict, or None on failure (logged)."""
+        headers = {"Content-Type": "application/json"}
+        if OLLAMA_API_KEY:
+            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
+        body = json.dumps(payload).encode("utf-8")
+        for attempt in range(retries + 1):
+            req = urllib.request.Request(url, data=body, headers=headers)
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except urllib.error.HTTPError as e:
+                logger.warning("Ollama embed HTTP %s at %s: %s", e.code, url, e)
+                return None  # 4xx/5xx response body — don't retry blindly
+            except _RETRYABLE as e:
+                if attempt < retries:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+                logger.warning("Ollama embed unreachable at %s after %d tries: %s",
+                               url, retries + 1, e)
+                return None
+            except Exception as e:
+                logger.warning("Ollama embed error at %s: %s", url, e)
+                return None
 
     def get_ollama_embedding(self, text):
         """Generate an embedding using the local Ollama instance.
@@ -60,30 +123,17 @@ class VedicSearchEngine:
         # so repeated/identical queries skip the ~3s CPU embed.
         if text in self._embed_cache:
             return self._embed_cache[text]
-        data = {
-            "model": EMBEDDING_MODEL,
-            "prompt": text
-        }
-        headers = {"Content-Type": "application/json"}
-        if OLLAMA_API_KEY:
-            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-        req = urllib.request.Request(
-            OLLAMA_EMBED_URL,
-            data=json.dumps(data).encode("utf-8"),
-            headers=headers
+        res_data = self._http_json_post(
+            OLLAMA_EMBED_URL, {"model": EMBEDDING_MODEL, "prompt": text}, EMBED_TIMEOUT
         )
-        try:
-            with urllib.request.urlopen(req, timeout=EMBED_TIMEOUT) as response:
-                res_data = json.loads(response.read().decode("utf-8"))
-                embedding = res_data.get("embedding", [])
-                if embedding and len(embedding) == EMBEDDING_DIM:
-                    self._cache_embedding(text, embedding)
-                    return embedding
-                # Wrong-dimension vectors are failures too, per the docstring.
-                return None
-        except Exception as e:
-            print(f"Error generating embedding in search engine: {e}")
+        if not res_data:
             return None
+        embedding = res_data.get("embedding", [])
+        if embedding and len(embedding) == EMBEDDING_DIM:
+            self._cache_embedding(text, embedding)
+            return embedding
+        # Wrong-dimension vectors are failures too, per the docstring.
+        return None
 
     def get_ollama_embeddings_batch(self, texts):
         """
@@ -105,30 +155,20 @@ class VedicSearchEngine:
         if not to_embed:
             return results
 
-        data = {"model": EMBEDDING_MODEL, "input": to_embed}
-        headers = {"Content-Type": "application/json"}
-        if OLLAMA_API_KEY:
-            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-        req = urllib.request.Request(
-            OLLAMA_EMBED_BATCH_URL,
-            data=json.dumps(data).encode("utf-8"),
-            headers=headers,
+        # Scale the timeout with batch size (serial CPU embedding), but cap it so
+        # a huge batch can't block a request thread indefinitely.
+        timeout = min(EMBED_TIMEOUT * max(1, len(to_embed)), 120)
+        res_data = self._http_json_post(
+            OLLAMA_EMBED_BATCH_URL, {"model": EMBEDDING_MODEL, "input": to_embed}, timeout
         )
-        try:
-            # Scale the timeout with batch size (serial CPU embedding), but cap
-            # it so a huge batch can't block a request thread indefinitely.
-            timeout = min(EMBED_TIMEOUT * max(1, len(to_embed)), 120)
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                res_data = json.loads(response.read().decode("utf-8"))
-                embeddings = res_data.get("embeddings", []) or []
+        if res_data:
+            embeddings = res_data.get("embeddings", []) or []
             for j, emb in enumerate(embeddings):
                 if emb and len(emb) == EMBEDDING_DIM:
                     pos = to_embed_idx[j]
                     results[pos] = emb
                     self._cache_embedding(to_embed[j], emb)
-        except Exception as e:
-            print(f"Error generating batch embeddings: {e}")
-            # Leave the uncached entries as None; callers fall back to sparse.
+        # else: uncached entries stay None; callers fall back to sparse.
         return results
 
     def load_index(self):
@@ -176,7 +216,7 @@ class VedicSearchEngine:
                             num_floats = len(emb_blob) // 4  # float is 4 bytes
                             embedding = list(struct.unpack(f"{num_floats}f", emb_blob[: num_floats * 4]))
                         except struct.error as e:
-                            print(f"Skipping corrupt embedding (book {book_id}, page {page_num}): {e}")
+                            logger.warning("Skipping corrupt embedding (book %s, page %s): %s", book_id, page_num, e)
                             continue
 
                         # Ensure embedding has the expected dimensions
@@ -213,9 +253,9 @@ class VedicSearchEngine:
                 self.embeddings = embeddings
                 self.last_page_count = page_count
 
-                print(f"Loaded search index: {len(self.page_map)} pages from {len(self.books)} books.")
+                logger.info("Loaded search index: %d pages from %d books.", len(self.page_map), len(self.books))
             except Exception as e:
-                print(f"Error loading search index: {e}. Index might be empty or still ingesting.")
+                logger.warning("Error loading search index: %s. Index might be empty or still ingesting.", e)
                 # Preserve any previously loaded index rather than wiping it on a
                 # transient read error.
             finally:
@@ -315,7 +355,7 @@ class VedicSearchEngine:
             cursor.execute(sql, tuple(params))
             rows = cursor.fetchall()
         except Exception as e:
-            print(f"Sparse (FTS) search failed: {e}")
+            logger.warning("Sparse (FTS) search failed: %s", e)
             return []
         finally:
             if conn is not None:

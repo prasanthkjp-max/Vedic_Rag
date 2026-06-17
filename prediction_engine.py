@@ -9,7 +9,10 @@ graha drishti (aspects), the currently running Mahadasa/Antardasa, gochara
 structured analysis block plus a set of targeted RAG queries so the LLM can
 ground its reading in the classical texts.
 """
+import logging
 from datetime import datetime, date
+
+logger = logging.getLogger("vedic.prediction")
 
 # Sign (rasi) lords, index 0 = Mesha .. 11 = Meena
 SIGN_LORDS = [
@@ -752,14 +755,15 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
         return "", []
     try:
         search_engine.reload()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("RAG index reload failed (using stale index): %s", e)
 
     # Embed all queries in a single batched call (one HTTP round trip; cached),
     # then run dense + sparse per query. This avoids N separate ~3s embed calls.
     try:
         query_vectors = search_engine.get_ollama_embeddings_batch(queries)
-    except Exception:
+    except Exception as e:
+        logger.warning("RAG batch embed failed (dense retrieval degraded to sparse): %s", e)
         query_vectors = [None] * len(queries)
 
     scored = {}  # (book_id, page_num) -> {res, score}
@@ -769,7 +773,8 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
             if vec:
                 dense_results = search_engine.dense_search_with_vector(vec, top_k=per_query, category=category)
             sparse_results = search_engine.sparse_search(q, top_k=per_query, category=category)
-        except Exception:
+        except Exception as e:
+            logger.warning("RAG search failed for query %r: %s", q[:60], e)
             continue
         # Dedupe within a single query's results, keeping best rank. Rank dense
         # and sparse hits within their OWN lists (proper RRF): the concatenated
