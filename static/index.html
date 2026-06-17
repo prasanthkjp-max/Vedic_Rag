@@ -2962,8 +2962,27 @@
             const opts = { ...options, headers: { ...(options.headers || {}) } };
             const token = localStorage.getItem('session_token');
             if (token) opts.headers['x-session-token'] = token;
-            
-            const response = await fetch(url, opts);
+
+            // Abort a stalled request so the UI never hangs forever on a
+            // backend that accepts the connection but never responds. Streaming
+            // callers (opts.stream) opt out — an LLM stream legitimately runs
+            // for minutes and is bounded server-side by LLM_STREAM_TIMEOUT; they
+            // may still pass their own opts.signal for an idle abort.
+            let timer = null;
+            if (!opts.stream && !opts.signal) {
+                const controller = new AbortController();
+                opts.signal = controller.signal;
+                timer = setTimeout(() => controller.abort(), opts.timeoutMs || 30000);
+            }
+            const fetchOpts = { ...opts };
+            delete fetchOpts.stream;
+            delete fetchOpts.timeoutMs;
+            let response;
+            try {
+                response = await fetch(url, fetchOpts);
+            } finally {
+                if (timer) clearTimeout(timer);
+            }
             if (response.status === 402) {
                 alert("Insufficient Credits. Please click your profile/name in the header to buy credits or subscribe to a pass.");
                 openProfileModal();
@@ -4291,8 +4310,20 @@
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
 
+        // Guarded label setter: a missing/renamed element id no longer throws
+        // and aborts the whole language switch (leaving the UI half-translated
+        // and skipping the panchangam/calendar refresh that runs afterwards).
+        function setText(id, txt) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = txt;
+        }
+
         // Change website language in real-time
         async function changeLanguage(langCode, userInitiated = true) {
+            // Validate against the known locales — a stale/garbage vedic_lang
+            // from localStorage would otherwise make `localization[langCode]`
+            // undefined and throw on the first `dict.*`, blanking the dashboard.
+            if (!localization[langCode]) langCode = 'en';
             currentLang = langCode;
             localStorage.setItem('vedic_lang', langCode);
             // A manual pick locks the language so adaptive-by-region won't override it.
@@ -4320,24 +4351,24 @@
             
             // Set button name in UI
             const langNames = {en: "English", ta: "Tamil (தமிழ்)", te: "Telugu (తెలుగు)", ml: "Malayalam (മലയാളം)", kn: "Kannada (ಕನ್ನಡ)", hi: "Hindi (हिन्दी)"};
-            document.getElementById('current-lang-name').innerText = langNames[langCode];
+            setText('current-lang-name', langNames[langCode]);
 
             // Localize text labels
             const dict = localization[langCode];
-            document.getElementById('lbl-title').innerText = dict.title;
-            document.getElementById('lbl-subtitle').innerText = dict.subtitle;
-            document.getElementById('lbl-home-calendar').innerText = dict.lbl_home_calendar;
+            setText('lbl-title', dict.title);
+            setText('lbl-subtitle', dict.subtitle);
+            setText('lbl-home-calendar', dict.lbl_home_calendar);
 
             // Update active Navagraha slide to match newly selected language
             if (typeof renderNavagrahaSlide === 'function') {
                 renderNavagrahaSlide();
             }
 
-            document.getElementById('lbl-jyothisyam-title').innerText = dict.lbl_jyothisyam_title;
-            document.getElementById('lbl-ai-title').innerText = dict.lbl_ai_title;
-            document.getElementById('nav-btn-home').innerText = dict.nav_btn_home || "Home (Panchangam)";
-            document.getElementById('nav-btn-jyothisyam').innerText = dict.nav_btn_jyothisyam || "Astrology";
-            document.getElementById('nav-btn-ai').innerText = dict.nav_btn_ai || "Astro AI Chat";
+            setText('lbl-jyothisyam-title', dict.lbl_jyothisyam_title);
+            setText('lbl-ai-title', dict.lbl_ai_title);
+            setText('nav-btn-home', dict.nav_btn_home || "Home (Panchangam)");
+            setText('nav-btn-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
+            setText('nav-btn-ai', dict.nav_btn_ai || "Astro AI Chat");
             const marriageNavBtn = document.getElementById('nav-btn-marriage');
             if (marriageNavBtn) marriageNavBtn.innerText = dict.nav_btn_marriage || "Marriage Matching";
             const marriageIntro = document.getElementById('lbl-marriage-intro');
@@ -4409,21 +4440,21 @@
             const descGochara = document.getElementById('lbl-desc-gochara');
             if (descGochara) descGochara.innerText = dict.desc_gochara;
             updateDynamicPanchangamLabels(langCode, systemSelect ? systemSelect.value : 'sauramana');
-            document.getElementById('lbl-tithi').innerText = dict.tithi;
-            document.getElementById('lbl-naks').innerText = dict.naks;
-            document.getElementById('lbl-yogam').innerText = dict.yogam;
-            document.getElementById('lbl-karanam').innerText = dict.karanam;
+            setText('lbl-tithi', dict.tithi);
+            setText('lbl-naks', dict.naks);
+            setText('lbl-yogam', dict.yogam);
+            setText('lbl-karanam', dict.karanam);
             
             // Localize new labels
-            document.getElementById('lbl-sunrise').innerText = dict.sunrise || "Sunrise Time";
-            document.getElementById('lbl-sunset').innerText = dict.sunset || "Sunset Time";
+            setText('lbl-sunrise', dict.sunrise || "Sunrise Time");
+            setText('lbl-sunset', dict.sunset || "Sunset Time");
             const moonriseLabel = document.getElementById('lbl-moonrise');
             if (moonriseLabel) moonriseLabel.innerText = dict.moonrise || "Moonrise Time";
             const moonsetLabel = document.getElementById('lbl-moonset');
             if (moonsetLabel) moonsetLabel.innerText = dict.moonset || "Moonset Time";
-            document.getElementById('lbl-ahas').innerText = dict.ahas || "Day Duration (Ahas)";
-            document.getElementById('lbl-udayadhi').innerText = dict.udayadhi || "Udayadhi Nazhikai";
-            document.getElementById('lbl-kali-year').innerText = dict.kali_year || "Kali Yuga Year";
+            setText('lbl-ahas', dict.ahas || "Day Duration (Ahas)");
+            setText('lbl-udayadhi', dict.udayadhi || "Udayadhi Nazhikai");
+            setText('lbl-kali-year', dict.kali_year || "Kali Yuga Year");
             
             const panchWisdomTitle = document.getElementById('lbl-panch-wisdom-title');
             if (panchWisdomTitle) panchWisdomTitle.innerText = dict.panch_wisdom_title || "Panchangam Wisdom & Astrological Timings";
@@ -4502,13 +4533,13 @@
             const btnCloseAiLbl = document.getElementById('lbl-btn-close-ai');
             if (btnCloseAiLbl) btnCloseAiLbl.innerText = dict.lbl_btn_close_ai || "Close";
 
-            document.getElementById('lbl-name').innerText = dict.name;
-            document.getElementById('lbl-dob').innerText = dict.dob;
-            document.getElementById('lbl-tob').innerText = dict.tob;
-            document.getElementById('lbl-pob').innerText = dict.pob;
-            document.getElementById('lbl-lon').innerText = dict.lon;
-            document.getElementById('lbl-lat').innerText = dict.lat;
-            document.getElementById('lbl-gender').innerText = dict.gender || "Gender";
+            setText('lbl-name', dict.name);
+            setText('lbl-dob', dict.dob);
+            setText('lbl-tob', dict.tob);
+            setText('lbl-pob', dict.pob);
+            setText('lbl-lon', dict.lon);
+            setText('lbl-lat', dict.lat);
+            setText('lbl-gender', dict.gender || "Gender");
             const genderSelect = document.getElementById('in-gender');
             if (genderSelect) {
                 const maleTranslations = {
@@ -4520,8 +4551,8 @@
                 genderSelect.options[0].text = maleTranslations[langCode] || 'Male';
                 genderSelect.options[1].text = femaleTranslations[langCode] || 'Female';
             }
-            document.getElementById('lbl-chart-style').innerText = dict.chart_style;
-            document.getElementById('lbl-btn-generate').innerText = dict.btn_generate;
+            setText('lbl-chart-style', dict.chart_style);
+            setText('lbl-btn-generate', dict.btn_generate);
             document.getElementById('lbl-ai-p1').innerHTML = `<i class="fa-solid fa-lightbulb" style="color: var(--accent-indigo); margin-right: 6px;"></i>${dict.ai_p1}`;
             const aiWelcomeText = document.getElementById('lbl-ai-welcome-text');
             if (aiWelcomeText) aiWelcomeText.innerText = dict.lbl_ai_welcome_text || "Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in the Astrology tab, I will give you personalized chart-specific readings grounded in classical RAG scriptures.";
@@ -4529,14 +4560,14 @@
             if (chatInput) chatInput.placeholder = dict.lbl_chat_placeholder || "Ask Astro AI...";
 
             // Localize table headers & chart labels
-            document.getElementById('th-planet').innerText = dict.th_planet || "Planet";
-            document.getElementById('th-longitude').innerText = dict.th_longitude || "Longitude";
-            document.getElementById('th-rasi').innerText = dict.th_rasi || "Zodiac Sign (Rasi)";
-            document.getElementById('th-rasi-lord').innerText = dict.th_rasi_lord || "Rasi Lord";
-            document.getElementById('th-degree').innerText = dict.th_degree || "Rasi Degree";
-            document.getElementById('th-nakshatra').innerText = dict.th_nakshatra || "Nakshatra";
-            document.getElementById('th-pada').innerText = dict.th_pada || "Pada";
-            document.getElementById('th-dignity').innerText = dict.th_dignity || "Dignity (Strength)";
+            setText('th-planet', dict.th_planet || "Planet");
+            setText('th-longitude', dict.th_longitude || "Longitude");
+            setText('th-rasi', dict.th_rasi || "Zodiac Sign (Rasi)");
+            setText('th-rasi-lord', dict.th_rasi_lord || "Rasi Lord");
+            setText('th-degree', dict.th_degree || "Rasi Degree");
+            setText('th-nakshatra', dict.th_nakshatra || "Nakshatra");
+            setText('th-pada', dict.th_pada || "Pada");
+            setText('th-dignity', dict.th_dignity || "Dignity (Strength)");
             
             const rasiLbl = document.getElementById('lbl-rasi-chart-title');
             if (rasiLbl) rasiLbl.innerText = dict.lbl_rasi_chart || "Rasi Chart (D1)";
@@ -4838,9 +4869,14 @@
         }
 
         function getRegionalFestivals(panchangam, placements, system) {
-            const sunRasi = placements["Sun"].rasi_name;
-            const sunDeg = placements["Sun"].degree;
-            const tithi = panchangam.tithi;
+            // Defensive against a partial/error response that lacks full
+            // placements — a missing Sun would otherwise throw and abort the
+            // whole panchangam UI update.
+            const sun = placements && placements["Sun"];
+            if (!sun) return [];
+            const sunRasi = sun.rasi_name;
+            const sunDeg = sun.degree;
+            const tithi = panchangam.tithi || "";
             const lunarMonth = panchangam.tamil_month;
             
             let festivals = [];
@@ -4866,8 +4902,9 @@
                 }
             } else {
                 let tithiNum = 1;
-                if (tithi.includes("Tithi")) {
-                    tithiNum = parseInt(tithi.match(/Tithi (\d+)/)[1]);
+                const tithiMatch = tithi.match(/Tithi (\d+)/);
+                if (tithiMatch) {
+                    tithiNum = parseInt(tithiMatch[1]);
                 }
                 const isSukla = tithi.includes("Sukla");
                 const isPournami = tithi.includes("Pournami");
@@ -5996,6 +6033,10 @@
 
             const btn = document.getElementById('lbl-btn-generate');
             const originalText = btn.innerText;
+            // Guard against a double-click firing two paid (50-credit) requests
+            // that also race to set calculatedChartData.
+            if (btn.disabled) return;
+            btn.disabled = true;
             btn.innerText = "Drafting Sidereal Chart Placements...";
 
             try {
@@ -6046,6 +6087,7 @@
                 alert("Failed to compute chart. Please ensure all coordinates and inputs are valid.");
             } finally {
                 btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -6690,6 +6732,8 @@
 
         // ------------------ PAGE 3: COSMIC ASTROLOGY AI predictions chat engine ------------------
         let isChatResponding = false;
+        let isJyothiResponding = false;   // double-submit guard for /api/ai-predict
+        let isMarriageAIResponding = false; // double-submit guard for /api/ai-predict-marriage
         let aiChatHistory = [];
         let lastMessageTime = null;
         let sessionTokenCount = 0;
@@ -6864,6 +6908,7 @@
             try {
                 const response = await apiFetch(apiPath, {
                     method: 'POST',
+                    stream: true,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(apiBody)
                 });
@@ -6917,6 +6962,9 @@
         // Jyothisyam tab: inline AI prediction session
         async function generateJyothiAIReading() {
             if (!calculatedChartData) return;
+            // Guard against a double-click firing two paid (25-credit) streams.
+            if (isJyothiResponding) return;
+            isJyothiResponding = true;
 
             const section = document.getElementById('jyothi-ai-reading-section');
             section.style.display = 'block';
@@ -6931,6 +6979,7 @@
             try {
                 const response = await apiFetch('/api/ai-predict', {
                     method: 'POST',
+                    stream: true,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         chart_data: calculatedChartData,
@@ -6958,6 +7007,8 @@
                 outputPane.innerHTML = formatMarkdown(accumulatedText);
             } catch (err) {
                 outputPane.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`;
+            } finally {
+                isJyothiResponding = false;
             }
         }
 
@@ -7439,7 +7490,10 @@
                 alert("Please calculate the compatibility report first.");
                 return;
             }
-            
+            // Guard against a double-click firing two paid (25-credit) streams.
+            if (isMarriageAIResponding) return;
+            isMarriageAIResponding = true;
+
             const chatBox = document.getElementById('marriage-ai-output');
             const dict = localization[currentLang] || localization.en;
             const loadingMsg = dict.lbl_marriage_ai_loading || "Consulting relationship scripture RAG database and streaming Ganesha reading...";
@@ -7459,6 +7513,7 @@
             try {
                 const response = await apiFetch('/api/ai-predict-marriage', {
                     method: 'POST',
+                    stream: true,
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -7516,6 +7571,8 @@
                 }
             } catch (err) {
                 chatBox.innerHTML = `<span style="color:#F56565;">*Prediction Streaming Error: ${err.message}*</span>`;
+            } finally {
+                isMarriageAIResponding = false;
             }
         }
 
@@ -8551,230 +8608,6 @@
             }
         }
 
-        // --- MUHURTHAM FINDER PAGE JS ---
-        function useMyLocationForMuhurtham() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        document.getElementById('muh-lat').value = position.coords.latitude.toFixed(4);
-                        document.getElementById('muh-lon').value = position.coords.longitude.toFixed(4);
-                        alert("Location updated successfully!");
-                    },
-                    (error) => {
-                        console.error("Error getting location:", error);
-                        alert("Could not retrieve location automatically. Please type it in.");
-                    }
-                );
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
-
-        async function calculateMuhurthamWindow() {
-            const activity = document.getElementById('muh-activity').value;
-            const paradigm = document.getElementById('muh-paradigm').value;
-            const datetimeVal = document.getElementById('muh-datetime').value;
-            const lat = parseFloat(document.getElementById('muh-lat').value);
-            const lon = parseFloat(document.getElementById('muh-lon').value);
-
-            if (!datetimeVal || isNaN(lat) || isNaN(lon)) {
-                alert("Please fill in all parameters, including a valid date, time, and coordinates.");
-                return;
-            }
-
-            const resultsPanel = document.getElementById('muhurtham-results-panel');
-            resultsPanel.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px;">
-                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 16px; color: var(--accent-cosmic);"></i>
-                    <p>Calculating auspicious alignments and evaluating seasonal doshams...</p>
-                </div>
-            `;
-
-            const localDate = new Date(datetimeVal);
-            const utcTimestamp = localDate.toISOString();
-
-            try {
-                const response = await apiFetch('/api/muhurtham', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        timestamp: utcTimestamp,
-                        latitude: lat,
-                        longitude: lon,
-                        regional_paradigm: paradigm,
-                        target_activity: activity
-                    })
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.detail || `HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                renderMuhurthamResults(data);
-            } catch (err) {
-                console.error("Muhurtham calculation failed:", err);
-                resultsPanel.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: #ef4444;">
-                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 48px; margin-bottom: 16px;"></i>
-                        <p>Failed to calculate Muhurtham: ${err.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        function renderMuhurthamResults(data) {
-            const resultsPanel = document.getElementById('muhurtham-results-panel');
-            
-            const status = data.muhurtham_status;
-            const attrs = data.base_attributes;
-            const compat = status.activity_compatibility;
-            const activeActivity = document.getElementById('muh-activity').value;
-            
-            const isTargetAuspicious = compat[activeActivity];
-            
-            const cardBg = isTargetAuspicious 
-                ? 'background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.25);'
-                : 'background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.25);';
-            const badgeBg = isTargetAuspicious ? '#22c55e' : '#ef4444';
-            const badgeText = isTargetAuspicious ? 'Auspicious Alignment' : 'Inauspicious Alignment';
-            
-            let doshamsHtml = "";
-            if (status.active_doshams_detected.length === 0) {
-                doshamsHtml = `
-                    <div style="display: flex; align-items: center; gap: 8px; color: #22c55e; font-size: 13px; font-weight: 500; background: rgba(34, 197, 94, 0.08); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.15);">
-                        <i class="fa-solid fa-circle-check"></i> No Major Astronomical Doshams Detected (Clear Day)
-                    </div>
-                `;
-            } else {
-                doshamsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 8px;">`;
-                status.active_doshams_detected.forEach(dosham => {
-                    const pretty = dosham.replace(/_/g, ' ');
-                    doshamsHtml += `
-                        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 4px 8px; border-radius: 6px; font-weight: 600;">
-                            <i class="fa-solid fa-triangle-exclamation"></i> ${pretty}
-                        </span>
-                    `;
-                });
-                doshamsHtml += `</div>`;
-            }
-
-            const activityNames = {
-                "GENERAL": "General Activities",
-                "VIVAHA": "Wedding (Vivaha)",
-                "GRAHAPRAVESHA": "Housewarming (Grahapravesha)",
-                "AKSHARABHYASAM": "Education Start",
-                "VAHAN_KHARIDI": "Vehicle Purchase"
-            };
-
-            let compatHtml = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 10px;">`;
-            for (const [act, val] of Object.entries(compat)) {
-                const label = activityNames[act] || act;
-                const statusColor = val ? '#22c55e' : '#ef4444';
-                const statusBg = val ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)';
-                const statusBorder = val ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-                const icon = val ? 'fa-circle-check' : 'fa-circle-xmark';
-                
-                compatHtml += `
-                    <div style="background: ${statusBg}; border: 1px solid ${statusBorder}; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="font-size: 11px; font-weight: 500; color: var(--text-primary);">${label}</span>
-                        <span style="color: ${statusColor}; font-size: 12px; display: flex; align-items: center; gap: 4px; font-weight: 600;">
-                            <i class="fa-solid ${icon}"></i> ${val ? 'Yes' : 'No'}
-                        </span>
-                    </div>
-                `;
-            }
-            compatHtml += `</div>`;
-
-            let horaiHtml = "";
-            if (data.recommended_subha_horai_windows.length === 0) {
-                horaiHtml = `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">No subha horai windows recommended for this day.</p>`;
-            } else {
-                horaiHtml = `<div style="display: flex; flex-wrap: wrap; gap: 8px;">`;
-                data.recommended_subha_horai_windows.forEach(w => {
-                    let planetIcon = "fa-circle";
-                    if (w.planet === "Jupiter") planetIcon = "fa-hand-holding-dollar";
-                    else if (w.planet === "Venus") planetIcon = "fa-heart";
-                    else if (w.planet === "Mercury") planetIcon = "fa-brain";
-                    
-                    horaiHtml += `
-                        <div style="background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.25); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 10px; font-weight: bold; color: var(--accent-gold); text-transform: uppercase;">
-                                <i class="fa-solid ${planetIcon}"></i> ${w.planet}
-                            </span>
-                            <span style="font-size: 11px; font-weight: 600; color: var(--text-primary);">${w.start} - ${w.end}</span>
-                        </div>
-                    `;
-                });
-                horaiHtml += `</div>`;
-            }
-
-            const panchColor = status.panchaka_classification === "Subha" ? '#22c55e' : '#ef4444';
-            const panchBg = status.panchaka_classification === "Subha" ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)';
-            const panchBorder = status.panchaka_classification === "Subha" ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
-
-            resultsPanel.innerHTML = `
-                <h2 class="card-section-title"><i class="fa-solid fa-chart-pie"></i> Muhurtham Calculation Results</h2>
-                
-                <div style="margin-top: 14px; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; ${cardBg}">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                        <span style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--text-primary);">
-                            Target: ${activityNames[activeActivity]}
-                        </span>
-                        <span style="background: ${badgeBg}; color: #fff; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 4px 8px; border-radius: 20px;">
-                            ${badgeText}
-                        </span>
-                    </div>
-                    <p style="font-size: 12px; line-height: 1.5; margin: 0; color: var(--text-secondary);">
-                        Evaluated for <strong>${data.timestamp_evaluated.replace('Z', '').replace('T', ' ')}</strong> at local timezone coordinates.
-                    </p>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
-                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
-                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Tithi</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-moon"></i> ${attrs.tithi}</span>
-                    </div>
-                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
-                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nakshatram</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-star"></i> ${attrs.nakshatram}</span>
-                    </div>
-                    <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
-                        <span style="font-size: 10px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nitya Yogam</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);"><i class="fa-solid fa-circle-nodes"></i> ${attrs.nitya_yogam}</span>
-                    </div>
-                </div>
-
-                <div style="margin-top: 16px;">
-                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Panchaka Rahita</h3>
-                    <div style="background: ${panchBg}; border: 1px solid ${panchBorder}; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Panchaka Value: ${status.panchaka_value}</span>
-                            <p style="font-size: 10px; margin: 2px 0 0 0; color: var(--text-secondary);">Computed from Tithi + Day + Star + Lagna modulo 9.</p>
-                        </div>
-                        <span style="color: ${panchColor}; font-size: 12px; font-weight: bold; text-transform: uppercase;">
-                            ${status.panchaka_classification} Panchakam
-                        </span>
-                    </div>
-                </div>
-
-                <div style="margin-top: 16px;">
-                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Exclusion Doshams Detected</h3>
-                    ${doshamsHtml}
-                </div>
-
-                <div style="margin-top: 16px;">
-                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Activity Suitability Matrix</h3>
-                    ${compatHtml}
-                </div>
-
-                <div style="margin-top: 18px;">
-                    <h3 style="font-size: 12px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Recommended Subha Horai Windows</h3>
-                    ${horaiHtml}
-                </div>
-            `;
-        }
     </script>
 
     <!-- Sign In / Sign Up Modal -->

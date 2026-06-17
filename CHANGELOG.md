@@ -3,6 +3,35 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.3]
+
+Robustness — frontend resilience (Group C, `static/index.html`).
+
+### Fixed
+- **`changeLanguage` no longer blanks the dashboard** on a stale/garbage
+  `vedic_lang` from localStorage: it validates the code (`if
+  (!localization[langCode]) langCode='en'`) before dereferencing the dict, and
+  the ~35 bare `getElementById('lbl-…').innerText = …` writes now go through a
+  guarded `setText()` helper so a missing/renamed id can't throw and abort the
+  switch mid-way (which previously skipped the panchangam/calendar refresh).
+- **Requests can no longer hang the UI forever.** `apiFetch` aborts a stalled
+  non-streaming request after a timeout (default 30 s) via `AbortController`;
+  streaming calls (`stream: true`) are exempt — an LLM stream legitimately runs
+  for minutes and is bounded server-side by `LLM_STREAM_TIMEOUT`.
+- **Double-submit guards** on the three paid generate flows: `generateBirthChart`
+  (50 credits, `btn.disabled`), `generateJyothiAIReading` and
+  `generateMarriageAICompatibility` (25 credits each, `is*Responding` flags) —
+  a double-click no longer fires two charged requests that race shared state.
+- **`getRegionalFestivals` hardened**: returns `[]` if the response lacks a Sun
+  placement, and guards the `tithi.match(/Tithi (\d+)/)` access (a tithi string
+  without the exact pattern previously threw on `null[1]`).
+
+### Removed
+- ~225 lines of dead Muhurtham UI handlers (`useMyLocationForMuhurtham`,
+  `calculateMuhurthamWindow`, `renderMuhurthamResults`) that referenced `muh-*`
+  / `muhurtham-results-panel` elements absent from the DOM — a latent trap that
+  would throw if ever wired to a button.
+
 ## [1.8.2]
 
 Robustness — observability & dependency resilience (Group B).
