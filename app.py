@@ -104,6 +104,7 @@ app.add_middleware(
 _OPEN_API_PATHS = {
     "/api/version",
     "/api/health",
+    "/api/live",
     "/api/local-key",
     "/api/auth/signup",
     "/api/auth/login",
@@ -181,12 +182,18 @@ def init_user_db():
     )
     """)
     
-    # Safely add columns if they don't exist (backward compatibility)
+    # Safely add columns if they don't exist (backward compatibility). Only the
+    # expected "duplicate column name" case is swallowed — any other failure
+    # (locked DB, disk full, malformed type) is logged so a real migration
+    # problem isn't silently ignored, leaving the app on a wrong schema.
     def add_col(col_name, col_type, table_name="users"):
         try:
             cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}")
-        except Exception:
-            pass
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                logger.warning("Schema migration: ALTER %s ADD %s failed: %s", table_name, col_name, e)
+        except Exception as e:
+            logger.warning("Schema migration: ALTER %s ADD %s failed: %s", table_name, col_name, e)
 
     add_col("latitude", "REAL DEFAULT 13.0827")
     add_col("longitude", "REAL DEFAULT 80.2707")
@@ -1058,26 +1065,31 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
             dob_str = f"{req.year:04d}-{req.month:02d}-{req.day:02d}"
             tob_str = f"{req.hour:02d}:{req.minute:02d}"
             
+            # try/finally so a failure in the INSERT/SELECT/DELETE doesn't leak
+            # the WAL connection (the saved-history is best-effort and must not
+            # break chart calculation).
             conn = connect_db(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-            """, (user["id"], req.name, dob_str, tob_str, req.place_name, req.latitude, req.longitude, req.gender, req.ayanamsa, req.visual_style))
-            
-            # Enforce max 50 history details
-            cursor.execute("""
-                SELECT id FROM user_charts 
-                WHERE user_id = ? AND is_saved = 0
-                ORDER BY created_at DESC
-            """, (user["id"],))
-            histories = cursor.fetchall()
-            if len(histories) > 50:
-                to_delete = [h[0] for h in histories[50:]]
-                cursor.execute(f"DELETE FROM user_charts WHERE id IN ({','.join('?' * len(to_delete))})", to_delete)
-            conn.commit()
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                """, (user["id"], req.name, dob_str, tob_str, req.place_name, req.latitude, req.longitude, req.gender, req.ayanamsa, req.visual_style))
+
+                # Enforce max 50 history details
+                cursor.execute("""
+                    SELECT id FROM user_charts
+                    WHERE user_id = ? AND is_saved = 0
+                    ORDER BY created_at DESC
+                """, (user["id"],))
+                histories = cursor.fetchall()
+                if len(histories) > 50:
+                    to_delete = [h[0] for h in histories[50:]]
+                    cursor.execute(f"DELETE FROM user_charts WHERE id IN ({','.join('?' * len(to_delete))})", to_delete)
+                conn.commit()
+            finally:
+                conn.close()
+
         return chart
     except HTTPException:
         raise
@@ -2438,17 +2450,40 @@ def get_version():
     """Report the running application version."""
     return {"name": "Vedic Astrology AI RAG Portal", "version": VERSION}
 
+@app.get("/api/live")
+def liveness_probe():
+    """Process liveness: returns 200 as long as the app is up and serving.
+
+    This is what the container HEALTHCHECK should hit. Unlike /api/health it
+    does NOT depend on Ollama or the DB — those are dependencies, and a downed
+    dependency must not mark the app itself unhealthy (the app still serves
+    charts/panchangam/PDF) and trigger a needless restart.
+    """
+    return {"status": "alive", "version": VERSION}
+
 @app.get("/api/health")
 def health_check():
-    """Lightweight readiness probe: checks the DB and the Ollama backend."""
+    """Readiness/diagnostic probe: checks the DB and the Ollama backend.
+
+    Returns 503 if a dependency is down. Also flags a loaded-but-empty search
+    index (the silent zero-page failure mode) as degraded so it's visible.
+    """
     status = {"version": VERSION, "database": "down", "ollama": "down"}
     code = 200
     try:
         conn = connect_db(DB_PATH)
-        conn.execute("SELECT 1 FROM pages LIMIT 1")
-        conn.close()
+        try:
+            conn.execute("SELECT 1 FROM pages LIMIT 1")
+            book_count = conn.execute("SELECT count(*) FROM books").fetchone()[0]
+        finally:
+            conn.close()
         status["database"] = "ok"
         status["indexed_pages"] = len(search_engine.page_map)
+        # Books registered but nothing searchable → index failed to load
+        # (e.g. an embedding-dimension mismatch); surface it instead of "ok".
+        if book_count > 0 and len(search_engine.page_map) == 0:
+            status["search_index"] = "degraded: 0 pages loaded despite registered books"
+            code = 503
     except Exception as e:
         status["database_error"] = str(e)
         code = 503

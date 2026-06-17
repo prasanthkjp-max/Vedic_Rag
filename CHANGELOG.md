@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.5]
+
+Robustness — operational hardening (Group E).
+
+### Added
+- **`/api/live`** — a pure process-liveness probe (no DB/Ollama dependency).
+  The container `HEALTHCHECK` now hits this instead of `/api/health`, so a
+  transiently-down dependency no longer marks the container unhealthy (and
+  triggers a restart) while it can still serve charts/panchangam/PDF.
+
+### Changed
+- **`/api/health`** now also flags a loaded-but-empty search index (books
+  registered but 0 pages loaded — the silent embedding-dimension-mismatch
+  failure mode) as `503 degraded`, and closes its DB connection via
+  `try/finally`.
+- **`init_user_db` migrations** only swallow the expected "duplicate column
+  name" `OperationalError`; any other ALTER failure (locked DB, disk full,
+  malformed type) is logged instead of silently ignored.
+- **`/api/calculate-chart`** wraps its best-effort history-save in `try/finally`
+  so a failure there can't leak the WAL connection.
+- **`BOOKS_DIR`** defaults to a repo-relative `./books` (was a hardcoded
+  personal absolute path); **ingest `NUM_THREADS`** defaults to the host CPU
+  count and is overridable via `VEDIC_INGEST_THREADS`. `.env.example` documents
+  the new vars (plus `VEDIC_LOG_LEVEL`).
+
 ## [1.8.4]
 
 Robustness — CI & deterministic tests (Group D).
