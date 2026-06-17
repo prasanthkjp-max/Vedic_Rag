@@ -1167,7 +1167,6 @@ A precise computational analysis of the chart is given below. You MUST reason fr
 
 --- BIRTH PANCHANGAM ---
 - Nakshatram: {panch.get('nakshatra')} | Tithi: {panch.get('tithi')} | Yogam: {panch.get('yogam')}
-- Amruthathi Yoga (birth nakshatra x weekday): {panch.get('amruthathi_yoga')} ({panch.get('amruthathi_quality')})
 
 --- CLASSICAL TEXT REFERENCES (retrieved from Brihat Parasara Hora Sastra, Phaladeepika, Saravali, Jataka Parijata, etc.) ---
 {rag_context}

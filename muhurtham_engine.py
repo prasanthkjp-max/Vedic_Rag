@@ -158,7 +158,7 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
       3.  Forbidden Weekday (Tuesday) — VIVAHA
       4.  Nakshatra Whitelist — only 11 approved stars — VIVAHA
       5.  Guru (Jupiter) & Sukra (Venus) Combustion — VIVAHA
-      6.  Anandadi Yogam daily flag (Marana / Varjya / Nasha / Dagdha = bad)
+      6.  Saturday nakshatra flaw (only Rohini / Swati pass on a Saturday)
       7.  Nitya Yogam first-Ghati block (9 malefic Yogams)
       8.  Masa Varjyam (solar dead-zone months) — TAMIL_SOLAR / KERALA_DRIG
       9.  Chaturmas (lunar block Ashadha S11 – Kartika S11) — lunar paradigms
@@ -205,8 +205,6 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
     tithi_name       = panch["tithi"]
     nakshatra_name   = panch["nakshatra"]     # English name from NAKSHATRAS list
     nitya_yogam_name = get_yogam_name(yog_idx)
-    anandadi_yogam   = panch.get("amruthathi_yoga", "")
-    anandadi_quality = panch.get("amruthathi_quality", "")
     sun_long         = placements["Sun"]["longitude"]
     moon_long        = placements["Moon"]["longitude"]
     lagna_rasi_idx   = placements["Lagna"]["rasi_index"]
@@ -286,24 +284,15 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
                 active_doshams.append(f"{planet}_Combust_Asthamanam")
 
     # ════════════════════════════════════════════════════════════════════════
-    # ── 6. Anandadi (daily weather) flag ────────────────────────────────────
+    # ── 6. Saturday nakshatra flaw ──────────────────────────────────────────
     # ════════════════════════════════════════════════════════════════════════
+    # Only Rohini / Swati are auspicious on a Saturday. (The former
+    # Anandadi/Amruthathi-yoga gating has been removed; auspiciousness now rests
+    # on the nitya-yogam first-ghati block, weekday, tithi and nakshatra checks.)
     is_generally_auspicious = True
-
-    if day_idx == 6:    # Saturday special rule
-        if nakshatra_name in ("Rohini", "Swati"):
-            is_generally_auspicious = True
-        else:
-            is_generally_auspicious = False
-            active_doshams.append("Saturday_Nakshatra_Flaw")
-    else:
-        if anandadi_yogam in ("Siddha", "Amrita", "Subha"):
-            is_generally_auspicious = True
-        elif anandadi_yogam in ("Marana", "Varjya", "Nasha", "Dagdha"):
-            is_generally_auspicious = False
-            active_doshams.append("Marana_Prabalarishta")
-        else:
-            is_generally_auspicious = (anandadi_quality == "auspicious")
+    if day_idx == 6 and nakshatra_name not in ("Rohini", "Swati"):
+        is_generally_auspicious = False
+        active_doshams.append("Saturday_Nakshatra_Flaw")
 
     # ════════════════════════════════════════════════════════════════════════
     # ── 7. Nitya Yogam first-Ghati block ────────────────────────────────────
@@ -504,7 +493,6 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
             "tithi":        tithi_name,
             "nakshatram":   nakshatra_name,
             "nitya_yogam":  nitya_yogam_name,
-            "anandadi_yogam": anandadi_yogam,
         },
         "muhurtham_status": {
             "is_general_muhurtham_naal":  is_general_muhurtham_naal,

@@ -3,6 +3,39 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.0]
+
+Removed the Amruthathi (Anandadi) day-yoga entirely; the panchangam now exposes
+only the 27 nitya yogas (the Sun+Moon `yogam`).
+
+### Removed
+- `astro_engine.py`: `AMRUTHATHI_YOGA_TABLE`, `AMRUTHATHI_YOGA_NAMES`,
+  `get_amruthathi_yoga()`, and the `amruthathi_yoga` / `amruthathi_quality`
+  fields from the panchangam output.
+- `pdf_generator.py`: `translate_amruthathi_yoga()`, the per-language
+  "Amruthathi" labels, and the PDF row.
+- `static/index.html`: the Amruthathi panchangam tile (`item-amruthathi` /
+  `lbl-amruthathi` / `panch-amruthathi`), `translateAmruthathiYoga()`, the
+  per-language `amruthathi` labels, and the muhurtham "Anandadi Yogam" display.
+- `app.py`: the Amruthathi line in the AI-prediction prompt.
+- `muhurtham_engine.py`: the Anandadi-based auspiciousness gating and the
+  `anandadi_yogam` field in `base_attributes`. The independent Saturday rule
+  (only Rohini/Swati pass on a Saturday) is retained; the muhurtham verdict now
+  rests on tithi, weekday, nakshatra, combustion, the nitya-yogam first-ghati
+  block, and the seasonal/Panchaka/Kartari checks.
+- `test_amruthathi_yoga.py` (the dedicated regression test).
+
+### Breaking
+- API response shape: `/api/calculate-chart` & `/api/panchangam` no longer
+  return `panchangam.amruthathi_yoga` / `amruthathi_quality`; `/api/muhurtham`
+  no longer returns `base_attributes.anandadi_yogam`. The bundled frontend is
+  updated in lockstep; external clients reading those fields must adapt.
+
+### Verified
+- 27 nitya yogas intact; `test_muhurtham_engine.py` 4/4; `test_i18n_sync.py`
+  passes; PDF renders; JS parses; daily-panchangam and muhurtham outputs carry
+  the nitya yogam and no amruthathi/anandadi keys.
+
 ## [1.7.0]
 
 Single source of truth for panchangam value translations.

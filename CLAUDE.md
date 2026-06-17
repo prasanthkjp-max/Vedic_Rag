@@ -45,12 +45,13 @@ Most `test_*translation*.py` verify that per-language UI **label IDs** translate
 (and that English values don't leak into other languages). They pass through the
 API-key gate because the frontend auto-bootstraps the key on localhost — see Auth.
 
-Exception: `test_amruthathi_yoga.py` is a **pure-engine** regression test (imports
-`astro_engine` directly — no server, no browser). It locks in the Amruthathi yoga
-lookup: table invariants (27 nakshatras × 7 weekdays, valid codes), the
-`AMRUTHATHI_YOGA_TABLE[nakshatra][weekday]` index orientation, known dates through
-`get_astrological_chart()`, and direct cell lookups for the rarer codes. Run it
-standalone (`python3 test_amruthathi_yoga.py`, exits 0/1) without a running server.
+Pure-engine (no server/browser) checks: `test_muhurtham_engine.py` (marriage
+muhurtham rules) and `test_i18n_sync.py` (the `translations.py` single-source
+guard). Run them standalone (`python3 test_<name>.py`, exit 0/1).
+
+The panchangam exposes the **27 nitya yogas** (Sun+Moon `yogam`) only; the older
+Tamil Amruthathi/Anandadi day-yoga (nakshatra × weekday) has been removed
+entirely.
 
 ## Architecture (the parts that span files)
 

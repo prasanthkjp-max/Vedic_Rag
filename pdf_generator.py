@@ -243,22 +243,6 @@ def translate_nakshatra(nak_str, lang):
 def translate_yogam(yog_str, lang):
     return _translate_value(YOGAM, yog_str, lang)
 
-def translate_amruthathi_yoga(name, quality, lang):
-    # Amruthathi yoga (birth nakshatra x weekday): Siddha/Amrita/Subha
-    # (auspicious) or Varjya/Nasha/Dagdha/Marana (inauspicious).
-    if not name:
-        return "--"
-    yoga_names = {
-        "Siddha": {"en": "Siddha", "ta": "சித்த", "te": "సిద్ధ", "ml": "സിദ്ധ", "kn": "ಸಿದ್ಧ", "hi": "सिद्ध"},
-        "Amrita": {"en": "Amrita", "ta": "அம்ருத", "te": "అమృత", "ml": "അമൃത", "kn": "ಅಮೃತ", "hi": "अमृत"},
-        "Subha":  {"en": "Subha", "ta": "சுப", "te": "శుభ", "ml": "ശുഭ", "kn": "ಶುಭ", "hi": "शुभ"},
-        "Varjya": {"en": "Varjya", "ta": "வர்ஜ்ய", "te": "వర్జ్య", "ml": "വർജ്യ", "kn": "ವರ್ಜ್ಯ", "hi": "वर्ज्य"},
-        "Nasha":  {"en": "Nasha", "ta": "நாச", "te": "నాశ", "ml": "നാശ", "kn": "ನಾಶ", "hi": "नाश"},
-        "Dagdha": {"en": "Dagdha", "ta": "தக்த", "te": "దగ్ధ", "ml": "ദഗ്ധ", "kn": "ದಗ್ಧ", "hi": "दग्ध"},
-        "Marana": {"en": "Marana", "ta": "மரண", "te": "మరణ", "ml": "മരണ", "kn": "ಮರಣ", "hi": "मरण"},
-    }
-    return yoga_names.get(name, {}).get(lang) or yoga_names.get(name, {}).get("en") or name
-
 def translate_karanam(kar_str, lang):
     return _translate_value(KARANA, kar_str, lang)
 
@@ -405,7 +389,7 @@ LABEL_LOCALIZATION = {
         "name": "Native Name", "date": "Birth Date", "tob": "Birth Time", "place": "Birth Place",
         "coords": "Coordinates", "ayanamsa": "Ayanamsa", "tamil_year": "Tamil Year",
         "tamil_month": "Tamil Date", "tithi": "Tithi (Phases)", "naks": "Nakshatram",
-        "yogam": "Yogam", "amruthathi": "Amruthathi Yoga", "karanam": "Karanam", "sunrise": "Sunrise Time", "sunset": "Sunset Time",
+        "yogam": "Yogam", "karanam": "Karanam", "sunrise": "Sunrise Time", "sunset": "Sunset Time",
         "ahas": "Day Duration (Ahas)", "udayadhi": "Udayadhi Nazhikai", "lmt": "Local Mean Time (LMT)",
         "kali_year": "Kali Yuga Year", "day_of_week": "Birth Day of Week", "planet": "Planet",
         "longitude": "Sidereal Longitude", "rasi": "Zodiac Sign (Rasi)", "rasi_deg": "Rasi Degree",
@@ -424,7 +408,7 @@ LABEL_LOCALIZATION = {
         "name": "ஜாதகர் பெயர்", "date": "பிறந்த தேதி", "tob": "பிறந்த நேரம்", "place": "பிறந்த ஊர்",
         "coords": "அட்ச/தீர்க்க ரேகை", "ayanamsa": "அயனாம்சம்", "tamil_year": "தமிழ் வருடம்",
         "tamil_month": "தமிழ் தேதி", "tithi": "திதி", "naks": "நட்சத்திரம்",
-        "yogam": "யோகம்", "amruthathi": "அம்ருதாதி யோகம்", "karanam": "கரணம்", "sunrise": "சூரிய உதயம்", "sunset": "சூரிய அஸ்தமனம்",
+        "yogam": "யோகம்", "karanam": "கரணம்", "sunrise": "சூரிய உதயம்", "sunset": "சூரிய அஸ்தமனம்",
         "ahas": "பகலின் அளவு (அகஸ்)", "udayadhi": "உதயாதி நாழிகை", "lmt": "சுதேச மணி (LMT)",
         "kali_year": "கலி வருடம்", "day_of_week": "பிறந்த கிழமை", "planet": "கிரகம்",
         "longitude": "தீர்க்கரேகை பாகை", "rasi": "ராசி சக்கரம்", "rasi_deg": "ராசி பாகை",
@@ -443,7 +427,7 @@ LABEL_LOCALIZATION = {
         "name": "జాతకుని పేరు", "date": "పుట్టిన తేదీ", "tob": "పుట్టిన సమయం", "place": "పుట్టిన స్థలం",
         "coords": "అక్షాంశ/రేఖాంశం", "ayanamsa": "అయనాంశం", "tamil_year": "సంవత్సరం",
         "tamil_month": "తేదీ", "tithi": "తిథి", "naks": "నక్షత్రం",
-        "yogam": "యోగం", "amruthathi": "అమృతాది యోగం", "karanam": "కరణం", "sunrise": "సూర్యోదయం", "sunset": "సూర్యాస్తమయం",
+        "yogam": "యోగం", "karanam": "కరణం", "sunrise": "సూర్యోదయం", "sunset": "సూర్యాస్తమయం",
         "ahas": "పగటి ప్రమాణం (అహస్సు)", "udayadhi": "ఉదయాది ఘడియలు", "lmt": "స్థానిక సమయం (LMT)",
         "kali_year": "కలి యుగ వర్షం", "day_of_week": "పుట్టిన వారం", "planet": "గ్రహం",
         "longitude": "రేఖాంశం డిగ్రీ", "rasi": "రాశి చక్రం", "rasi_deg": "రాశి డిగ్రీ",
@@ -462,7 +446,7 @@ LABEL_LOCALIZATION = {
         "name": "ജാതകന്റെ പേര്", "date": "ജനന തീയതി", "tob": "ജനന സമയം", "place": "ജനന സ്ഥലം",
         "coords": "അക്ഷാംശം/രേഖാംശം", "ayanamsa": "അയനാംശം", "tamil_year": "വർഷം",
         "tamil_month": "തീയതി", "tithi": "തിഥി", "naks": "നക്ഷത്രം",
-        "yogam": "യോഗം", "amruthathi": "അമൃതാദി യോഗം", "karanam": "കരണം", "sunrise": "സൂര്യോദയം", "sunset": "സൂര്യാസ്തമയം",
+        "yogam": "യോഗം", "karanam": "കരണം", "sunrise": "സൂര്യോദയം", "sunset": "സൂര്യാസ്തമയം",
         "ahas": "പകൽ ദൈർഘ്യം (അഹസ്സ്)", "udayadhi": "ഉദയാദി നാഴിക", "lmt": "പ്രാദേശിക സമയം (LMT)",
         "kali_year": "കലി വർഷം", "day_of_week": "ജനന ദിവസം", "planet": "ഗ്രഹം",
         "longitude": "രേഖാംശം ഡിഗ്രി", "rasi": "രാശി ചക്രം", "rasi_deg": "രാശി ഡിഗ്രി",
@@ -481,7 +465,7 @@ LABEL_LOCALIZATION = {
         "name": "ಜಾತಕನ ಹೆಸರು", "date": "ಹುಟ್ಟಿದ ದಿನಾಂಕ", "tob": "ಹುಟ್ಟಿದ ಸಮಯ", "place": "ಹುಟ್ಟಿದ ಸ್ಥಳ",
         "coords": "ಅಕ್ಷಾಂಶ/ರೇಖಾಂಶ", "ayanamsa": "ಅಯನಾಂಶ", "tamil_year": "ವರ್ಷ",
         "tamil_month": "ದಿನಾಂಕ", "tithi": "ತಿಥಿ", "naks": "ನಕ್ಷತ್ರ",
-        "yogam": "ಯೋಗ", "amruthathi": "ಅಮೃತಾದಿ ಯೋಗ", "karanam": "ಕರಣ", "sunrise": "ಸೂರ್ಯೋದಯ", "sunset": "ಸೂರ್ಯಾಸ್ತ",
+        "yogam": "ಯೋಗ", "karanam": "ಕರಣ", "sunrise": "ಸೂರ್ಯೋದಯ", "sunset": "ಸೂರ್ಯಾಸ್ತ",
         "ahas": "ಹಗಲಿನ ಅವಧಿ (ಅಹಸ್)", "udayadhi": "ಉದಯಾದಿ ಘಳಿಗೆ", "lmt": "ಸ್ಥಳೀಯ ಸಮಯ (LMT)",
         "kali_year": "ಕಲಿ ವರ್ಷ", "day_of_week": "ಹುಟ್ಟಿದ ವಾರ", "planet": "ಗ್ರಹ",
         "longitude": "ರೇಖಾಂಶ ಡಿಗ್ರಿ", "rasi": "ರಾಶಿ ಚಕ್ರ", "rasi_deg": "ರಾಶಿ ಡಿಗ್ರಿ",
@@ -500,7 +484,7 @@ LABEL_LOCALIZATION = {
         "name": "जातक का नाम", "date": "जन्म तिथि", "tob": "जन्म समय", "place": "जन्म स्थान",
         "coords": "अक्षांश/रेखांश", "ayanamsa": "अयनांश", "tamil_year": "वर्ष",
         "tamil_month": "तिथि/दिनांक", "tithi": "तिथि", "naks": "नक्षत्र",
-        "yogam": "योग", "amruthathi": "अमृतादि योग", "karanam": "करण", "sunrise": "सूर्योदय", "sunset": "सूर्यास्त",
+        "yogam": "योग", "karanam": "करण", "sunrise": "सूर्योदय", "sunset": "सूर्यास्त",
         "ahas": "दिनमान (अहस)", "udayadhi": "उदयादि घटी", "lmt": "स्थानीय समय (LMT)",
         "kali_year": "कलि युग वर्ष", "day_of_week": "जन्म वार", "planet": "ग्रह",
         "longitude": "रेखांश डिग्री", "rasi": "राशि चक्र", "rasi_deg": "राशि अंश",
@@ -1081,9 +1065,6 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     tithi_local = translate_tithi(chart_data['panchangam']['tithi'], lang)
     naks_local = translate_nakshatra(chart_data['panchangam']['nakshatra'], lang)
     yog_local = translate_yogam(chart_data['panchangam']['yogam'], lang)
-    amruthathi_local = translate_amruthathi_yoga(
-        chart_data['panchangam'].get('amruthathi_yoga'),
-        chart_data['panchangam'].get('amruthathi_quality'), lang)
     kar_local = translate_karanam(chart_data['panchangam']['karanam'], lang)
     month_local = translate_month(chart_data['panchangam']['tamil_date'], lang)
     
@@ -1098,7 +1079,6 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         (labels["tithi"], tithi_local),
         (labels["naks"], naks_local),
         (labels["yogam"], yog_local),
-        (labels["amruthathi"], amruthathi_local),
         (labels["karanam"], kar_local),
         (labels["sunrise"], chart_data['panchangam']['sunrise']),
         (labels["sunset"], chart_data['panchangam']['sunset']),
