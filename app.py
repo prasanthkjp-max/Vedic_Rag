@@ -2,6 +2,8 @@ import os
 import json
 import uuid
 import time
+import queue
+import threading
 import logging
 import secrets
 import sqlite3
@@ -603,7 +605,7 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
 
 
 
-def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: str = "ai"):
+def ollama_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai"):
     """Shared streaming generator for all Ollama-backed AI endpoints.
 
     - Sends the Authorization header when OLLAMA_API_KEY is configured (cloud
@@ -613,15 +615,18 @@ def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: 
     - Refunds the caller's debited credits if the stream fails before any
       content was produced (the response status is already 200 by then, so a
       refund is the only useful remediation).
+    - Yields an immediate newline to flush HTTP headers and prevent Cloudflare
+      524 timeouts, then yields keepalive newlines while evaluating the prompt
+      and establishing the stream in a background thread.
     """
-    def _open_stream():
+    def _open_stream(evaluated_prompt):
         """Open the generate connection, retrying once on a transient
         connection error (a cold cloud model often refuses the first connect).
         Returns the open response, or raises after the final attempt."""
         headers = {"Content-Type": "application/json"}
         if OLLAMA_API_KEY:
             headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-        body = json.dumps({"model": model_name, "prompt": prompt, "stream": True}).encode("utf-8")
+        body = json.dumps({"model": model_name, "prompt": evaluated_prompt, "stream": True}).encode("utf-8")
         last = None
         for attempt in range(2):
             try:
@@ -637,8 +642,54 @@ def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: 
 
     def generator():
         produced_content = False
+        # Yield a newline immediately to flush HTTP status/headers to the client
+        # and prevent Cloudflare 524 timeouts.
+        yield "\n"
+
         try:
-            response = _open_stream()
+            result_queue = queue.Queue()
+
+            def worker():
+                try:
+                    # Evaluate prompt (calls build_prediction_context which may do embed API calls)
+                    if callable(prompt):
+                        eval_prompt = prompt()
+                    else:
+                        eval_prompt = prompt
+                    # Open connection to Ollama (may block while model loads)
+                    response_obj = _open_stream(eval_prompt)
+                    result_queue.put(("success", response_obj))
+                except Exception as ex:
+                    result_queue.put(("error", ex))
+
+            worker_thread = threading.Thread(target=worker, daemon=True)
+            worker_thread.start()
+
+            # Wait for worker thread while yielding periodic keepalive newlines
+            response = None
+            while worker_thread.is_alive():
+                try:
+                    status, val = result_queue.get(timeout=5.0)
+                    if status == "success":
+                        response = val
+                    else:
+                        raise val
+                    break
+                except queue.Empty:
+                    # Send a keepalive newline to keep connection active
+                    yield "\n"
+
+            # Double check queue if thread terminated but response not set yet
+            if response is None:
+                if not result_queue.empty():
+                    status, val = result_queue.get_nowait()
+                    if status == "success":
+                        response = val
+                    else:
+                        raise val
+                else:
+                    raise RuntimeError("AI engine worker thread terminated unexpectedly")
+
             with response:
                 for line in response:
                     if not line:
@@ -659,6 +710,7 @@ def ollama_stream(prompt: str, model_name: str, user: dict = None, action_type: 
             if not produced_content and user:
                 refund_user_credits(user, action_type)
             yield f"\n\n*Error streaming from local AI backend: {e}*"
+
     return generator()
 
 
@@ -861,29 +913,26 @@ def query_rag(request: QueryRequest, raw_req: Request):
     query_text = request.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
 
-    try:
+    def prompt_builder():
         # Reload engine to get latest pages
         search_engine.reload()
 
         # Retrieve top 3 matching pages
         results = search_engine.hybrid_search(query_text, top_k=3)
-    except Exception as e:
-        refund_user_credits(user, "query")
-        raise HTTPException(status_code=500, detail=f"Search failed: {e}")
-    
-    if not results:
-        # Fallback if DB is empty
-        context_str = "No pages have been indexed yet. Ingestion is running in the background."
-    else:
-        context_parts = []
-        for i, res in enumerate(results):
-            context_parts.append(
-                f"Source [{i+1}]: Book: \"{res['book_title']}\" (ID: {res['book_id']}), Page: {res['page_num'] + 1}\n"
-                f"--- OCR TEXT START ---\n{res['raw_text'].strip()}\n--- OCR TEXT END ---\n"
-            )
-        context_str = "\n\n".join(context_parts)
         
-    prompt = f"""You are a wise and enlightened Vedic Astrology scholar named Antigravity.
+        if not results:
+            # Fallback if DB is empty
+            context_str = "No pages have been indexed yet. Ingestion is running in the background."
+        else:
+            context_parts = []
+            for i, res in enumerate(results):
+                context_parts.append(
+                    f"Source [{i+1}]: Book: \"{res['book_title']}\" (ID: {res['book_id']}), Page: {res['page_num'] + 1}\n"
+                    f"--- OCR TEXT START ---\n{res['raw_text'].strip()}\n--- OCR TEXT END ---\n"
+                )
+            context_str = "\n\n".join(context_parts)
+            
+        prompt = f"""You are a wise and enlightened Vedic Astrology scholar named Antigravity.
 Your purpose is to answer the user's astrological queries using the provided authoritative old Sanskrit/English astrological texts.
 Each book page was extracted using OCR and may contain minor spelling errors or smudged formatting. Use your expert knowledge of Sanskrit, Jyotish (Vedic astrology), and context to reconstruct, understand, and explain the texts accurately.
 
@@ -901,8 +950,9 @@ USER QUERY: {query_text}
 
 Provide an elegant, authoritative, and helpful answer. Start directly with the answer:
 """
+        return prompt
 
-    return StreamingResponse(ollama_stream(prompt, model_name, user, "query"), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "query"), media_type="text/event-stream")
 
 # --- Astrological & Thirukanitha Panchangam Models & Routes ---
 
@@ -1179,36 +1229,33 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
     client = req.client_name
     place = req.place_name
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
-    
-    lang_map = {
-        "en": "English",
-        "ta": "Tamil (தமிழ்)",
-        "te": "Telugu (తెలుగు)",
-        "ml": "Malayalam (മലയാളം)",
-        "kn": "Kannada (ಕನ್ನಡ)",
-        "hi": "Hindi (हिन्दी)"
-    }
-    target_lang = lang_map.get(req.lang, "English")
+    lang_code = req.lang
 
-    # Derive full interpretive analysis (houses, conjunctions, aspects, current
-    # dasa/bhukti, gochara, yogas) and retrieve grounding passages from the RAG.
-    # chart_data is client-supplied: refund + 400 on a malformed dict rather
-    # than a 500 with the 25 credits already gone.
-    try:
+    def prompt_builder():
+        # Validate chart_data structure inside the deferred callback
+        try:
+            lat_val = float(chart['metadata']['latitude'])
+            lon_val = float(chart['metadata']['longitude'])
+            coords = f"{abs(lat_val)}°{'N' if lat_val >= 0 else 'S'}, {abs(lon_val)}°{'E' if lon_val >= 0 else 'W'}"
+            birth_dt = chart['metadata']['datetime']
+            ayanamsa_name = chart['metadata']['ayanamsa_name']
+            panch = chart['panchangam']
+        except Exception as e:
+            raise ValueError(f"Invalid chart_data: {e}")
+
+        lang_map = {
+            "en": "English",
+            "ta": "Tamil (தமிழ்)",
+            "te": "Telugu (తెలుగు)",
+            "ml": "Malayalam (മലയാളം)",
+            "kn": "Kannada (ಕನ್ನಡ)",
+            "hi": "Hindi (हिन्दी)"
+        }
+        target_lang = lang_map.get(lang_code, "English")
+
         analysis_text, rag_context = build_prediction_context(chart)
-        lat_val = float(chart['metadata']['latitude'])
-        lon_val = float(chart['metadata']['longitude'])
-        coords = f"{abs(lat_val)}°{'N' if lat_val >= 0 else 'S'}, {abs(lon_val)}°{'E' if lon_val >= 0 else 'W'}"
-        birth_dt = chart['metadata']['datetime']
-        ayanamsa_name = chart['metadata']['ayanamsa_name']
-        panch = chart['panchangam']
-    except HTTPException:
-        raise
-    except Exception as e:
-        refund_user_credits(user, "ai_predict")
-        raise HTTPException(status_code=400, detail=f"Invalid chart_data: {e}")
 
-    prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and master scholar.
+        prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and master scholar.
 You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {birth_dt} in {place} (Coordinates: {coords}), using high-precision Thirukanitha sidereal coordinates with {ayanamsa_name} Ayanamsa.
 
 A precise computational analysis of the chart is given below. You MUST reason from it as a real astrologer does — never from planet signs alone. Specifically: read each planet by its BHAVA (house) and house-lordship, its DIGNITY/strength (exalted, debilitated, own, combust, retrograde), its CONJUNCTIONS (combined effects of planets together), the ASPECTS (graha drishti) it gives and receives, the YOGAS formed, the CURRENT running Mahadasa & Antardasa, and the GOCHARA (current transits incl. Sade Sati). Synthesise these factors together; a result is the NET effect of all of them, not any single placement.
@@ -1242,8 +1289,9 @@ Using the classical rules from the retrieved texts AND standard Jyotish techniqu
 
 Be authoritative, compassionate, and precise. Start directly with the invocation in {target_lang}:
 """
+        return prompt
 
-    return StreamingResponse(ollama_stream(prompt, model_name, user, "ai_predict"), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "ai_predict"), media_type="text/event-stream")
 
 
 @app.post("/api/ai-predict-marriage")
@@ -1259,31 +1307,33 @@ def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
     male_place = req.male_place
     female_place = req.female_place
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    lang_code = req.lang
 
-    lang_map = {
-        "en": "English",
-        "ta": "Tamil (தமிழ்)",
-        "te": "Telugu (తెలుగు)",
-        "ml": "Malayalam (മലയാളം)",
-        "kn": "Kannada (ಕನ್ನಡ)",
-        "hi": "Hindi (हिन्दी)"
-    }
-    target_lang = lang_map.get(req.lang, "English")
+    def prompt_builder():
+        # Validate chart structure inside the deferred callback
+        try:
+            m_plac = male_chart["placements"]
+            f_plac = female_chart["placements"]
+            m_lagna = m_plac["Lagna"]
+            f_lagna = f_plac["Lagna"]
+            m_moon = m_plac["Moon"]
+            f_moon = f_plac["Moon"]
+        except Exception as e:
+            raise ValueError(f"Invalid chart/compatibility data: {e}")
 
-    # Build targeted marriage RAG context. Both charts and the compatibility
-    # dict are client-supplied: refund + 400 on malformed input.
-    try:
+        lang_map = {
+            "en": "English",
+            "ta": "Tamil (தமிழ்)",
+            "te": "Telugu (తెలుగు)",
+            "ml": "Malayalam (മലയാളം)",
+            "kn": "Kannada (ಕನ್ನಡ)",
+            "hi": "Hindi (हिन्दी)"
+        }
+        target_lang = lang_map.get(lang_code, "English")
+
         rag_context = build_marriage_prediction_context(male_chart, female_chart, comp)
 
         # Render a clean text-based comparison of both charts for prompt grounding
-        m_plac = male_chart["placements"]
-        f_plac = female_chart["placements"]
-
-        m_lagna = m_plac["Lagna"]
-        f_lagna = f_plac["Lagna"]
-        m_moon = m_plac["Moon"]
-        f_moon = f_plac["Moon"]
-
         analysis_text = f"""
 --- NATIVE DETAILS ---
 Male Native: {male_name} born at {male_chart['metadata']['datetime']} in {male_place}
@@ -1303,13 +1353,8 @@ Moon Nakshatra: {female_chart['panchangam']['nakshatra']}
 """
         for key, detail in comp["details"].items():
             analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']})\n"
-    except HTTPException:
-        raise
-    except Exception as e:
-        refund_user_credits(user, "ai_predict_marriage")
-        raise HTTPException(status_code=400, detail=f"Invalid chart/compatibility data: {e}")
 
-    prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and relationship matchmaker.
+        prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and relationship matchmaker.
 You provide deep, accurate, and authoritative marriage compatibility (Vivaha Melapaka/Porutham) predictions for {male_name} and {female_name}, utilizing high-precision Thirukanitha sidereal coordinates and classical Vedic scriptures from our Vedic astrology RAG database.
 
 A precise computational analysis of their charts and Nakshatra compatibility is given below. You MUST reason from it — considering the Nakshatra matching points, potential afflictions (like Rajju Dosha or Vedha), Rasi harmony, lagna harmony,and friendship of lords.
@@ -1347,8 +1392,9 @@ Structure your analysis as follows:
 
 Be authoritative, compassionate, and precise. Start directly with the invocation:
 """
+        return prompt
 
-    return StreamingResponse(ollama_stream(prompt, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
 
 
 class AIChatMessage(BaseModel):
@@ -1851,34 +1897,29 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     place = req.place_name
     query_text = req.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    history = req.history
 
-    # Derive full interpretive analysis and retrieve grounding passages. The
-    # user's own question is added as the first RAG query so the most relevant
-    # classical rules for their inquiry are surfaced alongside the chart-derived
-    # queries (houses, conjunctions, current dasa, gochara, yogas).
-    # chart_data is client-supplied: refund + 400 on a malformed dict.
-    try:
-        analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
-        birth_dt = chart['metadata']['datetime']
-    except HTTPException:
-        raise
-    except Exception as e:
-        refund_user_credits(user, "ai_predict_chat")
-        raise HTTPException(status_code=400, detail=f"Invalid chart_data: {e}")
+    def prompt_builder():
+        # Validate and build context inside the deferred callback
+        try:
+            analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
+            birth_dt = chart['metadata']['datetime']
+        except Exception as e:
+            raise ValueError(f"Invalid chart_data: {e}")
 
-    # Format the conversation history if present. Cap it (most recent turns)
-    # so a client cannot grow the prompt without bound, and only honour the
-    # two known roles — anything else is rendered as user content, so a forged
-    # "assistant" variant cannot impersonate the model's own prior guidance.
-    history_text = ""
-    if req.history:
-        history_text = "\n\n--- CONVERSATION HISTORY ---\n"
-        for msg in req.history[-20:]:
-            role_label = "You (Master of Vedic Astrology)" if msg.role == "assistant" else f"{client} (User)"
-            history_text += f"{role_label}: {msg.content}\n"
-        history_text += "----------------------------\n"
+        # Format the conversation history if present. Cap it (most recent turns)
+        # so a client cannot grow the prompt without bound, and only honour the
+        # two known roles — anything else is rendered as user content, so a forged
+        # "assistant" variant cannot impersonate the model's own prior guidance.
+        history_text = ""
+        if history:
+            history_text = "\n\n--- CONVERSATION HISTORY ---\n"
+            for msg in history[-20:]:
+                role_label = "You (Master of Vedic Astrology)" if msg.role == "assistant" else f"{client} (User)"
+                history_text += f"{role_label}: {msg.content}\n"
+            history_text += "----------------------------\n"
 
-    prompt = f"""Role & Persona: You are an enlightened Master of Vedic Astrology (Jyotisha), possessing the combined wisdom of Maharshi Parasara, Vaidyanatha Dikshita, Kalyana Varma, and Mantreswara. Your purpose is to provide highly accurate, classical astrological predictions based strictly on the retrieved scriptures (Brihat Parasara Hora Sastra, Jataka Parijata, Saravali, and Phaladeepika) and the provided computed chart analysis. You do not use modern, western, or unverified astrological systems. Your tone is scholarly, objective, and deeply analytical.
+        prompt = f"""Role & Persona: You are an enlightened Master of Vedic Astrology (Jyotisha), possessing the combined wisdom of Maharshi Parasara, Vaidyanatha Dikshita, Kalyana Varma, and Mantreswara. Your purpose is to provide highly accurate, classical astrological predictions based strictly on the retrieved scriptures (Brihat Parasara Hora Sastra, Jataka Parijata, Saravali, and Phaladeepika) and the provided computed chart analysis. You do not use modern, western, or unverified astrological systems. Your tone is scholarly, objective, and deeply analytical.
 
 You are in a live chat session with {client}, born at {birth_dt} in {place}.
 
@@ -1950,8 +1991,9 @@ OUTPUT GENERATION RULES:
 
 Start directly with the chat response:
 """
+        return prompt
 
-    return StreamingResponse(ollama_stream(prompt, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
+    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 

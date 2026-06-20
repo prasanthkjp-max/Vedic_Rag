@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.6]
+
+Streaming keep-alive and connection stability fixes to prevent Cloudflare 524 timeouts.
+
+### Fixed
+- **Cloudflare 524 Timeouts**: Prevented HTTP 524 timeouts in streaming AI endpoints (`/api/query`, `/api/ai-predict`, `/api/ai-predict-marriage`, and `/api/ai-predict-chat`) by yielding an immediate newline chunk.
+- **Lazy Prompt Evaluation**: Moved heavy computations (e.g. database RAG searches, batch embedding, and Ollama generator connection startup) inside the stream generator, executing them on a background worker thread.
+- **Periodic Keep-Alives**: Yield keep-alive newlines every 5 seconds while waiting for the background worker thread to finish context building and LLM connection startup, keeping the socket active.
+
 ## [1.8.5]
 
 Robustness — operational hardening (Group E).
