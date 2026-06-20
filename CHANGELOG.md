@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.7]
+
+### Fixed
+- **AI Chat History Validation (HTTP 422)**: Fixed HTTP 422 validation errors when sending messages in the Astro AI chat. The length limit (`max_length`) of the AI Chat history message content has been increased from `4000` to `65536` characters to accommodate long assistant responses returned by the model.
+
 ## [1.8.6]
 
 Streaming keep-alive and connection stability fixes to prevent Cloudflare 524 timeouts.

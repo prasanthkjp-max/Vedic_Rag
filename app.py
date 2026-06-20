@@ -1399,7 +1399,7 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
 
 class AIChatMessage(BaseModel):
     role: Literal["user", "assistant"] = "user"
-    content: str = Field(max_length=4000)
+    content: str = Field(max_length=65536)
 
 class AIChatRequest(BaseModel):
     chart_data: dict
