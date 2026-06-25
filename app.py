@@ -54,9 +54,8 @@ from config import (
     BOOKS_DIR,
     STATIC_DIR,
     DEFAULT_LLM_MODEL,
-    OLLAMA_HOST,
-    OLLAMA_API_KEY,
-    OLLAMA_GENERATE_URL,
+    OPENROUTER_API_KEY,
+    get_llm_client,
     LLM_STREAM_TIMEOUT,
     EMBEDDING_DIM,
     API_KEY,
@@ -605,13 +604,10 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
 
 
 
-def ollama_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai"):
-    """Shared streaming generator for all Ollama-backed AI endpoints.
+def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai"):
+    """Shared streaming generator for all AI endpoints, backed by OpenRouter via
+    the OpenAI SDK (chat completions, streamed).
 
-    - Sends the Authorization header when OLLAMA_API_KEY is configured (cloud
-      models), matching the search-engine embed calls.
-    - Surfaces Ollama mid-stream {"error": ...} chunks instead of silently
-      truncating the answer.
     - Refunds the caller's debited credits if the stream fails before any
       content was produced (the response status is already 200 by then, so a
       refund is the only useful remediation).
@@ -620,21 +616,18 @@ def ollama_stream(prompt, model_name: str, user: dict = None, action_type: str =
       and establishing the stream in a background thread.
     """
     def _open_stream(evaluated_prompt):
-        """Open the generate connection, retrying once on a transient
-        connection error (a cold cloud model often refuses the first connect).
-        Returns the open response, or raises after the final attempt."""
-        headers = {"Content-Type": "application/json"}
-        if OLLAMA_API_KEY:
-            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-        body = json.dumps({"model": model_name, "prompt": evaluated_prompt, "stream": True}).encode("utf-8")
+        """Open the chat-completion stream, retrying once on a transient error
+        (a cold cloud model often refuses the first connect). Returns the open
+        streaming iterator, or raises after the final attempt."""
+        client = get_llm_client()
+        messages = [{"role": "user", "content": evaluated_prompt}]
         last = None
         for attempt in range(2):
             try:
-                req = urllib.request.Request(OLLAMA_GENERATE_URL, data=body, headers=headers)
-                return urllib.request.urlopen(req, timeout=LLM_STREAM_TIMEOUT)
-            except urllib.error.HTTPError:
-                raise  # a real HTTP error response — don't retry blindly
-            except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+                return client.with_options(timeout=LLM_STREAM_TIMEOUT).chat.completions.create(
+                    model=model_name, messages=messages, stream=True
+                )
+            except Exception as e:
                 last = e
                 if attempt == 0:
                     time.sleep(0.5)
@@ -656,7 +649,7 @@ def ollama_stream(prompt, model_name: str, user: dict = None, action_type: str =
                         eval_prompt = prompt()
                     else:
                         eval_prompt = prompt
-                    # Open connection to Ollama (may block while model loads)
+                    # Open connection to OpenRouter (may block while the model warms up)
                     response_obj = _open_stream(eval_prompt)
                     result_queue.put(("success", response_obj))
                 except Exception as ex:
@@ -691,17 +684,19 @@ def ollama_stream(prompt, model_name: str, user: dict = None, action_type: str =
                     raise RuntimeError("AI engine worker thread terminated unexpectedly")
 
             with response:
-                for line in response:
-                    if not line:
-                        continue
-                    chunk = json.loads(line.decode("utf-8"))
-                    if chunk.get("error"):
-                        logger.warning("Ollama mid-stream error (%s): %s", action_type, chunk["error"])
+                for chunk in response:
+                    # OpenRouter may interleave error payloads into the stream.
+                    err = getattr(chunk, "error", None)
+                    if err:
+                        logger.warning("OpenRouter mid-stream error (%s): %s", action_type, err)
                         if not produced_content and user:
                             refund_user_credits(user, action_type)
-                        yield f"\n\n*AI backend error: {chunk['error']}*"
+                        yield f"\n\n*AI backend error: {err}*"
                         return
-                    text_chunk = chunk.get("response", "")
+                    if not getattr(chunk, "choices", None):
+                        continue
+                    delta = chunk.choices[0].delta
+                    text_chunk = getattr(delta, "content", None) or ""
                     if text_chunk:
                         produced_content = True
                         yield text_chunk
@@ -709,7 +704,7 @@ def ollama_stream(prompt, model_name: str, user: dict = None, action_type: str =
             logger.error("AI stream failed (%s): %s", action_type, e)
             if not produced_content and user:
                 refund_user_credits(user, action_type)
-            yield f"\n\n*Error streaming from local AI backend: {e}*"
+            yield f"\n\n*Error streaming from the AI backend: {e}*"
 
     return generator()
 
@@ -952,7 +947,7 @@ Provide an elegant, authoritative, and helpful answer. Start directly with the a
 """
         return prompt
 
-    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "query"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "query"), media_type="text/event-stream")
 
 # --- Astrological & Thirukanitha Panchangam Models & Routes ---
 
@@ -1302,7 +1297,7 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
 """
         return prompt
 
-    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "ai_predict"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict"), media_type="text/event-stream")
 
 
 @app.post("/api/ai-predict-marriage")
@@ -1410,7 +1405,7 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
 """
         return prompt
 
-    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
 
 
 class AIChatMessage(BaseModel):
@@ -2014,7 +2009,7 @@ Start directly with the chat response:
 """
         return prompt
 
-    return StreamingResponse(ollama_stream(prompt_builder, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -2518,7 +2513,7 @@ def liveness_probe():
     """Process liveness: returns 200 as long as the app is up and serving.
 
     This is what the container HEALTHCHECK should hit. Unlike /api/health it
-    does NOT depend on Ollama or the DB — those are dependencies, and a downed
+    does NOT depend on OpenRouter or the DB — those are dependencies, and a downed
     dependency must not mark the app itself unhealthy (the app still serves
     charts/panchangam/PDF) and trigger a needless restart.
     """
@@ -2526,12 +2521,12 @@ def liveness_probe():
 
 @app.get("/api/health")
 def health_check():
-    """Readiness/diagnostic probe: checks the DB and the Ollama backend.
+    """Readiness/diagnostic probe: checks the DB and the OpenRouter backend.
 
     Returns 503 if a dependency is down. Also flags a loaded-but-empty search
     index (the silent zero-page failure mode) as degraded so it's visible.
     """
-    status = {"version": VERSION, "database": "down", "ollama": "down"}
+    status = {"version": VERSION, "database": "down", "openrouter": "down"}
     code = 200
     try:
         conn = connect_db(DB_PATH)
@@ -2551,11 +2546,14 @@ def health_check():
         status["database_error"] = str(e)
         code = 503
 
+    # Lightweight reachability/auth probe of OpenRouter (lists models).
     try:
-        with urllib.request.urlopen(f"{OLLAMA_HOST}/api/tags", timeout=5):
-            status["ollama"] = "ok"
+        if not OPENROUTER_API_KEY:
+            raise RuntimeError("OPENROUTER_API_KEY not configured")
+        get_llm_client().with_options(timeout=5).models.list()
+        status["openrouter"] = "ok"
     except Exception as e:
-        status["ollama_error"] = str(e)
+        status["openrouter_error"] = str(e)
         code = 503
 
     if code != 200:

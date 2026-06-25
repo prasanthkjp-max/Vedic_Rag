@@ -1,37 +1,26 @@
 import sqlite3
 import struct
-import json
-import urllib.request
 import time
 import sys
 
-DB_PATH = "/home/prasanth/Vedic_Rag/vedic_astrology_rag.db"
-EMBEDDING_MODEL = "nomic-embed-text"
-OLLAMA_URL = "http://localhost:11434/api/embeddings"
+from config import get_llm_client, EMBEDDING_MODEL, EMBEDDING_DIM
 
-def get_ollama_embedding(text):
-    """Generate embedding with a long timeout (30s) and retry mechanism"""
-    data = {
-        "model": EMBEDDING_MODEL,
-        "prompt": text
-    }
-    req = urllib.request.Request(
-        OLLAMA_URL, 
-        data=json.dumps(data).encode("utf-8"),
-        headers={"Content-Type": "application/json"}
-    )
-    
+DB_PATH = "/home/prasanth/Vedic_Rag/vedic_astrology_rag.db"
+
+def get_embedding(text):
+    """Generate an embedding via OpenRouter with a long timeout and retries."""
     for attempt in range(5):
         try:
-            # High 30-second timeout to handle CPU queuing safely
-            with urllib.request.urlopen(req, timeout=30) as response:
-                res_data = json.loads(response.read().decode("utf-8"))
-                embedding = res_data.get("embedding", [])
-                if embedding and len(embedding) == 768:
-                    return embedding
-        except Exception as e:
-            time.sleep(1.5) # Wait before retry
-            
+            client = get_llm_client()
+            resp = client.with_options(timeout=30).embeddings.create(
+                model=EMBEDDING_MODEL, input=text
+            )
+            embedding = resp.data[0].embedding if resp.data else []
+            if embedding and len(embedding) == EMBEDDING_DIM:
+                return embedding
+        except Exception:
+            time.sleep(1.5)  # Wait before retry
+
     return None
 
 def serialize_embedding(vector):
@@ -81,7 +70,7 @@ def main():
         text_to_embed = page["text"].strip() if page["text"].strip() else f"Book page {page['page_num']}"
         
         # Call API sequentially
-        vector = get_ollama_embedding(text_to_embed)
+        vector = get_embedding(text_to_embed)
         
         if vector:
             blob = serialize_embedding(vector)

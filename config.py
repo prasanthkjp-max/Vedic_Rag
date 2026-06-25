@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.9.0"
+VERSION = "1.10.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -58,23 +58,69 @@ DB_PATH = os.environ.get("VEDIC_DB_PATH", os.path.join(BASE_DIR, "vedic_astrolog
 BOOKS_DIR = os.environ.get("VEDIC_BOOKS_DIR", os.path.join(BASE_DIR, "books"))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-# --- Ollama ---
-OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_API_KEY = os.environ.get("OLLAMA_API_KEY", "")
-OLLAMA_EMBED_URL = f"{OLLAMA_HOST}/api/embeddings"        # single-prompt (legacy)
-OLLAMA_EMBED_BATCH_URL = f"{OLLAMA_HOST}/api/embed"       # batched (input: [..])
-OLLAMA_GENERATE_URL = f"{OLLAMA_HOST}/api/generate"
+# --- OpenRouter (OpenAI-compatible API) ---
+# All LLM chat and RAG embedding traffic goes through OpenRouter using the
+# OpenAI SDK (base_url swapped to OpenRouter). The key is a secret — set it in
+# the (gitignored) .env, never commit it.
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+# Optional attribution headers OpenRouter uses for rankings (harmless if unset).
+OPENROUTER_REFERER = os.environ.get("OPENROUTER_REFERER", "")
+OPENROUTER_TITLE = os.environ.get("OPENROUTER_TITLE", "Vedic Astrology AI RAG Portal")
 
-# --- Models ---
-EMBEDDING_MODEL = os.environ.get("VEDIC_EMBED_MODEL", "nomic-embed-text")
-EMBEDDING_DIM = _env_int("VEDIC_EMBED_DIM", 768)
-DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", "gemma4:31b-cloud")
+# --- Models (OpenRouter model IDs) ---
+MODEL_FAST = os.environ.get("MODEL_FAST", "deepseek/deepseek-v4-flash")
+MODEL_BALANCED = os.environ.get("MODEL_BALANCED", "google/gemma-4-31b-it")
+MODEL_PREMIUM = os.environ.get("MODEL_PREMIUM", "deepseek/deepseek-v4-pro")
+MODEL_EMBEDDING = os.environ.get("MODEL_EMBEDDING", "openai/text-embedding-3-small")
+
+# The single LLM used by every AI endpoint (backend-enforced; client-supplied
+# `model` is ignored). Defaults to the balanced tier; override via VEDIC_LLM_MODEL.
+DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", MODEL_BALANCED)
+
+# Embedding model + its output dimensionality. text-embedding-3-small is 1536-dim
+# (vs. the old nomic-embed-text 768) — changing the model REQUIRES re-ingesting
+# the RAG corpus so stored vectors match this dim, else they are dropped at load.
+EMBEDDING_MODEL = MODEL_EMBEDDING
+EMBEDDING_DIM = _env_int("VEDIC_EMBED_DIM", 1536)
 
 # --- Timeouts (seconds) ---
-# Embedding calls are quick; LLM generation streams can run for minutes,
-# especially on a cold cloud model, so keep that generous.
-EMBED_TIMEOUT = _env_int("VEDIC_EMBED_TIMEOUT", 15)
+# Embedding calls are quick; LLM generation streams can run for minutes, so keep
+# that generous.
+EMBED_TIMEOUT = _env_int("VEDIC_EMBED_TIMEOUT", 30)
 LLM_STREAM_TIMEOUT = _env_int("VEDIC_LLM_TIMEOUT", 300)
+
+# Process-wide cached OpenAI client pointed at OpenRouter. Lazily constructed so
+# importing config (e.g. for the astro/PDF tools) doesn't hard-require the
+# `openai` package or a configured key.
+_llm_client = None
+
+
+def get_llm_client():
+    """Return a shared OpenAI SDK client configured for OpenRouter.
+
+    Raises RuntimeError if OPENROUTER_API_KEY is unset so callers fail loud
+    rather than firing unauthenticated requests.
+    """
+    global _llm_client
+    if _llm_client is None:
+        if not OPENROUTER_API_KEY:
+            raise RuntimeError(
+                "OPENROUTER_API_KEY is not set — configure it in .env "
+                "(see .env.example) before using AI/embedding endpoints."
+            )
+        from openai import OpenAI
+        default_headers = {}
+        if OPENROUTER_REFERER:
+            default_headers["HTTP-Referer"] = OPENROUTER_REFERER
+        if OPENROUTER_TITLE:
+            default_headers["X-Title"] = OPENROUTER_TITLE
+        _llm_client = OpenAI(
+            base_url=OPENROUTER_BASE_URL,
+            api_key=OPENROUTER_API_KEY,
+            default_headers=default_headers or None,
+        )
+    return _llm_client
 
 # --- OAuth / social login ---
 # The /api/auth/oauth endpoint verifies the provider token server-side and

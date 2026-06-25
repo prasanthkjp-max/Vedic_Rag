@@ -37,7 +37,7 @@ EXPOSE 8008
 
 # Define healthcheck to verify the app process is up and serving. Uses /api/live
 # (pure process liveness) NOT /api/health, so a transiently-down dependency
-# (Ollama/DB) doesn't mark the container unhealthy and trigger a restart while
+# (OpenRouter/DB) doesn't mark the container unhealthy and trigger a restart while
 # it can still serve charts/panchangam/PDF.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8008/api/live || exit 1

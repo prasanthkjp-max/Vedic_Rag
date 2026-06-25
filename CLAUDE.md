@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A self-hosted FastAPI portal for Vedic astrology: a sidereal (Thirukanitha)
 birth-chart + Panchangam engine (pure Python over Swiss Ephemeris), multilingual
 reports (Tamil/Telugu/Kannada/Malayalam/Hindi/English), and an AI prediction
-layer that grounds an LLM in a RAG database of classical texts via a local Ollama
-backend. Single backend file (`app.py`) + a single-page frontend
+layer that grounds an LLM in a RAG database of classical texts via OpenRouter
+(OpenAI-compatible API). Single backend file (`app.py`) + a single-page frontend
 (`static/index.html`); SQLite for everything.
 
 ## Commands
@@ -21,8 +21,11 @@ python3 astro_engine.py                # quick chart/panchangam diagnostic (no s
 python3 ingest.py                      # OCR PDFs -> embeddings into the DB
 ```
 
-Requires a running Ollama (`http://localhost:11434`) with the embedding model
-(`nomic-embed-text`) and the chat model pulled.
+Requires an `OPENROUTER_API_KEY` (set in `.env`; see `.env.example`). All LLM
+chat and RAG embeddings go through OpenRouter via the OpenAI SDK — model IDs
+(`MODEL_FAST`/`MODEL_BALANCED`/`MODEL_PREMIUM`, `MODEL_EMBEDDING`) live in
+`config.py`. The embedding model is `text-embedding-3-small` (1536-dim); changing
+it requires re-ingesting the corpus so stored vectors match `EMBEDDING_DIM`.
 
 **Restart to apply backend changes:** `app.py` loads code into memory at startup
 (`reload=False`), so edits to Python files do NOT take effect until you restart
@@ -77,7 +80,8 @@ entirely.
    with Reciprocal Rank Fusion) retrieves grounding passages from the classical
    texts.
 4. `app.py` assembles a large prompt f-string (analysis + retrieved passages +
-   instructions) and streams the answer from Ollama.
+   instructions) and streams the answer from OpenRouter (`llm_stream`, chat
+   completions via the OpenAI SDK).
 
 **`config.py` is the single source of truth** for all paths, model names,
 endpoints, tunables, and secrets — every value is env-overridable (see

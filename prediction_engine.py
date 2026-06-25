@@ -761,7 +761,7 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
     # Embed all queries in a single batched call (one HTTP round trip; cached),
     # then run dense + sparse per query. This avoids N separate ~3s embed calls.
     try:
-        query_vectors = search_engine.get_ollama_embeddings_batch(queries)
+        query_vectors = search_engine.get_embeddings_batch(queries)
     except Exception as e:
         logger.warning("RAG batch embed failed (dense retrieval degraded to sparse): %s", e)
         query_vectors = [None] * len(queries)

@@ -1,10 +1,6 @@
 import struct
 import numpy as np
-import json
-import time
 import logging
-import urllib.request
-import urllib.error
 import re
 import threading
 
@@ -12,18 +8,13 @@ from config import (
     DB_PATH,
     EMBEDDING_MODEL,
     EMBEDDING_DIM,
-    OLLAMA_EMBED_URL,
-    OLLAMA_EMBED_BATCH_URL,
-    OLLAMA_API_KEY,
     EMBED_TIMEOUT,
+    get_llm_client,
     connect_db,
     ensure_fts,
 )
 
 logger = logging.getLogger("vedic.search")
-
-# Transient errors worth one retry (connection refused/reset, DNS, 5xx).
-_RETRYABLE = (urllib.error.URLError, ConnectionError, TimeoutError)
 
 class VedicSearchEngine:
     def __init__(self, db_path=DB_PATH):
@@ -57,16 +48,16 @@ class VedicSearchEngine:
 
         A mismatch is otherwise silent: every vector fails the len()==DIM guard
         and is dropped, so the index loads zero pages and search dies quietly.
-        Best-effort — skipped if Ollama is unreachable at startup.
+        Best-effort — skipped if OpenRouter is unreachable/unconfigured at startup.
         """
         try:
-            # Use the RAW post (get_ollama_embedding would filter a mismatch to
+            # Use the RAW embed call (get_embedding would filter a mismatch to
             # None, hiding the very thing we're probing for).
-            res = self._http_json_post(
-                OLLAMA_EMBED_URL, {"model": EMBEDDING_MODEL, "prompt": "dimension probe"},
-                EMBED_TIMEOUT, retries=0,
+            client = get_llm_client()
+            resp = client.with_options(timeout=EMBED_TIMEOUT).embeddings.create(
+                model=EMBEDDING_MODEL, input="dimension probe"
             )
-            vec = (res or {}).get("embedding") or []
+            vec = resp.data[0].embedding if resp.data else []
             if vec and len(vec) != EMBEDDING_DIM:
                 logger.error(
                     "Embedding model %r returns %d dims but EMBEDDING_DIM=%d — "
@@ -75,7 +66,7 @@ class VedicSearchEngine:
                     EMBEDDING_MODEL, len(vec), EMBEDDING_DIM, len(vec),
                 )
         except Exception:
-            pass  # Ollama down at startup; not fatal, dim is re-checked per call.
+            pass  # OpenRouter down/unconfigured at startup; dim is re-checked per call.
 
     def _cache_embedding(self, text, embedding):
         """Insert into the query-embedding cache, evicting oldest entries when full."""
@@ -85,61 +76,46 @@ class VedicSearchEngine:
         self._embed_cache[text] = embedding
 
     @staticmethod
-    def _http_json_post(url, payload, timeout, retries=1):
-        """POST JSON to Ollama, parse the JSON reply. Retries once (short
-        backoff) on a transient connection error — exactly the blip a cold
-        cloud model throws — but NOT on an HTTP 4xx (a permanent error).
-        Returns the parsed dict, or None on failure (logged)."""
-        headers = {"Content-Type": "application/json"}
-        if OLLAMA_API_KEY:
-            headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-        body = json.dumps(payload).encode("utf-8")
-        for attempt in range(retries + 1):
-            req = urllib.request.Request(url, data=body, headers=headers)
-            try:
-                with urllib.request.urlopen(req, timeout=timeout) as response:
-                    return json.loads(response.read().decode("utf-8"))
-            except urllib.error.HTTPError as e:
-                logger.warning("Ollama embed HTTP %s at %s: %s", e.code, url, e)
-                return None  # 4xx/5xx response body — don't retry blindly
-            except _RETRYABLE as e:
-                if attempt < retries:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                logger.warning("Ollama embed unreachable at %s after %d tries: %s",
-                               url, retries + 1, e)
-                return None
-            except Exception as e:
-                logger.warning("Ollama embed error at %s: %s", url, e)
-                return None
+    def _embed_call(inputs, timeout):
+        """Call the OpenRouter embeddings endpoint (OpenAI SDK) for one string or
+        a list of strings. Returns a list of vectors aligned to `inputs`, or None
+        on any failure (logged) so callers can fall back to sparse search."""
+        try:
+            client = get_llm_client()
+            resp = client.with_options(timeout=timeout).embeddings.create(
+                model=EMBEDDING_MODEL, input=inputs
+            )
+            # OpenAI/OpenRouter may not preserve order; sort by index to be safe.
+            data = sorted(resp.data, key=lambda d: d.index)
+            return [d.embedding for d in data]
+        except Exception as e:
+            logger.warning("OpenRouter embedding error (model=%s): %s", EMBEDDING_MODEL, e)
+            return None
 
-    def get_ollama_embedding(self, text):
-        """Generate an embedding using the local Ollama instance.
+    def get_embedding(self, text):
+        """Generate a single embedding via OpenRouter.
 
         Returns None on failure so callers can distinguish a real vector from a
         silent all-zero fallback (which would otherwise produce garbage hits).
         """
         # Reuse the shared text->vector cache (the batch path populates it too),
-        # so repeated/identical queries skip the ~3s CPU embed.
+        # so repeated/identical queries skip the network round trip.
         if text in self._embed_cache:
             return self._embed_cache[text]
-        res_data = self._http_json_post(
-            OLLAMA_EMBED_URL, {"model": EMBEDDING_MODEL, "prompt": text}, EMBED_TIMEOUT
-        )
-        if not res_data:
+        vectors = self._embed_call(text, EMBED_TIMEOUT)
+        if not vectors:
             return None
-        embedding = res_data.get("embedding", [])
+        embedding = vectors[0]
         if embedding and len(embedding) == EMBEDDING_DIM:
             self._cache_embedding(text, embedding)
             return embedding
         # Wrong-dimension vectors are failures too, per the docstring.
         return None
 
-    def get_ollama_embeddings_batch(self, texts):
+    def get_embeddings_batch(self, texts):
         """
-        Embed many texts in a single /api/embed round trip (the Pi computes them
-        serially, but one HTTP call avoids per-request overhead). Results are
-        cached by text. Returns a list aligned to `texts`, each a vector or None.
+        Embed many texts in a single OpenRouter round trip. Results are cached by
+        text. Returns a list aligned to `texts`, each a vector or None.
         """
         results = [None] * len(texts)
         to_embed = []      # texts needing a fresh embedding
@@ -155,14 +131,11 @@ class VedicSearchEngine:
         if not to_embed:
             return results
 
-        # Scale the timeout with batch size (serial CPU embedding), but cap it so
-        # a huge batch can't block a request thread indefinitely.
-        timeout = min(EMBED_TIMEOUT * max(1, len(to_embed)), 120)
-        res_data = self._http_json_post(
-            OLLAMA_EMBED_BATCH_URL, {"model": EMBEDDING_MODEL, "input": to_embed}, timeout
-        )
-        if res_data:
-            embeddings = res_data.get("embeddings", []) or []
+        # Scale the timeout with batch size, but cap it so a huge batch can't
+        # block a request thread indefinitely.
+        timeout = min(EMBED_TIMEOUT * max(1, len(to_embed) // 8 + 1), 120)
+        embeddings = self._embed_call(to_embed, timeout)
+        if embeddings:
             for j, emb in enumerate(embeddings):
                 if emb and len(emb) == EMBEDDING_DIM:
                     pos = to_embed_idx[j]
@@ -271,7 +244,7 @@ class VedicSearchEngine:
         # Get query embedding. None / wrong-dim means the embedding service
         # failed; return nothing so hybrid_search falls back to sparse instead
         # of fabricating zero-score "matches".
-        query_vector = self.get_ollama_embedding(query_text)
+        query_vector = self.get_embedding(query_text)
         return self.dense_search_with_vector(query_vector, top_k=top_k, category=category)
 
     def dense_search_with_vector(self, query_vector, top_k=10, category=None):

@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.10.0]
+
+### Changed
+- **AI backend switched from Ollama to OpenRouter** (OpenAI-compatible API, via
+  the `openai` SDK). All LLM chat/prediction streaming (`llm_stream`, now using
+  chat completions) and RAG embeddings (ingest + query) route through OpenRouter.
+  Configuration is env-driven (`OPENROUTER_API_KEY`, `MODEL_FAST`/
+  `MODEL_BALANCED`/`MODEL_PREMIUM`, `MODEL_EMBEDDING`); AI endpoints use the
+  backend-enforced `DEFAULT_LLM_MODEL` (defaults to `MODEL_BALANCED`).
+- `/api/health` now probes OpenRouter (key + model list) instead of Ollama.
+- Removed all Ollama config/HTTP code; added `openai` to `requirements.txt`.
+
+### ⚠️ Breaking / migration
+- **Embedding model changed** from `nomic-embed-text` (768-dim) to
+  `openai/text-embedding-3-small` (1536-dim), so `EMBEDDING_DIM` is now 1536.
+  **Existing RAG embeddings are incompatible and must be regenerated** — re-run
+  `python3 ingest.py` (or repair) against the corpus; until then, stored 768-dim
+  vectors are dropped at index load and dense search returns nothing.
+- Requires `OPENROUTER_API_KEY` in `.env` (see `.env.example`). The old
+  `OLLAMA_*` / `VEDIC_EMBED_MODEL` env vars are no longer read.
+
 ## [1.9.0]
 
 ### Fixed
