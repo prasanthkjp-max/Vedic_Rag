@@ -16,17 +16,36 @@
     <script>
     (function () {
         var KEY_STORE = 'vedic_api_key';
+        var BACKEND_STORE = 'vedic_backend_url';
         var origFetch = window.fetch.bind(window);
         var apiKey = localStorage.getItem(KEY_STORE) || '';
         var bootstrapping = null;
 
+        // BACKEND_URL: empty = same-origin (browser / self-hosted).
+        // On first Capacitor launch auto-defaults to production; user can override via Server Settings.
+        var _stored = localStorage.getItem(BACKEND_STORE);
+        if (_stored === null && typeof window.Capacitor !== 'undefined' &&
+                window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+            _stored = 'https://vedicastroai.net';
+            localStorage.setItem(BACKEND_STORE, _stored);
+        }
+        window.BACKEND_URL = (_stored !== null) ? _stored : '';
+
+        function resolveUrl(url) {
+            if (window.BACKEND_URL && typeof url === 'string' && url.charAt(0) === '/') {
+                return window.BACKEND_URL.replace(/\/$/, '') + url;
+            }
+            return url;
+        }
+
         function isApiUrl(url) {
+            if (typeof url !== 'string') url = '';
+            if (url.indexOf('/api/') === 0) return true;
+            if (window.BACKEND_URL && url.indexOf(window.BACKEND_URL.replace(/\/$/, '') + '/api/') === 0) return true;
             try {
                 var u = new URL(url, location.origin);
                 return u.origin === location.origin && u.pathname.indexOf('/api/') === 0;
-            } catch (e) {
-                return typeof url === 'string' && url.indexOf('/api/') === 0;
-            }
+            } catch (e) { return false; }
         }
 
         function bootstrapKey() {
@@ -34,7 +53,7 @@
             if (bootstrapping) return bootstrapping;
             bootstrapping = (async function () {
                 try {
-                    var r = await origFetch('/api/local-key');
+                    var r = await origFetch(resolveUrl('/api/local-key'));
                     if (r.ok) {
                         var d = await r.json();
                         if (d && d.api_key) {
@@ -43,7 +62,7 @@
                             return apiKey;
                         }
                     }
-                } catch (e) { /* not a loopback client */ }
+                } catch (e) { /* remote server or no local-key */ }
                 var entered = window.prompt('Enter the Vedic portal API key to continue:');
                 if (entered) {
                     apiKey = entered.trim();
@@ -58,6 +77,13 @@
         window.fetch = async function (input, init) {
             var url = (typeof input === 'string') ? input : (input && input.url) || '';
             if (!isApiUrl(url)) return origFetch(input, init);
+
+            // Rewrite relative /api/... to BACKEND_URL/api/... when a backend is configured.
+            if (typeof input === 'string') {
+                input = resolveUrl(input);
+            } else if (input && typeof input.url === 'string') {
+                input = new Request(resolveUrl(input.url), input);
+            }
 
             function call() {
                 var opts = Object.assign({}, init);
@@ -2067,6 +2093,11 @@
                 <!-- Location chip: detects the user's place (GPS / IP) for accurate Panchangam -->
                 <button class="lang-select-btn" id="btn-header-location" onclick="detectLocation()" title="Set your location for accurate Panchangam" style="margin-right: 8px;">
                     <i class="fa-solid fa-location-dot" style="color: var(--accent-gold);"></i> <span id="header-location-name">Chennai</span>
+                </button>
+
+                <!-- Backend server selector (visible when BACKEND_URL is configured or on native) -->
+                <button class="lang-select-btn" id="btn-server-settings" onclick="openServerSettings()" title="Configure backend server" style="margin-right: 8px; display: none;">
+                    <i class="fa-solid fa-server" style="color: var(--accent-gold);"></i> <span id="server-indicator">Server</span>
                 </button>
 
                 <!-- User Profile / Session Control Widget -->
@@ -8106,6 +8137,50 @@
             }
         }
 
+        // --- Server Settings (Capacitor / self-host backend selector) ---
+        function openServerSettings() {
+            var current = window.BACKEND_URL || '';
+            document.getElementById('server-current-display').textContent = current || '(same origin — browser mode)';
+            var radios = document.querySelectorAll('[name="server-preset"]');
+            var matched = false;
+            radios.forEach(function(r) {
+                if (r.value !== 'custom' && r.value === current) { r.checked = true; matched = true; }
+            });
+            if (!matched) {
+                document.querySelector('[name="server-preset"][value="custom"]').checked = true;
+                document.getElementById('server-custom-url-input').value = current;
+            }
+            document.getElementById('server-settings-modal').style.display = 'flex';
+        }
+        function closeServerSettings() {
+            document.getElementById('server-settings-modal').style.display = 'none';
+        }
+        function saveServerSettings() {
+            var selected = document.querySelector('[name="server-preset"]:checked');
+            if (!selected) return;
+            var newUrl = selected.value === 'custom'
+                ? (document.getElementById('server-custom-url-input').value || '').trim()
+                : selected.value;
+            newUrl = newUrl.replace(/\/$/, '');
+            localStorage.setItem('vedic_backend_url', newUrl);
+            localStorage.removeItem('vedic_api_key');
+            localStorage.removeItem('session_token');
+            window.location.reload();
+        }
+        // Show the server button when a remote backend is configured or on native
+        (function() {
+            var isNative = typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+            if (isNative || window.BACKEND_URL) {
+                var btn = document.getElementById('btn-server-settings');
+                var ind = document.getElementById('server-indicator');
+                if (btn) btn.style.display = '';
+                if (ind && window.BACKEND_URL) {
+                    var host = window.BACKEND_URL.replace(/https?:\/\//, '').split('/')[0];
+                    ind.textContent = host || 'Server';
+                }
+            }
+        })();
+
         function openLoginModal() {
             document.getElementById('login-modal').style.display = 'flex';
             switchAuthTab('login');
@@ -8609,6 +8684,44 @@
         }
 
     </script>
+
+    <!-- Server Settings Modal (Capacitor / self-host backend configuration) -->
+    <div id="server-settings-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 400px; max-width: 92vw; position: relative;">
+            <button onclick="closeServerSettings()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            <h3 style="font-family: var(--font-heading); color: var(--accent-gold); margin: 0 0 4px;">Backend Server</h3>
+            <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 18px;">Select the Vedic Astro AI server this app connects to.</p>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-size: 13px;">
+                    <input type="radio" name="server-preset" value="https://vedicastroai.net" style="accent-color: var(--accent-gold); flex-shrink: 0;">
+                    <span><strong>Production</strong> — vedicastroai.net</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-size: 13px;">
+                    <input type="radio" name="server-preset" value="http://10.0.2.2:8008" style="accent-color: var(--accent-gold); flex-shrink: 0;">
+                    <span><strong>Dev</strong> — local machine (Android emulator)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-size: 13px;">
+                    <input type="radio" name="server-preset" value="" style="accent-color: var(--accent-gold); flex-shrink: 0;">
+                    <span><strong>Same origin</strong> — browser / self-hosted</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-size: 13px; flex-wrap: wrap;">
+                    <input type="radio" name="server-preset" value="custom" style="accent-color: var(--accent-gold); flex-shrink: 0;">
+                    <span style="flex-shrink: 0;">Custom URL:</span>
+                    <input type="text" id="server-custom-url-input" placeholder="https://your-server.com"
+                        style="flex: 1; min-width: 160px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); border-radius: 6px; padding: 5px 8px; color: var(--text-primary); font-size: 12px;"
+                        onclick="document.querySelector('[name=server-preset][value=custom]').checked=true;">
+                </label>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px; margin-bottom: 18px;">
+                <strong style="color: var(--accent-gold);">Currently connected to:</strong><br>
+                <span id="server-current-display" style="word-break: break-all;"></span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="saveServerSettings()" style="flex: 1; background: var(--accent-gold); color: #000; border: none; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; font-size: 13px;">Save &amp; Reconnect</button>
+                <button onclick="closeServerSettings()" style="flex: 1; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-glass); border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px;">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Sign In / Sign Up Modal -->
     <div id="login-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
