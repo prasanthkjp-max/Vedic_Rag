@@ -3,6 +3,37 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.9.0]
+
+### Fixed
+- **Sidebar language picker was stuck on English (mobile/Android)**: the drawer's
+  "Language" button toggled the desktop header dropdown (`#lang-menu`), whose
+  container (`.header-controls .lang-selector`) is `display:none` below 1024px, so
+  nothing ever appeared and the language never changed. The sidebar now has its own
+  inline language submenu (`#side-lang-sub`) that calls `changeLanguage()` directly
+  and never depends on the hidden header control.
+
+### Added
+- **Mobile/Android side-navigation drawer is now in the source of truth**
+  (`static/index.html`). The drawer had previously only existed in the gitignored
+  Capacitor build artifact (`android/app/.../assets/public/index.html`), so any
+  `cap copy` would have wiped it. It is now part of `static/` and regenerated into
+  the Android bundle.
+- **Login / account block pinned to the top of the sidebar**: shows *Sign In /
+  Sign Up* when logged out and name + 🪙 credits + *Logout* when logged in, mirroring
+  the header widget via `updateAuthUI()`.
+- **Settings menu in the sidebar** consolidating existing controls (language,
+  location, server settings, default Ayanamsa, default Panchangam system) and new
+  options: text size (A−/A/A+, scales the root font for dense regional scripts),
+  default landing page, lock location (skips the on-load GPS override), a daily
+  Panchangam reminder (Capacitor `LocalNotifications`, native-only), and an
+  About/version readout fed from `/api/version`.
+
+### Notes
+- A light/dark **theme** toggle was scoped but deferred: the current palette is
+  already a light theme and ~74% of colors are hardcoded literals rather than CSS
+  variables, so a reliable toggle needs a color-token refactor first.
+
 ## [1.8.8]
 
 ### Fixed

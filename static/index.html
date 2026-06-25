@@ -1984,11 +1984,167 @@
             .panchangam-advanced-grid { grid-template-columns: 1fr; }
         }
 
-        @media (max-width: 768px) {
-            header { padding: 0 14px; height: auto; min-height: 56px; flex-wrap: wrap; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+        /* ── Side Navigation Drawer for Android/Mobile ── */
+        .side-nav {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100%;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-gold);
+            z-index: 1000;
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(67, 20, 7, 0.15);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .side-nav.open { left: 0; }
+        .side-nav-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(67, 20, 7, 0.4);
+            z-index: 999;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+        .side-nav-overlay.show { display: block; }
+        .side-nav-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .side-nav-header img { width: 36px; height: 36px; border-radius: 8px; }
+        .side-nav-header h2 {
+            font-size: 16px;
+            font-family: var(--font-heading);
+            background: linear-gradient(135deg, #f97316 0%, #d97706 50%, #ea580c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        .side-nav-content {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .side-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-family: var(--font-heading);
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 13.5px;
+        }
+        .side-nav-item i { width: 18px; text-align: center; color: var(--accent-gold); font-size: 15px; }
+        .side-nav-item i.chevron { width: auto; margin-left: auto; font-size: 11px; transition: transform 0.2s; }
+        .side-nav-item.expanded i.chevron { transform: rotate(180deg); }
+        .side-nav-item:hover { background: rgba(245, 158, 11, 0.08); color: #ea580c; }
+        .side-nav-item.active {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(234, 88, 12, 0.1));
+            color: #ea580c;
+            border-color: rgba(217, 119, 6, 0.3);
+        }
+        .side-nav-item .side-value { margin-left: auto; font-size: 12px; font-weight: 600; opacity: 0.8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .side-nav-divider { height: 1px; background: var(--border-glass); margin: 8px 0; }
+
+        /* Expandable submenu (language / settings) — inline so it never depends
+           on the desktop header dropdown that is hidden at mobile widths. */
+        .side-nav-sub {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            padding: 4px 0 8px 10px;
+            margin: 0 0 0 10px;
+            border-left: 1px solid var(--border-glass);
+        }
+        .side-nav-sub.open { display: flex; }
+        .side-nav-subitem {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            background: transparent;
+            border: 1px solid transparent;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-family: var(--font-sans);
+        }
+        .side-nav-subitem:hover { background: rgba(245, 158, 11, 0.08); color: #ea580c; }
+        .side-nav-subitem.active { color: #ea580c; font-weight: 700; }
+        .side-setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 14px;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+        }
+        .side-setting-row select {
+            background: var(--bg-input);
+            border: 1px solid var(--border-gold);
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: 12px;
+            color: var(--text-primary);
+            max-width: 140px;
+            cursor: pointer;
+        }
+        .side-setting-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent-gold); cursor: pointer; }
+        .side-seg { display: inline-flex; border: 1px solid var(--border-gold); border-radius: 8px; overflow: hidden; }
+        .side-seg button { padding: 4px 11px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
+        .side-seg button.active { background: rgba(245, 158, 11, 0.18); color: #ea580c; font-weight: 700; }
+
+        .menu-toggle-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--accent-gold);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 10px;
+            margin-left: -10px;
+        }
+
+        @media (max-width: 1024px) {
+            .nav-top-bar, .header-controls .lang-selector { display: none; }
+            .menu-toggle-btn { display: block; }
+            header { padding: 0 16px; height: 56px; }
+            .logo-section { gap: 8px; }
+            .logo-section img { width: 34px; height: 34px; }
             #lbl-title { font-size: 16px; }
-            .nav-top-bar { gap: 2px; }
-            .nav-tab { padding: 6px 10px; font-size: 12px; }
+            #lbl-subtitle { display: none; }
+            #btn-header-location { display: none; }
+        }
+
+        /* Root text-scale knob (Settings → Text size) — helps dense regional scripts. */
+        html.txt-s { font-size: 14px; }
+        html.txt-m { font-size: 16px; }
+        html.txt-l { font-size: 18px; }
+
+        @media (max-width: 768px) {
             .single-page-content { padding: 12px; }
             .card { padding: 16px 18px; }
             .panch-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2071,8 +2227,122 @@
 <body>
     <div class="app-container">
         
+        <!-- Side Navigation Drawer for Mobile/Android -->
+        <div id="side-nav-overlay" class="side-nav-overlay" onclick="toggleSideNav()"></div>
+        <nav id="side-nav" class="side-nav">
+            <div class="side-nav-header">
+                <img src="/assets/oolaichuvadi_icon.png" alt="Oolaichuvadi">
+                <div class="logo-title"><h2 id="lbl-side-title">Vedic Astro AI</h2></div>
+            </div>
+            <div class="side-nav-content">
+
+                <!-- Account block (kept at the very top) -->
+                <button class="side-nav-item" id="side-account-signin" onclick="openLoginModal()">
+                    <i class="fa-solid fa-user-astronaut"></i> <span data-i18n-key="nav_sign_in">Sign In / Sign Up</span>
+                </button>
+                <div id="side-account-loggedin" style="display: none; flex-direction: column; gap: 6px;">
+                    <button class="side-nav-item active" onclick="openProfileModal()">
+                        <i class="fa-solid fa-circle-user"></i> <span id="side-user-name">User</span>
+                    </button>
+                    <div class="side-setting-row">
+                        <span><i class="fa-solid fa-coins" style="color: var(--accent-gold);"></i> <span data-i18n-key="lbl_credits">Credits</span></span>
+                        <strong id="side-user-credits" style="color: var(--accent-gold);">0</strong>
+                    </div>
+                    <button class="side-nav-item" onclick="handleLogout()">
+                        <i class="fa-solid fa-sign-out-alt"></i> <span data-i18n-key="nav_logout">Logout</span>
+                    </button>
+                </div>
+
+                <div class="side-nav-divider"></div>
+
+                <button class="side-nav-item active" id="side-btn-home" onclick="navigateToPage('home')">
+                    <i class="fa-solid fa-calendar-days"></i> <span data-i18n-key="nav_btn_home">Home (Panchangam)</span>
+                </button>
+                <button class="side-nav-item" id="side-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
+                    <i class="fa-solid fa-circle-user"></i> <span data-i18n-key="nav_btn_jyothisyam">Astrology</span>
+                </button>
+                <button class="side-nav-item" id="side-btn-marriage" onclick="navigateToPage('marriage')">
+                    <i class="fa-solid fa-heart"></i> <span data-i18n-key="nav_btn_marriage">Marriage Matching</span>
+                </button>
+                <button class="side-nav-item" id="side-btn-ai" onclick="navigateToPage('ai')">
+                    <i class="fa-solid fa-brain"></i> <span data-i18n-key="nav_btn_ai">Astro AI Chat</span>
+                </button>
+
+                <div class="side-nav-divider"></div>
+
+                <!-- Language (own inline submenu — fixes the stuck-on-English bug) -->
+                <button class="side-nav-item" id="side-lang-toggle" onclick="toggleSideSub('side-lang-sub', this)">
+                    <i class="fa-solid fa-language"></i> <span data-i18n-key="lbl_language">Language</span>
+                    <span class="side-value" id="side-lang-name">English</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="side-nav-sub" id="side-lang-sub">
+                    <button class="side-nav-subitem" data-lang="en" onclick="changeLanguage('en')">English</button>
+                    <button class="side-nav-subitem" data-lang="ta" onclick="changeLanguage('ta')">Tamil (தமிழ்)</button>
+                    <button class="side-nav-subitem" data-lang="te" onclick="changeLanguage('te')">Telugu (తెలుగు)</button>
+                    <button class="side-nav-subitem" data-lang="ml" onclick="changeLanguage('ml')">Malayalam (മലയാളം)</button>
+                    <button class="side-nav-subitem" data-lang="kn" onclick="changeLanguage('kn')">Kannada (ಕನ್ನಡ)</button>
+                    <button class="side-nav-subitem" data-lang="hi" onclick="changeLanguage('hi')">Hindi (हिन्दी)</button>
+                </div>
+
+                <button class="side-nav-item" onclick="detectLocation()">
+                    <i class="fa-solid fa-location-dot"></i> <span data-i18n-key="lbl_location">Location</span>
+                    <span class="side-value" id="side-location-name">Chennai, India</span>
+                </button>
+
+                <!-- Settings (own inline submenu) -->
+                <button class="side-nav-item" id="side-settings-toggle" onclick="toggleSideSub('side-settings-sub', this)">
+                    <i class="fa-solid fa-gear"></i> <span data-i18n-key="lbl_settings">Settings</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="side-nav-sub" id="side-settings-sub">
+                    <div class="side-setting-row">
+                        <span data-i18n-key="set_text_size">Text size</span>
+                        <span class="side-seg" id="set-text-size">
+                            <button type="button" data-scale="s" onclick="setTextScale('s')">A-</button>
+                            <button type="button" data-scale="m" onclick="setTextScale('m')">A</button>
+                            <button type="button" data-scale="l" onclick="setTextScale('l')">A+</button>
+                        </span>
+                    </div>
+                    <div class="side-setting-row">
+                        <span data-i18n-key="set_default_page">Start page</span>
+                        <select id="set-default-page" onchange="saveSetting('vedic_default_page', this.value)">
+                            <option value="home">Home</option>
+                            <option value="jyothisyam">Astrology</option>
+                            <option value="marriage">Marriage</option>
+                            <option value="ai">AI Chat</option>
+                        </select>
+                    </div>
+                    <div class="side-setting-row">
+                        <span data-i18n-key="lbl_ayanamsa_system">Ayanamsa</span>
+                        <select id="set-default-ayanamsa" onchange="setDefaultAyanamsa(this.value)"></select>
+                    </div>
+                    <div class="side-setting-row">
+                        <span data-i18n-key="set_panch_system">Panchangam</span>
+                        <select id="set-default-panch" onchange="setDefaultPanchSystem(this.value)"></select>
+                    </div>
+                    <label class="side-setting-row" style="cursor: pointer;">
+                        <span data-i18n-key="set_lock_location">Lock location</span>
+                        <input type="checkbox" id="set-lock-location" onchange="saveSetting('vedic_location_locked', this.checked ? '1' : '')">
+                    </label>
+                    <label class="side-setting-row" style="cursor: pointer;">
+                        <span data-i18n-key="set_daily_reminder">Daily reminder</span>
+                        <input type="checkbox" id="set-daily-reminder" onchange="toggleDailyReminder(this.checked)">
+                    </label>
+                    <button class="side-nav-subitem" id="side-btn-server" onclick="openServerSettings()" style="display: none;">
+                        <i class="fa-solid fa-server"></i> <span id="side-server-name">Server Settings</span>
+                    </button>
+                    <div class="side-setting-row" style="opacity: 0.7;">
+                        <span data-i18n-key="set_about">Version</span>
+                        <span id="side-app-version">—</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
         <!-- App Header with Left logo and Center top bar tabs and Right language select -->
         <header>
+            <button class="menu-toggle-btn" onclick="toggleSideNav()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
             <div class="logo-section">
                 <img src="/assets/oolaichuvadi_icon.png" alt="Oolaichuvadi">
                 <div class="logo-title">
@@ -3058,6 +3328,10 @@
                 nav_btn_jyothisyam: "Astrology",
                 nav_btn_ai: "Astro AI Chat",
                 nav_btn_marriage: "Marriage Matching",
+                nav_sign_in: "Sign In / Sign Up", nav_logout: "Logout", lbl_credits: "Credits",
+                lbl_language: "Language", lbl_location: "Location", lbl_settings: "Settings",
+                set_text_size: "Text size", set_default_page: "Start page", set_panch_system: "Panchangam",
+                set_lock_location: "Lock location", set_daily_reminder: "Daily reminder", set_about: "Version",
                 lbl_marriage_intro: "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.",
                 lbl_marriage_title: "Marriage Compatibility & Harmony",
                 lbl_male_partner_title: "Male Partner Details",
@@ -3175,6 +3449,10 @@
                 desc_gochara: "இன்றைய கோசார கிரக மாற்றங்களின் வரைபடம் தென்னிந்திய முறையில்.",
                 tamil_year: "தமிழ் வருடம்",
                 nav_btn_marriage: "திருமண பொருத்தம்",
+                nav_sign_in: "உள்நுழை / பதிவு", nav_logout: "வெளியேறு", lbl_credits: "கிரெடிட்டுகள்",
+                lbl_language: "மொழி", lbl_location: "இடம்", lbl_settings: "அமைப்புகள்",
+                set_text_size: "எழுத்து அளவு", set_default_page: "தொடக்கப் பக்கம்", set_panch_system: "பஞ்சாங்கம்",
+                set_lock_location: "இடத்தைப் பூட்டு", set_daily_reminder: "தினசரி நினைவூட்டல்", set_about: "பதிப்பு",
                 lbl_marriage_intro: "இரு மணமக்களின் பிறப்பு விவரங்களை உள்ளிட்டு நட்சத்திர பொருத்தம் (கூட்ட பொருத்தம்) மற்றும் பிரபஞ்ச ஜோதிட பலன்களைப் பெறலாம்.",
                 lbl_marriage_title: "திருமண பொருத்தம் & இணக்கம்",
                 lbl_male_partner_title: "வரன் விவரங்கள் (ஆண்)",
@@ -3286,6 +3564,10 @@
                 nav_btn_jyothisyam: "జ్యోతిష్యం",
                 nav_btn_ai: "ఆస్ట్రో AI చాట్",
                 nav_btn_marriage: "వివాహ పొంతన",
+                nav_sign_in: "సైన్ ఇన్ / నమోదు", nav_logout: "లాగౌట్", lbl_credits: "క్రెడిట్‌లు",
+                lbl_language: "భాష", lbl_location: "ప్రదేశం", lbl_settings: "సెట్టింగ్‌లు",
+                set_text_size: "అక్షర పరిమాణం", set_default_page: "ప్రారంభ పేజీ", set_panch_system: "పంచాంగం",
+                set_lock_location: "ప్రదేశం లాక్", set_daily_reminder: "రోజువారీ రిమైండర్", set_about: "వెర్షన్",
                 lbl_marriage_intro: "ఇద్దరు భాగస్వాముల జన్మ వివరాలను నమోదు చేసి నక్షత్ర పొంతన (కూట పొంతన) మరియు వైవాహిక జ్యోతిష్య ఫలాలను పొందండి.",
                 lbl_marriage_title: "వివాహ పొంతన & వైవాహిక బంధం",
                 lbl_male_partner_title: "వరుడి వివరాలు (పురుషుడు)",
@@ -3400,6 +3682,10 @@
                 nav_btn_jyothisyam: "ജ്യോതിഷ്യം",
                 nav_btn_ai: "ആസ്ട്രോ AI ചാറ്റ്",
                 nav_btn_marriage: "വിവാഹ പൊരുത്തം",
+                nav_sign_in: "സൈൻ ഇൻ / രജിസ്റ്റർ", nav_logout: "ലോഗൗട്ട്", lbl_credits: "ക്രെഡിറ്റുകൾ",
+                lbl_language: "ഭാഷ", lbl_location: "സ്ഥലം", lbl_settings: "ക്രമീകരണങ്ങൾ",
+                set_text_size: "അക്ഷര വലുപ്പം", set_default_page: "ആരംഭ പേജ്", set_panch_system: "പഞ്ചാംഗം",
+                set_lock_location: "സ്ഥലം ലോക്ക്", set_daily_reminder: "ദിവസേന ഓർമ്മപ്പെടുത്തൽ", set_about: "പതിപ്പ്",
                 lbl_marriage_intro: "ഇരുവരുടെ ജനന വിവരങ്ങൾ നൽകി നക്ഷത്ര പൊരുത്തം (കൂട്ട പൊരുത്തം) മൂല്യനിർണ്ണയം നടത്തി ജ്യോതിഷ ഫലങ്ങൾ ലഭ്യമാക്കൂ.",
                 lbl_marriage_title: "വിവാഹ പൊരുത്തവും കുടുംബ ഐക്യവും",
                 lbl_male_partner_title: "വരന്റെ വിവരങ്ങൾ (പുരുഷൻ)",
@@ -3514,6 +3800,10 @@
                 nav_btn_jyothisyam: "ಜ್ಯೋತಿಷ್ಯ",
                 nav_btn_ai: "ಆಸ್ಟ್ರೋ AI ಚಾಟ್",
                 nav_btn_marriage: "ವಿವಾಹ ಹೊಂದಾಣಿಕೆ",
+                nav_sign_in: "ಸೈನ್ ಇನ್ / ನೋಂದಣಿ", nav_logout: "ಲಾಗ್ ಔಟ್", lbl_credits: "ಕ್ರೆಡಿಟ್‌ಗಳು",
+                lbl_language: "ಭಾಷೆ", lbl_location: "ಸ್ಥಳ", lbl_settings: "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+                set_text_size: "ಅಕ್ಷರ ಗಾತ್ರ", set_default_page: "ಪ್ರಾರಂಭ ಪುಟ", set_panch_system: "ಪಂಚಾಂಗ",
+                set_lock_location: "ಸ್ಥಳ ಲಾಕ್", set_daily_reminder: "ದೈನಂದಿನ ಜ್ಞಾಪನೆ", set_about: "ಆವೃತ್ತಿ",
                 lbl_marriage_intro: "ಇಬ್ಬರು ಸಂಗಾತಿಗಳ ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ ನಕ್ಷತ್ರ ಹೊಂದಾಣಿಕೆ (ಕೂಟ ಹೊಂದಾಣಿಕೆ) ಮತ್ತು ಜ್ಯೋತಿಷ್ಯ ಫಲಗಳನ್ನು ಪಡೆಯಿರಿ.",
                 lbl_marriage_title: "ವಿವಾಹ ಹೊಂದಾಣಿಕೆ ಮತ್ತು ದಾಂಪತ್ಯ ಸುಖ",
                 lbl_male_partner_title: "ವರನ ವಿವರಗಳು (ಪುರುಷ)",
@@ -3628,6 +3918,10 @@
                 nav_btn_jyothisyam: "ज्योतिषम्",
                 nav_btn_ai: "एस्ट्रो AI चैट",
                 nav_btn_marriage: "कुण्डली मिलान",
+                nav_sign_in: "साइन इन / पंजीकरण", nav_logout: "लॉग आउट", lbl_credits: "क्रेडिट",
+                lbl_language: "भाषा", lbl_location: "स्थान", lbl_settings: "सेटिंग्स",
+                set_text_size: "अक्षर आकार", set_default_page: "प्रारंभ पृष्ठ", set_panch_system: "पंचांग",
+                set_lock_location: "स्थान लॉक करें", set_daily_reminder: "दैनिक अनुस्मारक", set_about: "संस्करण",
                 lbl_marriage_intro: "दोनों जातकों के जन्म विवरण दर्ज करें और नक्षत्र मिलान (कूटा मिलान) तथा ब्रह्मांडीय भविष्यफल प्राप्त करें।",
                 lbl_marriage_title: "कुण्डली मिलान एवं वैवाहिक सुख",
                 lbl_male_partner_title: "वर का विवरण (वर)",
@@ -4312,16 +4606,51 @@
         let activeSubTab = 'basic';
         let calculatedChartData = null; // saved birth data for AI predictions
 
+        // Slide the mobile/Android drawer in and out.
+        function toggleSideNav() {
+            const nav = document.getElementById('side-nav');
+            const overlay = document.getElementById('side-nav-overlay');
+            if (nav && overlay) {
+                nav.classList.toggle('open');
+                overlay.classList.toggle('show');
+            }
+        }
+
+        // Expand/collapse an inline sidebar submenu (language / settings). Inline
+        // means it never relies on the desktop header dropdown, which is hidden at
+        // mobile widths — the old cause of the "stuck on English" bug.
+        function toggleSideSub(subId, btn) {
+            const sub = document.getElementById(subId);
+            if (!sub) return;
+            const opening = !sub.classList.contains('open');
+            sub.classList.toggle('open', opening);
+            if (btn) btn.classList.toggle('expanded', opening);
+        }
+
         // Top bar subpage navigation
         function navigateToPage(pageId) {
             activeMainTab = pageId;
-            
-            // Toggle navigation button active states
+
+            // Close the drawer if a nav item was tapped from inside it.
+            const sideNav = document.getElementById('side-nav');
+            const sideOverlay = document.getElementById('side-nav-overlay');
+            if (sideNav && sideNav.classList.contains('open')) {
+                sideNav.classList.remove('open');
+                if (sideOverlay) sideOverlay.classList.remove('show');
+            }
+
+            // Toggle navigation button active states (desktop top bar)
             document.getElementById('nav-btn-home').className = pageId === 'home' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-jyothisyam').className = pageId === 'jyothisyam' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-marriage').className = pageId === 'marriage' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-ai').className = pageId === 'ai' ? 'nav-tab active' : 'nav-tab';
-            
+
+            // Mirror active state onto the sidebar items (mobile drawer)
+            ['home', 'jyothisyam', 'marriage', 'ai'].forEach(p => {
+                const sideBtn = document.getElementById('side-btn-' + p);
+                if (sideBtn) sideBtn.className = pageId === p ? 'side-nav-item active' : 'side-nav-item';
+            });
+
             // Toggle page content blocks visibility
             document.getElementById('page-home').style.display = pageId === 'home' ? 'block' : 'none';
             document.getElementById('page-jyothisyam').style.display = pageId === 'jyothisyam' ? 'block' : 'none';
@@ -4383,10 +4712,21 @@
             // Set button name in UI
             const langNames = {en: "English", ta: "Tamil (தமிழ்)", te: "Telugu (తెలుగు)", ml: "Malayalam (മലയാളം)", kn: "Kannada (ಕನ್ನಡ)", hi: "Hindi (हिन्दी)"};
             setText('current-lang-name', langNames[langCode]);
+            // Sidebar (mobile) language label + active highlight
+            setText('side-lang-name', langNames[langCode]);
+            document.querySelectorAll('#side-lang-sub .side-nav-subitem').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-lang') === langCode);
+            });
 
             // Localize text labels
             const dict = localization[langCode];
             setText('lbl-title', dict.title);
+            setText('lbl-side-title', dict.title);
+            // Localize sidebar items carrying a data-i18n-key (nav + account labels)
+            document.querySelectorAll('#side-nav [data-i18n-key]').forEach(el => {
+                const key = el.getAttribute('data-i18n-key');
+                if (dict[key]) el.innerText = dict[key];
+            });
             setText('lbl-subtitle', dict.subtitle);
             setText('lbl-home-calendar', dict.lbl_home_calendar);
 
@@ -4745,9 +5085,12 @@
         let userLocation = { name: "Chennai, India", lat: 13.0827, lon: 80.2707 };
 
         function updateLocationLabel() {
-            const el = document.getElementById('header-location-name');
             // Show "City, State" (first two parts); names are built as place+region.
-            if (el) el.innerText = (userLocation.name || "Location").split(',').slice(0, 2).map(s => s.trim()).join(', ');
+            const locName = (userLocation.name || "Location").split(',').slice(0, 2).map(s => s.trim()).join(', ');
+            const el = document.getElementById('header-location-name');
+            if (el) el.innerText = locName;
+            const sideEl = document.getElementById('side-location-name');
+            if (sideEl) sideEl.innerText = locName;
         }
 
         function loadStoredLocation() {
@@ -7974,10 +8317,17 @@
                 renderMonthlyCalendar();
             }
 
+            // Restore Settings preferences (text size, defaults, toggles) and
+            // populate the sidebar Settings selects from the existing form controls.
+            initSettingsPanel();
+
             // Force precise GPS on load (prompts for permission, overriding any
             // stored/IP location); falls back to IP if denied or unavailable.
             // Browsers remember the grant, so repeat loads won't re-prompt.
-            detectLocation();
+            // Skipped when the user locked their location in Settings.
+            if (localStorage.getItem('vedic_location_locked') !== '1') {
+                detectLocation();
+            }
 
             // Add listener to D-chart dropdown select
             const dChartSelect = document.getElementById('d-chart-select');
@@ -8014,7 +8364,126 @@
             
             // Initialise user session status
             await initAuth();
+
+            // Honour the user's preferred landing page (Settings → Start page).
+            applyDefaultPage();
         };
+
+        // ── Sidebar Settings panel ──────────────────────────────────────────
+        function saveSetting(key, val) {
+            if (val) localStorage.setItem(key, val);
+            else localStorage.removeItem(key);
+        }
+
+        // Scale the root font-size; affects rem-based sizing (helps dense scripts).
+        function setTextScale(scale) {
+            const valid = ['s', 'm', 'l'].includes(scale) ? scale : 'm';
+            document.documentElement.classList.remove('txt-s', 'txt-m', 'txt-l');
+            document.documentElement.classList.add('txt-' + valid);
+            localStorage.setItem('vedic_text_scale', valid);
+            document.querySelectorAll('#set-text-size button').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-scale') === valid);
+            });
+        }
+
+        // Mirror a Settings <select> onto an existing form <select> and persist it.
+        function setDefaultAyanamsa(val) {
+            localStorage.setItem('vedic_default_ayanamsa', val);
+            ['in-ayanamsa', 'in-marriage-ayanamsa'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (sel) sel.value = val;
+            });
+        }
+        function setDefaultPanchSystem(val) {
+            localStorage.setItem('vedic_default_panch', val);
+            const sel = document.getElementById('panch-system-select');
+            if (sel && sel.value !== val) {
+                sel.value = val;
+                if (typeof togglePanchangamSystem === 'function') togglePanchangamSystem();
+            }
+        }
+
+        // Daily Panchangam reminder — native only (Capacitor LocalNotifications).
+        async function toggleDailyReminder(on) {
+            saveSetting('vedic_daily_reminder', on ? '1' : '');
+            try {
+                const LN = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+                if (!LN) return; // web: preference stored, no-op until opened on device
+                if (on) {
+                    await LN.requestPermissions();
+                    await LN.schedule({ notifications: [{
+                        id: 1001,
+                        title: "Today's Panchangam",
+                        body: "Tap to view today's tithi, nakshatra and muhurtham.",
+                        schedule: { on: { hour: 6, minute: 30 }, repeats: true }
+                    }]});
+                } else {
+                    await LN.cancel({ notifications: [{ id: 1001 }] });
+                }
+            } catch (e) { /* notifications unavailable — preference still saved */ }
+        }
+
+        // Clone the option list of an existing form <select> into a Settings select.
+        function mirrorSelectOptions(srcId, destId) {
+            const src = document.getElementById(srcId);
+            const dest = document.getElementById(destId);
+            if (!src || !dest) return;
+            dest.innerHTML = '';
+            Array.from(src.options).forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                // Keep the Settings list compact: first word/segment of the label.
+                opt.text = o.text.split('(')[0].split(' - ')[0].trim();
+                dest.appendChild(opt);
+            });
+        }
+
+        function applyDefaultPage() {
+            const page = localStorage.getItem('vedic_default_page');
+            if (page && page !== 'home' && document.getElementById('page-' + page)) {
+                navigateToPage(page);
+            }
+        }
+
+        function initSettingsPanel() {
+            // Text size
+            setTextScale(localStorage.getItem('vedic_text_scale') || 'm');
+
+            // Default landing page
+            const pageSel = document.getElementById('set-default-page');
+            if (pageSel) pageSel.value = localStorage.getItem('vedic_default_page') || 'home';
+
+            // Astro defaults — populate from the real form selects, then apply saved pick
+            mirrorSelectOptions('in-ayanamsa', 'set-default-ayanamsa');
+            mirrorSelectOptions('panch-system-select', 'set-default-panch');
+            const savedAyan = localStorage.getItem('vedic_default_ayanamsa');
+            if (savedAyan) {
+                const a = document.getElementById('set-default-ayanamsa');
+                if (a) a.value = savedAyan;
+                setDefaultAyanamsa(savedAyan);
+            }
+            const savedPanch = localStorage.getItem('vedic_default_panch');
+            if (savedPanch) {
+                const p = document.getElementById('set-default-panch');
+                if (p) p.value = savedPanch;
+                setDefaultPanchSystem(savedPanch);
+            }
+
+            // Toggles
+            const lockEl = document.getElementById('set-lock-location');
+            if (lockEl) lockEl.checked = localStorage.getItem('vedic_location_locked') === '1';
+            const remindEl = document.getElementById('set-daily-reminder');
+            if (remindEl) remindEl.checked = localStorage.getItem('vedic_daily_reminder') === '1';
+
+            // About — app version (open endpoint, no auth)
+            const verEl = document.getElementById('side-app-version');
+            if (verEl) {
+                fetch('/api/version')
+                    .then(r => r.ok ? r.json() : null)
+                    .then(d => { if (d && (d.version || d.app_version)) verEl.innerText = 'v' + (d.version || d.app_version); })
+                    .catch(() => {});
+            }
+        }
 
         // --- User Authentication & Credits Logic ---
         let currentUser = null;
@@ -8055,16 +8524,26 @@
             const widgetLoggedIn = document.getElementById('logged-in-widget');
             const userDisplayName = document.getElementById('user-display-name');
             const userCreditsCount = document.getElementById('user-credits-count');
-            
+            // Sidebar (mobile) account block mirrors the header widget.
+            const sideSignIn = document.getElementById('side-account-signin');
+            const sideLoggedIn = document.getElementById('side-account-loggedin');
+            const sideUserName = document.getElementById('side-user-name');
+            const sideUserCredits = document.getElementById('side-user-credits');
+
             if (currentUser) {
                 if (btnSignIn) btnSignIn.style.display = 'none';
                 if (widgetLoggedIn) widgetLoggedIn.style.display = 'flex';
+                if (sideSignIn) sideSignIn.style.display = 'none';
+                if (sideLoggedIn) sideLoggedIn.style.display = 'flex';
+                const credits = currentUser.subscription_active ? "UNLIMITED" : currentUser.credit_balance;
                 if (userDisplayName) {
                     const name = currentUser.full_name || currentUser.email;
                     userDisplayName.innerText = name.length > 12 ? name.substring(0, 10) + ".." : name;
                 }
+                if (sideUserName) sideUserName.innerText = currentUser.full_name || currentUser.email;
+                if (sideUserCredits) sideUserCredits.innerText = credits;
                 if (userCreditsCount) {
-                    userCreditsCount.innerText = currentUser.subscription_active ? "UNLIMITED" : currentUser.credit_balance;
+                    userCreditsCount.innerText = credits;
                 }
                 
                 // Pre-fill birth details from profile if present
@@ -8085,7 +8564,9 @@
             } else {
                 if (btnSignIn) btnSignIn.style.display = 'flex';
                 if (widgetLoggedIn) widgetLoggedIn.style.display = 'none';
-                
+                if (sideSignIn) sideSignIn.style.display = 'flex';
+                if (sideLoggedIn) sideLoggedIn.style.display = 'none';
+
                 document.getElementById('saved-charts-auth-callout').style.display = 'block';
                 document.getElementById('chart-history-auth-callout').style.display = 'block';
                 document.getElementById('saved-charts-list').innerHTML = '';
@@ -8173,10 +8654,14 @@
             if (isNative || window.BACKEND_URL) {
                 var btn = document.getElementById('btn-server-settings');
                 var ind = document.getElementById('server-indicator');
+                var sideBtn = document.getElementById('side-btn-server');
+                var sideInd = document.getElementById('side-server-name');
                 if (btn) btn.style.display = '';
-                if (ind && window.BACKEND_URL) {
+                if (sideBtn) sideBtn.style.display = '';
+                if (window.BACKEND_URL) {
                     var host = window.BACKEND_URL.replace(/https?:\/\//, '').split('/')[0];
-                    ind.textContent = host || 'Server';
+                    if (ind) ind.textContent = host || 'Server';
+                    if (sideInd) sideInd.textContent = host || 'Server Settings';
                 }
             }
         })();
