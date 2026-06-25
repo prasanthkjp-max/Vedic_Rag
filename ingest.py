@@ -175,9 +175,9 @@ def process_page(book_id, pdf_path, page_num):
             conn.close()
 
 def ingest_book(book_filename):
-    print(f"\n==================================================")
+    print("\n==================================================")
     print(f"Ingesting Book: {book_filename}")
-    print(f"==================================================")
+    print("==================================================")
     
     pdf_path = os.path.join(BOOKS_DIR, book_filename)
     if not os.path.exists(pdf_path):

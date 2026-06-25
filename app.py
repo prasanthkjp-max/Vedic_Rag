@@ -1186,6 +1186,12 @@ def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
 def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     """Generate ReportLab PDF and stream it for download"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    # Validate chart_data shape up front so malformed input returns a clear 400
+    # instead of a cryptic KeyError 500 from get_regional_panchangam/the PDF
+    # builder — and is never charged credits.
+    for k in ("metadata", "panchangam", "placements"):
+        if k not in req.chart_data:
+            raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
     user = check_credits_or_raise(token, 50, "download_pdf")
     try:
         # Create a secure temporary file path. The client name is slugified so a
@@ -1224,6 +1230,11 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
 def ai_predict(req: AIPredictRequest, raw_req: Request):
     """Stream real-time Lord Ganesha Jyotishyam prediction based on chart coordinates"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    # Validate chart_data shape before charging credits so malformed input gets a
+    # clean 400 (not a 200 event-stream carrying a cryptic "Invalid chart_data" error).
+    for k in ("metadata", "panchangam"):
+        if k not in req.chart_data:
+            raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
     user = check_credits_or_raise(token, 25, "ai_predict")
     chart = req.chart_data
     client = req.client_name
@@ -1298,6 +1309,11 @@ Be authoritative, compassionate, and precise. Start directly with the invocation
 def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
     """Stream real-time Lord Ganesha Jyotishyam marriage prediction using targeted marriage RAG database"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    # Validate both charts have placements before charging credits so malformed
+    # input gets a clean 400 instead of a 200 event-stream error.
+    for label, ch in (("male_chart", req.male_chart), ("female_chart", req.female_chart)):
+        if "placements" not in ch:
+            raise HTTPException(status_code=400, detail=f"{label} missing required key: placements")
     user = check_credits_or_raise(token, 25, "ai_predict_marriage")
     male_chart = req.male_chart
     female_chart = req.female_chart
@@ -1458,27 +1474,27 @@ PAKSHA_TRANSLATIONS = {
 
 TITHI_TRANSLATIONS = {
     "Prathama": {"ta": "பிரதமை", "te": "పాడ్యమి", "ml": "പ്രഥമ", "kn": "ಪಾಡ್ಯಮಿ", "hi": "प्रतिपदा", "en": "Prathama"},
-    "Dwitiya": {"ta": "துவிதியை", "te": "விதிయ", "ml": "ദ്വിതീയ", "kn": "ಬಿದಿಗೆ", "hi": "द्वितीया", "en": "Dwitiya"},
+    "Dwitiya": {"ta": "துவிதியை", "te": "విదియ", "ml": "ദ്വിതീയ", "kn": "ಬಿದಿಗೆ", "hi": "द्वितीया", "en": "Dwitiya"},
     "Tritiya": {"ta": "திருதியை", "te": "తదియ", "ml": "തൃതീയ", "kn": "ತದಿಗೆ", "hi": "तृतीया", "en": "Tritiya"},
     "Chaturthi": {"ta": "சதுர்த்தி", "te": "చవితి", "ml": "ചതുർത്ഥി", "kn": "ಚೌತಿ", "hi": "चतुर्थी", "en": "Chaturthi"},
-    "Panchami": {"ta": "பஞ்சமி", "te": "పంచమి", "ml": "పञ्चമി", "kn": "ಪಂಚಮಿ", "hi": "पंचमी", "en": "Panchami"},
+    "Panchami": {"ta": "பஞ்சமி", "te": "పంచమి", "ml": "പഞ്ചമി", "kn": "ಪಂಚಮಿ", "hi": "पंचमी", "en": "Panchami"},
     "Shashti": {"ta": "சஷ்டி", "te": "షష్ఠి", "ml": "ഷഷ്ഠി", "kn": "ಷಷ್ಠಿ", "hi": "षष्ठी", "en": "Shashti"},
-    "Saptami": {"ta": "சப்தமி", "te": "సప్తమి", "ml": "സപ്തമി", "kn": "സಪ್ತಮಿ", "hi": "सप्तमी", "en": "Saptami"},
+    "Saptami": {"ta": "சப்தமி", "te": "సప్తమి", "ml": "സപ്തമി", "kn": "ಸಪ್ತಮಿ", "hi": "सप्तमी", "en": "Saptami"},
     "Ashtami": {"ta": "அஷ்டமி", "te": "అష్టమి", "ml": "അഷ്ടമി", "kn": "ಅಷ್ಟಮಿ", "hi": "अष्टमी", "en": "Ashtami"},
     "Navami": {"ta": "நவமி", "te": "నవమి", "ml": "നവമി", "kn": "ನವಮಿ", "hi": "नवमी", "en": "Navami"},
-    "Dashami": {"ta": "தசமி", "te": "దశమి", "ml": "ദശമി", "kn": "ದಶಮಿ", "hi": "ದಶಮಿ", "en": "Dashami"},
-    "Ekadashi": {"ta": "ஏகாதசி", "te": "ஏகாடசி", "ml": "ഏകാദശി", "kn": "ಏಕಾದಶಿ", "hi": "एकादशी", "en": "Ekadashi"},
+    "Dashami": {"ta": "தசமி", "te": "దశమి", "ml": "ദശമി", "kn": "ದಶಮಿ", "hi": "दशमी", "en": "Dashami"},
+    "Ekadashi": {"ta": "ஏகாதசி", "te": "ఏకాదశి", "ml": "ഏകാദശി", "kn": "ಏಕಾದಶಿ", "hi": "एकादशी", "en": "Ekadashi"},
     "Dwadashi": {"ta": "துவாதசி", "te": "ద్వాడశి", "ml": "ദ്വാദശി", "kn": "ದ್ವಾದಶಿ", "hi": "द्वादशी", "en": "Dwadashi"},
     "Trayodashi": {"ta": "திரயோதசி", "te": "త్రయోదశి", "ml": "ത്രയോദശി", "kn": "ತ್ರಯೋದಶಿ", "hi": "त्रयोदशी", "en": "Trayodashi"},
-    "Chaturdashi": {"ta": "சதுர்தசி", "te": "చతుర్దశి", "ml": "ചതുർദ്தசி", "kn": "ಚತುರ್ದಶಿ", "hi": "चतुर्दशी", "en": "Chaturdashi"},
+    "Chaturdashi": {"ta": "சதுர்தசி", "te": "చతుర్దశి", "ml": "ചതുർദ്ദശി", "kn": "ಚತುರ್ದಶಿ", "hi": "चतुर्दशी", "en": "Chaturdashi"},
     "Pournami (Full Moon)": {"ta": "பௌர்ணமி (முழு நிலவு)", "te": "పౌర్ణమి (పూర్ణ చంద్రుడు)", "ml": "പൗർണ്ണമി (പൂർണ്ണചന്ദ്രൻ)", "kn": "ಪೌರ್ಣಮಿ (ಹುಣ್ಣಿಮೆ)", "hi": "पूर्णिमा (पूर्ण चंद्र)", "en": "Pournami (Full Moon)"},
-    "Amavasya (New Moon)": {"ta": "அமாவாசை (புது நிலவு)", "te": "అమావాస్య", "ml": "அമാവാസി", "kn": "ಅಮಾವಾಸ್ಯೆ", "hi": "अमावस्या", "en": "Amavasya (New Moon)"}
+    "Amavasya (New Moon)": {"ta": "அமாவாசை (புது நிலவு)", "te": "అమావాస్య", "ml": "അമാവാസി", "kn": "ಅಮಾವಾಸ್ಯೆ", "hi": "अमावस्या", "en": "Amavasya (New Moon)"}
 }
 
 NAKSHATRA_TRANSLATIONS = {
     "Ashwini": {"ta": "அசுவினி", "te": "అశ్విని", "ml": "അശ്വതി", "kn": "ಅಶ್ವಿನಿ", "hi": "अश्विनी"},
     "Bharani": {"ta": "பரணி", "te": "భరణి", "ml": "ഭരണി", "kn": "ಭರಣಿ", "hi": "भरणी"},
-    "Krittika": {"ta": "கார்த்திகை", "te": "కృత్తిక", "ml": "കാർത്തിка", "kn": "ಕೃತ್ತಿಕಾ", "hi": "कृत्तिका"},
+    "Krittika": {"ta": "கார்த்திகை", "te": "కృత్తిక", "ml": "കാർത്തിക", "kn": "ಕೃತ್ತಿಕಾ", "hi": "कृत्तिका"},
     "Rohini": {"ta": "ரோகிணி", "te": "రోహిణి", "ml": "രോഹിണി", "kn": "ರೋಹಿಣಿ", "hi": "रोहिणी"},
     "Mrigashira": {"ta": "மிருகசீரிடம்", "te": "మృగశిర", "ml": "മകയിരം", "kn": "ಮೃಗಶಿರ", "hi": "मृगशिरा"},
     "Ardra": {"ta": "திருவாதிரை", "te": "ఆర్ద్ర", "ml": "തിരുവാതിര", "kn": "ಆರಿದ್ರಾ", "hi": "आर्द्र"},
@@ -1486,14 +1502,14 @@ NAKSHATRA_TRANSLATIONS = {
     "Pushya": {"ta": "பூசம்", "te": "పుష్యమి", "ml": "പൂയം", "kn": "ಪುಷ್ಯ", "hi": "पुष्य"},
     "Ashlesha": {"ta": "ஆயில்யம்", "te": "ఆశ్లేష", "ml": "ആയില്യം", "kn": "ಆಶ್ಲೇಷ", "hi": "अश्लेषा"},
     "Magha": {"ta": "மகம்", "te": "మఖ", "ml": "മകം", "kn": "ಮಖ", "hi": "मघा"},
-    "Purva Phalguni": {"ta": "பூரம்", "te": "పూర్వాఫాల్గుణి", "ml": "പൂരം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाफाल्गुनी"},
-    "Uttara Phalguni": {"ta": "உத்திரம்", "te": "उत्तराफाल्गुनी", "ml": "ഉത്രം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराफाल्गुनी"},
-    "Hasta": {"ta": "அஸ்தம்", "te": "ಹಸ್ತ", "ml": "അത്തം", "kn": "ಹಸ್ತ", "hi": "हस्त"},
+    "Purva Phalguni": {"ta": "பூரம்", "te": "పూర్వాఫాల్గుణి", "ml": "പൂരം", "kn": "ಪೂರ್ವಾಫಲ್ಗುಣಿ", "hi": "पूर्वाफाल्गुनी"},
+    "Uttara Phalguni": {"ta": "உத்திரம்", "te": "ఉత్తరాఫాల్గుణి", "ml": "ഉത്രം", "kn": "ಉತ್ತರಾಫಲ್ಗುಣಿ", "hi": "उत्तराफाल्गुनी"},
+    "Hasta": {"ta": "அஸ்தம்", "te": "హస్త", "ml": "അത്തം", "kn": "ಹಸ್ತ", "hi": "हस्त"},
     "Chitra": {"ta": "சித்திரை", "te": "చిత్త", "ml": "ചിത്ര", "kn": "ಚಿತ್ತಾ", "hi": "चित्रा"},
     "Swati": {"ta": "சுவாதி", "te": "స్వాతి", "ml": "ചോതി", "kn": "ಸ್ವಾತಿ", "hi": "स्वाति"},
     "Vishakha": {"ta": "விசாகம்", "te": "విశాఖ", "ml": "വിശാഖം", "kn": "ವಿಶಾಖ", "hi": "विशाखा"},
-    "Anuradha": {"ta": "அனுஷம்", "te": "అనూరాధ", "ml": "அನಿഴം", "kn": "అనూరాధ", "hi": "अनुराधा"},
-    "Jyeshtha": {"ta": "கேட்டை", "te": "జ్యేష్ఠ", "ml": "തൃക്കേട്ട", "kn": "ಜ್ಯೇಷ्ಠ", "hi": "ज्येष्ठा"},
+    "Anuradha": {"ta": "அனுஷம்", "te": "అనూరాధ", "ml": "അനിഴം", "kn": "ಅನುರಾಧ", "hi": "अनुराधा"},
+    "Jyeshtha": {"ta": "கேட்டை", "te": "జ్యేష్ఠ", "ml": "തൃക്കേട്ട", "kn": "ಜ್ಯೇಷ್ಠ", "hi": "ज्येष्ठा"},
     "Mula": {"ta": "மூலம்", "te": "మూల", "ml": "മൂലം", "kn": "ಮೂಲಾ", "hi": "मूल"},
     "Purva Ashadha": {"ta": "பூராடம்", "te": "పూర్వాషాఢ", "ml": "പൂരാടം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाषाढ़"},
     "Uttara Ashadha": {"ta": "உத்திராடம்", "te": "ఉత్తరాషాఢ", "ml": "ഉത്രാടം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराषाढ़"},
@@ -1501,8 +1517,8 @@ NAKSHATRA_TRANSLATIONS = {
     "Dhanishta": {"ta": "அவிட்டம்", "te": "ధనిష్ఠ", "ml": "അവിട്ടം", "kn": "ಧನಿಷ್ಠ", "hi": "धनिष्ठा"},
     "Shatabhisha": {"ta": "சதயம்", "te": "శతభిషం", "ml": "ചതയം", "kn": "ಶತಭಿಷ", "hi": "शतभिषा"},
     "Purva Bhadrapada": {"ta": "பூரட்டாதி", "te": "పూర్వాభాద్ర", "ml": "പൂരുരുട്ടാതി", "kn": "ಪೂರ್ವಾಭಾದ್ರ", "hi": "पूर्वभाद्रपद"},
-    "Uttara Bhadrapada": {"ta": "உத்திரட்டாதி", "te": "உத்தராభాద్ర", "ml": "ഉത്രട്ടാതി", "kn": "ಉತ್ತರಾಭಾದ್ರ", "hi": "उत्तरभाद्रपद"},
-    "Revati": {"ta": "ரேவதி", "te": "ரேவதி", "ml": "രേവതി", "kn": "ರೇವತಿ", "hi": "रेवती"}
+    "Uttara Bhadrapada": {"ta": "உத்திரட்டாதி", "te": "ఉత్తరాభాద్ర", "ml": "ഉത്രട്ടാതി", "kn": "ಉತ್ತರಾಭಾದ್ರ", "hi": "उत्तरभाद्रपद"},
+    "Revati": {"ta": "ரேவதி", "te": "రేవతి", "ml": "രേവതി", "kn": "ರೇವತಿ", "hi": "रेवती"}
 }
 
 FESTIVAL_TRANSLATIONS = {
@@ -1891,6 +1907,11 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     retrieval and birth placements.
     """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    # Validate chart_data shape before charging credits so malformed input gets a
+    # clean 400 (not a 200 event-stream carrying a cryptic "Invalid chart_data" error).
+    for k in ("metadata", "panchangam"):
+        if k not in req.chart_data:
+            raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
     user = check_credits_or_raise(token, 25, "ai_predict_chat")
     chart = req.chart_data
     client = req.client_name

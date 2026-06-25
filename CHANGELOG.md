@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.8.8]
+
+### Fixed
+- **Wrong-script glyphs in localized panchangam/nakshatra labels**: Corrected ~20
+  translation strings in `app.py` (`TITHI_TRANSLATIONS`, `NAKSHATRA_TRANSLATIONS`)
+  and `pdf_generator.py` (gender labels, the "Combust" tag, and the Chennai/Madras
+  Kannada city name) that contained characters from the wrong Indic script (e.g.
+  Tamil/Devanagari/Telugu/Cyrillic glyphs leaking into Telugu/Malayalam/Kannada/
+  Hindi values), so users in those languages saw garbled or mixed-script output.
+  Also fixed two copy-paste content errors where the Kannada *Purva/Uttara
+  Phalguni* nakshatras were filled with the *Ashadha* strings.
+- **Malformed `chart_data` returned cryptic errors and churned credits**:
+  `/api/download-pdf` now validates the chart payload up front and returns a clear
+  `400` (instead of a leaked `KeyError` `500`), and `/api/ai-predict`,
+  `/api/ai-predict-marriage`, and `/api/ai-predict-chat` now reject malformed
+  input with a `400` *before* debiting credits (instead of a `200` event-stream
+  carrying an opaque "Invalid chart_data" message).
+
+### Changed
+- Removed dead imports (`astro_engine.py`, `pdf_generator.py`,
+  `muhurtham_engine.py`), fixed placeholder-less f-strings in `ingest.py`, and
+  corrected the chart-response key list documented in `CLAUDE.md` to match the
+  real top-level keys (`metadata`, `panchangam`, `placements`, `dasas`,
+  `ashtakavarga`, `shadbala`).
+
 ## [1.8.7]
 
 ### Fixed

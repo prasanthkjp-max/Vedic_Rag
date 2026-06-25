@@ -61,10 +61,14 @@ entirely.
 ## Architecture (the parts that span files)
 
 **Chart → analysis → grounded prediction pipeline:**
-1. `astro_engine.get_astrological_chart(...)` returns the full chart dict
-   (placements, dignities, divisional charts, panchangam, 120-yr Vimshottari
-   dasa tree, ashtakavarga, shadbala). This dict shape IS the
-   `/api/calculate-chart` response and the frontend's `calculatedChartData`.
+1. `astro_engine.get_astrological_chart(...)` returns the full chart dict whose
+   top-level keys are `metadata`, `panchangam`, `placements`, `dasas`
+   (120-yr Vimshottari dasa tree), `ashtakavarga`, `shadbala`. Each
+   `placements[<graha>]` entry carries its own `dignity` and divisional-chart
+   fields (`navamsha_rasi_name`, `drekkana_rasi_name`, `dashamsha_rasi_name`,
+   `dwadashamsha_rasi_name`, …) — dignities and divisional charts are NOT
+   top-level. This dict shape IS the `/api/calculate-chart` response and the
+   frontend's `calculatedChartData`.
 2. `prediction_engine.build_analysis(chart, transit_chart, ref_date)` derives the
    *interpretive* layer (houses, lordships, conjunctions, graha drishti, current
    maha/antar/pratyantar dasa, gochara incl. Sade Sati, yogas) into a text block,
