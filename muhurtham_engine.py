@@ -6,7 +6,6 @@ from astro_engine import (
     get_ayanamsa,
     get_julian_date,
     get_timezone_offset,
-    NAKSHATRAS
 )
 
 # ── Accepted categorical inputs (validated at the top of calculate_muhurtham) ──

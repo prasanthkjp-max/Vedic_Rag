@@ -1,12 +1,9 @@
 import os
 import math
 import logging
-from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
@@ -760,14 +757,14 @@ def clean_and_translate_place(place_name, lang):
         "chennai": {
             "ta": "\u0b9a\u0bc6\u0ba9\u0bcd\u0ba9\u0bc8",
             "te": "\u0c1a\u0c46\u0c28\u0c4d\u0c28\u0c48",
-            "kn": "\u0c9a\u0c46\u0ca8\u0bcd\u0ca8\u0c48",
+            "kn": "\u0c9a\u0c46\u0ca8\u0ccd\u0ca8\u0c48",
             "ml": "\u0d1a\u0d46\u0d28\u0d4d\u0d28\u0d48",
             "hi": "\u091a\u0947\u0928\u094d\u0928\u0908"
         },
         "madras": {
             "ta": "\u0b9a\u0bc6\u0ba9\u0bcd\u0ba9\u0bc8",
             "te": "\u0c1a\u0c46\u0c28\u0c4d\u0c28\u0c48",
-            "kn": "\u0c9a\u0c46\u0ca8\u0bcd\u0ca8\u0c48",
+            "kn": "\u0c9a\u0c46\u0ca8\u0ccd\u0ca8\u0c48",
             "ml": "\u0d1a\u0d46\u0d28\u0d4d\u0d28\u0d48",
             "hi": "\u091a\u0947\u0928\u094d\u0928\u0908"
         },
@@ -1011,12 +1008,12 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     if gender_val == "female":
         gender_local = {
             "en": "Female", "ta": "\u0baa\u0bc6\u0ba3\u0bcd / Female", "te": "\u0c38\u0c4d\u0c24\u0c4d\u0c30\u0c40 / Female",
-            "ml": "\u0d38\u0d4d\u0d24\u0d4d\u0d30\u0d40 / Female", "kn": "\u0c38\u0c4d\u0c24\u0c4d\u0c30\u0c40 / Female", "hi": "\u0938\u094d\u0924\u094d\u0930\u0940 / Female"
+            "ml": "\u0d38\u0d4d\u0d24\u0d4d\u0d30\u0d40 / Female", "kn": "\u0cb8\u0ccd\u0ca4\u0ccd\u0cb0\u0cc0 / Female", "hi": "\u0938\u094d\u0924\u094d\u0930\u0940 / Female"
         }.get(lang, "Female")
     else:
         gender_local = {
             "en": "Male", "ta": "\u0b85\u0ba3\u0bcd / Male", "te": "\u0c2a\u0c41\u0c30\u0c41\u0c37\u0c41\u0c21\u0c41 / Male",
-            "ml": "\u0d2a\u0d41\u0d30\u0d41\u0d37\u0d28\u0d4d / Male", "kn": "\u0c2a\u0c41\u0c30\u0c41\u0c37 / Male", "hi": "\u092a\u0941\u0930\u0941\u0937 / Male"
+            "ml": "\u0d2a\u0d41\u0d30\u0d41\u0d37\u0d28\u0d4d / Male", "kn": "\u0caa\u0cc1\u0cb0\u0cc1\u0cb7 / Male", "hi": "\u092a\u0941\u0930\u0941\u0937 / Male"
         }.get(lang, "Male")
     
     offset_label = {
@@ -1183,7 +1180,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
             status_tags.append(tag_local)
         if plac.get("is_combust", False) and planet != "Lagna":
             tag_local = {
-                "en": "Combust", "ta": "அஸ்தங்கம்", "te": "అస్తంగతం", "ml": "മൗഢ്യം", "kn": "ಅಸ್ತಂಗತ", "hi": "అस्त"
+                "en": "Combust", "ta": "அஸ்தங்கம்", "te": "అస్తంగతం", "ml": "മൗഢ്യം", "kn": "ಅಸ್ತಂಗತ", "hi": "अस्त"
             }.get(lang, "Combust")
             status_tags.append(tag_local)
             
