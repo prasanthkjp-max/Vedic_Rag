@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Allows cleartext HTTP to the Android emulator loopback (10.0.2.2) and
+    LAN addresses for dev mode. All other traffic requires HTTPS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Android emulator alias for the host machine's localhost -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- LAN range for testing on a physical device -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

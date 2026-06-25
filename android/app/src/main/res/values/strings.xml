@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Vedic Astro AI</string>
+    <string name="title_activity_main">Vedic Astro AI</string>
+    <string name="package_name">net.vedicastroai.app</string>
+    <string name="custom_url_scheme">net.vedicastroai.app</string>
+</resources>
