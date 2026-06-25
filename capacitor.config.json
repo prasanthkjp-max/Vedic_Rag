@@ -3,6 +3,9 @@
   "appName": "Vedic Astro AI",
   "webDir": "static",
   "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
     "SplashScreen": {
       "launchShowDuration": 2000,
       "backgroundColor": "#040e2c",
