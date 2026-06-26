@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.11.0"
+VERSION = "1.12.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -148,13 +148,26 @@ UNLIMITED_EMAILS = {
 }
 
 # --- Billing / payments ---
-# Real payment processing is not wired up. Set STRIPE_SECRET_KEY to integrate
-# Stripe (the buy-credits/subscribe handlers must then create real
-# PaymentIntents/Subscriptions and verify them, ideally via webhooks). Until
-# then the endpoints would hand out credits for free, so they are DISABLED by
-# default and only run in an explicit, opt-in simulation mode for local dev.
+# Razorpay is the primary gateway (UPI-first, INR settlement). Set all three
+# RAZORPAY_* values to go live: the create-order handler builds a real Razorpay
+# Order, the checkout returns a signed payment which verify-payment validates,
+# and the webhook (HMAC-verified with RAZORPAY_WEBHOOK_SECRET) is the
+# authoritative source that grants credits. Without keys the real endpoints fail
+# closed (503); STRIPE_SECRET_KEY remains a reserved hook for a future
+# international/card path. The legacy buy-credits endpoint only runs in the
+# explicit opt-in simulation mode for local dev / tests.
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
+RAZORPAY_ENABLED = bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 ALLOW_SIMULATED_PAYMENTS = os.environ.get("VEDIC_ALLOW_SIMULATED_PAYMENTS", "0") == "1"
+
+# GST on digital services in India (18%). Pack prices in CREDIT_PACKAGES are
+# GST-INCLUSIVE — the customer pays exactly the listed paise amount and the tax
+# is carved out of it for display/invoicing (base = price / (1 + GST_RATE)).
+GST_RATE = float(os.environ.get("VEDIC_GST_RATE", "0.18"))
 
 # --- Credit costs (per paid action) ---
 # Single source of truth for what each metered endpoint debits, so repricing is
@@ -182,6 +195,19 @@ CREDIT_PACKAGES = {
     1125: 4900,   # ₹49  Kundli Pack
     5000: 19900,  # ₹199 Astro Pro Pack
 }
+
+
+def gst_breakdown(gross_paise, rate=None):
+    """Split a GST-INCLUSIVE amount (in paise) into base + tax components.
+
+    The pack price the customer pays is the gross; the tax is carved out, so
+    base + gst == gross exactly (gst is the remainder to avoid rounding drift).
+    Returns a dict of integer paise: {gross, base, gst, rate}.
+    """
+    if rate is None:
+        rate = GST_RATE
+    base = round(gross_paise / (1 + rate))
+    return {"gross": gross_paise, "base": base, "gst": gross_paise - base, "rate": rate}
 
 # --- CORS ---
 # Comma-separated list of allowed origins, or "*" for any (the default, kept for

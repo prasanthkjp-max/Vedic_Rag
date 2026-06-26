@@ -65,6 +65,12 @@ from config import (
     ALLOW_MOCK_OAUTH,
     STRIPE_SECRET_KEY,
     ALLOW_SIMULATED_PAYMENTS,
+    RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET,
+    RAZORPAY_WEBHOOK_SECRET,
+    RAZORPAY_ENABLED,
+    GST_RATE,
+    gst_breakdown,
     CREDIT_COST_CHART,
     CREDIT_COST_MARRIAGE,
     CREDIT_COST_PDF,
@@ -121,6 +127,9 @@ _OPEN_API_PATHS = {
     "/api/auth/logout",
     "/api/auth/me",
     "/api/billing/buy-credits",
+    "/api/billing/create-order",
+    "/api/billing/verify-payment",
+    "/api/billing/webhook",
     "/api/billing/subscribe",
     "/api/billing/cancel-subscription"
 }
@@ -167,6 +176,7 @@ async def api_key_guard(request: Request, call_next):
 # --- User Database & Authentication Initialization ---
 from datetime import timedelta
 import hashlib
+import hmac
 
 def init_user_db():
     conn = connect_db(DB_PATH)
@@ -273,6 +283,10 @@ def init_user_db():
     """)
     add_col("payment_gateway", "TEXT DEFAULT 'stripe'", "transactions")
     add_col("gateway_transaction_id", "TEXT", "transactions")
+    # Credits this transaction grants on capture. Recorded at order-creation
+    # time so the webhook/verify path can credit the right amount without
+    # reverse-mapping the paise price back to a package.
+    add_col("credits", "INTEGER", "transactions")
 
     # New tables for advanced multi-method logins, plans, wallets, and devices
     cursor.execute("""
@@ -555,6 +569,14 @@ class OAuthRequest(BaseModel):
 
 class BuyCreditsRequest(BaseModel):
     amount: int
+
+class CreateOrderRequest(BaseModel):
+    amount: int  # credits == one of the advertised CREDIT_PACKAGES keys
+
+class VerifyPaymentRequest(BaseModel):
+    razorpay_order_id: str = Field(max_length=64)
+    razorpay_payment_id: str = Field(max_length=64)
+    razorpay_signature: str = Field(max_length=256)
 
 class SubscribeRequest(BaseModel):
     tier: Tier
@@ -2255,31 +2277,117 @@ def auth_me(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
-def _require_payments_enabled():
-    """Block credit-granting endpoints unless payments are actually wired up.
+def _require_simulated_payments():
+    """Gate the legacy buy-credits shortcut to explicit local-dev simulation.
 
-    Real Stripe isn't integrated yet, so without this guard buy-credits/subscribe
-    would hand out credits (and 5000-credit subscriptions) for free to anyone
-    with a session. Fail closed; allow only the explicit local-dev simulation.
+    Without this, buy-credits would hand out credits for free to anyone with a
+    session. The real money path is Razorpay (create-order -> verify-payment /
+    webhook); this endpoint exists only for local dev and tests.
     """
-    if STRIPE_SECRET_KEY:
-        # A real integration would run here; not implemented yet, so fail closed
-        # rather than silently granting credits without charging.
-        raise HTTPException(status_code=501, detail="Live payments not yet implemented.")
     if not ALLOW_SIMULATED_PAYMENTS:
+        raise HTTPException(
+            status_code=503,
+            detail="Simulated payments are disabled. Use the Razorpay checkout flow.",
+        )
+
+
+def _require_razorpay_enabled():
+    """Fail closed unless Razorpay credentials are configured."""
+    if not RAZORPAY_ENABLED:
         raise HTTPException(
             status_code=503,
             detail="Payments are not configured on this server.",
         )
 
 
+def _get_razorpay_client():
+    """Lazily build a Razorpay client. Imported lazily so `import app` (and CI)
+    don't hard-require the SDK when payments are turned off."""
+    try:
+        import razorpay
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Razorpay SDK not installed on the server.",
+        )
+    return razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+
+def _verify_payment_signature(order_id, payment_id, signature, secret=None):
+    """Verify a Razorpay Checkout callback signature.
+
+    Razorpay signs `<order_id>|<payment_id>` with HMAC-SHA256 keyed by the API
+    secret. Constant-time compared so a wrong signature can't be timing-probed.
+    """
+    secret = secret if secret is not None else RAZORPAY_KEY_SECRET
+    expected = hmac.new(
+        secret.encode(), f"{order_id}|{payment_id}".encode(), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
+
+
+def _verify_webhook_signature(raw_body, signature, secret=None):
+    """Verify a Razorpay webhook: HMAC-SHA256 of the RAW request body keyed by
+    the webhook secret, compared constant-time against X-Razorpay-Signature."""
+    secret = secret if secret is not None else RAZORPAY_WEBHOOK_SECRET
+    if not secret:
+        return False
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
+
+
+def _grant_credits_for_order(order_id, payment_id, gateway):
+    """Atomically flip a pending transaction to 'succeeded' and credit the user
+    exactly once. Idempotent: the verify-payment callback and the webhook both
+    call this for the same order, and whichever wins the status flip grants the
+    credits; the loser is a no-op. Returns (granted: bool, credits: int|None).
+    """
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("BEGIN IMMEDIATE")
+        row = cursor.execute(
+            "SELECT id, user_id, credits, status FROM transactions WHERE payment_intent_id = ?",
+            (order_id,),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            return (False, None)
+        txn_id, user_id, credits, status = row[0], row[1], row[2], row[3]
+        if status == "succeeded":
+            conn.rollback()
+            return (False, credits)  # already credited — idempotent no-op
+        cursor.execute(
+            "UPDATE transactions SET status='succeeded', gateway_transaction_id=? "
+            "WHERE id=? AND status!='succeeded'",
+            (payment_id, txn_id),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return (False, credits)  # lost the race; the winner credits
+        cursor.execute(
+            "INSERT INTO credit_logs (user_id, amount, action_type, details) "
+            "VALUES (?, ?, 'purchase', ?)",
+            (user_id, credits, f"Purchased {credits} credits via {gateway} ({payment_id})"),
+        )
+        cursor.execute(
+            "UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+            (credits, user_id),
+        )
+        conn.commit()
+        return (True, credits)
+    finally:
+        conn.close()
+
+
 @app.post("/api/billing/buy-credits")
 def buy_credits(req: BuyCreditsRequest, request: Request):
+    """Legacy instant-grant path — local dev / tests only (simulated payments)."""
     token = request.headers.get("x-session-token") or request.cookies.get("session_token")
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    _require_payments_enabled()
+    _require_simulated_payments()
 
     # Only the advertised packages may be purchased — an arbitrary client
     # integer must not set its own credit amount (or a negative one). The packs
@@ -2288,7 +2396,6 @@ def buy_credits(req: BuyCreditsRequest, request: Request):
     if req.amount not in CREDIT_PACKAGES:
         raise HTTPException(status_code=400, detail=f"Unknown credit package: {req.amount}")
 
-    # Simulate Stripe transaction
     payment_intent = "pi_" + secrets.token_hex(16)
     cents = CREDIT_PACKAGES[req.amount]
 
@@ -2298,9 +2405,9 @@ def buy_credits(req: BuyCreditsRequest, request: Request):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status)
-            VALUES (?, ?, ?, ?, 'succeeded')
-        """, (user["id"], payment_intent, cents, BILLING_CURRENCY))
+            INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status, payment_gateway, credits)
+            VALUES (?, ?, ?, ?, 'succeeded', 'simulated', ?)
+        """, (user["id"], payment_intent, cents, BILLING_CURRENCY, req.amount))
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
             VALUES (?, ?, 'purchase', ?)
@@ -2313,13 +2420,126 @@ def buy_credits(req: BuyCreditsRequest, request: Request):
 
     return {"status": "success", "added_credits": req.amount}
 
+
+@app.post("/api/billing/create-order")
+def create_order(req: CreateOrderRequest, request: Request):
+    """Create a Razorpay Order for a credit pack and record it as pending.
+
+    The customer pays the GST-INCLUSIVE pack price; the order amount sent to
+    Razorpay is exactly that paise value. Returns the order id, public key, and
+    GST breakdown so the frontend can open Checkout and show the tax split.
+    """
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_razorpay_enabled()
+
+    if req.amount not in CREDIT_PACKAGES:
+        raise HTTPException(status_code=400, detail=f"Unknown credit package: {req.amount}")
+
+    credits = req.amount
+    gross_paise = CREDIT_PACKAGES[credits]
+    client = _get_razorpay_client()
+    try:
+        order = client.order.create({
+            "amount": gross_paise,
+            "currency": BILLING_CURRENCY,
+            "receipt": f"u{user['id']}-{secrets.token_hex(6)}",
+            "notes": {"user_id": str(user["id"]), "credits": str(credits)},
+        })
+    except Exception as e:
+        logger.error("Razorpay order creation failed: %s", e)
+        raise HTTPException(status_code=502, detail="Could not create payment order.")
+
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status, payment_gateway, credits)
+            VALUES (?, ?, ?, ?, 'created', 'razorpay', ?)
+        """, (user["id"], order["id"], gross_paise, BILLING_CURRENCY, credits))
+        conn.commit()
+    finally:
+        conn.close()
+
+    gst = gst_breakdown(gross_paise)
+    return {
+        "order_id": order["id"],
+        "key_id": RAZORPAY_KEY_ID,
+        "amount": gross_paise,
+        "currency": BILLING_CURRENCY,
+        "credits": credits,
+        "gst": gst,  # paise: {gross, base, gst, rate}
+        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or ""},
+    }
+
+
+@app.post("/api/billing/verify-payment")
+def verify_payment(req: VerifyPaymentRequest, request: Request):
+    """Verify a Razorpay Checkout callback signature and grant credits.
+
+    This is the fast, user-facing confirmation. The webhook is the authoritative
+    backstop; both funnel through the idempotent grant so credits land exactly
+    once even if both fire.
+    """
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_razorpay_enabled()
+
+    if not _verify_payment_signature(
+        req.razorpay_order_id, req.razorpay_payment_id, req.razorpay_signature
+    ):
+        raise HTTPException(status_code=400, detail="Invalid payment signature.")
+
+    granted, credits = _grant_credits_for_order(
+        req.razorpay_order_id, req.razorpay_payment_id, "razorpay"
+    )
+    if credits is None:
+        raise HTTPException(status_code=404, detail="Unknown order.")
+    return {"status": "success", "credits": credits, "newly_granted": granted}
+
+
+@app.post("/api/billing/webhook")
+async def razorpay_webhook(request: Request):
+    """Authoritative server-to-server credit grant on payment.captured.
+
+    Verifies the raw-body HMAC against RAZORPAY_WEBHOOK_SECRET, then grants
+    idempotently. Always 200s on a verified-but-already-processed event so
+    Razorpay stops retrying.
+    """
+    _require_razorpay_enabled()
+    raw = await request.body()
+    signature = request.headers.get("x-razorpay-signature", "")
+    if not _verify_webhook_signature(raw, signature):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature.")
+
+    try:
+        event = json.loads(raw)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Malformed webhook body.")
+
+    if event.get("event") == "payment.captured":
+        entity = (
+            event.get("payload", {}).get("payment", {}).get("entity", {})
+        )
+        order_id = entity.get("order_id")
+        payment_id = entity.get("id")
+        if order_id and payment_id:
+            _grant_credits_for_order(order_id, payment_id, "razorpay")
+    return {"status": "ok"}
+
 @app.post("/api/billing/subscribe")
 def billing_subscribe(req: SubscribeRequest, request: Request):
     token = request.headers.get("x-session-token") or request.cookies.get("session_token")
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    _require_payments_enabled()
+    # Recurring subscription billing via Razorpay is deferred (Phase 2 ships
+    # one-time credit packs only); the Astro Pass remains simulation-gated.
+    _require_simulated_payments()
 
     sub_id = "sub_" + secrets.token_hex(16)
     period_end = (datetime.utcnow() + timedelta(days=30)).isoformat()

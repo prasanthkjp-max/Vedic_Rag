@@ -112,6 +112,17 @@ via `search_engine.reload()`.
    accounts start with `SIGNUP_BONUS_CREDITS` (25). Credit packs and billing
    currency are also config-driven (`CREDIT_PACKAGES`, `BILLING_CURRENCY`=INR).
 
+**Buying credits** goes through **Razorpay** (config: `RAZORPAY_KEY_ID`/
+`_KEY_SECRET`/`_WEBHOOK_SECRET`; `razorpay` SDK imported lazily): `create-order`
+→ Razorpay Checkout → `verify-payment` (Checkout signature) **and** the
+`billing/webhook` (`payment.captured`, authoritative). Both call the
+**idempotent** `_grant_credits_for_order` — an atomic status flip on
+`transactions.payment_intent_id` UNIQUE — so credits land exactly once. Pack
+prices are **GST-inclusive** (`GST_RATE`=0.18, carved out via
+`config.gst_breakdown`). Unconfigured → fail closed (**503**). Legacy
+`buy-credits` is local-dev/test-only (`VEDIC_ALLOW_SIMULATED_PAYMENTS`);
+recurring subscriptions (Astro Pass) are still simulated/deferred.
+
 So 403 = "no/invalid API key", 401 = "session expired", 402 = "out of credits" —
 these are deliberately distinct.
 
@@ -140,10 +151,11 @@ these are deliberately distinct.
   and list ordering/length must stay aligned across all languages. Translation
   tests assert by **label ID**, so don't rename existing `id="lbl-..."` /
   `id="panch-..."` elements in `static/index.html`.
-- **Billing & social login are gated off by default** and fail closed (no real
-  Stripe; OAuth verifies the provider token and never trusts a client-supplied
-  email). Dev-only escape hatches: `VEDIC_ALLOW_SIMULATED_PAYMENTS=1`,
-  `VEDIC_ALLOW_MOCK_OAUTH=1` — never enable in production.
+- **Billing & social login are gated off by default** and fail closed (Razorpay
+  is the real gateway but inert without keys; OAuth verifies the provider token
+  and never trusts a client-supplied email). Dev-only escape hatches:
+  `VEDIC_ALLOW_SIMULATED_PAYMENTS=1`, `VEDIC_ALLOW_MOCK_OAUTH=1` — never enable in
+  production.
 - **Git workflow:** branch off `master`, open a PR (the user reviews/merges); do
   not commit straight to `master`.
 - **Versioning:** bump `config.py:VERSION` (SemVer — patch for fixes, minor for

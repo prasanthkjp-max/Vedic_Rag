@@ -38,5 +38,8 @@ jobs:
       - name: i18n single-source sync guard
         run: python test_i18n_sync.py
 
+      - name: Razorpay payment layer (GST + signatures)
+        run: python test_razorpay.py
+
       - name: Frontend JS syntax check
         run: python tools/check_js.py
