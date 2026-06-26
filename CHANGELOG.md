@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.14.0]
+
+### Added
+- **Growth & safeguards (Phase 4 monetisation).**
+  - **Per-user rate limiting** on LLM actions (query / ai-predict / marriage /
+    chat): a sliding 60s window (`RATE_LIMIT_AI_PER_MIN`, default 15) returns
+    **429** on breach, so a leaked session token can't drain credits at machine
+    speed. In-memory (single-process); applied centrally in
+    `check_credits_or_raise`.
+  - **Subscription monthly soft-cap** (`SUBSCRIPTION_SOFT_CAP`, default 150):
+    subscriber "unlimited" LLM usage is counted per calendar month and logged
+    when it tops the cap — **never blocked** (the UX promise stands).
+  - **Referral system:** every account gets a unique `referral_code`; signing up
+    with one credits the new user (`REFERRAL_BONUS_REFEREE`, 50) and the referrer
+    (`REFERRAL_BONUS_REFERRER`, 25). Code shown in the profile (with copy) and an
+    optional field on the signup form; surfaced via `/api/auth/me`.
+  - **Chat-history truncation:** the AI-chat prompt now keeps only the last
+    `CHAT_HISTORY_TURNS` turns (default 3), capping prompt-token growth.
+
+### Changed
+- **Dropped the unused `user_wallets` table** — `users.credit_balance` is the
+  single source of truth. Idempotent `DROP TABLE IF EXISTS` migration; the dead
+  create/seed code is gone.
+- New config (all env-overridable): `RATE_LIMIT_AI_PER_MIN`,
+  `SUBSCRIPTION_SOFT_CAP`, `REFERRAL_BONUS_REFEREE`/`_REFERRER`,
+  `CHAT_HISTORY_TURNS`. New `users` columns: `monthly_ai_usage`, `usage_period`,
+  `referral_code` (partial-unique index + backfill), `referred_by`.
+- `test_unit.py` extended: rate-limit window, referral both-sides credit
+  (+ unknown/self no-ops), and the soft-cap monthly counter/reset.
+
 ## [1.13.0]
 
 ### Added

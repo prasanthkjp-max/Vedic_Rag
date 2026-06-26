@@ -111,6 +111,11 @@ via `search_engine.reload()`.
    balance (no/expired session → **401**, not enough credits → **402**). New
    accounts start with `SIGNUP_BONUS_CREDITS` (25). Credit packs and billing
    currency are also config-driven (`CREDIT_PACKAGES`, `BILLING_CURRENCY`=INR).
+   `check_credits_or_raise` also **rate-limits** the LLM actions in `LLM_ACTIONS`
+   per user (`rate_limit_or_raise`, in-memory sliding window → **429**) and
+   counts subscriber LLM usage against a **soft cap** (`record_subscriber_usage`
+   — logs over `SUBSCRIPTION_SOFT_CAP`, never blocks). New accounts get a unique
+   `referral_code`; `_apply_referral` credits both sides on referred signup.
 
 **Buying credits** goes through **Razorpay** (config: `RAZORPAY_KEY_ID`/
 `_KEY_SECRET`/`_WEBHOOK_SECRET`; `razorpay` SDK imported lazily): `create-order`
