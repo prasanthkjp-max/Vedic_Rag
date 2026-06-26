@@ -77,6 +77,11 @@ from config import (
     CREDIT_COST_QUERY,
     CREDIT_COST_AI_PREDICT,
     SIGNUP_BONUS_CREDITS,
+    RATE_LIMIT_AI_PER_MIN,
+    SUBSCRIPTION_SOFT_CAP,
+    REFERRAL_BONUS_REFEREE,
+    REFERRAL_BONUS_REFERRER,
+    CHAT_HISTORY_TURNS,
     BILLING_CURRENCY,
     CREDIT_PACKAGES,
     CORS_ALLOW_ORIGINS,
@@ -179,6 +184,52 @@ from datetime import timedelta
 import hashlib
 import hmac
 
+
+def _new_referral_code(cursor):
+    """Generate a short, unique, human-shareable referral code (8 hex chars)."""
+    for _ in range(12):
+        code = secrets.token_hex(4).upper()
+        if not cursor.execute(
+            "SELECT 1 FROM users WHERE referral_code = ?", (code,)
+        ).fetchone():
+            return code
+    return secrets.token_hex(8).upper()  # vanishingly unlikely fallback
+
+
+def _apply_referral(cursor, new_user_id, referral_code):
+    """Credit both sides of a valid referral, idempotently per new account.
+
+    Returns the bonus granted to the referee. A blank/unknown code or a
+    self-referral is a silent no-op (returns 0). Caller commits.
+    """
+    if not referral_code:
+        return 0
+    row = cursor.execute(
+        "SELECT id FROM users WHERE referral_code = ?",
+        (referral_code.strip().upper(),),
+    ).fetchone()
+    if not row or row[0] == new_user_id:
+        return 0
+    referrer_id = row[0]
+    cursor.execute(
+        "UPDATE users SET credit_balance = credit_balance + ?, referred_by = ? WHERE id = ?",
+        (REFERRAL_BONUS_REFEREE, referrer_id, new_user_id),
+    )
+    cursor.execute(
+        "INSERT INTO credit_logs (user_id, amount, action_type, details) VALUES (?, ?, 'referral_bonus', ?)",
+        (new_user_id, REFERRAL_BONUS_REFEREE, f"Referred by user {referrer_id}"),
+    )
+    cursor.execute(
+        "UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+        (REFERRAL_BONUS_REFERRER, referrer_id),
+    )
+    cursor.execute(
+        "INSERT INTO credit_logs (user_id, amount, action_type, details) VALUES (?, ?, 'referral_reward', ?)",
+        (referrer_id, REFERRAL_BONUS_REFERRER, f"Referred new user {new_user_id}"),
+    )
+    return REFERRAL_BONUS_REFEREE
+
+
 def init_user_db():
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
@@ -227,6 +278,11 @@ def init_user_db():
     add_col("dob", "TEXT")
     add_col("tob", "TEXT")
     add_col("gender", "TEXT DEFAULT 'male'")
+    # Phase 4: subscriber soft-cap counters + referral system.
+    add_col("monthly_ai_usage", "INTEGER DEFAULT 0")
+    add_col("usage_period", "TEXT")
+    add_col("referral_code", "TEXT")
+    add_col("referred_by", "INTEGER")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
@@ -317,17 +373,9 @@ def init_user_db():
     )
     """)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS user_wallets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER UNIQUE NOT NULL,
-        balance INTEGER DEFAULT 0,
-        currency TEXT DEFAULT 'USD',
-        last_topped_up TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-    """)
+    # Phase 4: drop the never-wired `user_wallets` table — credit_balance on
+    # `users` is the single source of truth. Idempotent; cleans up old DBs.
+    cursor.execute("DROP TABLE IF EXISTS user_wallets")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_devices (
@@ -373,11 +421,19 @@ def init_user_db():
         VALUES (?, ?, ?, ?, ?)
         """, plans)
 
-    # Migrate/Initialize wallets for users who do not have one
-    cursor.execute("""
-    INSERT OR IGNORE INTO user_wallets (user_id, balance)
-    SELECT id, credit_balance FROM users
-    """)
+    # Referral codes: a partial UNIQUE index (multiple NULLs allowed) and a
+    # one-time backfill so every existing account has a shareable code.
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code "
+        "ON users(referral_code) WHERE referral_code IS NOT NULL"
+    )
+    for (uid,) in cursor.execute(
+        "SELECT id FROM users WHERE referral_code IS NULL"
+    ).fetchall():
+        cursor.execute(
+            "UPDATE users SET referral_code = ? WHERE id = ?",
+            (_new_referral_code(cursor), uid),
+        )
 
     conn.commit()
     conn.close()
@@ -408,15 +464,15 @@ def get_user_by_session(token: str):
     cursor.execute("""
         SELECT u.id, u.email, u.full_name, u.credit_balance, s.expires_at,
                u.latitude, u.longitude, u.timezone, u.language, u.wants_newsletter, u.location_name,
-               u.dob, u.tob, u.gender
-        FROM sessions s 
+               u.dob, u.tob, u.gender, u.referral_code
+        FROM sessions s
         JOIN users u ON s.user_id = u.id 
         WHERE s.session_token = ?
     """, (token,))
     row = cursor.fetchone()
     conn.close()
     if row:
-        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender = row
+        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender, referral_code = row
         try:
             expires_at = datetime.fromisoformat(expires_str)
         except (ValueError, TypeError):
@@ -451,7 +507,8 @@ def get_user_by_session(token: str):
                 "location_name": loc_name,
                 "dob": dob,
                 "tob": tob,
-                "gender": gender
+                "gender": gender,
+                "referral_code": referral_code
             }
         else:
             # Session has expired — drop the row so stale tokens don't accumulate.
@@ -484,6 +541,71 @@ def debit_user_credits(user_id: int, amount: int, action_type: str, details: str
     finally:
         conn.close()
 
+# LLM-backed actions — the ones worth rate-limiting and counting against the
+# subscriber soft cap (each costs a real upstream API call). Free local math
+# (chart/panchangam) and the PDF report are deliberately excluded.
+LLM_ACTIONS = {"query", "ai_predict", "ai_predict_marriage", "ai_predict_chat"}
+
+# Per-user sliding-window request log for rate limiting. In-memory is sufficient
+# for the single-process Uvicorn deployment; swap for Redis if it ever scales
+# horizontally. Keyed by user id -> list of recent request timestamps.
+_RATE_BUCKETS = {}
+
+
+def rate_limit_or_raise(user_id, limit=None, window=60, now=None):
+    """Allow at most `limit` calls per `window` seconds per user; else 429.
+
+    Pure-ish for testability: callers may inject `now` and the module-level
+    `_RATE_BUCKETS` store is observable. Old timestamps are pruned on each call.
+    """
+    limit = RATE_LIMIT_AI_PER_MIN if limit is None else limit
+    if limit <= 0:
+        return
+    now = time.time() if now is None else now
+    bucket = _RATE_BUCKETS.setdefault(user_id, [])
+    cutoff = now - window
+    bucket[:] = [t for t in bucket if t > cutoff]
+    if len(bucket) >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Please wait a moment before trying again.",
+        )
+    bucket.append(now)
+
+
+def record_subscriber_usage(user_id, now=None):
+    """Count a subscriber's monthly LLM usage and log if it tops the soft cap.
+
+    Subscribers bypass credit metering, so without this their "unlimited" pass
+    has no ceiling at all. This never blocks (the UX promise stands) — it just
+    flags abuse for review. Returns the new running count.
+    """
+    period = (now or datetime.utcnow()).strftime("%Y-%m")
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        row = cursor.execute(
+            "SELECT monthly_ai_usage, usage_period FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        count = (row[0] or 0) if row else 0
+        if not row or row[1] != period:
+            count = 0  # new calendar month — reset
+        count += 1
+        cursor.execute(
+            "UPDATE users SET monthly_ai_usage = ?, usage_period = ? WHERE id = ?",
+            (count, period, user_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    if count > SUBSCRIPTION_SOFT_CAP:
+        logger.warning(
+            "Subscriber %s exceeded soft cap: %d LLM calls in %s (cap %d)",
+            user_id, count, period, SUBSCRIPTION_SOFT_CAP,
+        )
+    return count
+
+
 def check_credits_or_raise(token: str, cost: int, action_type: str):
     """Authenticate, then atomically check-and-debit `cost` credits.
 
@@ -497,11 +619,19 @@ def check_credits_or_raise(token: str, cost: int, action_type: str):
         raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
     user["charged"] = 0
 
+    # Rate-limit expensive LLM actions per user (abuse guard), before any
+    # metering branch — applies to allowlisted/subscriber/credit users alike.
+    if action_type in LLM_ACTIONS:
+        rate_limit_or_raise(user["id"])
+
     # Allowlisted (e.g. operator) accounts skip metering entirely.
     if (user.get("email") or "").lower() in UNLIMITED_EMAILS:
         return user
 
     if user["subscription_active"]:
+        # Track "unlimited" usage against the soft cap (logs, never blocks).
+        if action_type in LLM_ACTIONS:
+            record_subscriber_usage(user["id"])
         return user
 
     # Free actions (e.g. chart/Panchangam generation, CREDIT_COST_CHART=0) still
@@ -557,6 +687,7 @@ class SignupRequest(BaseModel):
     email: str = Field(max_length=320)
     password: str = Field(max_length=512)
     full_name: str = Field(max_length=200)
+    referral_code: str = Field(default="", max_length=32)
 
 class LoginRequest(BaseModel):
     email: str = Field(max_length=320)
@@ -567,6 +698,7 @@ class OAuthRequest(BaseModel):
     email: str = Field(max_length=320)
     name: str = Field(max_length=200)
     token: str = Field(max_length=8192)
+    referral_code: str = Field(default="", max_length=32)
 
 class BuyCreditsRequest(BaseModel):
     amount: int
@@ -1958,14 +2090,16 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
         except Exception as e:
             raise ValueError(f"Invalid chart_data: {e}")
 
-        # Format the conversation history if present. Cap it (most recent turns)
-        # so a client cannot grow the prompt without bound, and only honour the
-        # two known roles — anything else is rendered as user content, so a forged
-        # "assistant" variant cannot impersonate the model's own prior guidance.
+        # Format the conversation history if present. Cap it to the most recent
+        # CHAT_HISTORY_TURNS turns (user+assistant pairs) so a long thread can't
+        # grow the prompt without bound and triple the per-message token cost.
+        # Only honour the two known roles — anything else is rendered as user
+        # content, so a forged "assistant" variant cannot impersonate the model's
+        # own prior guidance.
         history_text = ""
         if history:
             history_text = "\n\n--- CONVERSATION HISTORY ---\n"
-            for msg in history[-20:]:
+            for msg in history[-(CHAT_HISTORY_TURNS * 2):]:
                 role_label = "You (Master of Vedic Astrology)" if msg.role == "assistant" else f"{client} (User)"
                 history_text += f"{role_label}: {msg.content}\n"
             history_text += "----------------------------\n"
@@ -2071,11 +2205,16 @@ def auth_signup(req: SignupRequest):
             raise HTTPException(status_code=400, detail="Email already registered")
         user_id = cursor.lastrowid
 
-        # Log the signup bonus
+        # Assign a shareable referral code and log the signup bonus.
+        cursor.execute("UPDATE users SET referral_code = ? WHERE id = ?",
+                       (_new_referral_code(cursor), user_id))
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
             VALUES (?, ?, 'signup_bonus', 'Initial registration credit bonus')
         """, (user_id, SIGNUP_BONUS_CREDITS))
+
+        # Apply any referral the new user signed up with (credits both sides).
+        _apply_referral(cursor, user_id, req.referral_code)
 
         conn.commit()
     finally:
@@ -2237,10 +2376,13 @@ def auth_oauth(req: OAuthRequest):
             VALUES (?, ?, ?, ?, ?, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
         """, (verified_email, verified_name, provider, verified_email, SIGNUP_BONUS_CREDITS))
         user_id = cursor.lastrowid
+        cursor.execute("UPDATE users SET referral_code = ? WHERE id = ?",
+                       (_new_referral_code(cursor), user_id))
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
             VALUES (?, ?, 'signup_bonus', 'OAuth signup credit bonus')
         """, (user_id, SIGNUP_BONUS_CREDITS))
+        _apply_referral(cursor, user_id, req.referral_code)
         conn.commit()
 
     # create session

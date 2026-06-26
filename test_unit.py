@@ -161,5 +161,58 @@ check("usage: used-this-month sums debits only (25+50)", _usage["credits_used_th
 check("usage: recent activity newest-first", _usage["recent_activity"][0]["action_type"] == "purchase")
 check("usage: recent activity lists all rows", len(_usage["recent_activity"]) == 3)
 
+
+# ── Phase 4: per-user rate limiting ──────────────────────────────────────────
+# Injected clock + isolated bucket key so the test is deterministic.
+app._RATE_BUCKETS.pop("rl_user", None)
+for _i in range(3):
+    app.rate_limit_or_raise("rl_user", limit=3, window=60, now=1000.0 + _i)
+_rl_blocked = False
+try:
+    app.rate_limit_or_raise("rl_user", limit=3, window=60, now=1002.0)  # 4th in window
+except HTTPException as e:
+    _rl_blocked = (e.status_code == 429)
+check("ratelimit: 4th call in window raises 429", _rl_blocked)
+# After the window slides past the old timestamps, calls are allowed again.
+app.rate_limit_or_raise("rl_user", limit=3, window=60, now=1100.0)
+check("ratelimit: window expiry frees the bucket", len(app._RATE_BUCKETS["rl_user"]) == 1)
+check("ratelimit: limit<=0 disables (no raise)", app.rate_limit_or_raise("rl_user", limit=0) is None)
+
+
+# ── Phase 4: referral credits both sides ─────────────────────────────────────
+_conn = connect_db()
+_cur = _conn.cursor()
+_cur.execute("INSERT INTO users (email, credit_balance, referral_code) VALUES ('ref_owner@test', 100, 'CODE1234')")
+_referrer = _cur.lastrowid
+_cur.execute("INSERT INTO users (email, credit_balance) VALUES ('ref_new@test', 25)")
+_referee = _cur.lastrowid
+_granted = app._apply_referral(_cur, _referee, "code1234")  # case-insensitive
+_conn.commit()
+def _bal(uid):
+    return _cur.execute("SELECT credit_balance FROM users WHERE id=?", (uid,)).fetchone()[0]
+check("referral: referee credited REFERRAL_BONUS_REFEREE", _bal(_referee) == 25 + app.REFERRAL_BONUS_REFEREE)
+check("referral: referrer credited REFERRAL_BONUS_REFERRER", _bal(_referrer) == 100 + app.REFERRAL_BONUS_REFERRER)
+check("referral: returns referee bonus", _granted == app.REFERRAL_BONUS_REFEREE)
+check("referral: referred_by recorded", _cur.execute("SELECT referred_by FROM users WHERE id=?", (_referee,)).fetchone()[0] == _referrer)
+# Unknown code and self-referral are no-ops.
+check("referral: unknown code is a no-op", app._apply_referral(_cur, _referee, "NOPE9999") == 0)
+check("referral: self-referral is a no-op", app._apply_referral(_cur, _referrer, "CODE1234") == 0)
+_conn.commit()
+_conn.close()
+
+
+# ── Phase 4: subscriber soft-cap counter ─────────────────────────────────────
+_conn = connect_db()
+_cur = _conn.cursor()
+_cur.execute("INSERT INTO users (email, credit_balance) VALUES ('cap@test', 0)")
+_capuid = _cur.lastrowid
+_conn.commit()
+_conn.close()
+_n1 = app.record_subscriber_usage(_capuid, now=datetime.datetime(2026, 1, 15))
+_n2 = app.record_subscriber_usage(_capuid, now=datetime.datetime(2026, 1, 16))
+check("softcap: counter increments within month", _n1 == 1 and _n2 == 2)
+_n3 = app.record_subscriber_usage(_capuid, now=datetime.datetime(2026, 2, 1))
+check("softcap: counter resets on new month", _n3 == 1)
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

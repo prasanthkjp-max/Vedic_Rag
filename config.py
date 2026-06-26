@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.13.0"
+VERSION = "1.14.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -184,6 +184,21 @@ CREDIT_COST_AI_PREDICT = int(os.environ.get("VEDIC_CREDIT_COST_AI_PREDICT", "25"
 # Credits granted to a brand-new account at signup. With chart generation free
 # and an AI overview costing 25, the default grant is one free AI reading.
 SIGNUP_BONUS_CREDITS = int(os.environ.get("VEDIC_SIGNUP_BONUS_CREDITS", "25"))
+
+# --- Growth & safeguards (Phase 4) ---
+# Per-user rate limit on LLM-backed actions (sliding 60s window) — guards a
+# leaked session token from draining credits at machine speed. 429 on breach.
+RATE_LIMIT_AI_PER_MIN = _env_int("VEDIC_RATE_LIMIT_AI_PER_MIN", 15)
+# Soft monthly ceiling on a subscriber's "unlimited" AI calls. Not a hard block
+# (the UX promise stays) — exceeding it is logged for abuse review.
+SUBSCRIPTION_SOFT_CAP = _env_int("VEDIC_SUBSCRIPTION_SOFT_CAP", 150)
+# Referral rewards (credits). Scaled to the current economy (1 AI reading = 25):
+# the new user gets two free readings, the referrer one, per confirmed signup.
+REFERRAL_BONUS_REFEREE = _env_int("VEDIC_REFERRAL_BONUS_REFEREE", 50)
+REFERRAL_BONUS_REFERRER = _env_int("VEDIC_REFERRAL_BONUS_REFERRER", 25)
+# Conversation turns (user+assistant pairs) kept in the AI-chat prompt. Caps
+# prompt-token growth so a long thread can't triple the per-message cost.
+CHAT_HISTORY_TURNS = _env_int("VEDIC_CHAT_HISTORY_TURNS", 3)
 
 # --- Credit packs (INR) ---
 # Map of {credits granted -> price in the smallest currency unit} (paise for

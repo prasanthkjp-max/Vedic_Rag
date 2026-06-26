@@ -8742,7 +8742,21 @@
             document.getElementById('profile-in-lat').value = currentUser.latitude || "";
             document.getElementById('profile-in-gender').value = currentUser.gender || "male";
 
+            const refEl = document.getElementById('profile-referral-code');
+            if (refEl) refEl.innerText = currentUser.referral_code || "--";
+
             loadUsageDashboard();
+        }
+
+        function copyReferralCode() {
+            const code = currentUser && currentUser.referral_code;
+            if (!code) return;
+            const done = () => alert("Referral code copied: " + code + "\nShare it — your friend gets bonus tokens, and so do you!");
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(done).catch(done);
+            } else {
+                done();
+            }
         }
 
         async function loadUsageDashboard() {
@@ -8784,17 +8798,19 @@
             const name = document.getElementById('auth-signup-name').value.trim();
             const email = document.getElementById('auth-signup-email').value.trim();
             const password = document.getElementById('auth-signup-pass').value.trim();
-            
+            const referralEl = document.getElementById('auth-signup-referral');
+            const referral_code = referralEl ? referralEl.value.trim().toUpperCase() : "";
+
             if (!name || !email || !password) {
                 alert("Please fill all signup fields.");
                 return;
             }
-            
+
             try {
                 const res = await fetch('/api/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, full_name: name })
+                    body: JSON.stringify({ email, password, full_name: name, referral_code })
                 });
                 if (res.ok) {
                     alert("Account created successfully! Please sign in.");
@@ -9380,6 +9396,10 @@
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Password</label>
                     <input type="password" id="auth-signup-pass" placeholder="••••••••" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
+                <div class="input-group">
+                    <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Referral Code (optional)</label>
+                    <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
+                </div>
                 <button class="calculate-btn" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px;">Create Account</button>
             </div>
             
@@ -9437,9 +9457,16 @@
                     <span style="font-size: 11px; color: var(--text-secondary);">Credit Balance:</span>
                     <span style="font-size: 11px; font-weight: bold; color: var(--accent-gold);"><span id="profile-credits-count">0</span> Credits</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                     <span style="font-size: 11px; color: var(--text-secondary);">Subscription Status:</span>
                     <span id="profile-sub-status" style="font-size: 11px; font-weight: bold; color: #48BB78;">Free Tier</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--text-secondary);">Refer &amp; Earn:</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                        <strong id="profile-referral-code" style="font-size: 11px; color: var(--accent-gold); letter-spacing: 1px;">--</strong>
+                        <button onclick="copyReferralCode()" title="Copy referral code" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold); border-radius: 5px; font-size: 10px; padding: 2px 6px; cursor: pointer;"><i class="fa-solid fa-copy"></i></button>
+                    </span>
                 </div>
             </div>
 
