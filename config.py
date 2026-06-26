@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.14.0"
+VERSION = "1.15.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -160,6 +160,19 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 RAZORPAY_ENABLED = bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+
+# --- Astro Pass recurring subscription (Razorpay Subscriptions) ---
+# RAZORPAY_PLAN_ID is the Plan created once in the Razorpay dashboard for the
+# ₹99/mo Astro Pass; the create-subscription endpoint fails closed (503) without
+# it. TOTAL_COUNT is the number of billing cycles Razorpay schedules (≈10 years
+# of monthly charges — effectively ongoing). PRICE_PAISE records the charge in
+# our ledger; REFILL_CREDITS is a per-cycle buffer (subscribers bypass metering
+# anyway); PERIOD_DAYS extends the local access window on each charge.
+RAZORPAY_PLAN_ID = os.environ.get("RAZORPAY_PLAN_ID", "")
+SUBSCRIPTION_TOTAL_COUNT = _env_int("VEDIC_SUBSCRIPTION_TOTAL_COUNT", 120)
+SUBSCRIPTION_PRICE_PAISE = _env_int("VEDIC_SUBSCRIPTION_PRICE_PAISE", 9900)  # ₹99
+SUBSCRIPTION_REFILL_CREDITS = _env_int("VEDIC_SUBSCRIPTION_REFILL_CREDITS", 5000)
+SUBSCRIPTION_PERIOD_DAYS = _env_int("VEDIC_SUBSCRIPTION_PERIOD_DAYS", 30)
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 ALLOW_SIMULATED_PAYMENTS = os.environ.get("VEDIC_ALLOW_SIMULATED_PAYMENTS", "0") == "1"

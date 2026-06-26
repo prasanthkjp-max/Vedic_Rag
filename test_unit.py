@@ -214,5 +214,50 @@ check("softcap: counter increments within month", _n1 == 1 and _n2 == 2)
 _n3 = app.record_subscriber_usage(_capuid, now=datetime.datetime(2026, 2, 1))
 check("softcap: counter resets on new month", _n3 == 1)
 
+
+# ── Recurring subscription: idempotent charge / activation ───────────────────
+def _balance_of(uid):
+    c = connect_db()
+    v = c.execute("SELECT credit_balance FROM users WHERE id=?", (uid,)).fetchone()[0]
+    c.close()
+    return v
+
+def _sub_status(uid):
+    c = connect_db()
+    v = c.execute("SELECT status FROM subscriptions WHERE user_id=?", (uid,)).fetchone()[0]
+    c.close()
+    return v
+
+_conn = connect_db()
+_cur = _conn.cursor()
+_cur.execute("INSERT INTO users (email, credit_balance) VALUES ('subrenew@test', 0)")
+_subuid = _cur.lastrowid
+_cur.execute(
+    "INSERT INTO subscriptions (user_id, status, tier, current_period_end, platform, platform_subscription_id) "
+    "VALUES (?, 'created', 'astro', ?, 'razorpay', 'sub_RENEW1')",
+    (_subuid, datetime.datetime.utcnow().isoformat()),
+)
+_conn.commit()
+_conn.close()
+
+_applied1, _ruid = app._apply_subscription_charge("sub_RENEW1", "pay_charge_1")
+check("sub: first charge activates", _applied1 is True and _ruid == _subuid)
+check("sub: status flipped to active", _sub_status(_subuid) == "active")
+check("sub: refill credits granted", _balance_of(_subuid) == app.SUBSCRIPTION_REFILL_CREDITS)
+# Same payment id again (webhook retry / callback race) must be a no-op.
+_applied2, _ = app._apply_subscription_charge("sub_RENEW1", "pay_charge_1")
+check("sub: duplicate payment id is idempotent (no double refill)",
+      _applied2 is False and _balance_of(_subuid) == app.SUBSCRIPTION_REFILL_CREDITS)
+# A genuine renewal (new payment id) tops up again.
+_applied3, _ = app._apply_subscription_charge("sub_RENEW1", "pay_charge_2")
+check("sub: new charge id renews (second refill)",
+      _applied3 is True and _balance_of(_subuid) == 2 * app.SUBSCRIPTION_REFILL_CREDITS)
+# Unknown subscription id is a no-op.
+check("sub: unknown subscription id is a no-op",
+      app._apply_subscription_charge("sub_NOPE", "pay_x")[0] is False)
+# Lifecycle deactivation revokes the local pass.
+app._deactivate_subscription("sub_RENEW1", "cancelled")
+check("sub: deactivation sets terminal status", _sub_status(_subuid) == "cancelled")
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

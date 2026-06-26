@@ -8992,24 +8992,66 @@
 
         async function subscribeTier(tier) {
             const token = localStorage.getItem('session_token');
+            if (!token) { alert("Please log in to subscribe."); return; }
+            if (typeof Razorpay === 'undefined') {
+                alert("Payment library failed to load. Check your connection and retry.");
+                return;
+            }
             try {
-                const res = await fetch('/api/billing/subscribe', {
+                // 1. Create a Razorpay Subscription on the backend.
+                const res = await fetch('/api/billing/create-subscription', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-session-token': token
-                    },
-                    body: JSON.stringify({ tier })
+                    headers: { 'Content-Type': 'application/json', 'x-session-token': token }
                 });
-                if (res.ok) {
-                    alert(`Simulated Stripe Subscription active. Welcome to ${tier.toUpperCase()} pass!`);
-                    await initAuth();
-                    closeProfileModal();
-                    openProfileModal();
-                } else {
+                if (!res.ok) {
                     const data = await res.json();
-                    alert("Subscription failed: " + data.detail);
+                    alert("Could not start subscription: " + data.detail);
+                    return;
                 }
+                const sub = await res.json();
+                const g = sub.gst || {};
+                const rupees = (p) => '₹' + (p / 100).toFixed(2);
+
+                // 2. Open Razorpay Checkout to authorise the recurring mandate.
+                const rzp = new Razorpay({
+                    key: sub.key_id,
+                    subscription_id: sub.subscription_id,
+                    name: 'Vedic Astro AI',
+                    description: 'Astro Pass — ₹99/mo' +
+                        (g.gross ? `  (incl. ${rupees(g.gst)} GST)` : ''),
+                    prefill: sub.prefill || {},
+                    theme: { color: '#d4af37' },
+                    handler: async function (response) {
+                        // 3. Verify the signed subscription, then refresh.
+                        try {
+                            const vres = await fetch('/api/billing/verify-subscription', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+                                body: JSON.stringify({
+                                    razorpay_subscription_id: response.razorpay_subscription_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            if (vres.ok) {
+                                alert("Astro Pass active — welcome aboard! 🌟");
+                                await initAuth();
+                                closeProfileModal();
+                                openProfileModal();
+                            } else {
+                                const vd = await vres.json();
+                                alert("Payment authorised but activation is pending: " + vd.detail +
+                                    "\nYour pass will activate automatically once confirmed.");
+                            }
+                        } catch (e) {
+                            alert("Verification error: " + e + "\nYour pass will activate automatically once confirmed.");
+                        }
+                    }
+                });
+                rzp.on('payment.failed', function (resp) {
+                    alert("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                });
+                rzp.open();
             } catch (e) {
                 alert("Error during subscription: " + e);
             }

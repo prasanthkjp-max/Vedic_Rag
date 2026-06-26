@@ -69,6 +69,11 @@ from config import (
     RAZORPAY_KEY_SECRET,
     RAZORPAY_WEBHOOK_SECRET,
     RAZORPAY_ENABLED,
+    RAZORPAY_PLAN_ID,
+    SUBSCRIPTION_TOTAL_COUNT,
+    SUBSCRIPTION_PRICE_PAISE,
+    SUBSCRIPTION_REFILL_CREDITS,
+    SUBSCRIPTION_PERIOD_DAYS,
     GST_RATE,
     gst_breakdown,
     CREDIT_COST_CHART,
@@ -134,6 +139,8 @@ _OPEN_API_PATHS = {
     "/api/billing/buy-credits",
     "/api/billing/create-order",
     "/api/billing/verify-payment",
+    "/api/billing/create-subscription",
+    "/api/billing/verify-subscription",
     "/api/billing/webhook",
     "/api/billing/usage",
     "/api/billing/subscribe",
@@ -708,6 +715,11 @@ class CreateOrderRequest(BaseModel):
 
 class VerifyPaymentRequest(BaseModel):
     razorpay_order_id: str = Field(max_length=64)
+    razorpay_payment_id: str = Field(max_length=64)
+    razorpay_signature: str = Field(max_length=256)
+
+class VerifySubscriptionRequest(BaseModel):
+    razorpay_subscription_id: str = Field(max_length=64)
     razorpay_payment_id: str = Field(max_length=64)
     razorpay_signature: str = Field(max_length=256)
 
@@ -2469,6 +2481,20 @@ def _verify_payment_signature(order_id, payment_id, signature, secret=None):
     return hmac.compare_digest(expected, signature or "")
 
 
+def _verify_subscription_signature(subscription_id, payment_id, signature, secret=None):
+    """Verify a Razorpay Subscription Checkout callback signature.
+
+    For subscriptions Razorpay signs `<payment_id>|<subscription_id>` — note the
+    REVERSED order vs one-time orders (which sign order_id|payment_id). Keyed by
+    the API secret, constant-time compared.
+    """
+    secret = secret if secret is not None else RAZORPAY_KEY_SECRET
+    expected = hmac.new(
+        secret.encode(), f"{payment_id}|{subscription_id}".encode(), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
+
+
 def _verify_webhook_signature(raw_body, signature, secret=None):
     """Verify a Razorpay webhook: HMAC-SHA256 of the RAW request body keyed by
     the webhook secret, compared constant-time against X-Razorpay-Signature."""
@@ -2519,6 +2545,86 @@ def _grant_credits_for_order(order_id, payment_id, gateway):
         )
         conn.commit()
         return (True, credits)
+    finally:
+        conn.close()
+
+
+def _apply_subscription_charge(subscription_id, payment_id):
+    """Activate/renew an Astro Pass on a successful Razorpay charge, exactly once.
+
+    Idempotent on `payment_id` via the transactions UNIQUE key: the verify
+    callback (first charge) and the `subscription.charged` webhook (renewals)
+    both call this; whichever records the payment first extends the access
+    window by SUBSCRIPTION_PERIOD_DAYS and grants the per-cycle refill. Returns
+    (applied: bool, user_id: int|None).
+    """
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("BEGIN IMMEDIATE")
+        sub = cursor.execute(
+            "SELECT user_id, current_period_end FROM subscriptions "
+            "WHERE platform_subscription_id = ?",
+            (subscription_id,),
+        ).fetchone()
+        if sub is None:
+            conn.rollback()
+            return (False, None)
+        user_id, period_end_str = sub[0], sub[1]
+        # Idempotency: a payment we've already booked is a no-op (webhook retry
+        # or callback+webhook race). INSERT fails on the UNIQUE payment id.
+        try:
+            cursor.execute(
+                "INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status, payment_gateway, credits) "
+                "VALUES (?, ?, ?, ?, 'succeeded', 'razorpay', ?)",
+                (user_id, payment_id, SUBSCRIPTION_PRICE_PAISE, BILLING_CURRENCY, SUBSCRIPTION_REFILL_CREDITS),
+            )
+        except sqlite3.IntegrityError:
+            conn.rollback()
+            return (False, user_id)
+        # Extend from the later of now / existing period end so an early renewal
+        # never shortens access.
+        now = datetime.utcnow()
+        try:
+            base = max(now, datetime.fromisoformat(period_end_str)) if period_end_str else now
+        except (ValueError, TypeError):
+            base = now
+        new_period_end = (base + timedelta(days=SUBSCRIPTION_PERIOD_DAYS)).isoformat()
+        cursor.execute(
+            "UPDATE subscriptions SET status='active', current_period_end=?, updated_at=? "
+            "WHERE platform_subscription_id=?",
+            (new_period_end, now.isoformat(), subscription_id),
+        )
+        if SUBSCRIPTION_REFILL_CREDITS:
+            cursor.execute(
+                "UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+                (SUBSCRIPTION_REFILL_CREDITS, user_id),
+            )
+            cursor.execute(
+                "INSERT INTO credit_logs (user_id, amount, action_type, details) "
+                "VALUES (?, ?, 'subscription_bonus', ?)",
+                (user_id, SUBSCRIPTION_REFILL_CREDITS, f"Astro Pass charge ({payment_id})"),
+            )
+        conn.commit()
+        return (True, user_id)
+    finally:
+        conn.close()
+
+
+def _deactivate_subscription(subscription_id, status):
+    """Mark a Razorpay-backed subscription terminated (cancelled/halted/completed).
+
+    get_user_by_session only treats status='active' (and unexpired) as a live
+    pass, so any non-active status revokes access at the next request.
+    """
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE subscriptions SET status=?, updated_at=? WHERE platform_subscription_id=?",
+            (status, datetime.utcnow().isoformat(), subscription_id),
+        )
+        conn.commit()
     finally:
         conn.close()
 
@@ -2645,6 +2751,88 @@ def verify_payment(req: VerifyPaymentRequest, request: Request):
     return {"status": "success", "credits": credits, "newly_granted": granted}
 
 
+@app.post("/api/billing/create-subscription")
+def create_subscription(request: Request):
+    """Create a Razorpay Subscription for the Astro Pass and record it pending.
+
+    Needs a Plan (RAZORPAY_PLAN_ID) created once in the Razorpay dashboard for
+    the ₹99/mo pass; fails closed without it. Returns the subscription id +
+    public key so the frontend can open Checkout to authorise the mandate.
+    """
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_razorpay_enabled()
+    if not RAZORPAY_PLAN_ID:
+        raise HTTPException(status_code=503, detail="Subscriptions are not configured on this server.")
+
+    client = _get_razorpay_client()
+    try:
+        sub = client.subscription.create({
+            "plan_id": RAZORPAY_PLAN_ID,
+            "total_count": SUBSCRIPTION_TOTAL_COUNT,
+            "customer_notify": 1,
+            "notes": {"user_id": str(user["id"])},
+        })
+    except Exception as e:
+        logger.error("Razorpay subscription creation failed: %s", e)
+        raise HTTPException(status_code=502, detail="Could not create subscription.")
+
+    # Record (or replace) a pending subscription keyed by the Razorpay id. It
+    # only becomes 'active' once a charge is confirmed (verify / webhook).
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user["id"],))
+        cursor.execute(
+            "INSERT INTO subscriptions (user_id, status, tier, current_period_end, platform, platform_subscription_id, billing_interval, price_cents) "
+            "VALUES (?, 'created', 'astro', ?, 'razorpay', ?, 'monthly', ?)",
+            (user["id"], datetime.utcnow().isoformat(), sub["id"], SUBSCRIPTION_PRICE_PAISE),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    gst = gst_breakdown(SUBSCRIPTION_PRICE_PAISE)
+    return {
+        "subscription_id": sub["id"],
+        "key_id": RAZORPAY_KEY_ID,
+        "amount": SUBSCRIPTION_PRICE_PAISE,
+        "currency": BILLING_CURRENCY,
+        "tier": "astro",
+        "gst": gst,
+        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or ""},
+    }
+
+
+@app.post("/api/billing/verify-subscription")
+def verify_subscription(req: VerifySubscriptionRequest, request: Request):
+    """Verify the subscription Checkout callback and activate the Astro Pass.
+
+    The webhook (`subscription.charged`) is the authoritative renewal path; this
+    is the fast first-charge confirmation. Both funnel through the idempotent
+    _apply_subscription_charge so the pass activates exactly once.
+    """
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_razorpay_enabled()
+
+    if not _verify_subscription_signature(
+        req.razorpay_subscription_id, req.razorpay_payment_id, req.razorpay_signature
+    ):
+        raise HTTPException(status_code=400, detail="Invalid subscription signature.")
+
+    applied, uid = _apply_subscription_charge(
+        req.razorpay_subscription_id, req.razorpay_payment_id
+    )
+    if uid is None:
+        raise HTTPException(status_code=404, detail="Unknown subscription.")
+    return {"status": "success", "tier": "astro", "newly_activated": applied}
+
+
 @app.post("/api/billing/webhook")
 async def razorpay_webhook(request: Request):
     """Authoritative server-to-server credit grant on payment.captured.
@@ -2664,14 +2852,29 @@ async def razorpay_webhook(request: Request):
     except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="Malformed webhook body.")
 
-    if event.get("event") == "payment.captured":
-        entity = (
-            event.get("payload", {}).get("payment", {}).get("entity", {})
-        )
+    event_type = event.get("event")
+    payload = event.get("payload", {})
+
+    if event_type == "payment.captured":
+        entity = payload.get("payment", {}).get("entity", {})
         order_id = entity.get("order_id")
         payment_id = entity.get("id")
+        # Subscription charges also arrive as payment.captured but carry no
+        # order_id — skip those here; subscription.charged handles them.
         if order_id and payment_id:
             _grant_credits_for_order(order_id, payment_id, "razorpay")
+
+    elif event_type == "subscription.charged":
+        sub_id = payload.get("subscription", {}).get("entity", {}).get("id")
+        payment_id = payload.get("payment", {}).get("entity", {}).get("id")
+        if sub_id and payment_id:
+            _apply_subscription_charge(sub_id, payment_id)
+
+    elif event_type in ("subscription.cancelled", "subscription.halted", "subscription.completed"):
+        sub_id = payload.get("subscription", {}).get("entity", {}).get("id")
+        if sub_id:
+            _deactivate_subscription(sub_id, event_type.split(".", 1)[1])
+
     return {"status": "ok"}
 
 @app.post("/api/billing/subscribe")
@@ -2718,13 +2921,42 @@ def billing_cancel(request: Request):
     user = get_user_by_session(token)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("UPDATE subscriptions SET status = 'cancelled' WHERE user_id = ?", (user["id"],))
+    # For a Razorpay-backed pass, cancel at the END of the paid cycle so the user
+    # keeps access they've paid for; Razorpay then fires subscription.cancelled
+    # at period end, which flips the local status. The pass stays active here
+    # until then (we only flag cancel_at_period_end). A simulated/legacy sub has
+    # no platform id, so just mark it cancelled immediately.
+    row = cursor.execute(
+        "SELECT platform_subscription_id FROM subscriptions WHERE user_id = ?",
+        (user["id"],),
+    ).fetchone()
+    platform_sub_id = row[0] if row else None
+
+    cancelled_at_cycle_end = False
+    if platform_sub_id and RAZORPAY_ENABLED:
+        try:
+            _get_razorpay_client().subscription.cancel(
+                platform_sub_id, {"cancel_at_cycle_end": 1}
+            )
+            cancelled_at_cycle_end = True
+        except Exception as e:
+            logger.error("Razorpay subscription cancel failed: %s", e)
+            conn.close()
+            raise HTTPException(status_code=502, detail="Could not cancel subscription.")
+
+    if cancelled_at_cycle_end:
+        cursor.execute(
+            "UPDATE subscriptions SET cancel_at_period_end = 1, updated_at = ? WHERE user_id = ?",
+            (datetime.utcnow().isoformat(), user["id"]),
+        )
+    else:
+        cursor.execute("UPDATE subscriptions SET status = 'cancelled' WHERE user_id = ?", (user["id"],))
     conn.commit()
     conn.close()
-    return {"status": "success"}
+    return {"status": "success", "cancel_at_period_end": cancelled_at_cycle_end}
 
 
 @app.get("/api/billing/usage")
