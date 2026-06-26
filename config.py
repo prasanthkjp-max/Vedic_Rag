@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.10.0"
+VERSION = "1.11.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -155,6 +155,33 @@ UNLIMITED_EMAILS = {
 # default and only run in an explicit, opt-in simulation mode for local dev.
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 ALLOW_SIMULATED_PAYMENTS = os.environ.get("VEDIC_ALLOW_SIMULATED_PAYMENTS", "0") == "1"
+
+# --- Credit costs (per paid action) ---
+# Single source of truth for what each metered endpoint debits, so repricing is
+# a one-line env change instead of a code search-and-replace. Chart/Panchangam
+# generation is FREE (pure local math, zero API cost) to maximise acquisition;
+# only LLM-backed actions and the PDF report cost credits. Consumed by
+# check_credits_or_raise() in app.py.
+CREDIT_COST_CHART = int(os.environ.get("VEDIC_CREDIT_COST_CHART", "0"))
+CREDIT_COST_MARRIAGE = int(os.environ.get("VEDIC_CREDIT_COST_MARRIAGE", "50"))
+CREDIT_COST_PDF = int(os.environ.get("VEDIC_CREDIT_COST_PDF", "50"))
+CREDIT_COST_QUERY = int(os.environ.get("VEDIC_CREDIT_COST_QUERY", "25"))
+CREDIT_COST_AI_PREDICT = int(os.environ.get("VEDIC_CREDIT_COST_AI_PREDICT", "25"))
+
+# Credits granted to a brand-new account at signup. With chart generation free
+# and an AI overview costing 25, the default grant is one free AI reading.
+SIGNUP_BONUS_CREDITS = int(os.environ.get("VEDIC_SIGNUP_BONUS_CREDITS", "25"))
+
+# --- Credit packs (INR) ---
+# Map of {credits granted -> price in the smallest currency unit} (paise for
+# INR). Only these advertised packs may be purchased; an arbitrary client
+# integer must not set its own credit amount. 1 credit == 1 "token" in the UI.
+BILLING_CURRENCY = os.environ.get("VEDIC_BILLING_CURRENCY", "INR")
+CREDIT_PACKAGES = {
+    500: 2900,    # ₹29  Pocket Pack
+    1125: 4900,   # ₹49  Kundli Pack
+    5000: 19900,  # ₹199 Astro Pro Pack
+}
 
 # --- CORS ---
 # Comma-separated list of allowed origins, or "*" for any (the default, kept for

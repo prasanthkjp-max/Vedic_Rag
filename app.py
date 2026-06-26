@@ -65,6 +65,14 @@ from config import (
     ALLOW_MOCK_OAUTH,
     STRIPE_SECRET_KEY,
     ALLOW_SIMULATED_PAYMENTS,
+    CREDIT_COST_CHART,
+    CREDIT_COST_MARRIAGE,
+    CREDIT_COST_PDF,
+    CREDIT_COST_QUERY,
+    CREDIT_COST_AI_PREDICT,
+    SIGNUP_BONUS_CREDITS,
+    BILLING_CURRENCY,
+    CREDIT_PACKAGES,
     CORS_ALLOW_ORIGINS,
     UNLIMITED_EMAILS,
     connect_db,
@@ -341,11 +349,9 @@ def init_user_db():
     # Seed default subscription plans if empty
     cursor.execute("SELECT count(*) FROM subscription_plans")
     if cursor.fetchone()[0] == 0:
+        # Astro Pass — INR monthly pass (₹99). Annual/premium tiers deferred.
         plans = [
-            ("Basic Monthly", "basic", "monthly", 999, "USD"),
-            ("Basic Annual", "basic", "annual", 9999, "USD"),
-            ("Premium Monthly", "premium", "monthly", 1999, "USD"),
-            ("Premium Annual", "premium", "annual", 19999, "USD"),
+            ("Astro Pass", "astro", "monthly", 9900, "INR"),
         ]
         cursor.executemany("""
         INSERT INTO subscription_plans (name, tier, billing_interval, price_cents, currency)
@@ -481,6 +487,12 @@ def check_credits_or_raise(token: str, cost: int, action_type: str):
         return user
 
     if user["subscription_active"]:
+        return user
+
+    # Free actions (e.g. chart/Panchangam generation, CREDIT_COST_CHART=0) still
+    # require a valid session above but debit nothing — skip the DB write so we
+    # don't litter credit_logs with zero-amount rows on every chart.
+    if cost <= 0:
         return user
 
     conn = connect_db(DB_PATH)
@@ -903,7 +915,7 @@ def query_rag(request: QueryRequest, raw_req: Request):
     Retrieves relevant pages and streams the AI-generated astrological answer.
     """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    user = check_credits_or_raise(token, 25, "query")
+    user = check_credits_or_raise(token, CREDIT_COST_QUERY, "query")
 
     query_text = request.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
@@ -1098,7 +1110,7 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
 def calculate_chart(req: BirthChartRequest, raw_req: Request):
     """Calculate Sidereal chart with Thirukanitha positions and 120-year Dasas"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    user = check_credits_or_raise(token, 50, "calculate_chart")
+    user = check_credits_or_raise(token, CREDIT_COST_CHART, "calculate_chart")
     try:
         chart = get_astrological_chart(
             req.year, req.month, req.day, req.hour, req.minute,
@@ -1150,7 +1162,7 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
 def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
     """Calculate and compare charts for male and female natives for marriage compatibility"""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    user = check_credits_or_raise(token, 50, "calculate_marriage")
+    user = check_credits_or_raise(token, CREDIT_COST_MARRIAGE, "calculate_marriage")
     try:
         male_chart = get_astrological_chart(
             req.male.year, req.male.month, req.male.day, req.male.hour, req.male.minute,
@@ -1187,7 +1199,7 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     for k in ("metadata", "panchangam", "placements"):
         if k not in req.chart_data:
             raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
-    user = check_credits_or_raise(token, 50, "download_pdf")
+    user = check_credits_or_raise(token, CREDIT_COST_PDF, "download_pdf")
     try:
         # Create a secure temporary file path. The client name is slugified so a
         # crafted value (e.g. "../../etc/foo") cannot escape the temp directory,
@@ -1230,7 +1242,7 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
     for k in ("metadata", "panchangam"):
         if k not in req.chart_data:
             raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
-    user = check_credits_or_raise(token, 25, "ai_predict")
+    user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict")
     chart = req.chart_data
     client = req.client_name
     place = req.place_name
@@ -1309,7 +1321,7 @@ def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
     for label, ch in (("male_chart", req.male_chart), ("female_chart", req.female_chart)):
         if "placements" not in ch:
             raise HTTPException(status_code=400, detail=f"{label} missing required key: placements")
-    user = check_credits_or_raise(token, 25, "ai_predict_marriage")
+    user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict_marriage")
     male_chart = req.male_chart
     female_chart = req.female_chart
     comp = req.compatibility
@@ -1907,7 +1919,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     for k in ("metadata", "panchangam"):
         if k not in req.chart_data:
             raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
-    user = check_credits_or_raise(token, 25, "ai_predict_chat")
+    user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict_chat")
     chart = req.chart_data
     client = req.client_name
     place = req.place_name
@@ -2025,13 +2037,13 @@ def auth_signup(req: SignupRequest):
     try:
         cursor = conn.cursor()
         hashed = hash_password(req.password)
-        # create user with 100 free credits. Rely on the UNIQUE(email)
-        # constraint rather than a racy check-then-insert.
+        # create user with the signup bonus credits (see config.SIGNUP_BONUS_CREDITS).
+        # Rely on the UNIQUE(email) constraint rather than a racy check-then-insert.
         try:
             cursor.execute("""
                 INSERT INTO users (email, password_hash, full_name, credit_balance, latitude, longitude, timezone, language, wants_newsletter, location_name)
-                VALUES (?, ?, ?, 100, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
-            """, (email, hashed, req.full_name))
+                VALUES (?, ?, ?, ?, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
+            """, (email, hashed, req.full_name, SIGNUP_BONUS_CREDITS))
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Email already registered")
         user_id = cursor.lastrowid
@@ -2039,8 +2051,8 @@ def auth_signup(req: SignupRequest):
         # Log the signup bonus
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
-            VALUES (?, 100, 'signup_bonus', 'Initial registration credit bonus')
-        """, (user_id,))
+            VALUES (?, ?, 'signup_bonus', 'Initial registration credit bonus')
+        """, (user_id, SIGNUP_BONUS_CREDITS))
 
         conn.commit()
     finally:
@@ -2196,16 +2208,16 @@ def auth_oauth(req: OAuthRequest):
     if row:
         user_id, full_name, credit_balance = row
     else:
-        # Auto-signup with 100 free credits and preferences defaults
+        # Auto-signup with the signup bonus credits and preferences defaults
         cursor.execute("""
             INSERT INTO users (email, full_name, oauth_provider, oauth_id, credit_balance, latitude, longitude, timezone, language, wants_newsletter, location_name)
-            VALUES (?, ?, ?, ?, 100, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
-        """, (verified_email, verified_name, provider, verified_email))
+            VALUES (?, ?, ?, ?, ?, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
+        """, (verified_email, verified_name, provider, verified_email, SIGNUP_BONUS_CREDITS))
         user_id = cursor.lastrowid
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
-            VALUES (?, 100, 'signup_bonus', 'OAuth signup credit bonus')
-        """, (user_id,))
+            VALUES (?, ?, 'signup_bonus', 'OAuth signup credit bonus')
+        """, (user_id, SIGNUP_BONUS_CREDITS))
         conn.commit()
 
     # create session
@@ -2270,8 +2282,9 @@ def buy_credits(req: BuyCreditsRequest, request: Request):
     _require_payments_enabled()
 
     # Only the advertised packages may be purchased — an arbitrary client
-    # integer must not set its own credit amount (or a negative one).
-    CREDIT_PACKAGES = {50: 199, 250: 799}  # amount -> price in cents
+    # integer must not set its own credit amount (or a negative one). The packs
+    # and currency live in config.py (CREDIT_PACKAGES maps credits -> price in
+    # the smallest currency unit, e.g. paise for INR).
     if req.amount not in CREDIT_PACKAGES:
         raise HTTPException(status_code=400, detail=f"Unknown credit package: {req.amount}")
 
@@ -2286,8 +2299,8 @@ def buy_credits(req: BuyCreditsRequest, request: Request):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status)
-            VALUES (?, ?, ?, 'usd', 'succeeded')
-        """, (user["id"], payment_intent, cents))
+            VALUES (?, ?, ?, ?, 'succeeded')
+        """, (user["id"], payment_intent, cents, BILLING_CURRENCY))
         cursor.execute("""
             INSERT INTO credit_logs (user_id, amount, action_type, details)
             VALUES (?, ?, 'purchase', ?)
