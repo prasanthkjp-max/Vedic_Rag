@@ -1,12 +1,15 @@
 import os
+import sys
 import pypdf
 
-books_dir = "/home/prasanth/.openclaw/workspace/vedic_astrology_books"
+# Import config dynamically
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from config import BOOKS_DIR as books_dir
 
 print(f"Scanning directory: {books_dir}")
 if not os.path.exists(books_dir):
     print("Directory does not exist!")
-    exit(1)
+    sys.exit(1)
 
 total_pages = 0
 books = [f for f in os.listdir(books_dir) if f.endswith(".pdf")]

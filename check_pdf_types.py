@@ -1,7 +1,15 @@
 import os
+import sys
 import fitz
 
-books_dir = "/home/prasanth/.openclaw/workspace/vedic_astrology_books"
+# Import config dynamically
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from config import BOOKS_DIR as books_dir
+
+if not os.path.exists(books_dir):
+    print(f"Error: Books directory does not exist at {books_dir}")
+    sys.exit(1)
+
 books = [f for f in os.listdir(books_dir) if f.endswith(".pdf")]
 books.sort()
 

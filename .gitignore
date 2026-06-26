@@ -1,7 +1,8 @@
 # Databases
-vedic_astrology_rag.db
+*.db
 *.db-wal
 *.db-shm
+*.db.bak
 
 # Python
 __pycache__/
