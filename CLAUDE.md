@@ -103,10 +103,14 @@ via `search_engine.reload()`.
    auto-generated `.api_key` file. The frontend patches `window.fetch` to attach
    the key, fetching it from the loopback-only `/api/local-key` (or prompting).
 2. **Session tokens + credits** meter per-user actions. `check_credits_or_raise`
-   gates the paid endpoints (chart=50, marriage=50, PDF=50, AI predict/chat/
-   query=25). Order: allowlisted email (`VEDIC_UNLIMITED_EMAILS`) → active
-   subscription → credit balance (no/expired session → **401**, not enough
-   credits → **402**).
+   gates the paid endpoints; costs are centralised in `config.py`
+   (`CREDIT_COST_*`, all env-overridable): chart=0 (free — pure local math),
+   marriage=50, PDF=50, AI predict/chat/query=25. A zero-cost action is still
+   auth-gated but debits nothing and writes no `credit_logs` row. Order:
+   allowlisted email (`VEDIC_UNLIMITED_EMAILS`) → active subscription → credit
+   balance (no/expired session → **401**, not enough credits → **402**). New
+   accounts start with `SIGNUP_BONUS_CREDITS` (25). Credit packs and billing
+   currency are also config-driven (`CREDIT_PACKAGES`, `BILLING_CURRENCY`=INR).
 
 So 403 = "no/invalid API key", 401 = "session expired", 402 = "out of credits" —
 these are deliberately distinct.

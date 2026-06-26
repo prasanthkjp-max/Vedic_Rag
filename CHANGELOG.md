@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.11.0]
+
+### Changed
+- **INR pricing (Phase 1 monetisation).** Credit packs are now INR token packs:
+  Pocket ₹29 / 500, Kundli ₹49 / 1,125, Astro Pro ₹199 / 5,000 (1 credit == 1
+  "token" in the UI). Subscription seed replaced with a single **Astro Pass
+  ₹99/mo** plan (USD Basic/Premium + annual rows dropped for now). Billing
+  currency is now `INR`; the simulated transaction records the configured
+  currency instead of hardcoded `usd`.
+- **Chart/Panchangam generation is now free** (`CREDIT_COST_CHART=0`) — it is
+  pure local math with zero API cost, so only LLM-backed actions and the PDF
+  report still cost credits. `check_credits_or_raise` short-circuits zero-cost
+  actions (still auth-gated, but no debit and no `credit_logs` row).
+- **Signup bonus reduced 100 → 25 credits** (one free AI overview).
+- **Credit costs centralised in `config.py`** (`CREDIT_COST_CHART`/`_MARRIAGE`/
+  `_PDF`/`_QUERY`/`_AI_PREDICT`, `SIGNUP_BONUS_CREDITS`, `BILLING_CURRENCY`,
+  `CREDIT_PACKAGES`) — all env-overridable. Endpoint call sites no longer
+  hardcode credit amounts. Current costs: chart 0, marriage 50, PDF 50,
+  query/AI predict/chat 25.
+
 ## [1.10.0]
 
 ### Changed
