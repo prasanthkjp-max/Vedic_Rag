@@ -132,5 +132,34 @@ except HTTPException as e:
 check("credits: insufficient balance raises 402", _raised_402)
 check("credits: balance unchanged after a refused debit", _balance() == 100)
 
+
+# ── billing_usage summary ────────────────────────────────────────────────────
+# Fresh user with a known ledger: two debits + one purchase this month.
+_conn = connect_db()
+_cur = _conn.cursor()
+_cur.execute("INSERT INTO users (email, credit_balance) VALUES ('usage@test', 475)")
+_uid2 = _cur.lastrowid
+_tok2 = secrets.token_hex(8)
+_cur.execute("INSERT INTO sessions (session_token, user_id, expires_at) VALUES (?, ?, ?)", (_tok2, _uid2, _exp))
+_cur.execute("INSERT INTO credit_logs (user_id, amount, action_type) VALUES (?, -25, 'ai_predict')", (_uid2,))
+_cur.execute("INSERT INTO credit_logs (user_id, amount, action_type) VALUES (?, -50, 'download_pdf')", (_uid2,))
+_cur.execute("INSERT INTO credit_logs (user_id, amount, action_type) VALUES (?, 500, 'purchase')", (_uid2,))
+_conn.commit()
+_conn.close()
+
+
+class _FakeReq:
+    """Minimal Request stand-in: billing_usage only reads headers/cookies .get()."""
+    def __init__(self, token):
+        self.headers = {"x-session-token": token}
+        self.cookies = {}
+
+
+_usage = app.billing_usage(_FakeReq(_tok2))
+check("usage: remaining balance reported", _usage["credits_remaining"] == 475)
+check("usage: used-this-month sums debits only (25+50)", _usage["credits_used_this_month"] == 75)
+check("usage: recent activity newest-first", _usage["recent_activity"][0]["action_type"] == "purchase")
+check("usage: recent activity lists all rows", len(_usage["recent_activity"]) == 3)
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

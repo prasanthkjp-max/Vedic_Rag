@@ -121,7 +121,11 @@ via `search_engine.reload()`.
 prices are **GST-inclusive** (`GST_RATE`=0.18, carved out via
 `config.gst_breakdown`). Unconfigured → fail closed (**503**). Legacy
 `buy-credits` is local-dev/test-only (`VEDIC_ALLOW_SIMULATED_PAYMENTS`);
-recurring subscriptions (Astro Pass) are still simulated/deferred.
+recurring subscriptions (Astro Pass) are still simulated/deferred. A `402` from
+any paid action drives the frontend **paywall bottom sheet** (`showPaywall`);
+`GET /api/billing/usage` feeds the profile **usage dashboard** (balance, spend
+this month, recent ledger). AI chat is **stateless** (history re-sent each turn),
+so "New Reading" (`clearAIChat`) is frontend-only.
 
 So 403 = "no/invalid API key", 401 = "session expired", 402 = "out of credits" —
 these are deliberately distinct.

@@ -130,6 +130,7 @@ _OPEN_API_PATHS = {
     "/api/billing/create-order",
     "/api/billing/verify-payment",
     "/api/billing/webhook",
+    "/api/billing/usage",
     "/api/billing/subscribe",
     "/api/billing/cancel-subscription"
 }
@@ -2582,6 +2583,51 @@ def billing_cancel(request: Request):
     conn.commit()
     conn.close()
     return {"status": "success"}
+
+
+@app.get("/api/billing/usage")
+def billing_usage(request: Request):
+    """Per-user usage summary for the profile dashboard: current balance, credits
+    spent this calendar month (debits are stored as negative credit_logs rows),
+    subscription state, and the most recent credit-ledger activity."""
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    month_start = datetime.utcnow().replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    ).isoformat()
+
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        # Spent this month = sum of debits (negative amounts) since the 1st.
+        cursor.execute(
+            "SELECT COALESCE(SUM(-amount), 0) FROM credit_logs "
+            "WHERE user_id = ? AND amount < 0 AND created_at >= ?",
+            (user["id"], month_start),
+        )
+        used_this_month = cursor.fetchone()[0]
+        cursor.execute(
+            "SELECT amount, action_type, details, created_at FROM credit_logs "
+            "WHERE user_id = ? ORDER BY id DESC LIMIT 8",
+            (user["id"],),
+        )
+        recent = [
+            {"amount": r[0], "action_type": r[1], "details": r[2], "created_at": r[3]}
+            for r in cursor.fetchall()
+        ]
+    finally:
+        conn.close()
+
+    return {
+        "credits_remaining": user["credit_balance"],
+        "credits_used_this_month": used_this_month,
+        "subscription_active": user.get("subscription_active", False),
+        "subscription_tier": user.get("subscription_tier"),
+        "recent_activity": recent,
+    }
 
 
 # --- User Profile & Personal Astrology Details Models & Routes ---
