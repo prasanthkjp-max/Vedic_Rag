@@ -84,5 +84,20 @@ check("webhook sig: empty secret rejected (fail closed)",
       app._verify_webhook_signature(body, wh_sig, secret="") is False)
 
 
+# ── Razorpay subscription signature (reversed order: payment_id|subscription_id) ──
+sub_id = "sub_ABC123"
+# Correct subscription signing: payment_id|subscription_id.
+sub_sig = hmac.new(SECRET.encode(), f"{payment_id}|{sub_id}".encode(), hashlib.sha256).hexdigest()
+check("sub sig: valid signature verifies",
+      app._verify_subscription_signature(sub_id, payment_id, sub_sig, secret=SECRET) is True)
+check("sub sig: tampered subscription_id rejected",
+      app._verify_subscription_signature("sub_TAMPERED", payment_id, sub_sig, secret=SECRET) is False)
+# A signature built in the *order* convention (order_id|payment_id) must NOT pass
+# the subscription verifier — guards against copy-pasting the wrong field order.
+order_convention_sig = hmac.new(SECRET.encode(), f"{sub_id}|{payment_id}".encode(), hashlib.sha256).hexdigest()
+check("sub sig: order-convention signature rejected",
+      app._verify_subscription_signature(sub_id, payment_id, order_convention_sig, secret=SECRET) is False)
+
+
 print("\n" + ("ALL RAZORPAY TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

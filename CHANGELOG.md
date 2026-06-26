@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.15.0]
+
+### Added
+- **Astro Pass recurring subscription (real Razorpay Subscriptions).** Replaces
+  the simulated 30-day pass with true auto-renewing billing:
+  - `POST /api/billing/create-subscription` creates a Razorpay Subscription
+    against a dashboard-created Plan (`RAZORPAY_PLAN_ID`) and records it pending.
+  - `POST /api/billing/verify-subscription` validates the Checkout callback
+    signature (HMAC of `payment_id|subscription_id` — **reversed** vs one-time
+    orders) and activates the pass.
+  - The webhook now also handles `subscription.charged` (authoritative renewal:
+    extends the access window by `SUBSCRIPTION_PERIOD_DAYS` + grants the
+    per-cycle refill) and `subscription.cancelled`/`halted`/`completed`
+    (revokes). All renewals are **idempotent** on the charge `payment_id` via the
+    `transactions` UNIQUE key, so webhook retries can't double-credit.
+  - Cancel now calls Razorpay with `cancel_at_cycle_end` so users keep the access
+    they paid for until period end.
+  - Frontend `subscribeTier` opens Razorpay Checkout with the `subscription_id`
+    to authorise the UPI Autopay / card mandate.
+- New config (env-overridable): `RAZORPAY_PLAN_ID`, `SUBSCRIPTION_TOTAL_COUNT`,
+  `SUBSCRIPTION_PRICE_PAISE`, `SUBSCRIPTION_REFILL_CREDITS`,
+  `SUBSCRIPTION_PERIOD_DAYS`. Subscription endpoints **fail closed (503)** without
+  Razorpay keys / plan id.
+- `test_razorpay.py`: subscription signature (incl. a guard that the order-field
+  ordering is rejected); `test_unit.py`: charge activation, idempotent renewal,
+  unknown-sub no-op, lifecycle deactivation.
+
+### Changed
+- Legacy `/api/billing/subscribe` remains the local-dev/test-only simulated path.
+
 ## [1.14.0]
 
 ### Added

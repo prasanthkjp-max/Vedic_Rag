@@ -125,8 +125,13 @@ via `search_engine.reload()`.
 `transactions.payment_intent_id` UNIQUE — so credits land exactly once. Pack
 prices are **GST-inclusive** (`GST_RATE`=0.18, carved out via
 `config.gst_breakdown`). Unconfigured → fail closed (**503**). Legacy
-`buy-credits` is local-dev/test-only (`VEDIC_ALLOW_SIMULATED_PAYMENTS`);
-recurring subscriptions (Astro Pass) are still simulated/deferred. A `402` from
+`buy-credits` is local-dev/test-only (`VEDIC_ALLOW_SIMULATED_PAYMENTS`).
+The **Astro Pass** is a real recurring Razorpay **Subscription**
+(`create-subscription` against a dashboard `RAZORPAY_PLAN_ID` →
+`verify-subscription`, whose signature is `payment_id|subscription_id` —
+**reversed** vs orders): renewals arrive as the `subscription.charged` webhook
+and `cancelled`/`halted`/`completed` revoke, all through the idempotent
+`_apply_subscription_charge` (keyed on the charge payment id). A `402` from
 any paid action drives the frontend **paywall bottom sheet** (`showPaywall`);
 `GET /api/billing/usage` feeds the profile **usage dashboard** (balance, spend
 this month, recent ledger). AI chat is **stateless** (history re-sent each turn),
