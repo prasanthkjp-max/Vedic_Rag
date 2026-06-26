@@ -2222,6 +2222,10 @@
             margin: 0 auto;
             display: block;
         }
+        /* Low-token warning on the credit balance indicators (header + sidebar). */
+        .credits-low { color: #e53e3e !important; animation: creditsPulse 1.8s ease-in-out infinite; }
+        .credits-clickable { cursor: pointer; }
+        @keyframes creditsPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
@@ -3243,6 +3247,9 @@
                     </div>
 
                     <div class="chat-input-bar">
+                        <button class="chat-send-btn" id="chat-new-reading" onclick="clearAIChat()" title="New Reading — clear this conversation" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold);">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
                         <input type="text" class="chat-input" id="chat-user-textbox" placeholder="Ask Astro AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)..." onkeydown="if(event.key === 'Enter') sendAIChatMessage()">
                         <button class="chat-send-btn" id="chat-send-trigger" onclick="sendAIChatMessage()">
                             <i class="fa-solid fa-paper-plane"></i>
@@ -3286,8 +3293,7 @@
                 if (timer) clearTimeout(timer);
             }
             if (response.status === 402) {
-                alert("Insufficient Credits. Please click your profile/name in the header to buy credits or subscribe to a pass.");
-                openProfileModal();
+                showPaywall();
             } else if (response.status === 401 && !url.includes('/api/auth/')) {
                 alert("Session expired or authentication required. Please sign in.");
                 openLoginModal();
@@ -7112,6 +7118,8 @@
         let aiChatHistory = [];
         let lastMessageTime = null;
         let sessionTokenCount = 0;
+        let lastWelcomeArgs = null;     // args of the last chart-aware welcome, for "New Reading"
+        let genericWelcomeHTML = null;  // original (no-chart) welcome bubble, captured before first overwrite
 
         function estimateTokens(text) {
             if (!text) return 0;
@@ -7128,6 +7136,7 @@
             aiChatHistory = [];
             sessionTokenCount = 0;
             lastMessageTime = null;
+            lastWelcomeArgs = [name, pob, dob, tob];
             const chatMessages = document.getElementById('chat-messages-container');
             
             const mantras = {
@@ -7200,7 +7209,27 @@
             
             // Replace initial welcome message
             const bubble = document.getElementById('initial-welcome-bubble');
+            if (genericWelcomeHTML === null) genericWelcomeHTML = bubble.innerHTML; // capture once
             bubble.innerHTML = welcomeHtml;
+        }
+
+        // "New Reading" — wipe the conversation (frontend-only; the backend chat
+        // is stateless, history is re-sent each turn) and restore the welcome.
+        function clearAIChat() {
+            aiChatHistory = [];
+            sessionTokenCount = 0;
+            lastMessageTime = null;
+            const container = document.getElementById('chat-messages-container');
+            const welcome = document.getElementById('initial-welcome-bubble');
+            if (container) {
+                Array.from(container.children).forEach(ch => { if (ch !== welcome) ch.remove(); });
+            }
+            if (calculatedChartData && lastWelcomeArgs) {
+                preloadCosmicWelcomeMessage(...lastWelcomeArgs);  // chart-aware welcome
+            } else if (welcome && genericWelcomeHTML !== null) {
+                welcome.innerHTML = genericWelcomeHTML;           // generic welcome
+            }
+            if (container) container.scrollTop = 0;
         }
 
         async function sendAIChatMessage() {
@@ -8488,6 +8517,7 @@
 
         // --- User Authentication & Credits Logic ---
         let currentUser = null;
+        const LOW_BALANCE_THRESHOLD = 25; // < one AI reading (CREDIT_COST_AI_PREDICT)
 
         async function initAuth() {
             const token = localStorage.getItem('session_token');
@@ -8537,15 +8567,24 @@
                 if (sideSignIn) sideSignIn.style.display = 'none';
                 if (sideLoggedIn) sideLoggedIn.style.display = 'flex';
                 const credits = currentUser.subscription_active ? "UNLIMITED" : currentUser.credit_balance;
+                // Flag a low balance (one AI reading worth) so users notice before
+                // hitting the paywall; tapping the count opens the recharge sheet.
+                const isLow = !currentUser.subscription_active && (currentUser.credit_balance || 0) < LOW_BALANCE_THRESHOLD;
+                const applyCreditStyle = (el) => {
+                    if (!el) return;
+                    el.innerText = credits;
+                    el.classList.toggle('credits-low', isLow);
+                    el.classList.add('credits-clickable');
+                    el.title = isLow ? 'Low balance — tap to recharge' : 'Tap to recharge';
+                    el.onclick = showPaywall;
+                };
                 if (userDisplayName) {
                     const name = currentUser.full_name || currentUser.email;
                     userDisplayName.innerText = name.length > 12 ? name.substring(0, 10) + ".." : name;
                 }
                 if (sideUserName) sideUserName.innerText = currentUser.full_name || currentUser.email;
-                if (sideUserCredits) sideUserCredits.innerText = credits;
-                if (userCreditsCount) {
-                    userCreditsCount.innerText = credits;
-                }
+                applyCreditStyle(sideUserCredits);
+                applyCreditStyle(userCreditsCount);
                 
                 // Pre-fill birth details from profile if present
                 if (currentUser.dob && !document.getElementById('in-dob').dataset.userPrefilled) {
@@ -8702,7 +8741,41 @@
             document.getElementById('profile-in-lon').value = currentUser.longitude || "";
             document.getElementById('profile-in-lat').value = currentUser.latitude || "";
             document.getElementById('profile-in-gender').value = currentUser.gender || "male";
+
+            loadUsageDashboard();
         }
+
+        async function loadUsageDashboard() {
+            const usedEl = document.getElementById('usage-used-month');
+            const recentEl = document.getElementById('usage-recent');
+            if (recentEl) recentEl.innerHTML = '<span style="opacity: 0.7;">Loading recent activity…</span>';
+            try {
+                const res = await apiFetch('/api/billing/usage');
+                if (!res.ok) throw new Error('usage fetch failed');
+                const u = await res.json();
+                if (usedEl) usedEl.innerText = (u.credits_used_this_month || 0).toLocaleString();
+                if (recentEl) {
+                    const rows = (u.recent_activity || []);
+                    if (!rows.length) {
+                        recentEl.innerHTML = '<span style="opacity: 0.7;">No activity yet.</span>';
+                    } else {
+                        recentEl.innerHTML = rows.map(r => {
+                            const amt = r.amount > 0 ? `+${r.amount}` : `${r.amount}`;
+                            const color = r.amount > 0 ? '#48BB78' : '#e53e3e';
+                            const when = (r.created_at || '').replace('T', ' ').slice(0, 16);
+                            const label = (r.action_type || '').replace(/_/g, ' ');
+                            return `<div style="display: flex; justify-content: space-between; gap: 8px;">
+                                <span>${when} · ${label}</span>
+                                <span style="color: ${color}; font-weight: bold;">${amt}</span>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            } catch (e) {
+                if (recentEl) recentEl.innerHTML = '<span style="opacity: 0.7;">Could not load usage.</span>';
+            }
+        }
+
         function closeProfileModal() {
             document.getElementById('profile-modal').style.display = 'none';
         }
@@ -8812,6 +8885,23 @@
             localStorage.removeItem('session_token');
             currentUser = null;
             updateAuthUI();
+        }
+
+        // Out-of-tokens paywall bottom sheet (triggered by a 402 in apiFetch).
+        function showPaywall() {
+            if (!currentUser) { openLoginModal(); return; }
+            const bal = document.getElementById('paywall-balance');
+            if (bal) bal.innerText = (currentUser.credit_balance || 0).toLocaleString();
+            const sheet = document.getElementById('paywall-sheet');
+            if (sheet) sheet.style.display = 'block';
+        }
+        function dismissPaywall() {
+            const sheet = document.getElementById('paywall-sheet');
+            if (sheet) sheet.style.display = 'none';
+        }
+        function paywallBuy(amount) {
+            dismissPaywall();
+            buyCreditPackage(amount);
         }
 
         async function buyCreditPackage(amount) {
@@ -9306,6 +9396,24 @@
         </div>
     </div>
 
+    <!-- Out-of-tokens paywall bottom sheet (shown on a 402 from any paid action) -->
+    <div id="paywall-sheet" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); z-index: 1200;" onclick="if(event.target===this) dismissPaywall()">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: rgba(4,14,44,0.98); border-top: 1px solid var(--border-gold); border-radius: 18px 18px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;">
+            <div style="width: 38px; height: 4px; background: var(--border-gold); border-radius: 2px; margin: 0 auto 16px; opacity: 0.6;"></div>
+            <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin: 0 0 4px;">You're out of tokens</h3>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 14px;">
+                Balance: <strong id="paywall-balance" style="color: var(--accent-gold);">0</strong> tokens. Recharge to continue — pay via UPI, cards or netbanking.
+            </p>
+            <div style="display: flex; gap: 8px;">
+                <button class="lang-select-btn" onclick="paywallBuy(500)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Pocket<br>500<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span></button>
+                <button class="lang-select-btn" onclick="paywallBuy(1125)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Kundli<br>1,125<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span></button>
+                <button class="lang-select-btn" onclick="paywallBuy(5000)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Astro Pro<br>5,000<br><span style="font-size: 9px; color: var(--text-secondary);">₹199</span></button>
+            </div>
+            <div style="font-size: 9px; color: var(--text-secondary); text-align: center; opacity: 0.85; margin-top: 8px;">Incl. 18% GST · Secured by Razorpay</div>
+            <button onclick="dismissPaywall()" style="width: 100%; background: transparent; border: none; color: var(--text-secondary); font-size: 11px; cursor: pointer; padding: 12px; margin-top: 4px;">Maybe later</button>
+        </div>
+    </div>
+
     <!-- User Dashboard / Profile Modal -->
     <div id="profile-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 420px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
@@ -9334,7 +9442,19 @@
                     <span id="profile-sub-status" style="font-size: 11px; font-weight: bold; color: #48BB78;">Free Tier</span>
                 </div>
             </div>
-            
+
+            <!-- Usage Dashboard (populated from /api/billing/usage) -->
+            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Usage</h4>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
+                    <span>Tokens used this month</span>
+                    <span><strong id="usage-used-month" style="color: #fff;">0</strong></span>
+                </div>
+                <div id="usage-recent" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: var(--text-secondary);">
+                    <span style="opacity: 0.7;">Loading recent activity…</span>
+                </div>
+            </div>
+
             <!-- Astrology Personal Info Settings -->
             <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Personal Birth Info (For Auto-Chart Predictions)</h4>
             <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">

@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.13.0]
+
+### Added
+- **Billing UX polish (Phase 3 monetisation).**
+  - **Out-of-tokens paywall bottom sheet:** a `402` from any paid action now
+    raises a recharge sheet (balance + the three INR packs + "Maybe later")
+    instead of a bare `alert()`, going straight into Razorpay Checkout.
+  - **Low-balance indicator:** the header/sidebar token count turns red and
+    pulses below `LOW_BALANCE_THRESHOLD` (25, one AI reading) and is tappable to
+    open the recharge sheet.
+  - **"New Reading" button** in the AI chat bar — clears the conversation and
+    restores the (chart-aware or generic) welcome. Frontend-only: the backend
+    chat is stateless (history is re-sent each turn), so no session reset
+    endpoint is needed.
+  - **Usage dashboard** in the profile modal: tokens used this month + recent
+    credit-ledger activity, from the new **`GET /api/billing/usage`** endpoint.
+- Unit coverage for `billing_usage` (this-month debit sum, recent-activity
+  ordering) in `test_unit.py`.
+
 ## [1.12.0]
 
 ### Added
