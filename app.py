@@ -51,6 +51,7 @@ from datetime import date
 from config import (
     VERSION,
     DB_PATH,
+    DB_RAG_PATH,
     BOOKS_DIR,
     STATIC_DIR,
     DEFAULT_LLM_MODEL,
@@ -728,7 +729,7 @@ class SubscribeRequest(BaseModel):
 
 
 # Initialize Search Engine
-search_engine = VedicSearchEngine(DB_PATH)
+search_engine = VedicSearchEngine(DB_RAG_PATH)
 
 
 def build_prediction_context(chart, extra_queries=None):
@@ -914,7 +915,7 @@ def get_status():
     """Get the current progress of the OCR database indexing"""
     conn = None
     try:
-        conn = connect_db(DB_PATH)
+        conn = connect_db(DB_RAG_PATH)
         cursor = conn.cursor()
 
         # Count books
@@ -1003,7 +1004,7 @@ def get_page_image(book_id: int, page_num: int):
     """Render a book page as a PNG image on the fly and return it"""
     doc = None
     try:
-        conn = connect_db(DB_PATH)
+        conn = connect_db(DB_RAG_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT filename FROM books WHERE id = ?", (book_id,))
         row = cursor.fetchone()
@@ -1044,7 +1045,7 @@ def get_page_image(book_id: int, page_num: int):
 def get_page_text(book_id: int, page_num: int):
     """Get the raw Sanskrit+English OCR text of a specific page"""
     try:
-        conn = connect_db(DB_PATH)
+        conn = connect_db(DB_RAG_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT raw_text FROM pages WHERE book_id = ? AND page_num = ?", (book_id, page_num))
         row = cursor.fetchone()
@@ -3182,7 +3183,7 @@ def health_check():
     status = {"version": VERSION, "database": "down", "openrouter": "down"}
     code = 200
     try:
-        conn = connect_db(DB_PATH)
+        conn = connect_db(DB_RAG_PATH)
         try:
             conn.execute("SELECT 1 FROM pages LIMIT 1")
             book_count = conn.execute("SELECT count(*) FROM books").fetchone()[0]

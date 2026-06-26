@@ -53,8 +53,15 @@ VERSION = "1.15.0"
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Database separation: user/session transactions vs static RAG vector index
-DB_USER_PATH = os.environ.get("VEDIC_USER_DB_PATH", os.path.join(BASE_DIR, "vedic_user.db"))
+# Database separation: user/session transactions vs static RAG vector index.
+# The user DB also honours the legacy VEDIC_DB_PATH (it was the single-DB var)
+# for backward compatibility, so existing deployments, tests, and CI that set
+# VEDIC_DB_PATH keep isolating the DB after the split.
+DB_USER_PATH = (
+    os.environ.get("VEDIC_USER_DB_PATH")
+    or os.environ.get("VEDIC_DB_PATH")
+    or os.path.join(BASE_DIR, "vedic_user.db")
+)
 DB_RAG_PATH = os.environ.get("VEDIC_RAG_DB_PATH", os.path.join(BASE_DIR, "vedic_rag.db"))
 
 # Backwards compatibility alias pointing to user database
