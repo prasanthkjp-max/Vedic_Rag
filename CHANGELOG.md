@@ -3,6 +3,37 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.12.0]
+
+### Added
+- **Razorpay payments (Phase 2 monetisation).** Real one-time checkout for the
+  INR token packs replaces the simulated flow:
+  - `POST /api/billing/create-order` creates a Razorpay Order for the selected
+    pack and records a pending transaction.
+  - `POST /api/billing/verify-payment` validates the Checkout callback
+    signature (HMAC-SHA256 of `order_id|payment_id`) and credits the user.
+  - `POST /api/billing/webhook` is the authoritative server-to-server grant on
+    `payment.captured`, verified against `RAZORPAY_WEBHOOK_SECRET`.
+  - Both paths funnel through an **idempotent** grant (atomic status flip on the
+    `transactions.payment_intent_id` UNIQUE key) so credits land exactly once
+    even if the callback and webhook both fire.
+- **UPI / cards / netbanking** via Razorpay Checkout (`checkout.js`) in the
+  billing UI, with a "Secured by Razorpay" / GST notice.
+- **GST line item.** Pack prices are GST-INCLUSIVE (18%); `config.gst_breakdown`
+  carves out base + tax (e.g. ₹29 = ₹24.58 + ₹4.42) for display/invoicing.
+- New config: `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` /
+  `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_ENABLED`, `GST_RATE` (all
+  env-overridable); `razorpay` added to requirements (imported lazily).
+- `test_razorpay.py` (CI): GST-inclusive split + payment/webhook signature
+  verification.
+
+### Changed
+- Payments **fail closed** when Razorpay is unconfigured (503). The legacy
+  `buy-credits` endpoint is now local-dev/test-only (gated on
+  `VEDIC_ALLOW_SIMULATED_PAYMENTS`); `STRIPE_SECRET_KEY` is a reserved hook for a
+  future international/card path. Recurring subscription billing (Astro Pass)
+  remains deferred to a follow-up.
+
 ## [1.11.0]
 
 ### Changed

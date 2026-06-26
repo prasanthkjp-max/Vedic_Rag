@@ -25,6 +25,10 @@ numpy==2.2.6
 # LLM chat + RAG embeddings via OpenRouter (OpenAI-compatible API)
 openai==1.59.6
 
+# Payments — Razorpay Orders API (UPI/cards). Optional at runtime: imported
+# lazily so the app still starts/CI still passes when payments are turned off.
+razorpay==1.4.2
+
 # Note: pytesseract requires the system 'tesseract-ocr' binary plus the
 # 'san' (Sanskrit) and 'eng' language packs installed via the OS package manager.
 # The RAG chat and embeddings require an OPENROUTER_API_KEY (see config.py / .env.example).

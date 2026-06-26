@@ -2223,6 +2223,7 @@
             display: block;
         }
     </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -8815,24 +8816,69 @@
 
         async function buyCreditPackage(amount) {
             const token = localStorage.getItem('session_token');
+            if (!token) { alert("Please log in to buy tokens."); return; }
+            if (typeof Razorpay === 'undefined') {
+                alert("Payment library failed to load. Check your connection and retry.");
+                return;
+            }
             try {
-                const res = await fetch('/api/billing/buy-credits', {
+                // 1. Create a Razorpay order on the backend.
+                const res = await fetch('/api/billing/create-order', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-session-token': token
-                    },
+                    headers: { 'Content-Type': 'application/json', 'x-session-token': token },
                     body: JSON.stringify({ amount })
                 });
-                if (res.ok) {
-                    alert(`Simulated checkout complete. Added ${amount} credits!`);
-                    await initAuth();
-                    closeProfileModal();
-                    openProfileModal();
-                } else {
+                if (!res.ok) {
                     const data = await res.json();
-                    alert("Purchase failed: " + data.detail);
+                    alert("Could not start checkout: " + data.detail);
+                    return;
                 }
+                const order = await res.json();
+                const g = order.gst || {};
+                const rupees = (p) => '₹' + (p / 100).toFixed(2);
+
+                // 2. Open Razorpay Checkout (UPI / cards / netbanking / wallets).
+                const rzp = new Razorpay({
+                    key: order.key_id,
+                    order_id: order.order_id,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: 'Vedic Astro AI',
+                    description: `${order.credits.toLocaleString()} Tokens` +
+                        (g.gross ? `  (incl. ${rupees(g.gst)} GST @ ${Math.round((g.rate || 0) * 100)}%)` : ''),
+                    prefill: order.prefill || {},
+                    theme: { color: '#d4af37' },
+                    handler: async function (response) {
+                        // 3. Verify the signed payment server-side, then refresh.
+                        try {
+                            const vres = await fetch('/api/billing/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            if (vres.ok) {
+                                alert(`Payment successful! ${order.credits.toLocaleString()} tokens added.`);
+                                await initAuth();
+                                closeProfileModal();
+                                openProfileModal();
+                            } else {
+                                const vd = await vres.json();
+                                alert("Payment captured but verification is pending: " + vd.detail +
+                                    "\nYour tokens will be credited automatically once confirmed.");
+                            }
+                        } catch (e) {
+                            alert("Verification error: " + e + "\nTokens will be credited automatically once confirmed.");
+                        }
+                    }
+                });
+                rzp.on('payment.failed', function (resp) {
+                    alert("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                });
+                rzp.open();
             } catch (e) {
                 alert("Error during purchase: " + e);
             }
@@ -9332,7 +9378,7 @@
             </div>
             
             <!-- Purchase Options -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Cosmic Tokens & Billing (Simulated Stripe)</h4>
+            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Cosmic Tokens & Billing</h4>
             
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <!-- Token Packs (INR) -->
@@ -9346,6 +9392,9 @@
                     <button class="lang-select-btn" onclick="buyCreditPackage(5000)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
                         🪙 Astro Pro<br>5,000 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹199</span>
                     </button>
+                </div>
+                <div style="font-size: 9px; color: var(--text-secondary); text-align: center; opacity: 0.85;">
+                    All prices inclusive of 18% GST · Secured by Razorpay · UPI / Cards / Netbanking
                 </div>
 
                 <!-- Subscription -->
