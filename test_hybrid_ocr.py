@@ -1,10 +1,10 @@
 import os
 import sys
-import json
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
-import urllib.request
+
+from config import get_llm_client, DEFAULT_LLM_MODEL
 
 def render_page_to_image(pdf_path, page_num, dpi=300):
     doc = fitz.open(pdf_path)
@@ -21,24 +21,16 @@ def render_page_to_image(pdf_path, page_num, dpi=300):
     img = Image.open(BytesIO(img_data))
     return img
 
-def query_ollama(prompt, model="gemma4:31b-cloud"):
-    url = "http://localhost:11434/api/generate"
-    data = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False
-    }
-    req = urllib.request.Request(
-        url, 
-        data=json.dumps(data).encode("utf-8"),
-        headers={"Content-Type": "application/json"}
-    )
+def query_llm(prompt, model=DEFAULT_LLM_MODEL):
     try:
-        with urllib.request.urlopen(req) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            return res_data.get("response", "")
+        client = get_llm_client()
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return resp.choices[0].message.content or ""
     except Exception as e:
-        return f"Error querying Ollama: {e}"
+        return f"Error querying OpenRouter: {e}"
 
 def clean_ocr_text(raw_text):
     prompt = f"""You are an expert Sanskrit and Vedic Astrology scholar.
@@ -56,7 +48,7 @@ RAW OCR TEXT TO CLEAN:
 Provide only the clean, reconstructed, and beautifully formatted Sanskrit (with proper shloka format) and English text.
 Do not write introduction or outro remarks. Start directly with the cleaned text.
 """
-    return query_ollama(prompt)
+    return query_llm(prompt)
 
 if __name__ == "__main__":
     pdf_path = "/home/prasanth/.openclaw/workspace/vedic_astrology_books/Brihat Parasara Hora Sastra 1 -- Maharshi Parasara -- ( WeLib.org ).pdf"

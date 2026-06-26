@@ -5,13 +5,10 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 import sys
 import sqlite3
-import json
 import struct
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
-import urllib.request
-import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import logging
@@ -23,8 +20,7 @@ from config import (
     EMBEDDING_MODEL,
     EMBEDDING_DIM,
     EMBED_TIMEOUT,
-    OLLAMA_API_KEY,
-    OLLAMA_EMBED_URL as OLLAMA_URL,
+    get_llm_client,
     connect_db,
     ensure_fts,
     _env_int,
@@ -69,37 +65,27 @@ def init_db():
     ensure_fts(conn)
     conn.close()
 
-def get_ollama_embedding(text):
+def get_embedding(text):
     """
-    Get 768-dim vector embedding from local Ollama nomic-embed-text
+    Get a vector embedding from OpenRouter (OpenAI SDK). Dimensionality must
+    match EMBEDDING_DIM (text-embedding-3-small = 1536).
     """
-    data = {
-        "model": EMBEDDING_MODEL,
-        "prompt": text
-    }
-    headers = {"Content-Type": "application/json"}
-    if OLLAMA_API_KEY:
-        headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
-    req = urllib.request.Request(
-        OLLAMA_URL,
-        data=json.dumps(data).encode("utf-8"),
-        headers=headers
-    )
-
     # Retry logic
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=EMBED_TIMEOUT) as response:
-                res_data = json.loads(response.read().decode("utf-8"))
-                embedding = res_data.get("embedding", [])
-                # A wrong-dimension vector would be stored, then silently
-                # dropped by the search index forever — treat it as a failure.
-                if embedding and len(embedding) == EMBEDDING_DIM:
-                    return embedding
-                logger.warning("Embedding has wrong dimension (%d != %d)", len(embedding), EMBEDDING_DIM)
+            client = get_llm_client()
+            resp = client.with_options(timeout=EMBED_TIMEOUT).embeddings.create(
+                model=EMBEDDING_MODEL, input=text
+            )
+            embedding = resp.data[0].embedding if resp.data else []
+            # A wrong-dimension vector would be stored, then silently
+            # dropped by the search index forever — treat it as a failure.
+            if embedding and len(embedding) == EMBEDDING_DIM:
+                return embedding
+            logger.warning("Embedding has wrong dimension (%d != %d)", len(embedding), EMBEDDING_DIM)
         except Exception as e:
             if attempt == 2:
-                logger.warning("Error calling Ollama embedding API: %s", e)
+                logger.warning("Error calling OpenRouter embedding API: %s", e)
         if attempt < 2:
             time.sleep(1)
 
@@ -147,7 +133,7 @@ def process_page(book_id, pdf_path, page_num):
         # 3. Generate Vector Embedding
         # If the page is empty, embed a simple placeholder to prevent errors
         embed_prompt = raw_text.strip() if raw_text.strip() else f"Book page {page_num}"
-        embedding = get_ollama_embedding(embed_prompt)
+        embedding = get_embedding(embed_prompt)
 
         # If embedding failed, leave the page unindexed so it is retried on the
         # next run instead of being permanently stored as a zero vector.

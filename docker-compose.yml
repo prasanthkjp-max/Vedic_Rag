@@ -21,12 +21,15 @@ services:
       - VEDIC_DB_PATH=/app/data/vedic_astrology_rag.db
       - VEDIC_BOOKS_DIR=/app/books
       
-      # Ollama backend connection details
-      - OLLAMA_HOST=http://ollama:11434
-      - VEDIC_EMBED_MODEL=${VEDIC_EMBED_MODEL:-nomic-embed-text}
-      - VEDIC_EMBED_DIM=${VEDIC_EMBED_DIM:-768}
-      - VEDIC_LLM_MODEL=${VEDIC_LLM_MODEL:-gemma4:31b-cloud}
-      - VEDIC_EMBED_TIMEOUT=${VEDIC_EMBED_TIMEOUT:-15}
+      # OpenRouter backend (LLM chat + RAG embeddings via the OpenAI SDK)
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - MODEL_FAST=${MODEL_FAST:-deepseek/deepseek-v4-flash}
+      - MODEL_BALANCED=${MODEL_BALANCED:-google/gemma-4-31b-it}
+      - MODEL_PREMIUM=${MODEL_PREMIUM:-deepseek/deepseek-v4-pro}
+      - MODEL_EMBEDDING=${MODEL_EMBEDDING:-openai/text-embedding-3-small}
+      - VEDIC_LLM_MODEL=${VEDIC_LLM_MODEL:-google/gemma-4-31b-it}
+      - VEDIC_EMBED_DIM=${VEDIC_EMBED_DIM:-1536}
+      - VEDIC_EMBED_TIMEOUT=${VEDIC_EMBED_TIMEOUT:-30}
       - VEDIC_LLM_TIMEOUT=${VEDIC_LLM_TIMEOUT:-300}
       
       # App Security Key (Ensure you set this to a secure random string in production)
@@ -47,27 +50,3 @@ services:
       - FACEBOOK_APP_ID=${FACEBOOK_APP_ID:-}
       - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}
       - VEDIC_ALLOW_MOCK_OAUTH=${VEDIC_ALLOW_MOCK_OAUTH:-0}
-    depends_on:
-      - ollama
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    # NOTE: If your VPS has GPU support (highly recommended), uncomment the deployment
-    # block below to pass your NVIDIA GPU through to Ollama.
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
-
-volumes:
-  ollama-data:
-    driver: local

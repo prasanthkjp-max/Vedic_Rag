@@ -22,6 +22,9 @@ pyswisseph==2.10.3.2
 # Vector search
 numpy==2.2.6
 
+# LLM chat + RAG embeddings via OpenRouter (OpenAI-compatible API)
+openai==1.59.6
+
 # Note: pytesseract requires the system 'tesseract-ocr' binary plus the
 # 'san' (Sanskrit) and 'eng' language packs installed via the OS package manager.
-# The RAG chat and embeddings require a running Ollama instance (see config.py).
+# The RAG chat and embeddings require an OPENROUTER_API_KEY (see config.py / .env.example).

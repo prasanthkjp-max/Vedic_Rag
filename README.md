@@ -5,7 +5,7 @@
 A self-hosted FastAPI portal for Vedic astrology: a sidereal (Thirukanitha)
 birth-chart + Panchangam engine, multilingual reports (Tamil/Telugu/Kannada/
 Malayalam/Hindi/English), and an AI prediction layer grounded in a RAG database
-of classical texts via a local [Ollama](https://ollama.com) backend.
+of classical texts via [OpenRouter](https://openrouter.ai) (OpenAI-compatible API).
 
 - **Backend:** `app.py` (FastAPI, port **8008**)
 - **Search:** `search_engine.py` — hybrid dense (embeddings) + sparse (SQLite
@@ -22,8 +22,9 @@ of classical texts via a local [Ollama](https://ollama.com) backend.
 python3 app.py          # serves on http://0.0.0.0:8008
 ```
 
-Requires a local Ollama instance (`http://localhost:11434` by default) with the
-embedding model (`nomic-embed-text`) and a chat model pulled.
+Requires an `OPENROUTER_API_KEY` (set in `.env`; see `.env.example`). LLM chat
+and RAG embeddings run through OpenRouter via the OpenAI SDK — model IDs are
+configurable (`MODEL_FAST`/`MODEL_BALANCED`/`MODEL_PREMIUM`, `MODEL_EMBEDDING`).
 
 ## Authentication
 
@@ -113,8 +114,9 @@ See **`.env.example`** for a documented template of every supported variable
 environment, it doesn't auto-load `.env`).
 
 All env-overridable (see `config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
-`OLLAMA_HOST`, `VEDIC_EMBED_MODEL`, `VEDIC_EMBED_DIM`, `VEDIC_LLM_MODEL`,
-`VEDIC_EMBED_TIMEOUT`, `VEDIC_LLM_TIMEOUT`.
+`OPENROUTER_API_KEY`, `MODEL_FAST`/`MODEL_BALANCED`/`MODEL_PREMIUM`,
+`MODEL_EMBEDDING`, `VEDIC_LLM_MODEL`, `VEDIC_EMBED_DIM`, `VEDIC_EMBED_TIMEOUT`,
+`VEDIC_LLM_TIMEOUT`.
 
 - `VEDIC_CORS_ORIGINS` — comma-separated allowed origins (default `*`). Set to
   your real front-end origin in production; credentials are enabled automatically

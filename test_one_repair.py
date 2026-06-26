@@ -1,12 +1,10 @@
 import sqlite3
 import struct
-import json
-import urllib.request
 import time
 
+from config import get_llm_client, EMBEDDING_MODEL
+
 DB_PATH = "/home/prasanth/Vedic_Rag/vedic_astrology_rag.db"
-EMBEDDING_MODEL = "nomic-embed-text"
-OLLAMA_URL = "http://localhost:11434/api/embeddings"
 
 def is_vector_zero(emb_blob):
     if not emb_blob:
@@ -39,25 +37,17 @@ def main():
     print(f"Raw text snippet (first 100 chars): {repr(zero_page['text'][:100])}")
     
     prompt = zero_page['text'].strip() if zero_page['text'].strip() else "test page"
-    data = {
-        "model": EMBEDDING_MODEL,
-        "prompt": prompt
-    }
-    
-    req = urllib.request.Request(
-        OLLAMA_URL, 
-        data=json.dumps(data).encode("utf-8"),
-        headers={"Content-Type": "application/json"}
-    )
-    
-    print("Sending request to Ollama...")
+
+    print("Sending request to OpenRouter...")
     start_time = time.time()
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            vector = res_data.get("embedding", [])
-            print(f"SUCCESS! Received vector of length: {len(vector)}")
-            print(f"First 5 elements: {vector[:5]}")
+        client = get_llm_client()
+        resp = client.with_options(timeout=30).embeddings.create(
+            model=EMBEDDING_MODEL, input=prompt
+        )
+        vector = resp.data[0].embedding if resp.data else []
+        print(f"SUCCESS! Received vector of length: {len(vector)}")
+        print(f"First 5 elements: {vector[:5]}")
     except Exception as e:
         print(f"FAILED: {e}")
     print(f"Time taken: {time.time() - start_time:.2f} seconds")
