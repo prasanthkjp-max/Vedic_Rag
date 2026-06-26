@@ -4,7 +4,9 @@ import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
 
-from config import get_llm_client, DEFAULT_LLM_MODEL
+# Import config dynamically
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from config import BASE_DIR, BOOKS_DIR, get_llm_client, DEFAULT_LLM_MODEL
 
 def render_page_to_image(pdf_path, page_num, dpi=300):
     doc = fitz.open(pdf_path)
@@ -19,6 +21,7 @@ def render_page_to_image(pdf_path, page_num, dpi=300):
     img_data = pix.tobytes("png")
     from io import BytesIO
     img = Image.open(BytesIO(img_data))
+    doc.close()
     return img
 
 def query_llm(prompt, model=DEFAULT_LLM_MODEL):
@@ -51,10 +54,12 @@ Do not write introduction or outro remarks. Start directly with the cleaned text
     return query_llm(prompt)
 
 if __name__ == "__main__":
-    pdf_path = "/home/prasanth/.openclaw/workspace/vedic_astrology_books/Brihat Parasara Hora Sastra 1 -- Maharshi Parasara -- ( WeLib.org ).pdf"
+    book_filename = "Brihat Parasara Hora Sastra 1 -- Maharshi Parasara -- ( WeLib.org ).pdf"
+    pdf_path = os.path.join(BOOKS_DIR, book_filename)
     
     if not os.path.exists(pdf_path):
         print(f"Error: PDF not found at {pdf_path}")
+        print(f"Please place {book_filename} in the books directory: {BOOKS_DIR}")
         sys.exit(1)
         
     print("Step 1: Rendering page 14 (15th page) as high-res 300 DPI image...")
@@ -62,7 +67,7 @@ if __name__ == "__main__":
     img = render_page_to_image(pdf_path, 14, dpi=300)
     
     # Save temp image for inspection
-    temp_img_path = "/home/prasanth/Vedic_Rag/temp_page_14.png"
+    temp_img_path = os.path.join(BASE_DIR, "temp_page_14.png")
     img.save(temp_img_path)
     print(f"Saved temp page image to {temp_img_path}")
     
@@ -82,9 +87,10 @@ if __name__ == "__main__":
     print("--- AI-CLEANED OCR TEXT END ---\n")
     
     # Save both for comparison
-    with open("/home/prasanth/Vedic_Rag/sample_comparison.txt", "w", encoding="utf-8") as f:
+    comparison_path = os.path.join(BASE_DIR, "sample_comparison.txt")
+    with open(comparison_path, "w", encoding="utf-8") as f:
         f.write("=== RAW OCR ===\n")
         f.write(raw_ocr)
         f.write("\n\n=== AI CLEANED ===\n")
         f.write(cleaned_ocr)
-    print("Saved comparison to /home/prasanth/Vedic_Rag/sample_comparison.txt")
+    print(f"Saved comparison to {comparison_path}")

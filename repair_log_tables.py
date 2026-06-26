@@ -1,9 +1,12 @@
 import sqlite3
 import struct
+import os
+import sys
 
-from config import get_llm_client, EMBEDDING_MODEL
-
-DB_PATH = "/home/prasanth/Vedic_Rag/vedic_astrology_rag.db"
+# Import config dynamically
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from config import DB_RAG_PATH, get_llm_client, EMBEDDING_MODEL
+DB_PATH = DB_RAG_PATH
 
 def get_embedding(text):
     try:
@@ -20,9 +23,21 @@ def serialize_embedding(vector):
     return struct.pack(f"{len(vector)}f", *vector)
 
 def main():
+    if not os.path.exists(DB_PATH):
+        print(f"Error: Database file does not exist at {DB_PATH}")
+        sys.exit(1)
+        
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    # Check if table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='pages'")
+    if not cursor.fetchone():
+        print(f"Error: Table 'pages' does not exist in database {DB_PATH}")
+        print("Please run ingest.py first to initialize the database.")
+        conn.close()
+        sys.exit(1)
+        
     # Page 34 (0-indexed page_num = 33)
     p34_text = "Brihat Parasara Hora Sastra (Girish) Page 34: Table of Proportional Diurnal Logarithms (Dasa Systems Table of Hours and Degrees)"
     # Page 35 (0-indexed page_num = 34)

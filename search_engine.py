@@ -5,7 +5,7 @@ import re
 import threading
 
 from config import (
-    DB_PATH,
+    DB_RAG_PATH,
     EMBEDDING_MODEL,
     EMBEDDING_DIM,
     EMBED_TIMEOUT,
@@ -17,7 +17,7 @@ from config import (
 logger = logging.getLogger("vedic.search")
 
 class VedicSearchEngine:
-    def __init__(self, db_path=DB_PATH):
+    def __init__(self, db_path=DB_RAG_PATH):
         self.db_path = db_path
         self.books = {}      # book_id -> book_metadata
         self.page_map = []   # List of dicts with page metadata: {book_id, page_num, raw_text}
@@ -175,8 +175,8 @@ class VedicSearchEngine:
                 cursor.execute("SELECT book_id, page_num, raw_text, embedding FROM pages")
                 rows = cursor.fetchall()
 
-                page_map = []
-                emb_list = []
+                mismatched_count = 0
+                mismatched_dims = set()
 
                 for row in rows:
                     book_id, page_num, raw_text, emb_blob = row
@@ -210,6 +210,9 @@ class VedicSearchEngine:
                                 "book_title": books[book_id]["title"] if book_id in books else "Unknown Book"
                             })
                             emb_list.append(embedding)
+                        else:
+                            mismatched_count += 1
+                            mismatched_dims.add(len(embedding))
 
                 embeddings = None
                 if emb_list:
@@ -225,6 +228,13 @@ class VedicSearchEngine:
                 self.page_map = page_map
                 self.embeddings = embeddings
                 self.last_page_count = page_count
+
+                if mismatched_count > 0:
+                    logger.warning(
+                        "Skipped %d pages because their database embedding dimensions (%r) "
+                        "did not match EMBEDDING_DIM (%d). These pages require re-embedding (repair).",
+                        mismatched_count, list(mismatched_dims), EMBEDDING_DIM
+                    )
 
                 logger.info("Loaded search index: %d pages from %d books.", len(self.page_map), len(self.books))
             except Exception as e:

@@ -16,7 +16,7 @@ from io import BytesIO
 
 from config import (
     BOOKS_DIR,
-    DB_PATH,
+    DB_RAG_PATH,
     EMBEDDING_MODEL,
     EMBEDDING_DIM,
     EMBED_TIMEOUT,
@@ -27,6 +27,7 @@ from config import (
 )
 
 logger = logging.getLogger("vedic.ingest")
+DB_PATH = DB_RAG_PATH
 
 # Default to the host's core count (the original hardcoded 4 was wrong on any
 # other machine); override with VEDIC_INGEST_THREADS.

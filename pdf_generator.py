@@ -815,13 +815,17 @@ def clean_and_translate_place(place_name, lang):
             
     return main_place
 
-def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path="/home/prasanth/Vedic_Rag/birth_chart_report.pdf", lang="en"):
+def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path=None, lang="en"):
     """
     Generate a 2-page highly elegant, scholarly Vedic Astrology Report PDF in selected languages containing
     both Rasi D1 & Navamsha D9 charts side-by-side, Pillaiyar Suzhi & Lord Ganesha Invocation,
     20+ traditional birth/astronomical panchangam details, and 120-year Vimshottari Dasas.
     Includes a gorgeous divine astrological remedial guidance card at the bottom of page 2.
     """
+    if output_path is None:
+        from config import BASE_DIR
+        output_path = os.path.join(BASE_DIR, "birth_chart_report.pdf")
+
     FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
 
     # Initialize Canvas
