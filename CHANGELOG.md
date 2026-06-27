@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.15.5]
+
+### Added
+- **AGPL source-availability link in the UI.** A site footer ("© · GNU AGPL-3.0 ·
+  Source code") and a "Source code" row in the side-nav About section now link to
+  the repository and `LICENSE`, satisfying the AGPL §13 obligation to offer the
+  corresponding source to users of a hosted instance. *(Requires the linked repo
+  to be reachable by users — make it public or point the link at your source.)*
+
 ## [1.15.4]
 
 ### Added
