@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.15.2]
+
+### Added
+- **Bundled Noto fonts (`fonts/`).** The Noto Sans Regular/Bold faces for Latin,
+  Tamil, Telugu, Devanagari, Kannada and Malayalam now ship in the repo, so
+  multilingual PDF reports render on any host without relying on a system Noto
+  install. `pdf_generator.py` already prefers the bundled dir, so `/api/health`
+  reports `pdf_fonts: ok` out of the box. Fonts are SIL OFL 1.1 (`fonts/OFL.txt`).
+
 ## [1.15.1]
 
 ### Fixed
