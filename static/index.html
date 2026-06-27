@@ -6,13 +6,15 @@
     <title>Vedic Astro AI — Divine AI Vedic Astrology Portal</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
 
-    <!-- API-key gate bootstrap. The backend gates every /api/* call (except the
-         open auth/health paths) behind a shared key. We patch window.fetch so
-         every same-origin /api request carries the X-API-Key header — covering
-         apiFetch() and the direct fetch() calls alike. The key is fetched once
-         from the loopback-only /api/local-key when self-hosting, else prompted
-         for, and persisted in localStorage. Bootstrap is lazy: it only triggers
-         when a gated call actually returns 403, so open paths never prompt. -->
+    <!-- API-key bootstrap. The backend only key-gates the corpus/admin endpoints
+         (/api/search, /api/page-*, /api/status, /api/books); normal user actions
+         are authenticated per-user by session tokens, and panchangam is public.
+         We patch window.fetch so any same-origin /api request carries the
+         X-API-Key header when a key is known. Bootstrap is lazy — it only runs if
+         a request returns 403 (i.e. an operator hitting a corpus endpoint without
+         a key), so ordinary visitors are NEVER prompted. On self-hosting the key
+         is fetched from the loopback-only /api/local-key; otherwise prompted for
+         and persisted in localStorage. -->
     <script>
     (function () {
         var KEY_STORE = 'vedic_api_key';

@@ -87,7 +87,13 @@ import app
 from config import connect_db
 
 check("liveness: /api/live reports alive (no deps)", app.liveness_probe()["status"] == "alive")
-check("liveness: /api/live is an open (no-key) path", "/api/live" in app._OPEN_API_PATHS)
+# /api/live must NOT be key-gated; only the corpus/admin endpoints are.
+check("apikey: /api/live is not key-gated", app._is_key_protected("/api/live") is False)
+check("apikey: /api/version is not key-gated", app._is_key_protected("/api/version") is False)
+check("apikey: /api/search IS key-gated", app._is_key_protected("/api/search") is True)
+check("apikey: /api/page-image/1/2 IS key-gated (prefix)", app._is_key_protected("/api/page-image/1/2") is True)
+check("apikey: /api/books IS key-gated", app._is_key_protected("/api/books") is True)
+check("apikey: /api/calculate-chart is not key-gated (session-gated instead)", app._is_key_protected("/api/calculate-chart") is False)
 
 check("safe_slug: neutralises traversal", ".." not in app._safe_slug("../../etc/foo"))
 check("safe_slug: empty -> fallback", app._safe_slug("") == "chart")
