@@ -140,8 +140,11 @@ the AGPL **or** a paid Astrodienst Professional License. Adopting the AGPL is th
 free option; the alternative is to purchase the professional license (see
 `ephe/LICENSE`) or remove Swiss Ephemeris entirely.
 
-**Network-use obligation (AGPL §13):** if you run this as a public/hosted
-service, you must make the **complete corresponding source code** available to
-your users (e.g. a "Source" link in the UI pointing to your repository or a
-download). Running it commercially is allowed; keeping the source secret from
-your users is not.
+**Network-use obligation (AGPL §13):** a public/hosted instance must make the
+**complete corresponding source code** available to its users. This repository is
+**private**, so the app does not link to it; instead the in-app footer offers the
+source **on request** at `source@vedicastroai.net` — that mailbox must be live and
+must deliver the exact corresponding source of the running version, free of
+charge, to satisfy §13. (A self-hosted source download would be a stronger offer
+if you'd rather not field requests.) Running it commercially is allowed; refusing
+your users the source is not.

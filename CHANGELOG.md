@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.16.1]
+
+### Changed
+- **Removed the direct source-repo links from the UI.** The footer and side-nav
+  no longer hyperlink to the GitHub repository (the repo is now private). They
+  still show the **GNU AGPL-3.0** license (linking to the gnu.org license text)
+  and now satisfy the §13 network-use clause via a **source-on-request** contact
+  (`source@vedicastroai.net`) instead of a repo link. README updated to match.
+  *(That mailbox must be live and deliver the exact corresponding source.)*
+
 ## [1.16.0]
 
 ### Changed
