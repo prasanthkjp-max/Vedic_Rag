@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, Optional
 
 # --- Allowed categorical values (clean 422 instead of a downstream 500 or, for
 # the muhurtham paradigm, a silently permissive verdict) ---
@@ -43,8 +43,8 @@ def _remove_quietly(path):
         pass
 from io import BytesIO
 from search_engine import VedicSearchEngine
-from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility, calculate_luni_solar_month_index
-from pdf_generator import generate_pdf_report
+from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility, calculate_luni_solar_month_index, ephemeris_status
+from pdf_generator import generate_pdf_report, fonts_status
 from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
 from muhurtham_engine import calculate_muhurtham
 from datetime import date
@@ -132,6 +132,7 @@ _OPEN_API_PATHS = {
     "/api/health",
     "/api/live",
     "/api/local-key",
+    "/api/detect-location",
     "/api/auth/signup",
     "/api/auth/login",
     "/api/auth/oauth",
@@ -241,7 +242,7 @@ def _apply_referral(cursor, new_user_id, referral_code):
 def init_user_db():
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -250,7 +251,7 @@ def init_user_db():
         oauth_provider TEXT,
         oauth_id TEXT,
         is_active INTEGER DEFAULT 1,
-        credit_balance INTEGER DEFAULT 100,
+        credit_balance INTEGER DEFAULT {int(SIGNUP_BONUS_CREDITS)},
         latitude REAL DEFAULT 13.0827,
         longitude REAL DEFAULT 80.2707,
         timezone TEXT DEFAULT 'Asia/Kolkata',
@@ -910,6 +911,60 @@ def get_local_key(request: Request):
         raise HTTPException(status_code=403, detail="Forbidden: Local access only")
     return {"api_key": API_KEY}
 
+
+def _client_ip(request: Request):
+    """Best-effort public client IP for geolocation.
+
+    Honours the first hop of X-Forwarded-For / X-Real-IP (set by reverse
+    proxies); falls back to the socket peer. Returns "" for private/loopback
+    addresses so the caller geolocates the server's own egress IP instead.
+    """
+    import ipaddress
+    fwd = request.headers.get("x-forwarded-for", "")
+    candidate = (fwd.split(",")[0].strip() if fwd
+                 else request.headers.get("x-real-ip", "").strip()
+                 or (request.client.host if request.client else ""))
+    try:
+        ip = ipaddress.ip_address(candidate)
+        if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+            return ""
+        return candidate
+    except ValueError:
+        return ""
+
+
+@app.get("/api/detect-location")
+def detect_location(request: Request):
+    """Server-side IP geolocation proxy.
+
+    Privacy: the browser no longer calls ipapi.co directly, so the third party
+    never sees the visitor's User-Agent / headers / referrer / cookies — only an
+    opaque server request carrying the forwarded IP. Centralising it here also
+    lets us bound it with a timeout and a sane fallback. Best-effort: returns
+    {detected:false} on any failure so the frontend just keeps its default.
+    """
+    ip = _client_ip(request)
+    url = f"https://ipapi.co/{ip}/json/" if ip else "https://ipapi.co/json/"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "VedicRagPortal/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        lat, lon = data.get("latitude"), data.get("longitude")
+        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            return {"detected": False}
+        name = ", ".join(p for p in (data.get("city"), data.get("region") or data.get("country_name")) if p) or "Detected location"
+        return {
+            "detected": True,
+            "latitude": lat,
+            "longitude": lon,
+            "name": name,
+            "state": data.get("region"),
+            "country": data.get("country_code"),
+        }
+    except Exception as e:
+        logger.warning("IP geolocation lookup failed: %s", e)
+        return {"detected": False}
+
 @app.get("/api/status")
 def get_status():
     """Get the current progress of the OCR database indexing"""
@@ -952,8 +1007,14 @@ def get_status():
                 "progress_percent": round((vectorized / tot_pages) * 100, 1) if tot_pages > 0 else 0
             })
 
-        # Reload search engine index if new pages are vectorized
-        if len(search_engine.page_map) < total_vectorized_pages:
+        # Reload the in-memory index only when the vectorized-page count has
+        # actually grown since the last reload. Comparing against page_map alone
+        # would loop forever if some vectorized rows have mismatched embedding
+        # dimensions (counted here but skipped by load_index), re-running a full
+        # corpus SELECT on every status poll.
+        if (len(search_engine.page_map) < total_vectorized_pages
+                and total_vectorized_pages > getattr(search_engine, "_last_reload_vectorized", -1)):
+            search_engine._last_reload_vectorized = total_vectorized_pages
             search_engine.reload()
 
         return {
@@ -1143,6 +1204,10 @@ class BirthChartRequest(BaseModel):
     place_name: str = Field(max_length=200)
     gender: Gender = "male"
     ayanamsa: AyanamsaName = "Lahiri"
+    # Optional UTC offset in hours (e.g. -4.0 for US Eastern DST). When provided
+    # it overrides the engine's DST-unaware bounding-box estimate, which is
+    # essential for correct charts at births outside India / during DST.
+    timezone_offset: Optional[float] = Field(default=None, ge=-14.0, le=14.0)
     # system/timing are accepted for forward-compat but unused by the backend
     # (the chart is always Parashara/Vimshottari); cap length, don't constrain.
     system: str = Field(default="Parashara", max_length=40)
@@ -1282,7 +1347,8 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
     try:
         chart = get_astrological_chart(
             req.year, req.month, req.day, req.hour, req.minute,
-            req.longitude, req.latitude, req.ayanamsa, gender=req.gender
+            req.longitude, req.latitude, req.ayanamsa,
+            timezone_offset=req.timezone_offset, gender=req.gender
         )
 
         # Save to user history if logged in
@@ -1334,11 +1400,13 @@ def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
     try:
         male_chart = get_astrological_chart(
             req.male.year, req.male.month, req.male.day, req.male.hour, req.male.minute,
-            req.male.longitude, req.male.latitude, req.male.ayanamsa, gender=req.male.gender
+            req.male.longitude, req.male.latitude, req.male.ayanamsa,
+            timezone_offset=req.male.timezone_offset, gender=req.male.gender
         )
         female_chart = get_astrological_chart(
             req.female.year, req.female.month, req.female.day, req.female.hour, req.female.minute,
-            req.female.longitude, req.female.latitude, req.female.ayanamsa, gender=req.female.gender
+            req.female.longitude, req.female.latitude, req.female.ayanamsa,
+            timezone_offset=req.female.timezone_offset, gender=req.female.gender
         )
         compatibility = calculate_marriage_compatibility(male_chart, female_chart)
         
@@ -2506,11 +2574,15 @@ def _verify_webhook_signature(raw_body, signature, secret=None):
     return hmac.compare_digest(expected, signature or "")
 
 
-def _grant_credits_for_order(order_id, payment_id, gateway):
+def _grant_credits_for_order(order_id, payment_id, gateway, expected_user_id=None):
     """Atomically flip a pending transaction to 'succeeded' and credit the user
     exactly once. Idempotent: the verify-payment callback and the webhook both
     call this for the same order, and whichever wins the status flip grants the
     credits; the loser is a no-op. Returns (granted: bool, credits: int|None).
+
+    When `expected_user_id` is provided (user-facing verify path), the order is
+    asserted to belong to that user before any credit is granted — an IDOR guard.
+    The webhook path passes None (it has no session user; HMAC is the gate).
     """
     conn = connect_db(DB_PATH)
     try:
@@ -2524,6 +2596,9 @@ def _grant_credits_for_order(order_id, payment_id, gateway):
             conn.rollback()
             return (False, None)
         txn_id, user_id, credits, status = row[0], row[1], row[2], row[3]
+        if expected_user_id is not None and user_id != expected_user_id:
+            conn.rollback()
+            raise HTTPException(status_code=403, detail="Order does not belong to this account.")
         if status == "succeeded":
             conn.rollback()
             return (False, credits)  # already credited — idempotent no-op
@@ -2550,7 +2625,7 @@ def _grant_credits_for_order(order_id, payment_id, gateway):
         conn.close()
 
 
-def _apply_subscription_charge(subscription_id, payment_id):
+def _apply_subscription_charge(subscription_id, payment_id, expected_user_id=None):
     """Activate/renew an Astro Pass on a successful Razorpay charge, exactly once.
 
     Idempotent on `payment_id` via the transactions UNIQUE key: the verify
@@ -2558,6 +2633,10 @@ def _apply_subscription_charge(subscription_id, payment_id):
     both call this; whichever records the payment first extends the access
     window by SUBSCRIPTION_PERIOD_DAYS and grants the per-cycle refill. Returns
     (applied: bool, user_id: int|None).
+
+    When `expected_user_id` is provided (user-facing verify path), the
+    subscription is asserted to belong to that user — an IDOR guard. The webhook
+    path passes None (it has no session user; HMAC is the gate).
     """
     conn = connect_db(DB_PATH)
     try:
@@ -2572,6 +2651,9 @@ def _apply_subscription_charge(subscription_id, payment_id):
             conn.rollback()
             return (False, None)
         user_id, period_end_str = sub[0], sub[1]
+        if expected_user_id is not None and user_id != expected_user_id:
+            conn.rollback()
+            raise HTTPException(status_code=403, detail="Subscription does not belong to this account.")
         # Idempotency: a payment we've already booked is a no-op (webhook retry
         # or callback+webhook race). INSERT fails on the UNIQUE payment id.
         try:
@@ -2745,7 +2827,8 @@ def verify_payment(req: VerifyPaymentRequest, request: Request):
         raise HTTPException(status_code=400, detail="Invalid payment signature.")
 
     granted, credits = _grant_credits_for_order(
-        req.razorpay_order_id, req.razorpay_payment_id, "razorpay"
+        req.razorpay_order_id, req.razorpay_payment_id, "razorpay",
+        expected_user_id=user["id"],
     )
     if credits is None:
         raise HTTPException(status_code=404, detail="Unknown order.")
@@ -2827,7 +2910,8 @@ def verify_subscription(req: VerifySubscriptionRequest, request: Request):
         raise HTTPException(status_code=400, detail="Invalid subscription signature.")
 
     applied, uid = _apply_subscription_charge(
-        req.razorpay_subscription_id, req.razorpay_payment_id
+        req.razorpay_subscription_id, req.razorpay_payment_id,
+        expected_user_id=user["id"],
     )
     if uid is None:
         raise HTTPException(status_code=404, detail="Unknown subscription.")
@@ -2895,21 +2979,24 @@ def billing_subscribe(req: SubscribeRequest, request: Request):
     cursor = conn.cursor()
     # Update or insert subscription
     cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user["id"],))
+    # Write platform_subscription_id (the column the Razorpay path uses) so the
+    # active-subscription check and any reconciliation see a consistent shape,
+    # and use the config-driven refill amount instead of a hardcoded 5000.
     cursor.execute("""
-        INSERT INTO subscriptions (user_id, stripe_subscription_id, status, tier, current_period_end)
-        VALUES (?, ?, 'active', ?, ?)
+        INSERT INTO subscriptions (user_id, platform_subscription_id, platform, status, tier, current_period_end)
+        VALUES (?, ?, 'simulated', 'active', ?, ?)
     """, (user["id"], sub_id, req.tier, period_end))
-    
+
     # Grant refill credits
     cursor.execute("""
-        UPDATE users 
-        SET credit_balance = credit_balance + 5000 
+        UPDATE users
+        SET credit_balance = credit_balance + ?
         WHERE id = ?
-    """, (user["id"],))
+    """, (SUBSCRIPTION_REFILL_CREDITS, user["id"]))
     cursor.execute("""
         INSERT INTO credit_logs (user_id, amount, action_type, details)
-        VALUES (?, 5000, 'subscription_bonus', ?)
-    """, (user["id"], f"Credits added for {req.tier} subscription"))
+        VALUES (?, ?, 'subscription_bonus', ?)
+    """, (user["id"], SUBSCRIPTION_REFILL_CREDITS, f"Credits added for {req.tier} subscription"))
     
     conn.commit()
     conn.close()
@@ -3199,6 +3286,16 @@ def health_check():
     except Exception as e:
         status["database_error"] = str(e)
         code = 503
+
+    # Swiss Ephemeris precision: surface the Moshier fallback (no *.se1 files) so
+    # a degraded-accuracy deploy is visible. Not fatal — Moshier still produces
+    # charts — so this doesn't flip the probe to 503 on its own.
+    eph = ephemeris_status()
+    status["ephemeris"] = "ok" if eph["available"] else f"degraded: Moshier fallback (no ephe files in {eph['path']})"
+
+    # Indic PDF fonts: flag missing Noto faces (those languages would tofu).
+    missing_fonts = fonts_status()["missing_indic_fonts"]
+    status["pdf_fonts"] = "ok" if not missing_fonts else f"degraded: missing {', '.join(missing_fonts)}"
 
     # Lightweight reachability/auth probe of OpenRouter (lists models).
     try:

@@ -1,5 +1,43 @@
 import math
+import os
+import glob
+import logging
 import swisseph as swe
+
+from config import EPHE_PATH
+
+logger = logging.getLogger("vedic.astro")
+
+
+def _init_ephemeris():
+    """Point Swiss Ephemeris at an explicit data dir when one is present.
+
+    Returns True if the directory exists and holds `*.se1` data files (so the
+    high-precision ephemeris is in use), False if we're on the Moshier fallback.
+    Surfaced by app.py's /api/health so a missing-ephe deploy fails loud instead
+    of silently degrading chart accuracy.
+    """
+    try:
+        if os.path.isdir(EPHE_PATH) and glob.glob(os.path.join(EPHE_PATH, "*.se1")):
+            swe.set_ephe_path(EPHE_PATH)
+            return True
+        logger.warning(
+            "No Swiss Ephemeris data files (*.se1) found in %s — using the "
+            "lower-accuracy Moshier approximation. Set VEDIC_EPHE_PATH or place "
+            "the ephemeris files there for full precision.", EPHE_PATH
+        )
+    except Exception as e:  # pragma: no cover - defensive
+        logger.warning("Swiss Ephemeris path init failed: %s", e)
+    return False
+
+
+EPHEMERIS_AVAILABLE = _init_ephemeris()
+
+
+def ephemeris_status():
+    """Lightweight accessor for health checks: True = high-precision ephe in use."""
+    return {"available": EPHEMERIS_AVAILABLE, "path": EPHE_PATH}
+
 
 # Traditional Tamil Month Names
 TAMIL_MONTHS = [
@@ -2268,9 +2306,22 @@ def calculate_marriage_compatibility(male_chart, female_chart):
     rajju_score = 1.0 if rajju_match else 0.0
     
     # 4. Vedha Porutham
+    # Canonical Vedha (mutual-obstruction) nakshatra pairs, as in B.V. Raman's
+    # "Muhurtha" / standard panchangas. Indices are 0-based:
+    #   ( 0,17) Ashwini<->Jyeshtha     ( 1,16) Bharani<->Anuradha
+    #   ( 2,15) Krittika<->Vishakha    ( 3,14) Rohini<->Swati
+    #   ( 4,22) Mrigashira<->Dhanishta ( 5,21) Ardra<->Shravana
+    #   ( 6,20) Punarvasu<->U.Ashadha  ( 7,19) Pushya<->P.Ashadha
+    #   ( 8,18) Ashlesha<->Mula        ( 9,26) Magha<->Revati
+    #   (10,25) P.Phalguni<->U.Bhadra  (11,24) U.Phalguni<->P.Bhadra
+    #   (12,23) Hasta<->Shatabhisha
+    # Each nakshatra has at most ONE Vedha partner. Chitra (idx 13) is the lone
+    # unpaired nakshatra: its classical counterpart is Abhijit (the 28th), which
+    # the 27-nakshatra scheme does not enumerate. (13 pairs, not 14 — the old
+    # 14th entry was a spurious Mrigashira-Hasta-Dhanishta triangle.)
     vedha_pairs = {
-        (0, 17), (1, 16), (2, 15), (3, 14), (5, 21), (6, 20), (7, 19), (8, 18), (9, 26),
-        (10, 25), (11, 24), (12, 23), (4, 13), (13, 22), (4, 22)
+        (0, 17), (1, 16), (2, 15), (3, 14), (4, 22), (5, 21), (6, 20),
+        (7, 19), (8, 18), (9, 26), (10, 25), (11, 24), (12, 23)
     }
     pair = (min(male_idx, female_idx), max(male_idx, female_idx))
     vedha_match = pair not in vedha_pairs

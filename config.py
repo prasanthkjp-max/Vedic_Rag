@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.15.0"
+VERSION = "1.15.1"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -66,6 +66,12 @@ DB_RAG_PATH = os.environ.get("VEDIC_RAG_DB_PATH", os.path.join(BASE_DIR, "vedic_
 
 # Backwards compatibility alias pointing to user database
 DB_PATH = DB_USER_PATH
+
+# Swiss Ephemeris data directory. If it contains the `se*.se1` data files the
+# engine uses high-precision ephemerides; otherwise pyswisseph silently falls
+# back to the lower-accuracy Moshier approximation. Override with VEDIC_EPHE_PATH
+# to point at a system install (e.g. /usr/share/ephe).
+EPHE_PATH = os.environ.get("VEDIC_EPHE_PATH", os.path.join(BASE_DIR, "ephe"))
 
 # Repo-relative default so a fresh checkout works without a foreign absolute
 # path; override with VEDIC_BOOKS_DIR for a real corpus location.
