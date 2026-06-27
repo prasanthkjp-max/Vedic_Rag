@@ -7,8 +7,14 @@ __pycache__
 *.pyd
 .env
 .api_key
+node_modules
+android
 server.log
 server_error.log
 server_test.log
 birth_chart_report.pdf
-vedic_astrology_rag.db
+source.tar.gz
+*.db
+*.db-wal
+*.db-shm
+*.bak

@@ -44,3 +44,4 @@ android/app/build/
 android/local.properties
 android/app/release/
 *.aab
+source.tar.gz
