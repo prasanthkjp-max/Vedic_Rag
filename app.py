@@ -60,6 +60,7 @@ from config import (
     LLM_STREAM_TIMEOUT,
     EMBEDDING_DIM,
     API_KEY,
+    REQUIRE_API_KEY,
     GOOGLE_OAUTH_CLIENT_ID,
     FACEBOOK_APP_ID,
     FACEBOOK_APP_SECRET,
@@ -125,40 +126,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Endpoints reachable without an API key: the readiness/version probes and the
-# OPTIONS preflight. Everything else under /api/ requires the key.
-_OPEN_API_PATHS = {
-    "/api/version",
-    "/api/health",
-    "/api/live",
-    "/api/local-key",
-    "/api/detect-location",
-    "/api/auth/signup",
-    "/api/auth/login",
-    "/api/auth/oauth",
-    "/api/auth/logout",
-    "/api/auth/me",
-    "/api/billing/buy-credits",
-    "/api/billing/create-order",
-    "/api/billing/verify-payment",
-    "/api/billing/create-subscription",
-    "/api/billing/verify-subscription",
-    "/api/billing/webhook",
-    "/api/billing/usage",
-    "/api/billing/subscribe",
-    "/api/billing/cancel-subscription"
-}
+# Endpoints kept behind the shared operator API key even on a public deployment:
+# they expose the classical-text corpus or ingest internals (the data moat).
+# Everything ELSE under /api/ is intentionally NOT key-gated — user actions are
+# metered per-user by session tokens + credits (401/402), and panchangam/version/
+# health are meant to be public. Gating the whole API behind the shared key was
+# what prompted every new visitor for a key on a fresh browser. Matched by exact
+# path or as a "<prefix>/..." path-segment prefix (covers /api/page-image/{id}/…).
+_KEY_PROTECTED_PREFIXES = (
+    "/api/search",
+    "/api/page-image",
+    "/api/page-text",
+    "/api/status",
+    "/api/books",
+)
+
+
+def _is_key_protected(path: str) -> bool:
+    return any(path == p or path.startswith(p + "/") for p in _KEY_PROTECTED_PREFIXES)
 
 
 @app.middleware("http")
 async def api_key_guard(request: Request, call_next):
-    """Gate every /api/* call behind the shared API_KEY.
+    """Gate only the corpus/admin endpoints (_KEY_PROTECTED_PREFIXES) behind the
+    shared operator API_KEY; everything else under /api/ passes through.
 
-    Skips non-API routes (the static frontend), CORS preflight (OPTIONS) and the
-    handful of bootstrap/auth paths in _OPEN_API_PATHS. The key may be supplied
-    as the X-API-Key header or an api_key query parameter. The frontend fetches
-    it once from the loopback-only /api/local-key (or prompts for it) and then
-    sends it automatically.
+    Rationale: this is a multi-user app — per-user actions are authenticated by
+    session tokens + credits (401/402), and panchangam/version/health are public.
+    The shared key now exists only to keep the OCR'd corpus (/api/search,
+    /api/page-*, /api/status, /api/books) from being scraped. Disable it entirely
+    with VEDIC_REQUIRE_API_KEY=0. The key may be supplied as the X-API-Key header
+    or an api_key query parameter; the frontend fetches it from the loopback-only
+    /api/local-key when self-hosting.
 
     Returns 403 (not 401) on failure so it stays distinct from a 401 "session
     expired", which the UI handles differently. The marker header lets the client
@@ -166,9 +165,9 @@ async def api_key_guard(request: Request, call_next):
     """
     path = request.url.path
     if (
-        request.method != "OPTIONS"
-        and path.startswith("/api/")
-        and path not in _OPEN_API_PATHS
+        REQUIRE_API_KEY
+        and request.method != "OPTIONS"
+        and _is_key_protected(path)
     ):
         supplied = request.headers.get("x-api-key") or request.query_params.get("api_key")
         if not supplied or not secrets.compare_digest(supplied, API_KEY):

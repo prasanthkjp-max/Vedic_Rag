@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.15.5"
+VERSION = "1.16.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -377,3 +377,12 @@ def _load_api_key():
 
 
 API_KEY = _load_api_key()
+
+# Whether the shared operator API key gates the corpus/admin endpoints
+# (/api/search, /api/page-*, /api/status, /api/books). The rest of /api is
+# protected per-user by session tokens + credits, or is intentionally public
+# (panchangam, version, health), so it is NOT key-gated — that's what made new
+# visitors get prompted for a key on every fresh browser. Set
+# VEDIC_REQUIRE_API_KEY=0 to drop the operator key entirely (e.g. if the corpus
+# endpoints are fine to expose). Default on, so the OCR'd corpus stays private.
+REQUIRE_API_KEY = os.environ.get("VEDIC_REQUIRE_API_KEY", "1") == "1"

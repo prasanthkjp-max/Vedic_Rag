@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.16.0]
+
+### Changed
+- **Shared API key no longer gates the whole API — only the corpus/admin
+  endpoints.** Previously every `/api/*` call (except a few open paths) required
+  the operator key, so a new visitor on a fresh browser was prompted for a key on
+  page load (the loopback-only `/api/local-key` can't reach a remote user). The
+  key now gates **only** `/api/search`, `/api/page-image`, `/api/page-text`,
+  `/api/status`, `/api/books` (the OCR'd corpus / ingest internals). Everything
+  else is either public (panchangam, version, health) or already protected
+  per-user by session tokens + credits (401/402) — so ordinary visitors are never
+  prompted. The frontend's key prompt is lazy and now effectively never fires for
+  end users. New flag `VEDIC_REQUIRE_API_KEY` (default `1`); set `0` to drop the
+  operator key entirely and make the corpus endpoints public too.
+
 ## [1.15.5]
 
 ### Added
