@@ -175,6 +175,8 @@ class VedicSearchEngine:
                 cursor.execute("SELECT book_id, page_num, raw_text, embedding FROM pages")
                 rows = cursor.fetchall()
 
+                page_map = []
+                emb_list = []
                 mismatched_count = 0
                 mismatched_dims = set()
 

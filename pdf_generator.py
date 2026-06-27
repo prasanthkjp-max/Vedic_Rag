@@ -10,13 +10,27 @@ from reportlab.pdfbase.ttfonts import TTFont
 # Single source of truth for panchangam value translations (shared with the
 # frontend via tools/gen_frontend_i18n.py). See translations.py.
 from translations import NAKSHATRA, YOGAM, KARANA
+from config import BASE_DIR
 
 logger = logging.getLogger("vedic.pdf")
 
 # Set of successfully registered fonts (with standard fallback cores always available)
 REGISTERED_FONTS = set(['Helvetica', 'Helvetica-Bold', 'Times-Roman', 'Times-Bold', 'Courier', 'Courier-Bold'])
 
-def safe_register_font(name, path):
+# Resolve font files from a repo-bundled dir first (so the required Noto faces
+# can ship with the app and render Indic scripts on any host), then fall back to
+# the system Noto install. Override the system dir with VEDIC_FONT_DIR.
+BUNDLED_FONT_DIR = os.path.join(BASE_DIR, "fonts")
+SYSTEM_FONT_DIR = os.environ.get("VEDIC_FONT_DIR", "/usr/share/fonts/truetype/noto")
+
+def _font_path(filename):
+    bundled = os.path.join(BUNDLED_FONT_DIR, filename)
+    if os.path.exists(bundled):
+        return bundled
+    return os.path.join(SYSTEM_FONT_DIR, filename)
+
+def safe_register_font(name, filename):
+    path = _font_path(filename)
     try:
         if os.path.exists(path):
             pdfmetrics.registerFont(TTFont(name, path))
@@ -28,27 +42,48 @@ def safe_register_font(name, path):
         return False
 
 # Register NotoSans
-safe_register_font('NotoSans', '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf')
-safe_register_font('NotoSansBold', '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf')
+safe_register_font('NotoSans', 'NotoSans-Regular.ttf')
+safe_register_font('NotoSansBold', 'NotoSans-Bold.ttf')
 
 PRIMARY_REGULAR = 'NotoSans' if 'NotoSans' in REGISTERED_FONTS else 'Helvetica'
 PRIMARY_BOLD = 'NotoSansBold' if 'NotoSansBold' in REGISTERED_FONTS else 'Helvetica-Bold'
 
 # Register Noto Indic script fonts individually
-safe_register_font('Noto-Telugu', '/usr/share/fonts/truetype/noto/NotoSansTelugu-Regular.ttf')
-safe_register_font('Noto-Telugu-Bold', '/usr/share/fonts/truetype/noto/NotoSansTelugu-Bold.ttf')
+safe_register_font('Noto-Telugu', 'NotoSansTelugu-Regular.ttf')
+safe_register_font('Noto-Telugu-Bold', 'NotoSansTelugu-Bold.ttf')
 
-safe_register_font('Noto-Tamil', '/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf')
-safe_register_font('Noto-Tamil-Bold', '/usr/share/fonts/truetype/noto/NotoSansTamil-Bold.ttf')
+safe_register_font('Noto-Tamil', 'NotoSansTamil-Regular.ttf')
+safe_register_font('Noto-Tamil-Bold', 'NotoSansTamil-Bold.ttf')
 
-safe_register_font('Noto-Devanagari', '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf')
-safe_register_font('Noto-Devanagari-Bold', '/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf')
+safe_register_font('Noto-Devanagari', 'NotoSansDevanagari-Regular.ttf')
+safe_register_font('Noto-Devanagari-Bold', 'NotoSansDevanagari-Bold.ttf')
 
-safe_register_font('Noto-Kannada', '/usr/share/fonts/truetype/noto/NotoSansKannada-Regular.ttf')
-safe_register_font('Noto-Kannada-Bold', '/usr/share/fonts/truetype/noto/NotoSansKannada-Bold.ttf')
+safe_register_font('Noto-Kannada', 'NotoSansKannada-Regular.ttf')
+safe_register_font('Noto-Kannada-Bold', 'NotoSansKannada-Bold.ttf')
 
-safe_register_font('Noto-Malayalam', '/usr/share/fonts/truetype/noto/NotoSansMalayalam-Regular.ttf')
-safe_register_font('Noto-Malayalam-Bold', '/usr/share/fonts/truetype/noto/NotoSansMalayalam-Bold.ttf')
+safe_register_font('Noto-Malayalam', 'NotoSansMalayalam-Regular.ttf')
+safe_register_font('Noto-Malayalam-Bold', 'NotoSansMalayalam-Bold.ttf')
+
+# Indic scripts have NO glyphs in the Helvetica core fallback, so a missing Noto
+# face renders that language's PDF as blank/tofu. Track which scripts are
+# unavailable so startup warns and /api/health can flag a broken-PDF deploy.
+_REQUIRED_INDIC_FONTS = {
+    "Tamil": "Noto-Tamil", "Telugu": "Noto-Telugu", "Devanagari": "Noto-Devanagari",
+    "Kannada": "Noto-Kannada", "Malayalam": "Noto-Malayalam",
+}
+MISSING_INDIC_FONTS = sorted(
+    script for script, font in _REQUIRED_INDIC_FONTS.items() if font not in REGISTERED_FONTS
+)
+if MISSING_INDIC_FONTS:
+    logger.warning(
+        "Missing Noto fonts for %s — PDF reports in these languages will render "
+        "blank/tofu. Bundle the .ttf files in %s or install them under %s.",
+        ", ".join(MISSING_INDIC_FONTS), BUNDLED_FONT_DIR, SYSTEM_FONT_DIR,
+    )
+
+def fonts_status():
+    """Health accessor: which Indic scripts lack a usable font (empty = all OK)."""
+    return {"missing_indic_fonts": MISSING_INDIC_FONTS}
 
 def resolve_fonts(lang):
     """Dynamically select registered regular and bold fonts based on language preference."""

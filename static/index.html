@@ -3301,6 +3301,19 @@
             return response;
         }
 
+        // Fetch a third-party (non-API) URL with a hard timeout so a slow/down
+        // external service (Nominatim, ipapi) can never hang the UI. Returns the
+        // Response, or throws on timeout/network error for the caller to catch.
+        async function fetchExternal(url, options = {}, timeoutMs = 6000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
         const localization = {
             en: {
                 lbl_calculating_alignments: "Calculating Alignments...",
@@ -5171,7 +5184,7 @@
         async function reverseGeocode(lat, lon) {
             try {
                 const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
-                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                const res = await fetchExternal(url, { headers: { 'Accept': 'application/json' } });
                 if (!res.ok) return null;
                 const data = await res.json();
                 const a = data.address || {};
@@ -5186,7 +5199,7 @@
         // GPS fallback. Used for "future phone apps and supported devices" too.
         async function detectLocationByIP() {
             try {
-                const res = await fetch('https://ipapi.co/json/');
+                const res = await fetchExternal('https://ipapi.co/json/');
                 if (!res.ok) return false;
                 const d = await res.json();
                 if (typeof d.latitude !== 'number' || typeof d.longitude !== 'number') return false;
@@ -7073,7 +7086,7 @@
             
             try {
                 const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
-                const response = await fetch(url, {
+                const response = await fetchExternal(url, {
                     headers: {
                         'Accept': 'application/json',
                         'User-Agent': 'AntigravityAstrologyPortal/1.0'
@@ -7999,7 +8012,7 @@
             
             try {
                 const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
-                const response = await fetch(url, {
+                const response = await fetchExternal(url, {
                     headers: {
                         'Accept': 'application/json',
                         'User-Agent': 'AntigravityAstrologyPortal/1.0'
@@ -9133,7 +9146,12 @@
                     return;
                 }
                 try {
-                    const res = await fetch(`/api/search-places?q=${encodeURIComponent(query)}`);
+                    const res = await fetchExternal(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'AntigravityAstrologyPortal/1.0'
+                        }
+                    });
                     if (res.ok) {
                         const data = await res.json();
                         suggestionsDiv.innerHTML = '';
