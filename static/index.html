@@ -5208,15 +5208,16 @@
         }
 
         // IP-based lookup: no permission prompt, works on page load and as the
-        // GPS fallback. Used for "future phone apps and supported devices" too.
+        // GPS fallback. Routed through our own backend (/api/detect-location) so
+        // the visitor's browser never contacts the third-party geo service
+        // directly — only the server does, with the forwarded IP.
         async function detectLocationByIP() {
             try {
-                const res = await fetchExternal('https://ipapi.co/json/');
+                const res = await apiFetch('/api/detect-location', { timeoutMs: 6000 });
                 if (!res.ok) return false;
                 const d = await res.json();
-                if (typeof d.latitude !== 'number' || typeof d.longitude !== 'number') return false;
-                const name = [d.city, d.region || d.country_name].filter(Boolean).join(', ') || "Detected location";
-                await applyLocation(name, d.latitude, d.longitude, { state: d.region, country: d.country_code });
+                if (!d.detected || typeof d.latitude !== 'number' || typeof d.longitude !== 'number') return false;
+                await applyLocation(d.name || "Detected location", d.latitude, d.longitude, { state: d.state, country: d.country });
                 return true;
             } catch (e) { return false; }
         }

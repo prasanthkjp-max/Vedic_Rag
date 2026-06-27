@@ -132,6 +132,7 @@ _OPEN_API_PATHS = {
     "/api/health",
     "/api/live",
     "/api/local-key",
+    "/api/detect-location",
     "/api/auth/signup",
     "/api/auth/login",
     "/api/auth/oauth",
@@ -909,6 +910,60 @@ def get_local_key(request: Request):
     if client_host not in ("127.0.0.1", "::1", "localhost"):
         raise HTTPException(status_code=403, detail="Forbidden: Local access only")
     return {"api_key": API_KEY}
+
+
+def _client_ip(request: Request):
+    """Best-effort public client IP for geolocation.
+
+    Honours the first hop of X-Forwarded-For / X-Real-IP (set by reverse
+    proxies); falls back to the socket peer. Returns "" for private/loopback
+    addresses so the caller geolocates the server's own egress IP instead.
+    """
+    import ipaddress
+    fwd = request.headers.get("x-forwarded-for", "")
+    candidate = (fwd.split(",")[0].strip() if fwd
+                 else request.headers.get("x-real-ip", "").strip()
+                 or (request.client.host if request.client else ""))
+    try:
+        ip = ipaddress.ip_address(candidate)
+        if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+            return ""
+        return candidate
+    except ValueError:
+        return ""
+
+
+@app.get("/api/detect-location")
+def detect_location(request: Request):
+    """Server-side IP geolocation proxy.
+
+    Privacy: the browser no longer calls ipapi.co directly, so the third party
+    never sees the visitor's User-Agent / headers / referrer / cookies — only an
+    opaque server request carrying the forwarded IP. Centralising it here also
+    lets us bound it with a timeout and a sane fallback. Best-effort: returns
+    {detected:false} on any failure so the frontend just keeps its default.
+    """
+    ip = _client_ip(request)
+    url = f"https://ipapi.co/{ip}/json/" if ip else "https://ipapi.co/json/"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "VedicRagPortal/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        lat, lon = data.get("latitude"), data.get("longitude")
+        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            return {"detected": False}
+        name = ", ".join(p for p in (data.get("city"), data.get("region") or data.get("country_name")) if p) or "Detected location"
+        return {
+            "detected": True,
+            "latitude": lat,
+            "longitude": lon,
+            "name": name,
+            "state": data.get("region"),
+            "country": data.get("country_code"),
+        }
+    except Exception as e:
+        logger.warning("IP geolocation lookup failed: %s", e)
+        return {"detected": False}
 
 @app.get("/api/status")
 def get_status():

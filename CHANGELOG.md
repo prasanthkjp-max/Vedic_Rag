@@ -28,18 +28,23 @@ All notable changes to this project are documented here. Versions follow
   vectorized-page count actually grows, so mismatched-dimension rows no longer
   trigger a full corpus `SELECT` on every status poll.
 - **Marriage Vedha Porutham had a non-standard triangle.** The `vedha_pairs` set
-  made Mrigashira, Hasta and Dhanishta mutually Vedha (15 pairs). Removed the two
-  spurious edges so each nakshatra has at most one Vedha partner (the canonical
-  Mrigashira↔Dhanishta and Hasta↔Shatabhisha pairs are retained).
+  made Mrigashira, Hasta and Dhanishta mutually Vedha. Replaced it with the
+  canonical 13-pair Vedha list (per B.V. Raman's *Muhurtha* / standard
+  panchangas); each nakshatra now has at most one Vedha partner and Chitra is
+  correctly left unpaired (its counterpart Abhijit is the unenumerated 28th).
 - **Swiss Ephemeris ran silently on the Moshier fallback.** `astro_engine` now
   calls `swe.set_ephe_path(EPHE_PATH)` when `*.se1` data files are present and
   warns at startup otherwise; `/api/health` reports `ephemeris: ok|degraded`.
 - **Indic PDF fonts failed silently.** Font files now resolve from a bundled
   `fonts/` dir (then the system Noto dir, overridable via `VEDIC_FONT_DIR`);
   missing Indic faces warn at startup and surface as `pdf_fonts` in `/api/health`.
-- **Third-party browser calls could hang the UI.** Nominatim and ipapi.co
-  lookups now go through a `fetchExternal` helper with a 6s timeout so a slow/down
-  external service no longer stalls the page.
+- **Third-party browser calls could hang the UI.** Nominatim lookups now go
+  through a `fetchExternal` helper with a 6s timeout so a slow/down external
+  service no longer stalls the page.
+- **IP-geolocation privacy.** The browser no longer calls `ipapi.co` directly;
+  IP geolocation is proxied through a new server-side `GET /api/detect-location`
+  (honours `X-Forwarded-For`, 5s timeout, fails soft). The third party now sees
+  only an opaque server request, not the visitor's User-Agent/headers/cookies.
 
 ### Changed
 - `users.credit_balance` column default is now `SIGNUP_BONUS_CREDITS` (25)

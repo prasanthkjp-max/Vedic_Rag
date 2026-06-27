@@ -2306,10 +2306,19 @@ def calculate_marriage_compatibility(male_chart, female_chart):
     rajju_score = 1.0 if rajju_match else 0.0
     
     # 4. Vedha Porutham
-    # Each nakshatra has at most ONE Vedha (mutual-obstruction) partner. Indices
-    # are 0-based; e.g. (4, 22) = Mrigashira <-> Dhanishta, (12, 23) = Hasta <->
-    # Shatabhisha. Chitra (idx 13) has no Vedha partner in the 27-nakshatra
-    # scheme (its classical counterpart Abhijit is not enumerated here).
+    # Canonical Vedha (mutual-obstruction) nakshatra pairs, as in B.V. Raman's
+    # "Muhurtha" / standard panchangas. Indices are 0-based:
+    #   ( 0,17) Ashwini<->Jyeshtha     ( 1,16) Bharani<->Anuradha
+    #   ( 2,15) Krittika<->Vishakha    ( 3,14) Rohini<->Swati
+    #   ( 4,22) Mrigashira<->Dhanishta ( 5,21) Ardra<->Shravana
+    #   ( 6,20) Punarvasu<->U.Ashadha  ( 7,19) Pushya<->P.Ashadha
+    #   ( 8,18) Ashlesha<->Mula        ( 9,26) Magha<->Revati
+    #   (10,25) P.Phalguni<->U.Bhadra  (11,24) U.Phalguni<->P.Bhadra
+    #   (12,23) Hasta<->Shatabhisha
+    # Each nakshatra has at most ONE Vedha partner. Chitra (idx 13) is the lone
+    # unpaired nakshatra: its classical counterpart is Abhijit (the 28th), which
+    # the 27-nakshatra scheme does not enumerate. (13 pairs, not 14 — the old
+    # 14th entry was a spurious Mrigashira-Hasta-Dhanishta triangle.)
     vedha_pairs = {
         (0, 17), (1, 16), (2, 15), (3, 14), (4, 22), (5, 21), (6, 20),
         (7, 19), (8, 18), (9, 26), (10, 25), (11, 24), (12, 23)
