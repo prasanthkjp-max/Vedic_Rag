@@ -50,6 +50,7 @@ from muhurtham_engine import calculate_muhurtham
 from datetime import date
 from config import (
     VERSION,
+    BASE_DIR,
     DB_PATH,
     DB_RAG_PATH,
     BOOKS_DIR,
@@ -3247,6 +3248,61 @@ def mark_chart_saved(chart_id: int, request: Request):
 def get_version():
     """Report the running application version."""
     return {"name": "Vedic Astrology AI RAG Portal", "version": VERSION}
+
+
+# Cache the resolved source-archive path for the process lifetime so we don't
+# re-run `git archive` on every download.
+_SOURCE_ARCHIVE_CACHE = {"path": None}
+
+
+def _source_archive_path():
+    """Resolve a .tar.gz of the complete corresponding source, or None.
+
+    Prod (Docker): a tarball baked into the image at build time
+    (BASE_DIR/source.tar.gz) — the image has no `.git`/git binary.
+    Dev: generated once via `git archive HEAD`, which includes ONLY tracked
+    files, so gitignored secrets (.env, .api_key, *.db) can never leak.
+    """
+    prebuilt = os.path.join(BASE_DIR, "source.tar.gz")
+    if os.path.exists(prebuilt):
+        return prebuilt
+    cached = _SOURCE_ARCHIVE_CACHE.get("path")
+    if cached and os.path.exists(cached):
+        return cached
+    try:
+        import subprocess
+        out = os.path.join(tempfile.gettempdir(), "vedic_source.tar.gz")
+        subprocess.run(
+            ["git", "archive", "--format=tar.gz", "-o", out, "HEAD"],
+            cwd=BASE_DIR, check=True, capture_output=True, timeout=60,
+        )
+        _SOURCE_ARCHIVE_CACHE["path"] = out
+        return out
+    except Exception as e:
+        logger.warning("Could not build source archive on demand: %s", e)
+        return None
+
+
+@app.get("/api/source")
+def get_source():
+    """Serve the complete corresponding source of the running version.
+
+    Fulfils the AGPL §13 network-use clause directly (a stronger offer than
+    "on request"): any user can download the exact source, free of charge. Public
+    by design — not key-gated and not session-gated. Falls back to a 503 pointing
+    at the contact address if the archive can't be produced.
+    """
+    path = _source_archive_path()
+    if not path:
+        raise HTTPException(
+            status_code=503,
+            detail="Source archive temporarily unavailable. Request it at source@vedicastroai.net.",
+        )
+    return FileResponse(
+        path,
+        media_type="application/gzip",
+        filename=f"vedic-astro-source-{VERSION}.tar.gz",
+    )
 
 @app.get("/api/live")
 def liveness_probe():

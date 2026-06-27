@@ -32,6 +32,20 @@ RUN mkdir -p /app/static /app/data /app/books
 # Copy the rest of the application files (filtered via .dockerignore)
 COPY . .
 
+# Build the AGPL "corresponding source" tarball served by GET /api/source. The
+# image has no .git/git (stripped by .dockerignore), so bake it at build time.
+# The build context already excludes secrets (.env/.api_key) and .git; we also
+# drop runtime data, the corpus DBs, the books, caches and the archive itself.
+RUN tar -czf /app/source.tar.gz \
+      --exclude=./source.tar.gz \
+      --exclude=./.git --exclude=./.env --exclude=./.api_key \
+      --exclude=./node_modules --exclude=./.venv --exclude=./android \
+      --exclude=./data --exclude=./books \
+      --exclude='*.db' --exclude='*.db-wal' --exclude='*.db-shm' --exclude='*.bak' \
+      --exclude='*.log' \
+      --exclude=./__pycache__ --exclude='*.pyc' \
+      . && echo "source.tar.gz: $(du -h /app/source.tar.gz | cut -f1)"
+
 # Expose the port uvicorn runs on
 EXPOSE 8008
 

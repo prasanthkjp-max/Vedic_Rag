@@ -142,9 +142,10 @@ free option; the alternative is to purchase the professional license (see
 
 **Network-use obligation (AGPL §13):** a public/hosted instance must make the
 **complete corresponding source code** available to its users. This repository is
-**private**, so the app does not link to it; instead the in-app footer offers the
-source **on request** at `source@vedicastroai.net` — that mailbox must be live and
-must deliver the exact corresponding source of the running version, free of
-charge, to satisfy §13. (A self-hosted source download would be a stronger offer
-if you'd rather not field requests.) Running it commercially is allowed; refusing
-your users the source is not.
+**private**, so the app does not link to it; instead it serves the exact source
+of the running version directly at **`GET /api/source`** (a versioned `.tar.gz`),
+linked from the in-app footer as "Download source". The archive is built from
+`git archive HEAD` in dev and baked into the Docker image at build time for prod
+(the image has no git) — either way it contains only tracked files, so secrets
+(`.env`, `.api_key`, `*.db`) are never included. Running it commercially is
+allowed; refusing your users the source is not.

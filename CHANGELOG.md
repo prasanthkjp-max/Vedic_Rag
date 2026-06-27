@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.16.2]
+
+### Added
+- **`GET /api/source` — automated AGPL §13 source offer.** Serves the complete
+  corresponding source of the running version as a versioned `.tar.gz`, free of
+  charge and with no auth (public; not key- or session-gated). The footer now
+  links to it as "Download source" (replacing the email-on-request offer). Built
+  from `git archive HEAD` in dev and baked into the Docker image at build time
+  for prod (the image has no `git`); either path includes only tracked files, so
+  `.env`/`.api_key`/`*.db` can never leak. `source.tar.gz` is gitignored.
+
 ## [1.16.1]
 
 ### Changed

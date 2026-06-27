@@ -94,6 +94,23 @@ check("apikey: /api/search IS key-gated", app._is_key_protected("/api/search") i
 check("apikey: /api/page-image/1/2 IS key-gated (prefix)", app._is_key_protected("/api/page-image/1/2") is True)
 check("apikey: /api/books IS key-gated", app._is_key_protected("/api/books") is True)
 check("apikey: /api/calculate-chart is not key-gated (session-gated instead)", app._is_key_protected("/api/calculate-chart") is False)
+# /api/source must be public (AGPL §13) — neither key- nor corpus-gated.
+check("source: /api/source is not key-gated", app._is_key_protected("/api/source") is False)
+
+# Source archive (AGPL §13): builds a valid tarball with the source but NO secrets.
+import tarfile as _tarfile
+_src_path = app._source_archive_path()
+check("source: archive path resolves", bool(_src_path) and os.path.exists(_src_path))
+if _src_path and os.path.exists(_src_path):
+    _tf = _tarfile.open(_src_path, "r:gz")
+    _names = _tf.getnames()
+    _tf.close()
+    # strip any leading "./" git-archive prefixes for matching
+    _norm = {n[2:] if n.startswith("./") else n for n in _names}
+    check("source: archive contains app.py", "app.py" in _norm)
+    check("source: archive contains LICENSE", "LICENSE" in _norm)
+    _leaks = [n for n in _names if n.endswith(".env") or ".api_key" in n or n.endswith(".db")]
+    check("source: archive leaks no secrets", _leaks == [])
 
 check("safe_slug: neutralises traversal", ".." not in app._safe_slug("../../etc/foo"))
 check("safe_slug: empty -> fallback", app._safe_slug("") == "chart")
