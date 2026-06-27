@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.15.4]
+
+### Added
+- **Bundled Swiss Ephemeris data (`ephe/`).** Ships `sepl_18.se1` + `semo_18.se1`
+  (Sun/planets + Moon, 1800–2399 CE) so the engine computes high-precision
+  positions instead of the Moshier fallback; `/api/health` reports
+  `ephemeris: ok`. Dates outside the range still fall back to Moshier per-call.
+  Swiss Ephemeris is used under the AGPL (see project `LICENSE`); the data files'
+  own notice is preserved in `ephe/LICENSE`, with details in `ephe/README.md`.
+
 ## [1.15.3]
 
 ### Added
