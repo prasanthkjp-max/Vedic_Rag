@@ -17,10 +17,13 @@ All notable changes to this project are documented here. Versions follow
   birth-chart forms.
 - **International charts ignored DST.** `BirthChartRequest` (and the marriage
   sub-requests) now accept an optional `timezone_offset` (hours) that overrides
-  the engine's DST-unaware bounding-box estimate; India/IST is unaffected.
+  the engine's DST-unaware bounding-box estimate; India/IST is unaffected. The
+  birth and marriage forms expose an optional **UTC Offset** field (blank = auto
+  estimate) so interactive users abroad can correct for DST, not just API callers.
 - **Billing verify IDOR hardening.** `verify-payment`/`verify-subscription` now
   assert the order/subscription belongs to the authenticated session user
   (403 otherwise) before crediting; the HMAC-verified webhook path is unchanged.
+  Covered by new ownership-guard unit tests in `test_unit.py`.
 - **`/api/status` index-reload churn.** The reload now fires only when the
   vectorized-page count actually grows, so mismatched-dimension rows no longer
   trigger a full corpus `SELECT` on every status poll.

@@ -228,6 +228,12 @@ def _sub_status(uid):
     c.close()
     return v
 
+def _grant_status():
+    c = connect_db()
+    v = c.execute("SELECT status FROM transactions WHERE payment_intent_id='order_IDOR'").fetchone()[0]
+    c.close()
+    return v
+
 _conn = connect_db()
 _cur = _conn.cursor()
 _cur.execute("INSERT INTO users (email, credit_balance) VALUES ('subrenew@test', 0)")
@@ -258,6 +264,57 @@ check("sub: unknown subscription id is a no-op",
 # Lifecycle deactivation revokes the local pass.
 app._deactivate_subscription("sub_RENEW1", "cancelled")
 check("sub: deactivation sets terminal status", _sub_status(_subuid) == "cancelled")
+
+# ── billing IDOR guard: verify paths bind the order/sub to the session user ──
+from fastapi import HTTPException
+
+_conn = connect_db()
+_cur = _conn.cursor()
+_cur.execute("INSERT INTO users (email, credit_balance) VALUES ('idor_owner@test', 10)")
+_owner_id = _cur.lastrowid
+_cur.execute("INSERT INTO users (email, credit_balance) VALUES ('idor_attacker@test', 10)")
+_attacker_id = _cur.lastrowid
+# A pending order that belongs to the owner.
+_cur.execute(
+    "INSERT INTO transactions (user_id, payment_intent_id, amount_cents, currency, status, payment_gateway, credits) "
+    "VALUES (?, 'order_IDOR', 9900, 'INR', 'pending', 'razorpay', 500)",
+    (_owner_id,),
+)
+# A pending subscription that belongs to the owner.
+_cur.execute(
+    "INSERT INTO subscriptions (user_id, status, tier, current_period_end, platform, platform_subscription_id) "
+    "VALUES (?, 'created', 'astro', ?, 'razorpay', 'sub_IDOR')",
+    (_owner_id, datetime.datetime.utcnow().isoformat()),
+)
+_conn.commit()
+_conn.close()
+
+# Attacker (expected_user_id) tries to claim the owner's order -> 403, no credit.
+try:
+    app._grant_credits_for_order("order_IDOR", "pay_x", "razorpay", expected_user_id=_attacker_id)
+    _idor_blocked = False
+except HTTPException as e:
+    _idor_blocked = (e.status_code == 403)
+check("idor: grant rejects a mismatched user (403)", _idor_blocked)
+check("idor: attacker gained no credits", _balance_of(_attacker_id) == 10)
+check("idor: owner's order still pending (un-granted)",
+      _grant_status() == "pending" and _balance_of(_owner_id) == 10)
+
+# The rightful owner can still be granted (regression: guard doesn't over-block).
+_granted_ok, _credits = app._grant_credits_for_order(
+    "order_IDOR", "pay_ok", "razorpay", expected_user_id=_owner_id)
+check("idor: rightful owner is granted normally",
+      _granted_ok is True and _balance_of(_owner_id) == 510)
+
+# Same ownership guard on the subscription verify path.
+try:
+    app._apply_subscription_charge("sub_IDOR", "pay_sub_x", expected_user_id=_attacker_id)
+    _idor_sub_blocked = False
+except HTTPException as e:
+    _idor_sub_blocked = (e.status_code == 403)
+check("idor: subscription charge rejects a mismatched user (403)", _idor_sub_blocked)
+check("idor: owner's subscription still un-charged",
+      _sub_status(_owner_id) == "created")
 
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

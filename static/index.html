@@ -2758,6 +2758,10 @@
                             <input type="number" step="0.0001" id="in-lat" value="13.0827">
                         </div>
                         <div class="input-group">
+                            <label id="lbl-tz">UTC Offset (hours) <span style="opacity:.6;font-size:.8em">— optional; set for DST / births outside India</span></label>
+                            <input type="number" step="0.25" min="-12" max="14" id="in-tz" placeholder="Auto (estimate from location)">
+                        </div>
+                        <div class="input-group">
                             <label id="lbl-gender">Gender</label>
                             <select id="in-gender">
                                 <option value="male">Male</option>
@@ -3048,6 +3052,10 @@
                             <input type="text" id="in-m-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('male')">
                             <div id="m-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
+                        <div class="input-group">
+                            <label id="lbl-m-tz-txt">UTC Offset (hours) <span style="opacity:.6;font-size:.8em">— optional (DST/abroad)</span></label>
+                            <input type="number" step="0.25" min="-12" max="14" id="in-m-tz" placeholder="Auto">
+                        </div>
                     </div>
 
                     <!-- Female Native Details -->
@@ -3083,6 +3091,10 @@
                             <label id="lbl-f-pob-txt">Place of Birth</label>
                             <input type="text" id="in-f-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('female')">
                             <div id="f-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-f-tz-txt">UTC Offset (hours) <span style="opacity:.6;font-size:.8em">— optional (DST/abroad)</span></label>
+                            <input type="number" step="0.25" min="-12" max="14" id="in-f-tz" placeholder="Auto">
                         </div>
                     </div>
 
@@ -6425,6 +6437,13 @@
                 visual_style: style
             };
 
+            // Optional UTC offset: only send when the user filled it, so an
+            // empty field falls back to the backend's location estimate.
+            const tzRaw = document.getElementById('in-tz')?.value.trim();
+            if (tzRaw !== '' && tzRaw != null && !isNaN(parseFloat(tzRaw))) {
+                payload.timezone_offset = parseFloat(tzRaw);
+            }
+
             const btn = document.getElementById('lbl-btn-generate');
             const originalText = btn.innerText;
             // Guard against a double-click firing two paid (50-credit) requests
@@ -7761,7 +7780,13 @@
                 timing: document.getElementById('in-marriage-timing').value,
                 visual_style: document.getElementById('in-marriage-style').value
             };
-            
+
+            // Optional per-native UTC offset (DST/abroad); omit when left blank.
+            const mTz = document.getElementById('in-m-tz')?.value.trim();
+            if (mTz && !isNaN(parseFloat(mTz))) maleReq.timezone_offset = parseFloat(mTz);
+            const fTz = document.getElementById('in-f-tz')?.value.trim();
+            if (fTz && !isNaN(parseFloat(fTz))) femaleReq.timezone_offset = parseFloat(fTz);
+
             try {
                 const response = await apiFetch('/api/calculate-marriage', {
                     method: 'POST',
