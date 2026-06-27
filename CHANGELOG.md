@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.15.3]
+
+### Added
+- **Adopted GNU AGPL v3.0 (`LICENSE`).** The project is now formally licensed
+  under the AGPL — required (the free path) by its Swiss Ephemeris / `pyswisseph`
+  dependency, which is dual-licensed AGPL-or-paid. README gains a **License**
+  section noting the AGPL §13 network-use obligation (offer source to users of a
+  hosted instance). The alternative remains a paid Astrodienst Professional
+  License (see `ephe/LICENSE`) or removing Swiss Ephemeris.
+
 ## [1.15.2]
 
 ### Added
