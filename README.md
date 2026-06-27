@@ -128,3 +128,20 @@ All env-overridable (see `config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
   by default** (they would otherwise grant credits for free). Set
   `STRIPE_SECRET_KEY` to plug in a real integration, or
   `VEDIC_ALLOW_SIMULATED_PAYMENTS=1` for the local-dev simulation only.
+
+## License
+
+Copyright (C) 2026 Prasanth. This program is free software: licensed under the
+**GNU Affero General Public License v3.0** — see [`LICENSE`](LICENSE).
+
+This choice is driven by the astrology engine's dependency on **Swiss Ephemeris**
+(`pyswisseph`, and the bundled `ephe/*.se1` data), which is dual-licensed under
+the AGPL **or** a paid Astrodienst Professional License. Adopting the AGPL is the
+free option; the alternative is to purchase the professional license (see
+`ephe/LICENSE`) or remove Swiss Ephemeris entirely.
+
+**Network-use obligation (AGPL §13):** if you run this as a public/hosted
+service, you must make the **complete corresponding source code** available to
+your users (e.g. a "Source" link in the UI pointing to your repository or a
+download). Running it commercially is allowed; keeping the source secret from
+your users is not.
