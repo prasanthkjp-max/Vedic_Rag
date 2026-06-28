@@ -4470,7 +4470,7 @@
                 return "/assets/lord_murugar.png";
             }
             const mapping = {
-                "Ekadashi": "/assets/venkateswara_symbols.png",
+                "Ekadashi": "/assets/lord_venkateswara.png",
                 "Pradosham": "/assets/lord_shiva.png",
                 "Shivaratri": "/assets/lord_shiva.png",
                 "Ganesha Chaturthi": "/assets/lord_vinayaka.png",
@@ -4480,8 +4480,8 @@
                 "Rama Navami": "/assets/lord_rama.png",
                 "Hanuman Jayanti": "/assets/lord_hanuman.png",
                 "Durga Ashtami": "/assets/goddess_durga.png",
-                "Diwali": "/assets/diya.png",
-                "Marriage Muhurtham": "/assets/hindu_marriage_couple.png",
+                "Diwali": "/assets/diya_lamp.png",
+                "Marriage Muhurtham": "/assets/kalasam.png",
                 "Pongal / Sankranti": "/assets/pongal_pot.png",
                 "Vishu / Puthandu": "/assets/kalasam.png",
                 "Ugadi": "/assets/kalasam.png",
@@ -6014,7 +6014,7 @@
                     if (dayInfo.specialities && dayInfo.specialities.length > 0) {
                         const imgPath = getFestivalImage(dayInfo.specialities[0], currentLang);
                         if (imgPath) {
-                            festivalImgHtml = `<img src="${imgPath}?v=2" alt="${dayInfo.specialities[0]}" class="cell-fest-img" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                            festivalImgHtml = `<img src="${imgPath}?v=3" alt="${dayInfo.specialities[0]}" class="cell-fest-img" loading="lazy" decoding="async" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
                         }
                         specialityHtml = `<div class="cell-speciality">${translateSpeciality(dayInfo.specialities[0])}</div>`;
                     }
