@@ -1104,6 +1104,15 @@
         .calendar-cell.auspicious { border-color: rgba(234, 88, 12, 0.45); }
         .calendar-cell.inauspicious { border-color: rgba(220, 38, 38, 0.28); }
 
+        /* Quick fade when the grid swaps months (atomic, so no flicker).
+           Disabled automatically under prefers-reduced-motion (global rule). */
+        @keyframes calFadeIn { from { opacity: 0.4; } to { opacity: 1; } }
+        .calendar-grid.cal-fade { animation: calFadeIn 0.16s ease; }
+
+        /* Instant skeleton for an uncached month, before its data arrives. */
+        .calendar-cell.loading { background: rgba(255, 253, 245, 0.6); }
+        .calendar-cell.loading .cell-day-num { opacity: 0.55; }
+
         .cell-day-num {
             font-size: 18px;
             font-weight: 800;
@@ -5931,160 +5940,192 @@
         }
 
         // Renders the Monthly Calendar
-        async function renderMonthlyCalendar() {
-            const container = document.getElementById('calendar-grid-container');
-            if (!container) return;
-            
-            // Set header label
-            const monthNames = {
-                en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-                ta: ["ஜனவரி", "பிப்ரவரி", "மார்ச்", "ஏப்ரல்", "மே", "ஜூன்", "ஜூலை", "ஆகஸ்ட்", "செப்டம்பர்", "அக்டோபர்", "நவம்பர்", "டிசம்பர்"],
-                te: ["జనవరి", "ఫిబ్రవరి", "మార్చి", "ఏప్రిల్", "మే", "జూన్", "జూలై", "ఆగస్టు", "సెప్టెంబరు", "అక్టోబరు", "నవంబరు", "డిసెంబరు"],
-                ml: ["ജനുവരി", "ഫെബ്രുവരി", "മാർച്ച്", "ഏപ്രിൽ", "മേയ്", "ജൂൺ", "ജൂലൈ", "ആഗസ്റ്റ്", "സെപ്റ്റംബർ", "ഒക്ടോബർ", "നവംബർ", "ഡിസംബർ"],
-                kn: ["ಜನವರಿ", "ಫೆಬ್ರವರಿ", "ಮಾರ್ಚ್", "ಏಪ್ರಿಲ್", "ಮೇ", "ಜೂನ್", "ಜುಲೈ", "ಆಗಸ್ಟ್", "ಸೆಪ್ಟೆಂಬರ್", "ಅಕ್ಟೋಬರ್", "ನವೆಂಬರ್", "ಡಿಸೆಂಬರ್"],
-                hi: ["जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"]
-            };
-            document.getElementById('calendar-title-label').innerHTML = `${monthNames[currentLang][calendarMonth - 1]} ${calendarYear} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--accent-gold); margin-left: 4px;"></i>`;
-            
-            container.innerHTML = '';
-            
-            // Render Weekdays Column headers
-            const weekdayLabels = {
-                en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-                ta: ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"],
-                te: ["ఆది", "సోమ", "మంగళ", "బుధ", "గురు", "శుక్ర", "శని"],
-                ml: ["ഞായർ", "തിങ്കൾ", "ചൊവ്വ", "ബുധൻ", "വ്യാഴം", "വെള്ളി", "ശനി"],
-                kn: ["ಭಾನು", "ಸೋಮ", "ಮಂಗಳ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"],
-                hi: ["रवि", "सोम", "मंगल", "बुध", "गुरु", "शुक्र", "शनि"]
-            };
-            weekdayLabels[currentLang].forEach(label => {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day-header';
-                dayEl.innerText = label;
-                container.appendChild(dayEl);
-            });
-            
-            try {
-                // Fetch monthly panchangam from backend in batch (cached per month+lang)
-                const cacheKey = `${calendarYear}-${calendarMonth}-${currentLang}-${userLocation.lat},${userLocation.lon}`;
-                let data = monthPanchangamCache[cacheKey];
-                if (!data) {
-                    const res = await apiFetch(`/api/month-panchangam?year=${calendarYear}&month=${calendarMonth}&lang=${currentLang}&lat=${userLocation.lat}&lon=${userLocation.lon}`);
-                    if (!res.ok) {
-                        throw new Error(`HTTP error! status: ${res.status}`);
-                    }
-                    data = await res.json();
-                    if (!data || !data.days) {
-                        throw new Error("Invalid month-panchangam data structure");
-                    }
-                    monthPanchangamCache[cacheKey] = data;
-                }
+        // ── Calendar rendering ────────────────────────────────────────────
+        // A monotonically increasing token lets a newer render cancel a stale
+        // one, so overlapping month changes can never paint two months into the
+        // grid at once. Each render commits atomically via replaceChildren (no
+        // clear-then-async-append window). Uncached months paint an instant
+        // day-number skeleton, and adjacent months are prefetched, so changing
+        // month is never blocked on the network.
+        let calendarRenderToken = 0;
 
-                // Find day of the week for the 1st of the month
-                const firstDayDate = new Date(calendarYear, calendarMonth - 1, 1);
-                const startDayOfWeek = firstDayDate.getDay();
-                
-                // Render empty padded cells
-                for (let i = 0; i < startDayOfWeek; i++) {
-                    const emptyCell = document.createElement('div');
-                    emptyCell.className = 'calendar-cell empty';
-                    container.appendChild(emptyCell);
-                }
-                
-                // Render calculated daily cells
-                data.days.forEach(dayInfo => {
-                    const cell = document.createElement('div');
-                    
-                    // Determine classes
-                    const cellDateStr = `${calendarYear}-${String(calendarMonth).padStart(2, '0')}-${String(dayInfo.day).padStart(2, '0')}`;
-                    let classes = 'calendar-cell';
-                    if (cellDateStr === selectedPanchangamDate) {
-                        classes += ' active';
-                    }
-                    
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    if (cellDateStr === todayStr) {
-                        classes += ' today';
-                    }
-                    
-                    cell.className = classes;
-                    cell.setAttribute('data-date', cellDateStr);
-                    
-                    // Choose moon icon for Pournami and Amavasya
-                    let moonIconHtml = '';
+        const CAL_MONTH_NAMES = {
+            en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+            ta: ["ஜனவரி","பிப்ரவரி","மார்ச்","ஏப்ரல்","மே","ஜூன்","ஜூலை","ஆகஸ்ட்","செப்டம்பர்","அக்டோபர்","நவம்பர்","டிசம்பர்"],
+            te: ["జనవరి","ఫిబ్రవరి","మార్చి","ఏప్రిల్","మే","జూన్","జూలై","ఆగస్టు","సెప్టెంబరు","అక్టోబరు","నవంబరు","డిసెంబరు"],
+            ml: ["ജനുവരി","ഫെബ്രുവരി","മാർച്ച്","ഏപ്രിൽ","മേയ്","ജൂൺ","ജൂലൈ","ആഗസ്റ്റ്","സെപ്റ്റംബർ","ഒക്ടോബർ","നവംബർ","ഡിസംബർ"],
+            kn: ["ಜನವರಿ","ಫೆಬ್ರವರಿ","ಮಾರ್ಚ್","ಏಪ್ರಿಲ್","ಮೇ","ಜೂನ್","ಜುಲೈ","ಆಗಸ್ಟ್","ಸೆಪ್ಟೆಂಬರ್","ಅಕ್ಟೋಬರ್","ನವೆಂಬರ್","ಡಿಸೆಂಬರ್"],
+            hi: ["जनवरी","फरवरी","मार्च","अप्रैल","मई","जून","जुलाई","अगस्त","सितंबर","अक्टूबर","नवंबर","दिसंबर"]
+        };
+        const CAL_WEEKDAYS = {
+            en: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+            ta: ["ஞாயிறு","திங்கள்","செவ்வாய்","புதன்","வியாழன்","வெள்ளி","சனி"],
+            te: ["ఆది","సోమ","మంగళ","బుధ","గురు","శుక్ర","శని"],
+            ml: ["ഞായർ","തിങ്കൾ","ചൊവ്വ","ബുധൻ","വ്യാഴം","വെള്ളി","ശനി"],
+            kn: ["ಭಾನು","ಸೋಮ","ಮಂಗಳ","ಬುಧ","ಗುರು","ಶುಕ್ರ","ಶನಿ"],
+            hi: ["रवि","सोम","मंगल","बुध","गुरु","शुक्र","शनि"]
+        };
+
+        function _calCacheKey(year, month) {
+            return `${year}-${month}-${currentLang}-${userLocation.lat},${userLocation.lon}`;
+        }
+
+        // Build the full grid (headers + leading pad + day cells) as a detached
+        // fragment. `data` may be null -> a day-number-only skeleton.
+        function buildCalendarGrid(year, month, data) {
+            const frag = document.createDocumentFragment();
+            (CAL_WEEKDAYS[currentLang] || CAL_WEEKDAYS.en).forEach(label => {
+                const h = document.createElement('div');
+                h.className = 'calendar-day-header';
+                h.innerText = label;
+                frag.appendChild(h);
+            });
+
+            const startDayOfWeek = new Date(year, month - 1, 1).getDay();
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const e = document.createElement('div');
+                e.className = 'calendar-cell empty';
+                frag.appendChild(e);
+            }
+
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const todayStr = new Date().toISOString().split('T')[0];
+            const byDay = {};
+            if (data && data.days) data.days.forEach(d => { byDay[d.day] = d; });
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayInfo = byDay[day];
+                const cellDateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const cell = document.createElement('div');
+                let classes = 'calendar-cell';
+                if (cellDateStr === selectedPanchangamDate) classes += ' active';
+                if (cellDateStr === todayStr) classes += ' today';
+                if (!dayInfo) classes += ' loading';
+                cell.className = classes;
+                cell.setAttribute('data-date', cellDateStr);
+
+                let moonIconHtml = '', festivalImgHtml = '', specialityHtml = '', regionalDateHtml = '', naksHtml = '';
+                if (dayInfo) {
                     if (dayInfo.is_pournami) {
                         moonIconHtml = '<span class="cell-moon" style="color: #d97706; text-shadow: 0 0 8px rgba(217,119,6,0.6)">🌕</span>';
                     } else if (dayInfo.is_amavasya) {
                         moonIconHtml = '<span class="cell-moon" style="color: #64748b;">🌑</span>';
                     }
-                    
-                    // Check for festival image
-                    let festivalImgHtml = '';
-                    let specialityHtml = '';
                     if (dayInfo.specialities && dayInfo.specialities.length > 0) {
                         const imgPath = getFestivalImage(dayInfo.specialities[0], currentLang);
                         if (imgPath) {
                             festivalImgHtml = `<img src="${imgPath}?v=2" alt="${dayInfo.specialities[0]}" class="cell-fest-img" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
                         }
-                        const translatedSpec = translateSpeciality(dayInfo.specialities[0]);
-                        specialityHtml = `<div class="cell-speciality">${translatedSpec}</div>`;
+                        specialityHtml = `<div class="cell-speciality">${translateSpeciality(dayInfo.specialities[0])}</div>`;
                     }
-                    
-                    // Set Nakshatra abbreviation
                     const translatedNak = translateNakshatra(dayInfo.nakshatra);
                     const abbreviatedNak = translatedNak.slice(0, 5) + (translatedNak.length > 5 ? '.' : '');
-                    
-                    let regionalDateHtml = '';
+                    naksHtml = `<div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>`;
                     if (dayInfo.tamil_date) {
-                        const translatedReg = translateTamilMonth(dayInfo.tamil_date);
-                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translatedReg}</div>`;
+                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translateTamilMonth(dayInfo.tamil_date)}</div>`;
                     }
-                    
-                    cell.innerHTML = `
-                        <div class="calendar-cell-content" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; width: 100%;">
-                            <div class="cell-top" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                                <span class="cell-day-num">${dayInfo.day} ${moonIconHtml}</span>
-                                ${festivalImgHtml}
-                            </div>
-                            <div class="cell-mid" style="margin-top: 4px;">
-                                ${regionalDateHtml}
-                                <div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>
-                            </div>
-                            <div class="cell-bottom" style="margin-top: auto;">
-                                ${specialityHtml}
-                            </div>
+                }
+
+                cell.innerHTML = `
+                    <div class="calendar-cell-content" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; width: 100%;">
+                        <div class="cell-top" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                            <span class="cell-day-num">${day} ${moonIconHtml}</span>
+                            ${festivalImgHtml}
                         </div>
-                    `;
-                    
-                    cell.onclick = function() {
-                        // Click date action
-                        fetchDailyPanchangam(cellDateStr);
-                        
-                        // Set selected class in grid
-                        document.querySelectorAll('.calendar-cell').forEach(el => el.classList.remove('active'));
-                        cell.classList.add('active');
-                    };
-                    
-                    container.appendChild(cell);
-                });
-                
-            } catch (err) {
-                console.error("Monthly calendar rendering failed:", err);
-                const errorDiv = document.createElement('div');
-                errorDiv.style.gridColumn = "span 7";
-                errorDiv.style.textAlign = "center";
-                errorDiv.style.padding = "40px 10px";
-                errorDiv.style.color = "#dc2626";
-                errorDiv.style.fontFamily = "var(--font-heading)";
-                errorDiv.style.fontWeight = "600";
-                errorDiv.innerHTML = `
-                    <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
-                    Failed to load Calendar Data.<br>
-                    <span style="font-size: 11.5px; font-weight: normal; color: var(--text-muted);">
-                        Please reload the page or check your connection.
-                    </span>
+                        <div class="cell-mid" style="margin-top: 4px;">
+                            ${regionalDateHtml}
+                            ${naksHtml}
+                        </div>
+                        <div class="cell-bottom" style="margin-top: auto;">
+                            ${specialityHtml}
+                        </div>
+                    </div>
                 `;
-                container.appendChild(errorDiv);
+                cell.onclick = function() {
+                    fetchDailyPanchangam(cellDateStr);
+                    document.querySelectorAll('.calendar-cell').forEach(el => el.classList.remove('active'));
+                    cell.classList.add('active');
+                };
+                frag.appendChild(cell);
+            }
+            return frag;
+        }
+
+        function _calAnimate(container) {
+            container.classList.remove('cal-fade');
+            void container.offsetWidth; // reflow to restart the fade
+            container.classList.add('cal-fade');
+        }
+
+        // Warm the cache for the previous and next months so navigation to them
+        // is an instant cache hit. Fire-and-forget; errors are ignored.
+        function prefetchAdjacentMonths(year, month) {
+            [-1, 1].forEach(delta => {
+                let m = month + delta, y = year;
+                if (m > 12) { m = 1; y += 1; } else if (m < 1) { m = 12; y -= 1; }
+                const key = _calCacheKey(y, m);
+                if (monthPanchangamCache[key]) return;
+                apiFetch(`/api/month-panchangam?year=${y}&month=${m}&lang=${currentLang}&lat=${userLocation.lat}&lon=${userLocation.lon}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(d => { if (d && d.days) monthPanchangamCache[key] = d; })
+                    .catch(() => {});
+            });
+        }
+
+        function _calRenderError(container) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.gridColumn = "span 7";
+            errorDiv.style.textAlign = "center";
+            errorDiv.style.padding = "40px 10px";
+            errorDiv.style.color = "#dc2626";
+            errorDiv.style.fontFamily = "var(--font-heading)";
+            errorDiv.style.fontWeight = "600";
+            errorDiv.innerHTML = `
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
+                Failed to load Calendar Data.<br>
+                <span style="font-size: 11.5px; font-weight: normal; color: var(--text-muted);">
+                    Please reload the page or check your connection.
+                </span>
+            `;
+            container.replaceChildren(errorDiv);
+        }
+
+        async function renderMonthlyCalendar() {
+            const container = document.getElementById('calendar-grid-container');
+            if (!container) return;
+            const token = ++calendarRenderToken;
+            const year = calendarYear, month = calendarMonth;
+
+            const mn = CAL_MONTH_NAMES[currentLang] || CAL_MONTH_NAMES.en;
+            document.getElementById('calendar-title-label').innerHTML =
+                `${mn[month - 1]} ${year} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--accent-gold); margin-left: 4px;"></i>`;
+
+            const cached = monthPanchangamCache[_calCacheKey(year, month)];
+            if (cached) {
+                container.replaceChildren(buildCalendarGrid(year, month, cached));
+                _calAnimate(container);
+                prefetchAdjacentMonths(year, month);
+                return;
+            }
+
+            // Paint an instant day-number skeleton so the month switch is never
+            // blocked on the fetch, then enrich it once the data arrives.
+            container.replaceChildren(buildCalendarGrid(year, month, null));
+            _calAnimate(container);
+
+            try {
+                const res = await apiFetch(`/api/month-panchangam?year=${year}&month=${month}&lang=${currentLang}&lat=${userLocation.lat}&lon=${userLocation.lon}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                if (!data || !data.days) throw new Error("Invalid month-panchangam data structure");
+                monthPanchangamCache[_calCacheKey(year, month)] = data;
+                if (token !== calendarRenderToken) return; // a newer month render superseded this one
+                container.replaceChildren(buildCalendarGrid(year, month, data));
+                prefetchAdjacentMonths(year, month);
+            } catch (err) {
+                if (token !== calendarRenderToken) return;
+                console.error("Monthly calendar rendering failed:", err);
+                _calRenderError(container);
             }
         }
 
