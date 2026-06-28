@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.17.0]
+
+### Changed
+- **Daily Kaalams panel is now scannable at a glance.** The "Daily Kaalams &
+  Auspicious Timings" list was a plain bulleted list whose colors were arbitrary
+  and inconsistent (auspicious windows showed up as green *and* gold *and*
+  violet; inauspicious as red *and* brown), so the day's good/bad windows didn't
+  read as a system. It's now a set of omen rows with **one consistent color
+  language** — green = auspicious, red = inauspicious, amber = neutral — each
+  with a status dot and a colored left edge so red (avoid) and green (favorable)
+  windows jump out immediately. All `lbl-*`/`panch-*` label IDs are unchanged, so
+  translations are unaffected. Removed the unused `.kaalams-*` styles this
+  replaces.
+
 ## [1.16.3]
 
 ### Changed
