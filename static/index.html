@@ -114,7 +114,9 @@
     <!-- Google Fonts: Space Grotesk (modern UI) & Lora (classical serifs) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&family=Inter:wght@300..600&family=Noto+Sans+Devanagari:wght@300..700&family=Noto+Sans+Tamil:wght@300..700&family=Noto+Sans+Telugu:wght@300..700&family=Noto+Sans+Kannada:wght@300..700&family=Noto+Sans+Malayalam:wght@300..700&display=swap" rel="stylesheet">
+    <!-- Latin display/body/serif faces load eagerly; the heavy Noto Indic faces
+         load on demand for the SELECTED language only (see ensureLangFont). -->
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&family=Inter:wght@300..600&display=swap" rel="stylesheet">
     
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -313,7 +315,10 @@
                 radial-gradient(2px 2px at 74% 48%,  rgba(245,158,11,.50) 0%, transparent 100%),
                 radial-gradient(1px 1px at 82% 76%,  rgba(217,119,6,.38) 0%, transparent 100%),
                 radial-gradient(1px 1px at 93% 43%,  rgba(234,88,12,.40) 0%, transparent 100%);
-            animation: twinkle-a 4.5s ease-in-out infinite;
+            /* Painted once and promoted to its own layer so it never re-rasterizes
+               on scroll. (Was an infinite full-screen twinkle — pure GPU churn.) */
+            opacity: .6;
+            transform: translateZ(0);
         }
 
         /* Star field — layer 2: warm saffron stars */
@@ -342,7 +347,8 @@
                 radial-gradient(2px   2px   at 80% 35%,  rgba(245,158,11,.50) 0%, transparent 100%),
                 radial-gradient(1px   1px   at 88% 68%,  rgba(217,119,6,.38) 0%, transparent 100%),
                 radial-gradient(1px   1px   at 97% 20%,  rgba(234,88,12,.42) 0%, transparent 100%);
-            animation: twinkle-b 6.2s ease-in-out infinite alternate;
+            opacity: .55;
+            transform: translateZ(0);
         }
 
         /* ════════════════════════════════════════
@@ -368,7 +374,7 @@
             pointer-events: none;
             z-index: 0;
             user-select: none;
-            animation: om-breathe 12s ease-in-out infinite;
+            opacity: .12; /* held static — the breathe loop redrew a 950px glyph forever */
         }
 
         /* ════════════════════════════════════════
@@ -669,7 +675,7 @@
             font-family: var(--font-serif);
             font-size: 15.5px;
             color: #ea580c;
-            animation: mantra-glow 4s ease-in-out infinite;
+            text-shadow: 0 0 14px rgba(234, 88, 12, .35); /* static; was a 4s glow pulse */
             letter-spacing: .8px;
             font-weight: 700;
         }
@@ -738,16 +744,16 @@
                 0 0 28px rgba(245, 158, 11, 0.15);
         }
 
-        /* Shimmer top-edge sweep */
+        /* Static gold top-edge accent. (Previously an infinite sweep that ran
+           once per card simultaneously — N concurrent animations per page.) */
         .card::before {
             content: '';
             position: absolute;
-            top: 0; left: -100%;
+            top: 0; left: 0;
             width: 55%; height: 1.5px;
             background: linear-gradient(90deg,
                 transparent, rgba(245, 158, 11, 0.7),
                 rgba(234, 88, 12, 0.5), transparent);
-            animation: card-shimmer 7s ease-in-out infinite;
             pointer-events: none;
         }
 
@@ -2228,6 +2234,20 @@
         .credits-low { color: #e53e3e !important; animation: creditsPulse 1.8s ease-in-out infinite; }
         .credits-clickable { cursor: pointer; }
         @keyframes creditsPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+        /* ════════════════════════════════════════
+           ACCESSIBILITY — honor the OS "reduce motion" setting.
+           Stops the orbiting planets, spinning dharma wheels, blinking
+           cursors and every transition for users who ask for calm.
+        ════════════════════════════════════════ */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
@@ -4729,11 +4749,33 @@
         }
 
         // Change website language in real-time
+        // The Noto Indic webfonts are large and only one script is shown at a
+        // time, so we fetch the selected language's face on demand instead of
+        // loading all five up front. Idempotent: each family is injected once.
+        const _LANG_FONT_FAMILY = {
+            ta: 'Noto+Sans+Tamil:wght@300..700',
+            te: 'Noto+Sans+Telugu:wght@300..700',
+            kn: 'Noto+Sans+Kannada:wght@300..700',
+            ml: 'Noto+Sans+Malayalam:wght@300..700',
+            hi: 'Noto+Sans+Devanagari:wght@300..700',
+        };
+        const _loadedLangFonts = new Set();
+        function ensureLangFont(langCode) {
+            const family = _LANG_FONT_FAMILY[langCode];
+            if (!family || _loadedLangFonts.has(langCode)) return;
+            _loadedLangFonts.add(langCode);
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = `https://fonts.googleapis.com/css2?family=${family}&display=swap`;
+            document.head.appendChild(link);
+        }
+
         async function changeLanguage(langCode, userInitiated = true) {
             // Validate against the known locales — a stale/garbage vedic_lang
             // from localStorage would otherwise make `localization[langCode]`
             // undefined and throw on the first `dict.*`, blanking the dashboard.
             if (!localization[langCode]) langCode = 'en';
+            ensureLangFont(langCode);  // fetch the script's webfont on first use
             currentLang = langCode;
             localStorage.setItem('vedic_lang', langCode);
             // A manual pick locks the language so adaptive-by-region won't override it.

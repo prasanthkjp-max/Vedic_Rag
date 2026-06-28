@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.16.3]
+
+### Changed
+- **Frontend performance & accessibility pass (no visual redesign).** Removed
+  the always-on infinite animations that drove constant GPU repaints: the two
+  full-screen twinkling star fields are now painted once and promoted to their
+  own compositor layer (`translateZ(0)`), the 950px OM watermark is held static,
+  the per-card shimmer sweep (which ran one animation *per card* simultaneously)
+  is now a static gold edge, and the pulsing mantra text-shadow is static. The
+  orbiting-planet signature motion is kept.
+- **Indic webfonts now load on demand.** Only the Latin faces (Inter, Space
+  Grotesk, Lora) load up front; the heavy Noto Sans Tamil/Telugu/Kannada/
+  Malayalam/Devanagari faces are fetched lazily for the selected language via
+  `ensureLangFont()` (hooked into `changeLanguage`), instead of loading all five
+  on every page view.
+
+### Added
+- **`prefers-reduced-motion` support.** Users who request reduced motion at the
+  OS level now get the orbiting planets, spinning dharma wheels, blinking
+  cursors, and all transitions stilled.
+
 ## [1.16.2]
 
 ### Added
