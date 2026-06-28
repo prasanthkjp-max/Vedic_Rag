@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.0]
+
+### Changed
+- **Refined Saffron visual refresh.** Kept the warm saffron identity but made it
+  read as a deliberate, calm design rather than maximalist. Driven entirely
+  through the `:root` token layer (markup untouched):
+  - **Body text is now warm charcoal** (`--text-primary` #2b2018) with a warm
+    grey-brown muted tier, instead of everything being rust-orange — copy reads
+    calm and neutral, and saffron/gold is reserved for things that mean
+    something (titles, the active-tab indicator, card top-edges, omen states).
+  - **Quieter cards** — softened borders and a neutral lift shadow replace the
+    golden glow; the active nav tab now uses a clean saffron underline instead
+    of a glow box.
+  - **Calmer canvas** — the background nebulae and the two static star layers are
+    dialed well down for a soft-cream field.
+
 ## [1.17.0]
 
 ### Changed

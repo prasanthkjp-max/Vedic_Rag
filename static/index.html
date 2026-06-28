@@ -130,8 +130,8 @@
 
         :root {
             /* ── Solar Light Cosmic Backgrounds ── */
-            --bg-void:   #fffbf5; /* Warm sun-cream canvas */
-            --bg-deep:   #fff8eb; /* Soft sun-gold deep canvas */
+            --bg-void:   #fffaf3; /* Soft cream canvas */
+            --bg-deep:   #fdf6ea; /* Quiet warm deep canvas */
             --bg-glass:  rgba(255, 251, 238, 0.88); /* Light warm glass */
             --bg-card:   rgba(255, 255, 255, 0.95); /* Clean white card */
             --bg-darker: rgba(254, 243, 199, 0.35); /* Warm golden tint card */
@@ -156,18 +156,19 @@
             --glow-gold:   rgba(217, 119, 6, 0.35);
             --glow-violet: rgba(139, 92, 246, 0.15);
 
-            /* ── Text hierarchy (high contrast dark brown/rust on light orange) ── */
-            --text-primary:   #431407; /* Deepest warm rust-brown (contrast checked!) */
-            --text-secondary: #7c2d12; /* Warm dark orange-brown */
-            --text-muted:     #9a3412; /* Rust accent */
-            --text-gold:      #b45309; /* Deep gold for title/highlights */
-            --text-label:     #9a3412; /* Clear labels */
+            /* ── Text hierarchy — warm charcoal ink so body copy reads calm and
+               neutral; saffron/gold are reserved for things that mean something. ── */
+            --text-primary:   #2b2018; /* Warm charcoal — primary body text */
+            --text-secondary: #5a4636; /* Warm taupe-brown — secondary text */
+            --text-muted:     #8a6d52; /* Warm grey-brown — muted labels/captions */
+            --text-gold:      #b45309; /* Deep gold — titles & meaningful highlights */
+            --text-label:     #8a6d52; /* Muted warm grey-brown labels */
 
-            /* ── Aesthetic Golden Borders ── */
-            --border-blue:   rgba(234, 88, 12, 0.28);
-            --border-gold:   rgba(217, 119, 6, 0.45);
-            --border-glass:  rgba(245, 158, 11, 0.25);
-            --border-violet: rgba(139, 92, 246, 0.25);
+            /* ── Borders — softened so cards read quiet, not gilded ── */
+            --border-blue:   rgba(234, 88, 12, 0.20);
+            --border-gold:   rgba(180, 120, 40, 0.28);
+            --border-glass:  rgba(160, 120, 60, 0.16);
+            --border-violet: rgba(139, 92, 246, 0.20);
 
             /* ── Fonts ── */
             --font-sans:    'Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil',
@@ -269,16 +270,14 @@
             line-height: 1.6;
             background-color: var(--bg-void);
             background-image:
-                /* Orange solar flare nebula — top-right */
-                radial-gradient(ellipse 1100px 650px at 94% 3%, rgba(251,146,60,0.15) 0%, transparent 65%),
-                /* Soft gold nebula — bottom-left */
-                radial-gradient(ellipse 900px 520px at 3% 97%, rgba(253,224,71,0.18) 0%, transparent 60%),
-                /* Warm cosmic glow — center */
-                radial-gradient(ellipse 600px 350px at 52% 50%, rgba(251,146,60,0.08) 0%, transparent 70%),
-                /* Sun canopy — top */
-                radial-gradient(ellipse 1600px 900px at 50% 0%, rgba(254,215,170,0.40) 0%, transparent 80%),
-                /* Base warm cream/saffron background */
-                linear-gradient(192deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%);
+                /* Soft solar warmth — top-right (quieted for a calmer canvas) */
+                radial-gradient(ellipse 1100px 650px at 94% 3%, rgba(251,146,60,0.07) 0%, transparent 65%),
+                /* Faint gold wash — bottom-left */
+                radial-gradient(ellipse 900px 520px at 3% 97%, rgba(253,224,71,0.08) 0%, transparent 60%),
+                /* Gentle sun canopy — top */
+                radial-gradient(ellipse 1600px 900px at 50% 0%, rgba(254,215,170,0.20) 0%, transparent 80%),
+                /* Base soft-cream background — far less saturated than before */
+                linear-gradient(192deg, #fffaf3 0%, #fff4e6 55%, #fdead4 100%);
             color: var(--text-primary);
             overflow-x: hidden;
             min-height: 100vh;
@@ -316,8 +315,9 @@
                 radial-gradient(1px 1px at 82% 76%,  rgba(217,119,6,.38) 0%, transparent 100%),
                 radial-gradient(1px 1px at 93% 43%,  rgba(234,88,12,.40) 0%, transparent 100%);
             /* Painted once and promoted to its own layer so it never re-rasterizes
-               on scroll. (Was an infinite full-screen twinkle — pure GPU churn.) */
-            opacity: .6;
+               on scroll. (Was an infinite full-screen twinkle — pure GPU churn.)
+               Dialed down for the calmer Refined-Saffron canvas. */
+            opacity: .32;
             transform: translateZ(0);
         }
 
@@ -347,7 +347,7 @@
                 radial-gradient(2px   2px   at 80% 35%,  rgba(245,158,11,.50) 0%, transparent 100%),
                 radial-gradient(1px   1px   at 88% 68%,  rgba(217,119,6,.38) 0%, transparent 100%),
                 radial-gradient(1px   1px   at 97% 20%,  rgba(234,88,12,.42) 0%, transparent 100%);
-            opacity: .55;
+            opacity: .28;
             transform: translateZ(0);
         }
 
@@ -514,19 +514,15 @@
         }
 
         .nav-tab:hover {
-            background: rgba(245, 158, 11, 0.12);
+            background: rgba(234, 88, 12, 0.08);
             color: #ea580c;
-            border-color: rgba(217, 119, 6, 0.6);
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
-            text-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
         }
 
         .nav-tab.active {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.18));
+            background: rgba(234, 88, 12, 0.10);
             color: #ea580c;
-            border-color: rgba(217, 119, 6, 0.8);
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
             font-weight: 700;
+            box-shadow: inset 0 -2px 0 var(--accent-cosmic);
         }
 
         /* ── Header controls (Sign In + lang selector) ── */
@@ -730,18 +726,17 @@
             backdrop-filter: blur(22px);
             -webkit-backdrop-filter: blur(22px);
             box-shadow:
-                0 8px 40px rgba(217, 119, 6, 0.05),
-                0 0 0 1px rgba(217, 119, 6, 0.035),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                0 6px 24px rgba(82, 56, 24, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.85);
             overflow: hidden;
-            transition: border-color .25s, box-shadow .25s;
+            transition: border-color .25s, box-shadow .25s, transform .25s;
         }
 
         .card:hover {
-            border-color: rgba(217, 119, 6, 0.65);
+            border-color: var(--border-gold);
             box-shadow:
-                0 12px 52px rgba(217, 119, 6, 0.08),
-                0 0 28px rgba(245, 158, 11, 0.15);
+                0 10px 32px rgba(82, 56, 24, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.85);
         }
 
         /* Static gold top-edge accent. (Previously an infinite sweep that ran
