@@ -8903,7 +8903,7 @@
 
             // Populate preferences
             document.getElementById('profile-in-phone').value = currentUser.phone_number || "";
-            document.getElementById('profile-in-channel').value = currentUser.preferred_channel || "whatsapp";
+            document.getElementById('profile-in-channel').value = currentUser.preferred_channel || "sms";
 
             // Populate birth details form fields in the user profile dashboard
             document.getElementById('profile-in-name').value = currentUser.full_name || "";
@@ -9062,30 +9062,8 @@
             }
         }
 
-        let selectedOtpChannel = 'whatsapp';
-        function setOtpChannel(channel) {
-            selectedOtpChannel = channel;
-            const btnWhatsapp = document.getElementById('btn-channel-whatsapp');
-            const btnSms = document.getElementById('btn-channel-sms');
-            
-            if (channel === 'whatsapp') {
-                btnWhatsapp.style.background = 'rgba(37, 211, 102, 0.15)';
-                btnWhatsapp.style.color = '#25D366';
-                btnWhatsapp.style.border = '1px solid #25D366';
-                
-                btnSms.style.background = 'transparent';
-                btnSms.style.color = 'var(--text-secondary)';
-                btnSms.style.border = '1px solid var(--border-glass)';
-            } else {
-                btnSms.style.background = 'rgba(66, 153, 225, 0.15)';
-                btnSms.style.color = '#4299E1';
-                btnSms.style.border = '1px solid #4299E1';
-                
-                btnWhatsapp.style.background = 'transparent';
-                btnWhatsapp.style.color = 'var(--text-secondary)';
-                btnWhatsapp.style.border = '1px solid var(--border-glass)';
-            }
-        }
+        // OTP delivery is SMS-only (MSG91).
+        const selectedOtpChannel = 'sms';
 
         let otpTimerInterval = null;
         async function requestOTP() {
@@ -9794,18 +9772,7 @@
                     </div>
                 </div>
                 
-                <!-- Channel Selector -->
-                <div class="input-group">
-                    <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block; color: var(--text-secondary);">Send OTP via</label>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="btn-channel-whatsapp" onclick="setOtpChannel('whatsapp')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(37, 211, 102, 0.15); color: #25D366; border: 1px solid #25D366; border-radius: 6px; padding: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
-                            <i class="fa-brands fa-whatsapp" style="font-size: 14px;"></i> WhatsApp
-                        </button>
-                        <button id="btn-channel-sms" onclick="setOtpChannel('sms')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-glass); border-radius: 6px; padding: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
-                            <i class="fa-solid fa-comment-sms" style="font-size: 13px;"></i> SMS
-                        </button>
-                    </div>
-                </div>
+                <!-- OTP is delivered by SMS (MSG91). -->
 
                 <!-- OTP Input (initially hidden) -->
                 <div id="otp-input-container" style="display: none; flex-direction: column; gap: 12px; margin-top: 5px; border-top: 1px dashed var(--border-glass); padding-top: 12px;">
@@ -9937,7 +9904,6 @@
                 <div class="input-group">
                     <label style="font-size: 10px; color: var(--text-secondary);">Preferred OTP/Alerts Channel</label>
                     <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
-                        <option value="whatsapp">WhatsApp</option>
                         <option value="sms">SMS</option>
                     </select>
                 </div>

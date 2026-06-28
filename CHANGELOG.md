@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.3]
+
+### Changed
+- **OTP login is now MSG91 SMS only — Twilio removed.** Dropped the Twilio
+  SMS/WhatsApp integration (the `_send_twilio_otp` sender, the `TWILIO_*` config
+  and `.env.example` block, and the import). `_send_otp_via_api` now sends solely
+  via MSG91, and the request channel defaults to `sms`. Since WhatsApp had no
+  remaining provider, the auth modal's WhatsApp/SMS channel toggle is removed
+  (OTP is SMS-only) and the profile "preferred channel" select offers SMS only.
+
 ## [1.18.2]
 
 ### Fixed

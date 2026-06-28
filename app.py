@@ -63,10 +63,6 @@ from config import (
     API_KEY,
     REQUIRE_API_KEY,
     GOOGLE_OAUTH_CLIENT_ID,
-    TWILIO_ACCOUNT_SID,
-    TWILIO_AUTH_TOKEN,
-    TWILIO_PHONE_NUMBER,
-    TWILIO_WHATSAPP_NUMBER,
     MSG91_AUTH_KEY,
     MSG91_OTP_TEMPLATE_ID,
     ALLOW_MOCK_OAUTH,
@@ -721,7 +717,7 @@ class LoginRequest(BaseModel):
 
 class SendOTPRequest(BaseModel):
     phone_number: str = Field(max_length=20)
-    channel: str = Field(default="whatsapp", max_length=10) # "sms" or "whatsapp"
+    channel: str = Field(default="sms", max_length=10) # SMS only (MSG91)
 
 class VerifyOTPRequest(BaseModel):
     phone_number: str = Field(max_length=20)
@@ -2300,51 +2296,6 @@ import random
 import urllib.parse
 import urllib.request
 
-def _send_twilio_otp(phone_number: str, otp: str, channel: str) -> bool:
-    if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN):
-        logger.warning("Twilio credentials not configured.")
-        return False
-
-    message = f"Your Vedic RAG verification code is: {otp}. Valid for 10 minutes."
-    
-    to_number = phone_number
-    if not to_number.startswith("+"):
-        to_number = "+" + to_number
-
-    if channel == "whatsapp":
-        if not TWILIO_WHATSAPP_NUMBER:
-            logger.warning("TWILIO_WHATSAPP_NUMBER not configured.")
-            return False
-        from_number = f"whatsapp:{TWILIO_WHATSAPP_NUMBER}"
-        to_number = f"whatsapp:{to_number}"
-    else:
-        if not TWILIO_PHONE_NUMBER:
-            logger.warning("TWILIO_PHONE_NUMBER not configured.")
-            return False
-        from_number = TWILIO_PHONE_NUMBER
-
-    url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
-    data = urllib.parse.urlencode({
-        "From": from_number,
-        "To": to_number,
-        "Body": message
-    }).encode("utf-8")
-
-    req = urllib.request.Request(url, data=data, method="POST")
-    auth_str = f"{TWILIO_ACCOUNT_SID}:{TWILIO_AUTH_TOKEN}"
-    auth_b64 = base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
-    req.add_header("Authorization", f"Basic {auth_b64}")
-    req.add_header("Content-Type", "application/x-www-form-urlencoded")
-
-    try:
-        with urllib.request.urlopen(req, timeout=10) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            logger.info("Twilio OTP sent successfully: %s", res_data.get("sid"))
-            return True
-    except Exception as e:
-        logger.error("Failed to send OTP via Twilio: %s", e)
-        return False
-
 def _send_msg91_otp(phone_number: str, otp: str) -> bool:
     if not (MSG91_AUTH_KEY and MSG91_OTP_TEMPLATE_ID):
         logger.warning("MSG91 credentials not configured.")
@@ -2375,15 +2326,11 @@ def _send_msg91_otp(phone_number: str, otp: str) -> bool:
         return False
 
 def _send_otp_via_api(phone_number: str, otp: str, channel: str) -> bool:
-    # 1. Try Twilio (supports both SMS and WhatsApp)
-    if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
-        return _send_twilio_otp(phone_number, otp, channel)
-        
-    # 2. Try MSG91 (SMS only)
-    if MSG91_AUTH_KEY and MSG91_OTP_TEMPLATE_ID and channel == "sms":
+    # MSG91 (SMS only) is the sole provider.
+    if MSG91_AUTH_KEY and MSG91_OTP_TEMPLATE_ID:
         return _send_msg91_otp(phone_number, otp)
-        
-    logger.warning("No SMS/WhatsApp API provider configured. OTP logged to console: %s", otp)
+
+    logger.warning("MSG91 not configured. OTP logged to console: %s", otp)
     return False
 
 @app.post("/api/auth/send-otp")
