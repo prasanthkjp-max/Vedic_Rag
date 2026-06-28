@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.1]
+
+### Fixed
+- **App title was clipped in Tamil & Malayalam.** The header title (`#lbl-title`)
+  and the side-nav title use a saffron gradient via `-webkit-background-clip:
+  text`, which clips the fill to a tight line box. With `line-height: 1.2` that
+  box shaved the tall vowel marks/conjuncts of the Tamil "வைதிக …" and Malayalam
+  "വൈദിക …" titles (the leading word looked cut). Gave both a roomier line box
+  (`line-height: 1.5`) and small vertical padding so the full glyphs render; the
+  gradient is preserved and the titles still fit the 64px header.
+
 ## [1.18.0]
 
 ### Changed
