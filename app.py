@@ -2055,65 +2055,99 @@ def get_paradigm_from_lang(lang_code):
         return "TAMIL_SOLAR"
 
 
-@app.get("/api/month-panchangam")
-def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 13.08, lon: float = 80.27):
-    """
-    Get daily panchangam essentials for an entire month to populate the calendar.
-    lat/lon default to Chennai; the frontend supplies the user's detected location.
-    """
+# Month-panchangam cache. A month's data is fully determined by
+# (year, month, lang, location), so it never changes — cache it and recompute
+# at most once. Bounded LRU to cap memory. This matters a lot here: the daily
+# chart math runs ~10-15x slower inside FastAPI's sync threadpool than on the
+# main thread (a GIL/pyswisseph interaction), so the endpoint is async and the
+# compute runs on the event loop (fast + naturally serialized — no GIL thrash
+# from the frontend's concurrent current+prev+next prefetch), with this cache
+# making any repeat instant.
+from collections import OrderedDict
+_MONTH_CACHE = OrderedDict()
+_MONTH_CACHE_MAX = 240  # ~20 years of months at one location, or fewer across many
+
+
+def _month_cache_key(year, month, lang, lat, lon):
+    # Round coordinates so near-identical locations share a cache entry.
+    return (year, month, lang, round(float(lat), 2), round(float(lon), 2))
+
+
+def _compute_month_panchangam(year, month, lang, lat, lon):
+    """Daily panchangam essentials for a whole month (calendar grid). Pure
+    computation; callers handle caching. lat/lon default to Chennai upstream."""
     import calendar
+    _, num_days = calendar.monthrange(year, month)
+
+    days_data = []
+    # Only the PREVIOUS day's specialities are used for dedup — a month-running
+    # set suppressed the Krishna-paksha Ekadashi/Pradosham/Ashtami that
+    # legitimately recur ~15 days after the Sukla ones.
+    added_festivals_prev = set()
+    paradigm = get_paradigm_from_lang(lang)
+
+    for day in range(1, num_days + 1):
+        res = get_day_panchangam_and_festivals(year, month, day, lon, lat, lang, added_festivals_prev)
+        added_festivals_prev = set(res["specialities_all"])
+
+        day_specialities = list(res["specialities"])
+        # Compute Marriage Muhurtham for this day at 06:00 AM local time
+        try:
+            muh_res = calculate_muhurtham(
+                f"{year}-{month:02d}-{day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
+            )
+            if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+                day_specialities.insert(0, "Marriage Muhurtham")
+        except Exception as e:
+            logger.warning("Failed to calculate marriage muhurtham for %d-%02d-%02d: %s", year, month, day, e)
+
+        days_data.append({
+            "day": day,
+            "tithi": res["tithi_sunrise"],
+            "is_pournami": res["is_pournami"],
+            "is_amavasya": res["is_amavasya"],
+            "nakshatra": res["panchangam"]["nakshatra"],
+            "yogam": res["panchangam"]["yogam"],
+            "karanam": res["panchangam"]["karanam"],
+            "tamil_month": res["panchangam"]["tamil_month"],
+            "tamil_year": res["panchangam"]["tamil_year"],
+            "tamil_date": res["panchangam"]["tamil_date"],
+            "specialities": day_specialities
+        })
+
+    return {"year": year, "month": month, "days": days_data}
+
+
+@app.get("/api/month-panchangam")
+async def get_month_panchangam(year: int, month: int, lang: str = "en", lat: float = 13.08, lon: float = 80.27):
+    """Daily panchangam for a whole month (calendar grid), cached and computed
+    on the event loop for speed. lat/lon default to Chennai; the frontend
+    supplies the user's detected location."""
     # Bounds check: each day costs ~8 chart computations, so an absurd year or
     # month must not become a CPU sink (or a 500 from monthrange).
     if not (1 <= month <= 12):
         raise HTTPException(status_code=400, detail=f"month must be 1-12, got {month}")
     if not (1900 <= year <= 2100):
         raise HTTPException(status_code=400, detail=f"year must be 1900-2100, got {year}")
-    try:
-        _, num_days = calendar.monthrange(year, month)
-        
-        days_data = []
-        # Only the PREVIOUS day's specialities are used for dedup — a
-        # month-running set suppressed the Krishna-paksha Ekadashi/Pradosham/
-        # Ashtami that legitimately recur ~15 days after the Sukla ones.
-        added_festivals_prev = set()
-        paradigm = get_paradigm_from_lang(lang)
 
-        for day in range(1, num_days + 1):
-            res = get_day_panchangam_and_festivals(year, month, day, lon, lat, lang, added_festivals_prev)
-            added_festivals_prev = set(res["specialities_all"])
-            
-            day_specialities = list(res["specialities"])
-            # Compute Marriage Muhurtham for this day at 06:00 AM local time
-            try:
-                muh_res = calculate_muhurtham(
-                    f"{year}-{month:02d}-{day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
-                )
-                if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
-                    day_specialities.insert(0, "Marriage Muhurtham")
-            except Exception as e:
-                logger.warning("Failed to calculate marriage muhurtham for %d-%02d-%02d: %s", year, month, day, e)
-            
-            days_data.append({
-                "day": day,
-                "tithi": res["tithi_sunrise"],
-                "is_pournami": res["is_pournami"],
-                "is_amavasya": res["is_amavasya"],
-                "nakshatra": res["panchangam"]["nakshatra"],
-                "yogam": res["panchangam"]["yogam"],
-                "karanam": res["panchangam"]["karanam"],
-                "tamil_month": res["panchangam"]["tamil_month"],
-                "tamil_year": res["panchangam"]["tamil_year"],
-                "tamil_date": res["panchangam"]["tamil_date"],
-                "specialities": day_specialities
-            })
-            
-        return {
-            "year": year,
-            "month": month,
-            "days": days_data
-        }
+    key = _month_cache_key(year, month, lang, lat, lon)
+    cached = _MONTH_CACHE.get(key)
+    if cached is not None:
+        _MONTH_CACHE.move_to_end(key)  # LRU touch
+        return cached
+
+    try:
+        # Runs on the event loop (not the sync threadpool) where the chart math
+        # is ~10-15x faster and concurrent calendar prefetches serialize cleanly
+        # instead of thrashing the GIL. Bounded to <=31 days (~0.4s).
+        result = _compute_month_panchangam(year, month, lang, lat, lon)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    _MONTH_CACHE[key] = result
+    if len(_MONTH_CACHE) > _MONTH_CACHE_MAX:
+        _MONTH_CACHE.popitem(last=False)  # evict oldest
+    return result
 
 class ProfileUpdateRequest(BaseModel):
     full_name: str = Field(default=None, max_length=200)
