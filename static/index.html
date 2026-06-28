@@ -2794,7 +2794,6 @@
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
                     <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('facebook')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-facebook" style="color: #1877f2; margin-right: 8px;"></i> Continue with Facebook</button>
                 </div>
             </div>
 
@@ -3085,7 +3084,6 @@
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
                     <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('facebook')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-facebook" style="color: #1877f2; margin-right: 8px;"></i> Continue with Facebook</button>
                 </div>
             </div>
 
@@ -3307,7 +3305,6 @@
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
                     <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('facebook')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-facebook" style="color: #1877f2; margin-right: 8px;"></i> Continue with Facebook</button>
                 </div>
             </div>
 
@@ -8732,10 +8729,10 @@
                     el.onclick = showPaywall;
                 };
                 if (userDisplayName) {
-                    const name = currentUser.full_name || currentUser.email;
+                    const name = currentUser.full_name || currentUser.phone_number || currentUser.email;
                     userDisplayName.innerText = name.length > 12 ? name.substring(0, 10) + ".." : name;
                 }
-                if (sideUserName) sideUserName.innerText = currentUser.full_name || currentUser.email;
+                if (sideUserName) sideUserName.innerText = currentUser.full_name || currentUser.phone_number || currentUser.email;
                 applyCreditStyle(sideUserCredits);
                 applyCreditStyle(userCreditsCount);
                 
@@ -8786,28 +8783,45 @@
             });
         }
 
-        let activeAuthTab = 'login';
+        let activeAuthTab = 'phone';
         function switchAuthTab(tab) {
             activeAuthTab = tab;
+            const tabPhone = document.getElementById('tab-phone');
             const tabLogin = document.getElementById('tab-login');
             const tabSignup = document.getElementById('tab-signup');
+            const formPhone = document.getElementById('form-phone-fields');
             const formLogin = document.getElementById('form-login-fields');
             const formSignup = document.getElementById('form-signup-fields');
             
-            if (tab === 'login') {
-                tabLogin.style.color = 'var(--accent-gold)';
-                tabLogin.style.borderBottom = '2px solid var(--accent-gold)';
-                tabSignup.style.color = 'var(--text-secondary)';
-                tabSignup.style.borderBottom = 'none';
-                formLogin.style.display = 'flex';
-                formSignup.style.display = 'none';
+            // reset styles
+            [tabPhone, tabLogin, tabSignup].forEach(t => {
+                if (t) {
+                    t.style.color = 'var(--text-secondary)';
+                    t.style.borderBottom = 'none';
+                }
+            });
+            [formPhone, formLogin, formSignup].forEach(f => {
+                if (f) f.style.display = 'none';
+            });
+
+            if (tab === 'phone') {
+                if (tabPhone) {
+                    tabPhone.style.color = 'var(--accent-gold)';
+                    tabPhone.style.borderBottom = '2px solid var(--accent-gold)';
+                }
+                if (formPhone) formPhone.style.display = 'flex';
+            } else if (tab === 'login') {
+                if (tabLogin) {
+                    tabLogin.style.color = 'var(--accent-gold)';
+                    tabLogin.style.borderBottom = '2px solid var(--accent-gold)';
+                }
+                if (formLogin) formLogin.style.display = 'flex';
             } else {
-                tabSignup.style.color = 'var(--accent-gold)';
-                tabSignup.style.borderBottom = '2px solid var(--accent-gold)';
-                tabLogin.style.color = 'var(--text-secondary)';
-                tabLogin.style.borderBottom = 'none';
-                formSignup.style.display = 'flex';
-                formLogin.style.display = 'none';
+                if (tabSignup) {
+                    tabSignup.style.color = 'var(--accent-gold)';
+                    tabSignup.style.borderBottom = '2px solid var(--accent-gold)';
+                }
+                if (formSignup) formSignup.style.display = 'flex';
             }
         }
 
@@ -8861,7 +8875,7 @@
 
         function openLoginModal() {
             document.getElementById('login-modal').style.display = 'flex';
-            switchAuthTab('login');
+            switchAuthTab('phone');
         }
         function closeLoginModal() {
             document.getElementById('login-modal').style.display = 'none';
@@ -8872,6 +8886,7 @@
             
             document.getElementById('profile-full-name').innerText = currentUser.full_name || "Guest";
             document.getElementById('profile-email').innerText = currentUser.email || "";
+            document.getElementById('profile-phone').innerText = currentUser.phone_number || "Not linked";
             document.getElementById('profile-credits-count').innerText = currentUser.credit_balance;
             
             const subStatus = document.getElementById('profile-sub-status');
@@ -8885,6 +8900,10 @@
                 subStatus.style.color = 'var(--text-secondary)';
                 if (btnCancelSub) btnCancelSub.style.display = 'none';
             }
+
+            // Populate preferences
+            document.getElementById('profile-in-phone').value = currentUser.phone_number || "";
+            document.getElementById('profile-in-channel').value = currentUser.preferred_channel || "whatsapp";
 
             // Populate birth details form fields in the user profile dashboard
             document.getElementById('profile-in-name').value = currentUser.full_name || "";
@@ -9009,10 +9028,10 @@
         }
 
         async function handleSocialLogin(provider) {
-            const defaultEmail = provider === 'google' ? 'google_user@gmail.com' : 'fb_user@facebook.com';
+            const defaultEmail = 'google_user@gmail.com';
             const mockEmail = prompt(`Enter mock ${provider} account email:`, defaultEmail);
             if (!mockEmail) return;
-            const defaultName = provider === 'google' ? 'Google Cosmic User' : 'Facebook Astro Fan';
+            const defaultName = 'Google Cosmic User';
             const mockName = prompt(`Enter mock name for this account:`, defaultName);
             if (!mockName) return;
             const mockToken = 'mock_oauth_token_' + Math.random().toString(36).substring(7);
@@ -9040,6 +9059,201 @@
                 }
             } catch (e) {
                 alert("Error during OAuth: " + e);
+            }
+        }
+
+        let selectedOtpChannel = 'whatsapp';
+        function setOtpChannel(channel) {
+            selectedOtpChannel = channel;
+            const btnWhatsapp = document.getElementById('btn-channel-whatsapp');
+            const btnSms = document.getElementById('btn-channel-sms');
+            
+            if (channel === 'whatsapp') {
+                btnWhatsapp.style.background = 'rgba(37, 211, 102, 0.15)';
+                btnWhatsapp.style.color = '#25D366';
+                btnWhatsapp.style.border = '1px solid #25D366';
+                
+                btnSms.style.background = 'transparent';
+                btnSms.style.color = 'var(--text-secondary)';
+                btnSms.style.border = '1px solid var(--border-glass)';
+            } else {
+                btnSms.style.background = 'rgba(66, 153, 225, 0.15)';
+                btnSms.style.color = '#4299E1';
+                btnSms.style.border = '1px solid #4299E1';
+                
+                btnWhatsapp.style.background = 'transparent';
+                btnWhatsapp.style.color = 'var(--text-secondary)';
+                btnWhatsapp.style.border = '1px solid var(--border-glass)';
+            }
+        }
+
+        let otpTimerInterval = null;
+        async function requestOTP() {
+            const phoneVal = document.getElementById('auth-phone-number').value.trim();
+            if (!phoneVal) {
+                alert("Please enter your 10-digit phone number.");
+                return;
+            }
+            
+            const cleanNum = phoneVal.replace(/\D/g, '');
+            if (cleanNum.length !== 10 && !phoneVal.startsWith('+')) {
+                alert("Please enter a valid 10-digit mobile number.");
+                return;
+            }
+
+            const formattedPhone = phoneVal.startsWith('+') ? phoneVal : '+91' + cleanNum;
+            const btnAction = document.getElementById('btn-phone-action');
+            btnAction.disabled = true;
+            btnAction.innerText = "Sending OTP...";
+
+            try {
+                const res = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone_number: formattedPhone, channel: selectedOtpChannel })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(`Verification code sent via ${selectedOtpChannel.toUpperCase()}!`);
+                    
+                    if (data.debug_otp) {
+                        console.log("DEV MODE OTP:", data.debug_otp);
+                        document.getElementById('auth-otp-code').value = data.debug_otp;
+                    }
+                    
+                    document.getElementById('otp-input-container').style.display = 'flex';
+                    document.getElementById('btn-phone-back').style.display = 'block';
+                    btnAction.disabled = false;
+                    btnAction.innerText = "Verify & Login";
+                    
+                    startOtpTimer();
+                } else {
+                    const data = await res.json();
+                    alert("Failed to send OTP: " + (data.detail || "Unknown error"));
+                    btnAction.disabled = false;
+                    btnAction.innerText = "Send Verification OTP";
+                }
+            } catch (e) {
+                alert("Error sending OTP: " + e);
+                btnAction.disabled = false;
+                btnAction.innerText = "Send Verification OTP";
+            }
+        }
+
+        function startOtpTimer() {
+            if (otpTimerInterval) clearInterval(otpTimerInterval);
+            let timeLeft = 59;
+            const timerEl = document.getElementById('otp-timer');
+            const resendBtn = document.getElementById('btn-resend-otp');
+            
+            timerEl.style.display = 'inline';
+            resendBtn.style.display = 'none';
+            timerEl.innerText = `Resend OTP in ${timeLeft}s`;
+            
+            otpTimerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = `Resend OTP in ${timeLeft}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(otpTimerInterval);
+                    timerEl.style.display = 'none';
+                    resendBtn.style.display = 'inline';
+                }
+            }, 1000);
+        }
+
+        async function verifyOTP() {
+            const phoneVal = document.getElementById('auth-phone-number').value.trim();
+            const otpVal = document.getElementById('auth-otp-code').value.trim();
+            
+            if (!otpVal || otpVal.length < 4) {
+                alert("Please enter a valid verification code.");
+                return;
+            }
+            
+            const cleanNum = phoneVal.replace(/\D/g, '');
+            const formattedPhone = phoneVal.startsWith('+') ? phoneVal : '+91' + cleanNum;
+            const btnAction = document.getElementById('btn-phone-action');
+            btnAction.disabled = true;
+            btnAction.innerText = "Verifying...";
+
+            const refEl = document.getElementById('auth-signup-referral');
+            const referral_code = refEl ? refEl.value.trim().toUpperCase() : "";
+
+            try {
+                const res = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone_number: formattedPhone, otp: otpVal, referral_code })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('session_token', data.token);
+                    currentUser = data.user;
+                    closeLoginModal();
+                    updateAuthUI();
+                    resetPhoneForm();
+                } else {
+                    const data = await res.json();
+                    alert("Verification failed: " + (data.detail || "Invalid code"));
+                    btnAction.disabled = false;
+                    btnAction.innerText = "Verify & Login";
+                }
+            } catch (e) {
+                alert("Error during verification: " + e);
+                btnAction.disabled = false;
+                btnAction.innerText = "Verify & Login";
+            }
+        }
+
+        function resetPhoneForm() {
+            if (otpTimerInterval) clearInterval(otpTimerInterval);
+            document.getElementById('otp-input-container').style.display = 'none';
+            document.getElementById('btn-phone-back').style.display = 'none';
+            
+            const btnAction = document.getElementById('btn-phone-action');
+            btnAction.disabled = false;
+            btnAction.innerText = "Send Verification OTP";
+            
+            document.getElementById('auth-otp-code').value = '';
+        }
+        
+        function handlePhoneAction() {
+            const otpContainer = document.getElementById('otp-input-container');
+            if (otpContainer.style.display === 'none') {
+                requestOTP();
+            } else {
+                verifyOTP();
+            }
+        }
+
+        async function saveProfilePreferences() {
+            const phone = document.getElementById('profile-in-phone').value.trim();
+            const channel = document.getElementById('profile-in-channel').value;
+            
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch('/api/auth/profile/update', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-session-token': token
+                    },
+                    body: JSON.stringify({
+                        phone_number: phone,
+                        preferred_channel: channel
+                    })
+                });
+                if (res.ok) {
+                    alert("Preferences saved successfully!");
+                    await initAuth();
+                } else {
+                    alert("Failed to save preferences.");
+                }
+            } catch (e) {
+                alert("Error saving preferences: " + e);
             }
         }
 
@@ -9565,12 +9779,52 @@
         <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 380px; max-width: 90vw; position: relative;">
             <button onclick="closeLoginModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             <div style="display: flex; gap: 15px; border-bottom: 1px solid var(--border-glass); margin-bottom: 20px; padding-bottom: 5px;">
-                <h3 id="tab-login" onclick="switchAuthTab('login')" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 15px; cursor: pointer; border-bottom: 2px solid var(--accent-gold); padding-bottom: 5px;">Sign In</h3>
-                <h3 id="tab-signup" onclick="switchAuthTab('signup')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 15px; cursor: pointer; padding-bottom: 5px;">Sign Up</h3>
+                <h3 id="tab-phone" onclick="switchAuthTab('phone')" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 14px; cursor: pointer; border-bottom: 2px solid var(--accent-gold); padding-bottom: 5px;">Phone OTP</h3>
+                <h3 id="tab-login" onclick="switchAuthTab('login')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 14px; cursor: pointer; padding-bottom: 5px;">Email Sign In</h3>
+                <h3 id="tab-signup" onclick="switchAuthTab('signup')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 14px; cursor: pointer; padding-bottom: 5px;">Email Sign Up</h3>
+            </div>
+            
+            <!-- Phone OTP Form -->
+            <div id="form-phone-fields" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="input-group">
+                    <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Phone Number</label>
+                    <div style="display: flex; gap: 5px;">
+                        <span style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: var(--text-secondary); padding: 8px 10px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; font-weight: bold;">+91</span>
+                        <input type="tel" id="auth-phone-number" placeholder="9876543210" style="flex: 1; background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; font-size: 13px;">
+                    </div>
+                </div>
+                
+                <!-- Channel Selector -->
+                <div class="input-group">
+                    <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block; color: var(--text-secondary);">Send OTP via</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-channel-whatsapp" onclick="setOtpChannel('whatsapp')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(37, 211, 102, 0.15); color: #25D366; border: 1px solid #25D366; border-radius: 6px; padding: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                            <i class="fa-brands fa-whatsapp" style="font-size: 14px;"></i> WhatsApp
+                        </button>
+                        <button id="btn-channel-sms" onclick="setOtpChannel('sms')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-glass); border-radius: 6px; padding: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                            <i class="fa-solid fa-comment-sms" style="font-size: 13px;"></i> SMS
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OTP Input (initially hidden) -->
+                <div id="otp-input-container" style="display: none; flex-direction: column; gap: 12px; margin-top: 5px; border-top: 1px dashed var(--border-glass); padding-top: 12px;">
+                    <div class="input-group">
+                        <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block; color: var(--accent-gold);">Enter 6-Digit OTP</label>
+                        <input type="text" id="auth-otp-code" placeholder="123456" maxlength="6" style="background: var(--bg-darker); border: 1px solid var(--border-gold); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; letter-spacing: 4px; text-align: center; font-size: 16px; font-weight: bold;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                        <span id="otp-timer" style="color: var(--text-secondary);">Resend OTP in 59s</span>
+                        <button id="btn-resend-otp" onclick="requestOTP()" style="background: transparent; border: none; color: var(--accent-gold); cursor: pointer; padding: 0; font-size: 11px; text-decoration: underline; display: none;">Resend OTP</button>
+                    </div>
+                </div>
+
+                <button id="btn-phone-action" class="calculate-btn" onclick="handlePhoneAction()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Send Verification OTP</button>
+                <button id="btn-phone-back" onclick="resetPhoneForm()" style="background: transparent; border: none; color: var(--text-secondary); font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 5px; display: none; text-align: center; width: 100%;">Change Phone Number</button>
             </div>
             
             <!-- Login Form -->
-            <div id="form-login-fields" style="display: flex; flex-direction: column; gap: 12px;">
+            <div id="form-login-fields" style="display: none; flex-direction: column; gap: 12px;">
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Email Address</label>
                     <input type="email" id="auth-login-email" placeholder="email@example.com" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
@@ -9579,7 +9833,7 @@
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Password</label>
                     <input type="password" id="auth-login-pass" placeholder="••••••••" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
-                <button class="calculate-btn" onclick="submitLogin()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px;">Sign In</button>
+                <button class="calculate-btn" onclick="submitLogin()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Sign In</button>
             </div>
             
             <!-- Signup Form -->
@@ -9600,7 +9854,7 @@
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Referral Code (optional)</label>
                     <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
                 </div>
-                <button class="calculate-btn" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px;">Create Account</button>
+                <button class="calculate-btn" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Create Account</button>
             </div>
             
             <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
@@ -9611,7 +9865,6 @@
             
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 8px; font-size: 11px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
-                <button class="lang-select-btn" onclick="handleSocialLogin('facebook')" style="width: 100%; justify-content: center; padding: 8px; font-size: 11px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-facebook" style="color: #1877f2; margin-right: 8px;"></i> Continue with Facebook</button>
             </div>
         </div>
     </div>
@@ -9654,6 +9907,10 @@
                     <span id="profile-email" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 11px; color: var(--text-secondary);">Phone Number:</span>
+                    <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                     <span style="font-size: 11px; color: var(--text-secondary);">Credit Balance:</span>
                     <span style="font-size: 11px; font-weight: bold; color: var(--accent-gold);"><span id="profile-credits-count">0</span> Credits</span>
                 </div>
@@ -9668,6 +9925,23 @@
                         <button onclick="copyReferralCode()" title="Copy referral code" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold); border-radius: 5px; font-size: 10px; padding: 2px 6px; cursor: pointer;"><i class="fa-solid fa-copy"></i></button>
                     </span>
                 </div>
+            </div>
+
+            <!-- Account Preferences -->
+            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Account Preferences</h4>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="input-group">
+                    <label style="font-size: 10px; color: var(--text-secondary);">Phone Number</label>
+                    <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 10px; color: var(--text-secondary);">Preferred OTP/Alerts Channel</label>
+                    <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="sms">SMS</option>
+                    </select>
+                </div>
+                <button class="calculate-btn" onclick="saveProfilePreferences()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Preferences</button>
             </div>
 
             <!-- Usage Dashboard (populated from /api/billing/usage) -->

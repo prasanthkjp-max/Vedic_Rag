@@ -146,14 +146,20 @@ def get_llm_client():
 # The /api/auth/oauth endpoint verifies the provider token server-side and
 # derives the email from the *verified* response — it never trusts a
 # client-supplied email. Set these to your real OAuth app credentials to enable
-# Google / Facebook sign-in. When a provider is unconfigured, sign-in with that
+# Google sign-in. When a provider is unconfigured, sign-in with that
 # provider fails closed.
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
-FACEBOOK_APP_ID = os.environ.get("FACEBOOK_APP_ID", "")
-FACEBOOK_APP_SECRET = os.environ.get("FACEBOOK_APP_SECRET", "")
 
-# Opt-in, OFF by default. Allows a *mock* OAuth login (trusting the supplied
-# email) for local dev / newsletter testing only. Even when enabled it refuses
+# --- OTP / SMS / WhatsApp Login ---
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER", "")
+TWILIO_WHATSAPP_NUMBER = os.environ.get("TWILIO_WHATSAPP_NUMBER", "")
+MSG91_AUTH_KEY = os.environ.get("MSG91_AUTH_KEY", "")
+MSG91_OTP_TEMPLATE_ID = os.environ.get("MSG91_OTP_TEMPLATE_ID", "")
+
+# Opt-in, OFF by default. Allows a *mock* OAuth/OTP login (trusting the supplied
+# email/phone) for local dev / newsletter testing only. Even when enabled it refuses
 # to log into accounts that have a password or a different OAuth provider, so it
 # cannot be used to take over real users. NEVER enable this in production.
 ALLOW_MOCK_OAUTH = os.environ.get("VEDIC_ALLOW_MOCK_OAUTH", "0") == "1"

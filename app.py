@@ -63,8 +63,12 @@ from config import (
     API_KEY,
     REQUIRE_API_KEY,
     GOOGLE_OAUTH_CLIENT_ID,
-    FACEBOOK_APP_ID,
-    FACEBOOK_APP_SECRET,
+    TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN,
+    TWILIO_PHONE_NUMBER,
+    TWILIO_WHATSAPP_NUMBER,
+    MSG91_AUTH_KEY,
+    MSG91_OTP_TEMPLATE_ID,
     ALLOW_MOCK_OAUTH,
     STRIPE_SECRET_KEY,
     ALLOW_SIMULATED_PAYMENTS,
@@ -292,6 +296,17 @@ def init_user_db():
     add_col("usage_period", "TEXT")
     add_col("referral_code", "TEXT")
     add_col("referred_by", "INTEGER")
+    add_col("preferred_channel", "TEXT DEFAULT 'whatsapp'")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS otp_verifications (
+        phone_number TEXT NOT NULL,
+        otp TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        PRIMARY KEY (phone_number)
+    )
+    """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
@@ -473,7 +488,7 @@ def get_user_by_session(token: str):
     cursor.execute("""
         SELECT u.id, u.email, u.full_name, u.credit_balance, s.expires_at,
                u.latitude, u.longitude, u.timezone, u.language, u.wants_newsletter, u.location_name,
-               u.dob, u.tob, u.gender, u.referral_code
+               u.dob, u.tob, u.gender, u.referral_code, u.phone_number, u.preferred_channel
         FROM sessions s
         JOIN users u ON s.user_id = u.id 
         WHERE s.session_token = ?
@@ -481,7 +496,7 @@ def get_user_by_session(token: str):
     row = cursor.fetchone()
     conn.close()
     if row:
-        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender, referral_code = row
+        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender, referral_code, phone_number, preferred_channel = row
         try:
             expires_at = datetime.fromisoformat(expires_str)
         except (ValueError, TypeError):
@@ -517,7 +532,9 @@ def get_user_by_session(token: str):
                 "dob": dob,
                 "tob": tob,
                 "gender": gender,
-                "referral_code": referral_code
+                "referral_code": referral_code,
+                "phone_number": phone_number,
+                "preferred_channel": preferred_channel
             }
         else:
             # Session has expired — drop the row so stale tokens don't accumulate.
@@ -701,6 +718,15 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str = Field(max_length=320)
     password: str = Field(max_length=512)
+
+class SendOTPRequest(BaseModel):
+    phone_number: str = Field(max_length=20)
+    channel: str = Field(default="whatsapp", max_length=10) # "sms" or "whatsapp"
+
+class VerifyOTPRequest(BaseModel):
+    phone_number: str = Field(max_length=20)
+    otp: str = Field(max_length=10)
+    referral_code: str = Field(default="", max_length=32)
 
 class OAuthRequest(BaseModel):
     provider: str = Field(max_length=32)
@@ -2100,6 +2126,8 @@ class ProfileUpdateRequest(BaseModel):
     timezone: str = Field(default=None, max_length=64)
     language: LangCode = None
     location_name: str = Field(default=None, max_length=200)
+    phone_number: str = Field(default=None, max_length=20)
+    preferred_channel: str = Field(default=None, max_length=10)
 
 @app.post("/api/auth/profile/update")
 def profile_update(req: ProfileUpdateRequest, request: Request):
@@ -2128,6 +2156,12 @@ def profile_update(req: ProfileUpdateRequest, request: Request):
     if req.location_name is not None:
         updates.append("location_name = ?")
         params.append(req.location_name)
+    if req.phone_number is not None:
+        updates.append("phone_number = ?")
+        params.append(req.phone_number)
+    if req.preferred_channel is not None:
+        updates.append("preferred_channel = ?")
+        params.append(req.preferred_channel)
         
     if updates:
         params.append(user["id"])
@@ -2260,6 +2294,206 @@ Start directly with the chat response:
         return prompt
 
     return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
+
+import base64
+import random
+import urllib.parse
+import urllib.request
+
+def _send_twilio_otp(phone_number: str, otp: str, channel: str) -> bool:
+    if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN):
+        logger.warning("Twilio credentials not configured.")
+        return False
+
+    message = f"Your Vedic RAG verification code is: {otp}. Valid for 10 minutes."
+    
+    to_number = phone_number
+    if not to_number.startswith("+"):
+        to_number = "+" + to_number
+
+    if channel == "whatsapp":
+        if not TWILIO_WHATSAPP_NUMBER:
+            logger.warning("TWILIO_WHATSAPP_NUMBER not configured.")
+            return False
+        from_number = f"whatsapp:{TWILIO_WHATSAPP_NUMBER}"
+        to_number = f"whatsapp:{to_number}"
+    else:
+        if not TWILIO_PHONE_NUMBER:
+            logger.warning("TWILIO_PHONE_NUMBER not configured.")
+            return False
+        from_number = TWILIO_PHONE_NUMBER
+
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
+    data = urllib.parse.urlencode({
+        "From": from_number,
+        "To": to_number,
+        "Body": message
+    }).encode("utf-8")
+
+    req = urllib.request.Request(url, data=data, method="POST")
+    auth_str = f"{TWILIO_ACCOUNT_SID}:{TWILIO_AUTH_TOKEN}"
+    auth_b64 = base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
+    req.add_header("Authorization", f"Basic {auth_b64}")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            logger.info("Twilio OTP sent successfully: %s", res_data.get("sid"))
+            return True
+    except Exception as e:
+        logger.error("Failed to send OTP via Twilio: %s", e)
+        return False
+
+def _send_msg91_otp(phone_number: str, otp: str) -> bool:
+    if not (MSG91_AUTH_KEY and MSG91_OTP_TEMPLATE_ID):
+        logger.warning("MSG91 credentials not configured.")
+        return False
+
+    mobile = phone_number.replace("+", "").strip()
+    params = {
+        "template_id": MSG91_OTP_TEMPLATE_ID,
+        "mobile": mobile,
+        "otp": otp
+    }
+    url = "https://control.msg91.com/api/v5/otp?" + urllib.parse.urlencode(params)
+    
+    req = urllib.request.Request(url, method="POST")
+    req.add_header("authkey", MSG91_AUTH_KEY)
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            if res_data.get("type") == "success":
+                logger.info("MSG91 OTP sent successfully")
+                return True
+            else:
+                logger.error("MSG91 OTP send failed: %s", res_data)
+                return False
+    except Exception as e:
+        logger.error("Failed to send OTP via MSG91: %s", e)
+        return False
+
+def _send_otp_via_api(phone_number: str, otp: str, channel: str) -> bool:
+    # 1. Try Twilio (supports both SMS and WhatsApp)
+    if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+        return _send_twilio_otp(phone_number, otp, channel)
+        
+    # 2. Try MSG91 (SMS only)
+    if MSG91_AUTH_KEY and MSG91_OTP_TEMPLATE_ID and channel == "sms":
+        return _send_msg91_otp(phone_number, otp)
+        
+    logger.warning("No SMS/WhatsApp API provider configured. OTP logged to console: %s", otp)
+    return False
+
+@app.post("/api/auth/send-otp")
+def auth_send_otp(req: SendOTPRequest):
+    phone_number = req.phone_number.strip()
+    # Basic validation and formatting for India (+91)
+    if not phone_number.startswith("+"):
+        clean_num = "".join(filter(str.isdigit, phone_number))
+        if len(clean_num) == 10:
+            phone_number = "+91" + clean_num
+        else:
+            raise HTTPException(status_code=400, detail="Invalid phone number format. Use country code, e.g. +91 98765 43210")
+    
+    otp = f"{random.randint(100000, 999999)}"
+    expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
+    
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO otp_verifications (phone_number, otp, channel, expires_at)
+            VALUES (?, ?, ?, ?)
+        """, (phone_number, otp, req.channel, expires_at))
+        conn.commit()
+    finally:
+        conn.close()
+        
+    sent = _send_otp_via_api(phone_number, otp, req.channel)
+    
+    response_data = {"status": "success", "message": f"OTP sent via {req.channel}"}
+    if ALLOW_MOCK_OAUTH or not sent:
+        response_data["debug_otp"] = otp
+        
+    return response_data
+
+@app.post("/api/auth/verify-otp")
+def auth_verify_otp(req: VerifyOTPRequest):
+    phone_number = req.phone_number.strip()
+    if not phone_number.startswith("+"):
+        clean_num = "".join(filter(str.isdigit, phone_number))
+        if len(clean_num) == 10:
+            phone_number = "+91" + clean_num
+            
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT otp, channel, expires_at FROM otp_verifications
+            WHERE phone_number = ?
+        """, (phone_number,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=400, detail="No OTP requested for this phone number")
+            
+        stored_otp, channel, expires_str = row
+        expires_at = datetime.fromisoformat(expires_str)
+        
+        if expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+            
+        if stored_otp != req.otp.strip():
+            raise HTTPException(status_code=401, detail="Invalid OTP")
+            
+        cursor.execute("DELETE FROM otp_verifications WHERE phone_number = ?", (phone_number,))
+        
+        cursor.execute("SELECT id, full_name, credit_balance FROM users WHERE phone_number = ?", (phone_number,))
+        user_row = cursor.fetchone()
+        
+        if user_row:
+            user_id, full_name, credit_balance = user_row
+            cursor.execute("UPDATE users SET preferred_channel = ? WHERE id = ?", (channel, user_id))
+        else:
+            placeholder_email = f"phone_{phone_number.replace('+', '')}@phone.auth"
+            cursor.execute("""
+                INSERT INTO users (email, full_name, phone_number, preferred_channel, credit_balance, latitude, longitude, timezone, language, wants_newsletter, location_name)
+                VALUES (?, ?, ?, ?, ?, 13.0827, 80.2707, 'Asia/Kolkata', 'en', 1, 'Chennai, India')
+            """, (placeholder_email, f"Phone User {phone_number[-4:]}", phone_number, channel, SIGNUP_BONUS_CREDITS))
+            user_id = cursor.lastrowid
+            
+            cursor.execute("""
+                INSERT INTO user_authentications (user_id, provider, provider_user_id)
+                VALUES (?, 'phone', ?)
+            """, (user_id, phone_number))
+            
+            cursor.execute("UPDATE users SET referral_code = ? WHERE id = ?",
+                           (_new_referral_code(cursor), user_id))
+            cursor.execute("""
+                INSERT INTO credit_logs (user_id, amount, action_type, details)
+                VALUES (?, ?, 'signup_bonus', 'Phone signup credit bonus')
+            """, (user_id, SIGNUP_BONUS_CREDITS))
+            
+            _apply_referral(cursor, user_id, req.referral_code)
+            
+        token = secrets.token_hex(32)
+        expires_at_session = (datetime.utcnow() + timedelta(days=7)).isoformat()
+        cursor.execute("""
+            INSERT INTO sessions (session_token, user_id, expires_at)
+            VALUES (?, ?, ?)
+        """, (token, user_id, expires_at_session))
+        
+        conn.commit()
+    finally:
+        conn.close()
+        
+    return {
+        "status": "success",
+        "token": token,
+        "user": get_user_by_session(token)
+    }
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -2426,7 +2660,10 @@ def auth_oauth(req: OAuthRequest):
     if provider == "google":
         identity = _verify_google_token(req.token)
     elif provider == "facebook":
-        identity = _verify_facebook_token(req.token)
+        raise HTTPException(
+            status_code=400,
+            detail="Facebook login is no longer supported."
+        )
     else:
         identity = None
 
@@ -2803,7 +3040,7 @@ def create_order(req: CreateOrderRequest, request: Request):
         "currency": BILLING_CURRENCY,
         "credits": credits,
         "gst": gst,  # paise: {gross, base, gst, rate}
-        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or ""},
+        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or "", "contact": user.get("phone_number") or ""},
     }
 
 
@@ -2886,7 +3123,7 @@ def create_subscription(request: Request):
         "currency": BILLING_CURRENCY,
         "tier": "astro",
         "gst": gst,
-        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or ""},
+        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or "", "contact": user.get("phone_number") or ""},
     }
 
 
