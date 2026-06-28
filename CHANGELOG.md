@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.6]
+
+### Fixed
+- **Broken calendar festival images + huge asset payload.** Three festival
+  mappings in `getFestivalImage` pointed at filenames that don't exist, so those
+  days showed a broken image: Ekadashi → `venkateswara_symbols.png` (actual file
+  `lord_venkateswara.png`), Diwali → `diya.png` (actual `diya_lamp.png`), and
+  Marriage Muhurtham → `hindu_marriage_couple.png` (no asset — now maps to the
+  auspicious `kalasam.png`). Separately, the deity/festival PNGs were 1024px and
+  ~0.7–1.1 MB **each** (≈24 MB total) while displayed at 56px in the grid (and
+  ~190px in the hero), so they loaded slowly and sometimes failed. Resized all to
+  512px and palette-optimized them with Pillow: **~24 MB → ~1.7 MB** (deity art
+  ~1 MB → ~130 KB; icons → ~15 KB), with no visible quality loss at display size.
+  Festival thumbnails also gained `loading="lazy"`/`decoding="async"` and a
+  cache-buster bump. (The unused `cosmic_galaxy_bg.png` was left untouched.)
+
 ## [1.18.5]
 
 ### Fixed
