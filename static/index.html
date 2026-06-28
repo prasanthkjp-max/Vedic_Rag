@@ -1740,32 +1740,50 @@
         /* ════════════════════════════════════════
            DAILY KAALAMS
         ════════════════════════════════════════ */
-        .kaalams-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        /* ════════════════════════════════════════
+           DAILY TIMINGS — scannable omen rows.
+           One consistent color system encodes each window's nature so the
+           day reads at a glance: good (green) · neutral (amber) · bad (red).
+           (Replaces an inline-styled bullet list whose colors were arbitrary.)
+        ════════════════════════════════════════ */
+        .timings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
-
-        .kaalams-item {
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(217, 119, 6, 0.20);
-            border-radius: 10px;
-            padding: 11px 14px;
+        .timing-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 11px;
+            border-radius: 9px;
+            background: var(--omen-tint, rgba(255, 255, 255, 0.65));
+            border: 1px solid var(--border-glass);
+            border-left: 3px solid var(--omen, var(--accent-gold));
+            font-size: 12px;
+            line-height: 1.3;
         }
-
-        .kaalams-name {
-            font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1.1px;
-            color: var(--text-secondary); margin-bottom: 4px;
+        .timing-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--omen, var(--accent-gold));
+            flex-shrink: 0;
         }
-
-        .kaalams-time {
-            font-size: 15px; font-weight: 700;
-            color: var(--text-primary);
+        .timing-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 0;
         }
-
-        .kaalams-item.inauspicious .kaalams-time { color: #b91c1c; }
-        .kaalams-item.auspicious   .kaalams-time { color: var(--text-gold); }
+        .timing-time {
+            margin-left: auto;
+            padding-left: 10px;
+            font-weight: 700;
+            color: var(--omen, var(--text-primary));
+            white-space: nowrap;
+        }
+        .timing-row.omen-good    { --omen: #15803d; --omen-tint: rgba(21, 128, 61, 0.07); }
+        .timing-row.omen-bad     { --omen: #dc2626; --omen-tint: rgba(220, 38, 38, 0.06); }
+        .timing-row.omen-neutral { --omen: #b45309; --omen-tint: rgba(180, 83, 9, 0.06); }
 
         /* 2-Column Desktop layout for advanced wisdom panel to balance layout height */
         .panchangam-advanced-grid {
@@ -2157,7 +2175,6 @@
             .card { padding: 16px 18px; }
             .panch-grid { grid-template-columns: repeat(2, 1fr); }
             .horas-grid { grid-template-columns: repeat(3, 1fr); }
-            .kaalams-grid { grid-template-columns: 1fr; }
             .form-grid { grid-template-columns: 1fr; }
         }
 
@@ -2671,17 +2688,17 @@
                         <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                             <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title">Daily Kaalams & Auspicious Timings</span>
                         </div>
-                        <ul style="margin: 0; padding-left: 20px; font-size: 11.5px; color: var(--text-primary); line-height: 1.7; list-style-type: square;">
-                            <li><span id="lbl-rahu-kalam-label" style="font-weight: bold; color: #dc2626;">Rahu Kalam (Inauspicious):</span> <span id="panch-rahu-kalam" style="font-weight: bold; color: #dc2626;">--</span></li>
-                            <li><span id="lbl-yamagandam-label" style="font-weight: bold; color: #b45309;">Yamagandam (Inauspicious):</span> <span id="panch-yamagandam" style="font-weight: bold; color: #b45309;">--</span></li>
-                            <li><span id="lbl-gulika-kalam-label" style="font-weight: bold; color: #2563eb;">Gulika Kalam (Auspicious/Neutral):</span> <span id="panch-gulika-kalam" style="font-weight: bold; color: #2563eb;">--</span></li>
-                            <li><span id="lbl-abhijit-label" style="font-weight: bold; color: #16a34a;">Abhijit Muhurtha (Highly Auspicious):</span> <span id="panch-abhijit" style="font-weight: bold; color: #16a34a;">--</span></li>
-                            <li><span id="lbl-brahma-label" style="font-weight: bold; color: #d97706;">Brahma Muhurtha (Predawn Auspicious):</span> <span id="panch-brahma-muhurtha" style="font-weight: bold; color: #d97706;">--</span></li>
-                            <li><span id="lbl-godhuli-label" style="font-weight: bold; color: #d97706;">Godhuli Muhurta (Auspicious):</span> <span id="panch-godhuli-muhurtha" style="font-weight: bold; color: #d97706;">--</span></li>
-                            <li><span id="lbl-nishita-label" style="font-weight: bold; color: #7c3aed;">Nishita Muhurta (Auspicious):</span> <span id="panch-nishita-muhurtha" style="font-weight: bold; color: #7c3aed;">--</span></li>
-                            <li><span id="lbl-vijaya-label" style="font-weight: bold; color: #16a34a;">Vijaya Muhurta (Auspicious):</span> <span id="panch-vijaya-muhurtha" style="font-weight: bold; color: #16a34a;">--</span></li>
-                            <li><span id="lbl-dur-muhurta-label" style="font-weight: bold; color: #dc2626;">Dur Muhurtam (Inauspicious):</span> <span id="panch-dur-muhurta" style="font-weight: bold; color: #dc2626;">--</span></li>
-                        </ul>
+                        <div class="timings-list">
+                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-rahu-kalam-label">Rahu Kalam (Inauspicious):</span><span class="timing-time" id="panch-rahu-kalam">--</span></div>
+                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-yamagandam-label">Yamagandam (Inauspicious):</span><span class="timing-time" id="panch-yamagandam">--</span></div>
+                            <div class="timing-row omen-neutral"><span class="timing-dot"></span><span class="timing-label" id="lbl-gulika-kalam-label">Gulika Kalam (Auspicious/Neutral):</span><span class="timing-time" id="panch-gulika-kalam">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-abhijit-label">Abhijit Muhurtha (Highly Auspicious):</span><span class="timing-time" id="panch-abhijit">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-brahma-label">Brahma Muhurtha (Predawn Auspicious):</span><span class="timing-time" id="panch-brahma-muhurtha">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-godhuli-label">Godhuli Muhurta (Auspicious):</span><span class="timing-time" id="panch-godhuli-muhurtha">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-nishita-label">Nishita Muhurta (Auspicious):</span><span class="timing-time" id="panch-nishita-muhurtha">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-vijaya-label">Vijaya Muhurta (Auspicious):</span><span class="timing-time" id="panch-vijaya-muhurtha">--</span></div>
+                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-dur-muhurta-label">Dur Muhurtam (Inauspicious):</span><span class="timing-time" id="panch-dur-muhurta">--</span></div>
+                        </div>
                     </div>
 
                     <!-- Strength Metrics List -->
