@@ -484,6 +484,12 @@
                shave the tall vowel marks / conjuncts of Tamil & Malayalam. */
             line-height: 1.5;
             padding: 1px 0;
+            /* Never wrap: a wrapped title in the fixed-height header pushed the
+               first word (e.g. Tamil "வைதிக") above the bar and out of view.
+               Stay on one line; truncate gracefully only if truly cramped. */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         #lbl-subtitle {
@@ -492,6 +498,35 @@
             text-transform: uppercase;
             color: var(--text-muted);
             margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Keep the brand block at full size on desktop so the title never gets
+           squeezed into wrapping; on phones (<768) it may shrink and the title
+           ellipsizes instead. logo-title min-width:0 lets that truncation work. */
+        @media (min-width: 768px) { .logo-section { flex-shrink: 0; } }
+        .logo-title { min-width: 0; }
+
+        /* Cap the location chip — a long place name ("Saint-Ouen-sur-Seine,
+           Ile-de-France") otherwise ate the row and crowded out the title. */
+        #header-location-name {
+            display: inline-block;
+            max-width: 118px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+
+        /* Long-script languages (everything but English) have wider nav tabs and
+           titles, so collapse the top nav into the side drawer earlier — the
+           drawer already holds all navigation, language, and settings. English
+           desktops keep the top tabs down to the usual 1024px breakpoint. */
+        @media (max-width: 1450px) {
+            html:not([lang="en"]) .nav-top-bar { display: none; }
+            html:not([lang="en"]) .menu-toggle-btn { display: block; }
         }
 
         /* ── Nav top bar ── */

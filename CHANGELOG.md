@@ -3,6 +3,26 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.2]
+
+### Fixed
+- **App title went out of view in Tamil & Malayalam (real cause).** The 1.18.1
+  line-height tweak addressed glyph clipping but not the actual problem: in a
+  crowded header (wide Indic nav tabs + a long detected location like
+  "Saint-Ouen-sur-Seine, Ile-de-France"), the longer translated title wrapped to
+  a second line that was pushed *above* the fixed 64px header and out of view —
+  only "ஆஸ்ட்ரோ AI" / "ആസ്ട്രോ AI" remained, with the leading "வைதிக" / "വൈദിക"
+  gone. Now:
+  - The title and subtitle never wrap (`white-space: nowrap`, with an ellipsis
+    fallback only if truly cramped), and the brand block no longer shrinks on
+    desktop, so the full title always stays on one line and in view.
+  - The location chip is width-capped with an ellipsis so a long place name can't
+    crowd out the title.
+  - For long-script languages (everything but English) the top nav collapses into
+    the existing side drawer below 1450px — the drawer already holds all
+    navigation, language, and settings. English desktops are unchanged.
+  Verified across widths with headless-Chrome renders of the Tamil header.
+
 ## [1.18.1]
 
 ### Fixed
