@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.4]
+
+### Fixed
+- **Calendar: instant month switching, no more double-render glitch.**
+  `renderMonthlyCalendar` cleared the grid *before* awaiting the month-panchangam
+  fetch and appended cells *after*, so overlapping month changes (or concurrent
+  callers) interleaved and painted two or three months into the grid at once, and
+  every uncached month blocked on the network. Rewritten so:
+  - Renders commit **atomically** (`replaceChildren` of a prebuilt fragment) and
+    a monotonic **render token** makes a newer render cancel any stale in-flight
+    one — eliminating the multiple-months overlap.
+  - Switching to a month paints an **instant day-number skeleton**, then enriches
+    it when the data arrives, so navigation is never blocked on the fetch.
+  - The **previous and next months are prefetched** into the cache after each
+    render, so stepping through months is an instant cache hit.
+  - A 0.16s grid fade makes the transition smooth (respects reduced-motion).
+
 ## [1.18.3]
 
 ### Changed
