@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.18.5]
+
+### Fixed
+- **Calendar details now load fast (`/api/month-panchangam`).** The grid filled
+  in slowly — each month took ~5s and *nothing was cached*, so revisiting or
+  prefetching a month recomputed it every time. Two causes, both fixed:
+  - The per-day Swiss Ephemeris math ran ~10-15× slower inside FastAPI's sync
+    threadpool than on the main thread (a GIL/pyswisseph interaction; verified
+    by profiling: 0.37s on the main thread vs 5.5s in a worker thread). The
+    endpoint is now `async` and computes on the event loop, so a cold month is
+    **~0.37s instead of ~5s**, and the calendar's concurrent current+prev+next
+    prefetch requests serialize cleanly instead of thrashing the GIL.
+  - Added a bounded in-memory **LRU cache** (a month is fully determined by
+    year/month/language/location, so it never changes) — repeat and prefetched
+    months are now **instant** instead of recomputed.
+
+### Added
+- **`tools/test_calendar_nav.py`** — a Playwright navigation test that drives the
+  live calendar and asserts month switching renders exactly one clean month
+  (regression guard for the double-render glitch) and repaints without blocking
+  on the fetch. Falls back to the bundled Chromium when no system Chrome exists.
+
 ## [1.18.4]
 
 ### Fixed
