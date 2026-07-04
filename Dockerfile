@@ -44,7 +44,7 @@ RUN tar -czf /app/source.tar.gz \
       --exclude='*.db' --exclude='*.db-wal' --exclude='*.db-shm' --exclude='*.bak' \
       --exclude='*.log' \
       --exclude=./__pycache__ --exclude='*.pyc' \
-      . && echo "source.tar.gz: $(du -h /app/source.tar.gz | cut -f1)"
+      . ; rc=$? ; if [ $rc -gt 1 ] ; then exit $rc ; fi ; echo "source.tar.gz: $(du -h /app/source.tar.gz | cut -f1)"
 
 # Expose the port uvicorn runs on
 EXPOSE 8008

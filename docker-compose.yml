@@ -10,18 +10,23 @@ services:
     ports:
       - "8008:8008"
     volumes:
-      # Mount the sqlite database file persistently
+      # Mount the sqlite databases persistently
       - ./data:/app/data
       # Mount the books directory for RAG page rendering
       - ./books:/app/books
       # Mount the static frontend assets
       - ./static:/app/static
+      # Mount Swiss Ephemeris data
+      - ./ephe:/app/ephe
+      # Mount the .api_key file for operator key
+      - ./.api_key:/app/.api_key:ro
     environment:
       # Path overrides inside the container
       - VEDIC_DB_PATH=/app/data/vedic_astrology_rag.db
+      - VEDIC_USER_DB_PATH=/app/data/vedic_user.db
+      - VEDIC_RAG_DB_PATH=/app/data/vedic_astrology_rag.db
       - VEDIC_BOOKS_DIR=/app/books
-      
-      # OpenRouter backend (LLM chat + RAG embeddings via the OpenAI SDK)
+      - VEDIC_API_KEY=${VEDIC_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - MODEL_FAST=${MODEL_FAST:-deepseek/deepseek-v4-flash}
       - MODEL_BALANCED=${MODEL_BALANCED:-google/gemma-4-31b-it}
@@ -31,21 +36,10 @@ services:
       - VEDIC_EMBED_DIM=${VEDIC_EMBED_DIM:-1536}
       - VEDIC_EMBED_TIMEOUT=${VEDIC_EMBED_TIMEOUT:-30}
       - VEDIC_LLM_TIMEOUT=${VEDIC_LLM_TIMEOUT:-300}
-      
-      # App Security Key (Ensure you set this to a secure random string in production)
-      - VEDIC_API_KEY=${VEDIC_API_KEY:-}
-      
-      # CORS Allowed Origins
       - VEDIC_CORS_ORIGINS=${VEDIC_CORS_ORIGINS:-*}
-      
-      # Administrative/Billing Credit Exemptions
       - VEDIC_UNLIMITED_EMAILS=${VEDIC_UNLIMITED_EMAILS:-}
-      
-      # Payment and Stripe setup
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - VEDIC_ALLOW_SIMULATED_PAYMENTS=${VEDIC_ALLOW_SIMULATED_PAYMENTS:-0}
-      
-      # OAuth Authentication Credentials
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
       - FACEBOOK_APP_ID=${FACEBOOK_APP_ID:-}
       - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}
