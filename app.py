@@ -139,6 +139,8 @@ from config import (
     REFERRAL_BONUS_REFEREE,
     REFERRAL_BONUS_REFERRER,
     CHAT_HISTORY_TURNS,
+    MAX_SAVED_CHARTS,
+
     BILLING_CURRENCY,
     CREDIT_PACKAGES,
     CORS_ALLOW_ORIGINS,
@@ -473,10 +475,15 @@ def init_user_db():
         ayanamsa TEXT DEFAULT 'Lahiri',
         chart_style TEXT DEFAULT 'south',
         is_saved INTEGER DEFAULT 0,
+        relationship TEXT DEFAULT 'other',
+        profile_name TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+    add_col("relationship", "TEXT DEFAULT 'other'", "user_charts")
+    add_col("profile_name", "TEXT DEFAULT ''", "user_charts")
+
 
     # Daily digest opt-ins: one per user, driven by the profile's saved birth
     # info + location + language. `unsubscribe_token` powers the tokenless
@@ -874,9 +881,9 @@ def build_prediction_context(chart, extra_queries=None):
     if extra_queries:
         queries.extend(extra_queries)
     queries.extend(build_rag_queries(chart, analysis))
-    rag_context, _ = retrieve_rag_context(search_engine, queries)
+    rag_context, raw_passages = retrieve_rag_context(search_engine, queries)
 
-    return analysis["analysis_text"], rag_context
+    return analysis["analysis_text"], rag_context, raw_passages
 
 
 def build_marriage_prediction_context(male_chart, female_chart, compatibility):
@@ -896,8 +903,9 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
         f"relationship harmony of {female_rasi} sign and {male_rasi} sign"
     ]
     
-    rag_context, _ = retrieve_rag_context(search_engine, queries, category="marriage")
-    return rag_context
+    rag_context, raw_passages = retrieve_rag_context(search_engine, queries, category="marriage")
+    return rag_context, raw_passages
+
 
 
 
@@ -943,9 +951,19 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                 try:
                     # Evaluate prompt (calls build_prediction_context which may do embed API calls)
                     if callable(prompt):
-                        eval_prompt = prompt()
+                        eval_res = prompt()
+                        if isinstance(eval_res, tuple):
+                            eval_prompt, manifest = eval_res
+                        else:
+                            eval_prompt = eval_res
+                            manifest = None
                     else:
                         eval_prompt = prompt
+                        manifest = None
+
+                    if manifest is not None:
+                        result_queue.put(("manifest", manifest))
+
                     # Open connection to OpenRouter (may block while the model warms up)
                     response_obj = _open_stream(eval_prompt)
                     result_queue.put(("success", response_obj))
@@ -957,28 +975,38 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
 
             # Wait for worker thread while yielding periodic keepalive newlines
             response = None
-            while worker_thread.is_alive():
+            manifest = None
+            while worker_thread.is_alive() or not result_queue.empty():
                 try:
-                    status, val = result_queue.get(timeout=5.0)
-                    if status == "success":
+                    status, val = result_queue.get(timeout=1.0)
+                    if status == "manifest":
+                        manifest = val
+                    elif status == "success":
                         response = val
-                    else:
+                        break
+                    elif status == "error":
                         raise val
-                    break
                 except queue.Empty:
                     # Send a keepalive newline to keep connection active
                     yield "\n"
 
             # Double check queue if thread terminated but response not set yet
             if response is None:
-                if not result_queue.empty():
+                while not result_queue.empty():
                     status, val = result_queue.get_nowait()
-                    if status == "success":
+                    if status == "manifest":
+                        manifest = val
+                    elif status == "success":
                         response = val
-                    else:
+                    elif status == "error":
                         raise val
-                else:
+                if response is None:
                     raise RuntimeError("AI engine worker thread terminated unexpectedly")
+
+            if manifest:
+                import json
+                yield json.dumps({"manifest": manifest}) + "\n"
+
 
             with response:
                 for chunk in response:
@@ -1503,7 +1531,17 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
             finally:
                 conn.close()
 
+        # Compute aspects using prediction_engine and add to chart
+        from prediction_engine import compute_houses, compute_aspects
+        try:
+            _, houses = compute_houses(chart["placements"])
+            aspects = compute_aspects(chart["placements"], houses)
+            chart["aspects"] = aspects
+        except Exception as aspect_err:
+            pass
+
         return chart
+
     except HTTPException:
         raise
     except ValueError as e:
@@ -1664,7 +1702,7 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
         }
         target_lang = lang_map.get(lang_code, "English")
 
-        analysis_text, rag_context = build_prediction_context(chart)
+        analysis_text, rag_context, raw_passages = build_prediction_context(chart)
 
         prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and master scholar.
 You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {birth_dt} in {place} (Coordinates: {coords}), using high-precision Thirukanitha sidereal coordinates with {ayanamsa_name} Ayanamsa.
@@ -1689,8 +1727,9 @@ CRITICAL VEDIC ASTROLOGY GUARDRAILS:
 - Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu) and the Lagna.
 - Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY the Vedic Graha Drishti exactly as listed under GRAHA DRISHTI in the computed analysis (all planets aspect the 7th house; Saturn aspects 3rd and 10th; Jupiter aspects 5th and 9th; Mars aspects 4th and 8th).
 - Ground every prediction directly in the provided CLASSICAL TEXT REFERENCES. Do NOT fabricate or hallucinate general astrological rules that contradict these texts.
+- IMPORTANT CITATION REQUIREMENT: You MUST cite the classical text references by their source number inline (e.g. [1], [2], ...) wherever you rely on their principles, rules, or predictions.
 
-Using the classical rules from the retrieved texts AND standard Jyotish technique, write an exceptionally insightful, accurate reading in beautiful Markdown. You do not need to explicitly cite the book titles or page numbers in the text, but you MUST base your predictions and readings directly on the wisdom and rules from the provided CLASSICAL TEXT REFERENCES, synthesising them with the computed chart details (planets, bhava house placements, dignities, aspects, yogas, and the running Vimshottari Dasa-Bhukti-Pratyantardasa/Antaram). Structure it as:
+Using the classical rules from the retrieved texts AND standard Jyotish technique, write an exceptionally insightful, accurate reading in beautiful Markdown. You do not need to explicitly write out the full book titles or page numbers in the text, but you MUST cite the source numbers inline (e.g., [1], [2], ...) where your predictions and readings rely on the wisdom and rules from the provided CLASSICAL TEXT REFERENCES, synthesising them with the computed chart details (planets, bhava house placements, dignities, aspects, yogas, and the running Vimshottari Dasa-Bhukti-Pratyantardasa/Antaram). Structure it as:
 1. **Divine Invocation** (in {target_lang}) — a short Sanskrit invocation and blessing.
 2. **Lagna & Personality** (in {target_lang}) — ascendant, its lord's placement/strength, and overall constitution.
 3. **Mind & Emotions (Moon & Nakshatra)** (in {target_lang}) — Moon's house, sign, dignity and Janma Nakshatra.
@@ -1702,7 +1741,19 @@ Using the classical rules from the retrieved texts AND standard Jyotish techniqu
 
 Be authoritative, compassionate, and precise. Start directly with the invocation in {target_lang}:
 """
-        return prompt
+        manifest = []
+        for i, passage in enumerate(raw_passages):
+            snippet = passage.get("raw_text", "")
+            if len(snippet) > 900:
+                snippet = snippet[:900] + "…"
+            manifest.append({
+                "index": i + 1,
+                "book_id": passage.get("book_id"),
+                "book_title": passage.get("book_title"),
+                "page_num": passage.get("page_num"),
+                "snippet": snippet
+            })
+        return prompt, manifest
 
     return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict"), media_type="text/event-stream")
 
@@ -1749,7 +1800,7 @@ def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
         }
         target_lang = lang_map.get(lang_code, "English")
 
-        rag_context = build_marriage_prediction_context(male_chart, female_chart, comp)
+        rag_context, raw_passages = build_marriage_prediction_context(male_chart, female_chart, comp)
 
         # Render a clean text-based comparison of both charts for prompt grounding
         analysis_text = f"""
@@ -1790,6 +1841,7 @@ CRITICAL VEDIC ASTROLOGY GUARDRAILS:
 - Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu) and the Lagna.
 - Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY classical Vedic Graha Drishti (all planets aspect the 7th house; Saturn aspects 3rd and 10th; Jupiter aspects 5th and 9th; Mars aspects 4th and 8th).
 - Ground every prediction directly in the provided CLASSICAL MARRIAGE TEXT REFERENCES. Do NOT fabricate or hallucinate general astrological rules that contradict these texts.
+- IMPORTANT CITATION REQUIREMENT: You MUST cite the classical marriage text references by their source number inline (e.g. [1], [2], ...) wherever you rely on their principles, rules, or predictions.
 
 Using the classical rules from the retrieved texts, write an exceptionally insightful, accurate marriage compatibility analysis in beautiful Markdown. You MUST address the following requirements in detail:
 1. **Individual Character & Personality Analysis**: Analyze both {male_name}'s and {female_name}'s characteristics based on their respective Ascendants (Lagnas), Moon Signs (Rasis), and Nakshatras. Explain how their individual temperaments will interact.
@@ -1810,7 +1862,19 @@ Structure your analysis as follows:
 
 Be authoritative, compassionate, and precise. Start directly with the invocation:
 """
-        return prompt
+        manifest = []
+        for i, passage in enumerate(raw_passages):
+            snippet = passage.get("raw_text", "")
+            if len(snippet) > 900:
+                snippet = snippet[:900] + "…"
+            manifest.append({
+                "index": i + 1,
+                "book_id": passage.get("book_id"),
+                "book_title": passage.get("book_title"),
+                "page_num": passage.get("page_num"),
+                "snippet": snippet
+            })
+        return prompt, manifest
 
     return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
 
@@ -2367,7 +2431,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     def prompt_builder():
         # Validate and build context inside the deferred callback
         try:
-            analysis_text, rag_context = build_prediction_context(chart, extra_queries=[query_text])
+            analysis_text, rag_context, raw_passages = build_prediction_context(chart, extra_queries=[query_text])
             birth_dt = chart['metadata']['datetime']
         except Exception as e:
             raise ValueError(f"Invalid chart_data: {e}")
@@ -2454,6 +2518,7 @@ Step 7: Dasa-Bhukti & Transit (Timing of Events)
 
 OUTPUT GENERATION RULES:
 - Strict Adherence to Texts: Every prediction or astrological claim MUST be traced back to the classical rules. If combining rules, explain the synthesis. Cite the source book and page (e.g. [Phaladeepika, Page 12]) when applying rules.
+- IMPORTANT CITATION REQUIREMENT: You MUST cite the classical text references by their source number inline (e.g. [1], [2], ...) wherever you rely on their principles, rules, or predictions.
 - No Hallucination: If the planetary data provided does not form a specific Yoga, do not invent one.
 - Holistic Synthesis: Do not contradict yourself. If a planet is a Raja Yoga Karaka but is Astangata (combust), state clearly that the Yoga is nullified or severely weakened as per the rules of Yoga Bhanga.
 - Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas and the Lagna.
@@ -2462,7 +2527,20 @@ OUTPUT GENERATION RULES:
 
 Start directly with the chat response:
 """
-        return prompt
+        manifest = []
+        for i, passage in enumerate(raw_passages):
+            snippet = passage.get("raw_text", "")
+            if len(snippet) > 900:
+                snippet = snippet[:900] + "…"
+            manifest.append({
+                "index": i + 1,
+                "book_id": passage.get("book_id"),
+                "book_title": passage.get("book_title"),
+                "page_num": passage.get("page_num"),
+                "snippet": snippet
+            })
+        return prompt, manifest
+
 
     return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
 
@@ -3474,6 +3552,9 @@ class UserChartSave(BaseModel):
     ayanamsa: AyanamsaName = "Lahiri"
     chart_style: VisualStyle = "south"
     is_saved: int = Field(default=0, ge=0, le=1)
+    relationship: Literal["self", "spouse", "child", "parent", "friend", "other"] = "other"
+    profile_name: str = ""
+
 
 @app.post("/api/user/profile/birth-info")
 def update_profile_birth_info(req: BirthProfileUpdate, request: Request):
@@ -3504,7 +3585,7 @@ def get_user_charts(request: Request, saved: int = 0):
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved, created_at
+        SELECT id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved, created_at, relationship, profile_name
         FROM user_charts
         WHERE user_id = ? AND is_saved = ?
         ORDER BY created_at DESC
@@ -3526,7 +3607,9 @@ def get_user_charts(request: Request, saved: int = 0):
             "ayanamsa": r[8],
             "chart_style": r[9],
             "is_saved": r[10],
-            "created_at": r[11]
+            "created_at": r[11],
+            "relationship": r[12] if r[12] is not None else "other",
+            "profile_name": r[13] if r[13] is not None else ""
         })
     return charts
 
@@ -3541,20 +3624,38 @@ def save_user_chart(req: UserChartSave, request: Request):
     try:
         cursor = conn.cursor()
 
+        # Check profile cap if we are marking it as saved
+        if req.is_saved == 1:
+            is_already_saved = False
+            if req.id:
+                cursor.execute("SELECT is_saved FROM user_charts WHERE id = ? AND user_id = ?", (req.id, user["id"]))
+                row = cursor.fetchone()
+                if row and row[0] == 1:
+                    is_already_saved = True
+            
+            if not is_already_saved:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM user_charts
+                    WHERE user_id = ? AND is_saved = 1
+                """, (user["id"],))
+                saved_count = cursor.fetchone()[0]
+                if saved_count >= MAX_SAVED_CHARTS:
+                    raise HTTPException(status_code=400, detail=f"Maximum profile limit of {MAX_SAVED_CHARTS} reached. Cannot save more profiles.")
+
         if req.id:
             # Update existing
             cursor.execute("""
                 UPDATE user_charts
-                SET name = ?, dob = ?, tob = ?, pob = ?, latitude = ?, longitude = ?, gender = ?, ayanamsa = ?, chart_style = ?, is_saved = ?
+                SET name = ?, dob = ?, tob = ?, pob = ?, latitude = ?, longitude = ?, gender = ?, ayanamsa = ?, chart_style = ?, is_saved = ?, relationship = ?, profile_name = ?
                 WHERE id = ? AND user_id = ?
-            """, (req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved, req.id, user["id"]))
+            """, (req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved, req.relationship, req.profile_name, req.id, user["id"]))
             conn.commit()
             return {"status": "success", "id": req.id}
         # Insert new
         cursor.execute("""
-            INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (user["id"], req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved))
+            INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved, relationship, profile_name)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (user["id"], req.name, req.dob, req.tob, req.pob, req.latitude, req.longitude, req.gender, req.ayanamsa, req.chart_style, req.is_saved, req.relationship, req.profile_name))
         new_id = cursor.lastrowid
         
         # Enforce max 50 history (is_saved = 0) details
@@ -3600,11 +3701,21 @@ def mark_chart_saved(chart_id: int, request: Request):
     
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
+
+    # Check profile cap before saving
+    cursor.execute("""
+        SELECT COUNT(*) FROM user_charts
+        WHERE user_id = ? AND is_saved = 1
+    """, (user["id"],))
+    saved_count = cursor.fetchone()[0]
+    if saved_count >= MAX_SAVED_CHARTS:
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Maximum profile limit of {MAX_SAVED_CHARTS} reached. Cannot save more profiles.")
+
     cursor.execute("UPDATE user_charts SET is_saved = 1 WHERE id = ? AND user_id = ?", (chart_id, user["id"]))
     conn.commit()
     conn.close()
     return {"status": "success"}
-
 
 # =====================================================================
 # Depth features (v1.21): varshaphala, grounded remedies, in-depth
@@ -4596,6 +4707,7 @@ def robots_txt():
         "Disallow: /share/\n"
         f"Sitemap: {PORTAL_BASE_URL}/sitemap.xml\n"
     )
+
 
 
 @app.get("/api/version")

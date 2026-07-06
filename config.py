@@ -245,6 +245,8 @@ REFERRAL_BONUS_REFERRER = _env_int("VEDIC_REFERRAL_BONUS_REFERRER", 25)
 # Conversation turns (user+assistant pairs) kept in the AI-chat prompt. Caps
 # prompt-token growth so a long thread can't triple the per-message cost.
 CHAT_HISTORY_TURNS = _env_int("VEDIC_CHAT_HISTORY_TURNS", 3)
+MAX_SAVED_CHARTS = _env_int("VEDIC_MAX_SAVED_CHARTS", 20)
+
 
 # --- Credit packs (INR) ---
 # Map of {credits granted -> price in the smallest currency unit} (paise for

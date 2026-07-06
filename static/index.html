@@ -1333,6 +1333,51 @@
             border-color: rgba(217, 119, 6, 0.25) !important;
         }
 
+        /* Profile chip switcher styles */
+        .profile-chip {
+            display: inline-flex;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 5px 12px 5px 6px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            gap: 6px;
+            user-select: none;
+        }
+        .profile-chip:hover {
+            border-color: var(--accent-gold);
+            background: rgba(217, 119, 6, 0.05);
+        }
+        .profile-chip.active {
+            border-color: var(--accent-gold);
+            background: rgba(217, 119, 6, 0.15);
+            box-shadow: 0 0 8px rgba(217, 119, 6, 0.2);
+        }
+        .profile-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+        .profile-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+        .profile-rel {
+            font-size: 8px;
+            color: var(--text-muted);
+            line-height: 1;
+        }
+
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -2311,6 +2356,72 @@
                 scroll-behavior: auto !important;
             }
         }
+        /* Custom styles for Citations and Profiles */
+        .citation-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(217, 119, 6, 0.15);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            border-radius: 4px;
+            padding: 0 4px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 2px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .citation-chip:hover {
+            background: var(--accent-gold);
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
+        }
+        .profile-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .profile-chip:hover {
+            background: rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-gold);
+        }
+        .profile-chip.active {
+            background: rgba(217, 119, 6, 0.15);
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+        .profile-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .profile-chip.active .profile-avatar {
+            background: var(--accent-gold);
+            color: #ffffff;
+        }
+        .profile-rel {
+            font-size: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
@@ -2820,6 +2931,21 @@
                 </div>
 
                 <div id="jyothisyam-form-container">
+                    <!-- Profile Switcher section -->
+                    <div id="profile-switcher-section" style="display: none; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 15px;">
+                        <label id="lbl-profile-switcher-title" style="display: block; font-family: var(--font-heading); font-size: 12px; color: var(--accent-gold); margin-bottom: 8px;">Select Profile:</label>
+                        <div id="profile-chips-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                            <!-- Chips rendered dynamically -->
+                        </div>
+                        <div id="profile-transit-summary" style="display: none; font-size: 11px; color: var(--text-secondary); background: rgba(217, 119, 6, 0.05); padding: 8px 12px; border-radius: 8px; border: 1px dashed rgba(217, 119, 6, 0.3); align-items: center; justify-content: space-between; gap: 10px;">
+                            <div>
+                                <i class="fa-solid fa-moon"></i> <strong id="lbl-transit-summary-title">Today's Transit:</strong> 
+                                <span id="profile-transit-text">Loading transit info...</span>
+                            </div>
+                            <button class="calculate-btn" id="btn-profile-chat-context" onclick="openProfileChatContext()" style="padding: 4px 8px; font-size: 9.5px; white-space: nowrap;"><i class="fa-solid fa-comments"></i> Open AI Chat</button>
+                        </div>
+                    </div>
+
                     <!-- Birth details Form -->
                     <div class="form-grid">
                         <div class="input-group">
@@ -2864,6 +2990,21 @@
                                 <option value="south">South Indian Chart Style (Rasi Grid)</option>
                                 <option value="north">North Indian Chart Style (Diamond Grid)</option>
                             </select>
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-relationship">Profile Relationship</label>
+                            <select id="in-relationship">
+                                <option value="self">Self</option>
+                                <option value="spouse">Spouse</option>
+                                <option value="child">Child</option>
+                                <option value="parent">Parent</option>
+                                <option value="friend">Friend</option>
+                                <option value="other" selected>Other</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label id="lbl-profile-name">Profile Alias / Name</label>
+                            <input type="text" id="in-profile-name" placeholder="e.g. My Profile, Spouse, Daughter" value="">
                         </div>
                         
                         <!-- Advanced selection dropdowns -->
@@ -3052,6 +3193,22 @@
                             <i class="fa-solid fa-timeline"></i> <span id="lbl-dasa-timeline-title">120-Year Vimshottari Dasa Timeline</span>
                         </h4>
                         <p id="lbl-dasa-timeline-desc" style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Chronological timeline of Mahadasas and Bhuktis mapping planetary periods.</p>
+                        
+                        <!-- Interactive Dasa Timeline -->
+                        <div id="dasa-interactive-timeline-container" style="display: none; margin-top: 12px; margin-bottom: 12px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px; padding: 15px; position: relative;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span id="lbl-dasa-timeline-controls-hint" style="font-size: 11px; color: var(--text-muted); font-family: 'Space Grotesk', sans-serif;">Zoom & Scroll Timeline</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="lang-select-btn" onclick="zoomDasaTimeline(1.2)" style="font-size: 11px; padding: 2px 8px;" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                                    <button class="lang-select-btn" onclick="zoomDasaTimeline(0.8)" style="font-size: 11px; padding: 2px 8px;" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                                    <button class="lang-select-btn" onclick="resetDasaTimeline()" style="font-size: 11px; padding: 2px 8px;">Reset</button>
+                                </div>
+                            </div>
+                            <div id="dasa-timeline-scroll" style="overflow-x: auto; width: 100%; position: relative; border-radius: 6px; background: rgba(0,0,0,0.2);">
+                                <div id="dasa-timeline-svg-container" style="min-height: 120px; width: 100%;"></div>
+                            </div>
+                        </div>
+
                         <div class="dasa-columns" id="dasa-grid-list">
                             <!-- Populated dynamically -->
                         </div>
@@ -6469,7 +6626,7 @@
                         fill = "var(--accent-gold)";
                     }
                     
-                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="${fill}">${item.text}</text>`;
+                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="${fill}" class="graha-glyph" data-graha="${item.name}" data-chart="${chartType}" style="cursor: pointer; pointer-events: all;">${item.text}</text>`;
                     col++;
                     if (col >= 2) {
                         col = 0;
@@ -6570,7 +6727,7 @@
                         } else if (pName === "Lagna") {
                             fill = "var(--accent-gold)";
                         }
-                        return `<tspan fill="${fill}">${item.text}</tspan>`;
+                        return `<tspan fill="${fill}" class="graha-glyph" data-graha="${item.name}" data-chart="${chartType}" style="cursor: pointer; pointer-events: all;">${item.text}</tspan>`;
                     };
                     
                     const row1 = planetsInHouse.slice(0, 2).map(getTspan).join(' ');
@@ -6659,6 +6816,7 @@
                 }
 
                 calculatedChartData = await response.json();
+                expandedMahaDasaIdx = -1;
                 
                 // Renders table and SVG outputs with localized values!
                 renderBirthReportOutputs();
@@ -7031,6 +7189,8 @@
 
             // Render Vimshottari Dasa accordion (Mahadasa -> Bhukti -> Antaram)
             renderDasaAccordion();
+            renderDasaTimeline();
+            updateProfileTransitSummary();
 
             // Populate Shatbalam and Ashtakavarga grids!
             renderShadbala();
@@ -7620,6 +7780,7 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
+                currentActiveManifest = null;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -7628,15 +7789,20 @@
                     const chunk = decoder.decode(value, { stream: true });
                     accumulatedText += chunk;
 
-                    outputPane.innerHTML = formatMarkdown(accumulatedText) + '<span class="typing-cursor"></span>';
+                    const processed = processStreamChunk(accumulatedText);
+                    const renderText = processed.cleanText;
+
+                    outputPane.innerHTML = formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
 
-                outputPane.innerHTML = formatMarkdown(accumulatedText);
+                const processed = processStreamChunk(accumulatedText);
+                const renderText = processed.cleanText;
+                outputPane.innerHTML = formatMarkdown(renderText);
 
                 // Calculate and update session tokens
                 const requestTokens = 5000 + estimateTokens(messageText) + estimateTokens(JSON.stringify(aiChatHistory));
-                const responseTokens = estimateTokens(accumulatedText);
+                const responseTokens = estimateTokens(renderText);
                 const totalMessageTokens = requestTokens + responseTokens;
                 sessionTokenCount += totalMessageTokens;
                 lastMessageTime = Date.now();
@@ -7645,7 +7811,7 @@
                 // Save to session memory
                 if (calculatedChartData) {
                     aiChatHistory.push({ role: 'user', content: messageText });
-                    aiChatHistory.push({ role: 'assistant', content: accumulatedText });
+                    aiChatHistory.push({ role: 'assistant', content: renderText });
                 }
 
             } catch (err) {
@@ -7749,21 +7915,28 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
+                currentActiveManifest = null;
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
                     const chunk = decoder.decode(value, { stream: true });
                     accumulatedText += chunk;
-                    outputPane.innerHTML = formatMarkdown(accumulatedText) + '<span class="typing-cursor"></span>';
+                    
+                    const processed = processStreamChunk(accumulatedText);
+                    const renderText = processed.cleanText;
+
+                    outputPane.innerHTML = formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
                     outputPane.scrollTop = outputPane.scrollHeight;
                 }
 
-                outputPane.innerHTML = formatMarkdown(accumulatedText);
+                const processed = processStreamChunk(accumulatedText);
+                const renderText = processed.cleanText;
+                outputPane.innerHTML = formatMarkdown(renderText);
                 // Cache the generated reading (keyed to language) for reuse in the
                 // tab and for embedding into the downloaded PDF.
-                if (accumulatedText.trim()) {
-                    calculatedChartData.__aiPhala = accumulatedText;
+                if (renderText.trim()) {
+                    calculatedChartData.__aiPhala = renderText;
                     calculatedChartData.__aiPhalaLang = currentLang;
                 }
             } catch (err) {
@@ -9110,7 +9283,7 @@
                 document.getElementById('chart-history-list').innerHTML = '';
                 delete document.getElementById('in-dob').dataset.userPrefilled;
             }
-            
+            refreshProfileChips();
             updateTabLockStates();
         }
 
@@ -10031,6 +10204,13 @@
             const styleSelector = document.getElementById('in-style');
             if (styleSelector) styleSelector.value = c.chart_style || "south";
             
+            const relSelector = document.getElementById('in-relationship');
+            if (relSelector) relSelector.value = c.relationship || "other";
+            const profNameInput = document.getElementById('in-profile-name');
+            if (profNameInput) profNameInput.value = c.profile_name || "";
+
+            currentSelectedProfileId = c.id;
+
             // Switch back to configuration and calculate
             switchSubTab('basic');
             generateBirthChart();
@@ -10077,6 +10257,673 @@
             }
         }
 
+        // Custom features: Interactive Chart, Citation Popups, Timeline, Profiles
+        const houseLagnaTranslations = {
+            en: ["1st house", "2nd house", "3rd house", "4th house", "5th house", "6th house", "7th house", "8th house", "9th house", "10th house", "11th house", "12th house"],
+            ta: ["1-ஆம் வீடு", "2-ஆம் வீடு", "3-ஆம் வீடு", "4-ஆம் வீடு", "5-ஆம் வீடு", "6-ஆம் வீடு", "7-ஆம் வீடு", "8-ஆம் வீடு", "9-ஆம் வீடு", "10-ஆம் வீடு", "11-ஆம் வீடு", "12-ஆம் வீடு"],
+            te: ["1వ ఇల్లు", "2వ ఇల్లు", "3వ ఇల్లు", "4వ ఇల్లు", "5వ ఇల్లు", "6వ ఇల్లు", "7వ ఇల్లు", "8వ ఇల్లు", "9వ ఇల్లు", "10వ ఇల్లు", "11వ ఇల్లు", "12వ ఇల్లు"],
+            ml: ["1-ാം ഭാവം", "2-ാം ഭാവം", "3-ാം ഭാവം", "4-ാം ഭാവം", "5-ാം ഭാവം", "6-ാം ഭാവം", "7-ാം ഭാവം", "8-ാം ഭാവം", "9-ാം ഭാവം", "10-ാം ഭാവം", "11-ാം ഭാവം", "12-ാം ഭാവം"],
+            kn: ["1ನೇ ಮನೆ", "2ನೇ ಮನೆ", "3ನೇ ಮನೆ", "4ನೇ ಮನೆ", "5ನೇ ಮನೆ", "6ನೇ ಮನೆ", "7ನೇ ಮನೆ", "8ನೇ ಮನೆ", "9ನೇ ಮನೆ", "10ನೇ ಮನೆ", "11ನೇ ಮನೆ", "12ನೇ ಮನೆ"],
+            hi: ["प्रथम भाव", "द्वितीय भाव", "तृतीय भाव", "चतुर्थ भाव", "पंचम भाव", "षष्ठ भाव", "सप्तम भाव", "अष्टम भाव", "नवम भाव", "दशम भाव", "एकादश भाव", "द्वादश भाव"]
+        };
+
+        const askAiQuestionTemplates = {
+            en: "What are the astrological effects of {planet} in {house} from Lagna in {sign} sign with {dignity} dignity?",
+            ta: "லக்னத்திலிருந்து {house}ல் {sign} ராசியில் {dignity} நிலையில் இருக்கும் {planet} கிரகத்தின் ஜோதிட பலன்கள் என்ன?",
+            te: "లగ్నం నుండి {house} లో {sign} రాశిలో {dignity} గా ఉన్న {planet} గ్రహం యొక్క జ్యోతిష్య ఫలితాలు ఏమిటి?",
+            ml: "ലഗ്നത്തിൽ നിന്ന് {house}-ൽ {sign} രാശിയിൽ {dignity} ആയിരിക്കുന്ന {planet} ഗ്രഹത്തിന്റെ ജ്യോതിഷ ഫലങ്ങൾ എന്തൊക്കെയാണ്?",
+            kn: "ಲಗ್ನದಿಂದ {house} ನಲ್ಲಿ {sign} ರಾಶಿಯಲ್ಲಿ {dignity} ಆಗಿರುವ {planet} ಗ್ರಹದ ಜ್ಯೋತಿಷ್ಯ ಫಲಗಳೇನು?",
+            hi: "लग्न से {house} में {sign} राशि में {dignity} स्थिति में स्थित {planet} के ज्योतिषीय प्रभाव क्या हैं?"
+        };
+
+        const aspectedByLabels = {
+            en: "Aspected by",
+            ta: "பார்வை செலுத்தும் கிரகங்கள்",
+            te: "దృష్టి కలిగిన గ్రహాలు",
+            ml: "ദൃഷ്ടി നൽകുന്ന ഗ്രഹങ്ങൾ",
+            kn: "ದೃಷ್ಟಿ ಬೀರುವ ಗ್ರಹಗಳು",
+            hi: "दृष्टि डालने वाले ग्रह"
+        };
+
+        const noneLabels = {
+            en: "None",
+            ta: "ஏதுமில்லை",
+            te: "ఎవరూ లేరు",
+            ml: "ആരുമില്ല",
+            kn: "ಯารೂ ಇಲ್ಲ",
+            hi: "कोई नहीं"
+        };
+
+        function getRasiIndexByName(name) {
+            const canon = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+            const idx = canon.findIndex(r => r.toLowerCase() === name.toLowerCase());
+            return idx !== -1 ? idx : 0;
+        }
+
+        function getInterpretationLine(lang, planet, dignity, houseNum) {
+            const pName = (planetTranslations[lang] || planetTranslations.en)[planet] || planet;
+            const dName = (dignityTranslations[lang] || dignityTranslations.en)[dignity] || dignity;
+            const hName = (houseLagnaTranslations[lang] || houseLagnaTranslations.en)[houseNum - 1] || `${houseNum} house`;
+            
+            if (dignity === 'Neutral') {
+                switch (lang) {
+                    case 'ta': return `லக்னத்திலிருந்து ${hName}ல் ${pName} உள்ளது.`;
+                    case 'te': return `ఆ లగ్నం నుండి ${hName} లో ${pName} ఉంది.`;
+                    case 'ml': return `ലഗ്നത്തിൽ നിന്ന് ${hName}ൽ ${pName} ഉണ്ട്.`;
+                    case 'kn': return `ಲಗ್ನದಿಂದ ${hName} ನಲ್ಲಿ ${pName} ಇದೆ.`;
+                    case 'hi': return `लग्न से ${hName} में ${pName} है।`;
+                    case 'en':
+                    default: return `${pName} is in the ${hName} from lagna.`;
+                }
+            }
+
+            switch (lang) {
+                case 'ta':
+                    return `லக்னத்திலிருந்து ${hName}ல் ${pName} ${dName} பெற்றுள்ளது.`;
+                case 'te':
+                    return `లగ్నం నుండి ${hName} లో ${pName} ${dName} గా ఉంది.`;
+                case 'ml':
+                    return `ലഗ്നത്തിൽ നിന്ന് ${hName}ൽ ${pName} ${dName} ആണ്.`;
+                case 'kn':
+                    return `ಲಗ್ನದಿಂದ ${hName} ನಲ್ಲಿ ${pName} ${dName} ಆಗಿದೆ.`;
+                case 'hi':
+                    return `लग्न से ${hName} में ${pName} ${dName} है।`;
+                case 'en':
+                default:
+                    return `${pName} is ${dName} in the ${hName} from lagna.`;
+            }
+        }
+
+        let activePopover = null;
+
+        function showDetailPopover(title, contentHtml, questionText, event) {
+            if (activePopover) {
+                activePopover.remove();
+            }
+
+            const popover = document.createElement('div');
+            popover.className = 'custom-detail-popover';
+            popover.style.position = 'absolute';
+            popover.style.zIndex = '9999';
+            popover.style.background = 'var(--bg-card)';
+            popover.style.backdropFilter = 'blur(12px)';
+            popover.style.border = '1px solid var(--border-gold)';
+            popover.style.borderRadius = '12px';
+            popover.style.padding = '16px';
+            popover.style.boxShadow = '0 10px 30px rgba(0,0,0,0.4)';
+            popover.style.width = '280px';
+            popover.style.fontFamily = "'Space Grotesk', sans-serif";
+            popover.style.color = 'var(--text-primary)';
+
+            let buttonsHtml = '';
+            if (questionText) {
+                buttonsHtml = `
+                    <div style="margin-top: 12px; border-top: 1px solid var(--border-glass); padding-top: 10px; display: flex; justify-content: flex-end;">
+                        <button class="calculate-btn" onclick="askAiAboutThis('${escapeJsString(questionText)}')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--accent-gold); color: #fff;">
+                            <i class="fa-solid fa-brain"></i> Ask AI
+                        </button>
+                    </div>
+                `;
+            }
+
+            popover.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--border-glass); padding-bottom: 6px;">
+                    <h5 style="margin: 0; font-size: 13px; color: var(--accent-gold); font-weight: bold;">${title}</h5>
+                    <i class="fa-solid fa-xmark" onclick="closeActivePopover()" style="cursor: pointer; font-size: 12px; color: var(--text-muted);"></i>
+                </div>
+                <div style="font-size: 11.5px; line-height: 1.4; color: var(--text-secondary);">
+                    ${contentHtml}
+                </div>
+                ${buttonsHtml}
+            `;
+
+            document.body.appendChild(popover);
+
+            const rect = event.currentTarget.getBoundingClientRect ? event.currentTarget.getBoundingClientRect() : { bottom: event.clientY, left: event.clientX, width: 0 };
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+            let top = rect.bottom + scrollTop + 6;
+            let left = rect.left + scrollLeft + (rect.width / 2) - 140;
+
+            if (left < 10) left = 10;
+            if (left + 290 > window.innerWidth) left = window.innerWidth - 290;
+
+            popover.style.top = top + 'px';
+            popover.style.left = left + 'px';
+
+            activePopover = popover;
+            if (event.stopPropagation) event.stopPropagation();
+        }
+
+        function closeActivePopover() {
+            if (activePopover) {
+                activePopover.remove();
+                activePopover = null;
+            }
+        }
+
+        function escapeJsString(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        function askAiAboutThis(question) {
+            closeActivePopover();
+            navigateToPage('ai');
+            const chatInput = document.getElementById('chat-user-textbox');
+            if (chatInput) {
+                chatInput.value = question;
+                chatInput.focus();
+            }
+        }
+
+        function showGrahaPopover(graha, element, event) {
+            if (!calculatedChartData || !calculatedChartData.placements) return;
+            const placements = calculatedChartData.placements;
+            const plac = placements[graha];
+            if (!plac) return;
+
+            const lagnaPlac = placements["Lagna"];
+            const lagnaRasiIdx = lagnaPlac ? lagnaPlac.rasi_index : 0;
+            const houseNum = ((plac.rasi_index - lagnaRasiIdx + 12) % 12) + 1;
+
+            const lang = currentLang || 'en';
+            const translatedPlanet = (planetTranslations[lang] || planetTranslations.en)[graha] || graha;
+            
+            const rasiNameList = rasiTranslations[lang] || rasiTranslations.en;
+            const translatedRasi = rasiNameList[plac.rasi_index] || plac.rasi_name;
+
+            const dignityVal = plac.dignity || 'Neutral';
+            const translatedDignity = (dignityTranslations[lang] || dignityTranslations.en)[dignityVal] || dignityVal;
+
+            const houseName = (houseLagnaTranslations[lang] || houseLagnaTranslations.en)[houseNum - 1] || `${houseNum} house`;
+
+            const aspecting = [];
+            if (calculatedChartData.aspects) {
+                for (const [aspectingPlanet, aspectInfo] of Object.entries(calculatedChartData.aspects)) {
+                    if (aspectInfo.planets && aspectInfo.planets.some(item => item[0] === graha)) {
+                        const translatedAspecting = (planetTranslations[lang] || planetTranslations.en)[aspectingPlanet] || aspectingPlanet;
+                        aspecting.push(translatedAspecting);
+                    }
+                }
+            }
+            const aspectedByText = aspecting.length > 0 ? aspecting.join(', ') : (noneLabels[lang] || 'None');
+
+            const divNav = plac.navamsha_rasi_name ? (rasiNameList[getRasiIndexByName(plac.navamsha_rasi_name)] || plac.navamsha_rasi_name) : '';
+            const divDrek = plac.drekkana_rasi_name ? (rasiNameList[getRasiIndexByName(plac.drekkana_rasi_name)] || plac.drekkana_rasi_name) : '';
+            const divDash = plac.dashamsha_rasi_name ? (rasiNameList[getRasiIndexByName(plac.dashamsha_rasi_name)] || plac.dashamsha_rasi_name) : '';
+            const divDwad = plac.dwadashamsha_rasi_name ? (rasiNameList[getRasiIndexByName(plac.dwadashamsha_rasi_name)] || plac.dwadashamsha_rasi_name) : '';
+
+            const interpretation = getInterpretationLine(lang, graha, dignityVal, houseNum);
+
+            let contentHtml = `
+                <div style="margin-bottom: 6px;"><strong>Position:</strong> ${translatedRasi} ${plac.degree.toFixed(2)}°</div>
+                <div style="margin-bottom: 6px;"><strong>Nakshatra:</strong> ${plac.nakshatra} (Pada ${plac.pada})</div>
+                <div style="margin-bottom: 6px;"><strong>Dignity:</strong> ${translatedDignity}</div>
+                <div style="margin-bottom: 6px;"><strong>House:</strong> ${houseName} from Lagna</div>
+                <div style="margin-bottom: 6px; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 4px; font-size: 10px; line-height: 1.3;">
+                    <strong>Divisions:</strong><br/>
+                    Navamsha (D9): ${divNav || '-'}<br/>
+                    Drekkana (D3): ${divDrek || '-'}<br/>
+                    Dashamsha (D10): ${divDash || '-'}<br/>
+                    Dwadashamsha (D12): ${divDwad || '-'}
+                </div>
+                <div style="margin-bottom: 8px;"><strong>${aspectedByLabels[lang] || 'Aspected by'}:</strong> ${aspectedByText}</div>
+                <div style="font-style: italic; border-left: 2px solid var(--border-gold); padding-left: 6px; margin-top: 6px; font-size: 11px;">"${interpretation}"</div>
+            `;
+
+            const questionTemplate = askAiQuestionTemplates[lang] || askAiQuestionTemplates.en;
+            const finalQuestion = questionTemplate
+                .replace('{planet}', translatedPlanet)
+                .replace('{house}', houseName)
+                .replace('{sign}', translatedRasi)
+                .replace('{dignity}', translatedDignity);
+
+            showDetailPopover(translatedPlanet, contentHtml, finalQuestion, event);
+        }
+
+        // Delegate graha click events
+        document.addEventListener('click', function(event) {
+            const glyph = event.target.closest('.graha-glyph');
+            if (glyph) {
+                const graha = glyph.getAttribute('data-graha');
+                const chartType = glyph.getAttribute('data-chart');
+                if (graha && (chartType === 'd1' || chartType === 'rasi')) {
+                    showGrahaPopover(graha, glyph, event);
+                }
+            }
+        });
+
+        // Close popover when clicking anywhere else
+        window.addEventListener('click', function(e) {
+            if (activePopover && !activePopover.contains(e.target)) {
+                closeActivePopover();
+            }
+        });
+
+        // Citation logic
+        let currentActiveManifest = null;
+
+        function processStreamChunk(accumulatedText) {
+            if (!currentActiveManifest && accumulatedText.includes('\n')) {
+                let temp = accumulatedText;
+                while (temp.startsWith('\n')) {
+                    temp = temp.substring(1);
+                }
+                if (temp.includes('\n')) {
+                    const firstLineEnd = temp.indexOf('\n');
+                    const firstLine = temp.substring(0, firstLineEnd);
+                    if (firstLine.startsWith('{"manifest":')) {
+                        try {
+                            currentActiveManifest = JSON.parse(firstLine).manifest;
+                            return {
+                                manifest: currentActiveManifest,
+                                cleanText: temp.substring(firstLineEnd + 1)
+                            };
+                        } catch (e) {
+                            console.error("Error parsing manifest:", e);
+                        }
+                    }
+                }
+            }
+            return {
+                manifest: currentActiveManifest,
+                cleanText: accumulatedText
+            };
+        }
+
+        async function loadCitationPageImage(bookId, pageNum, imgElementId) {
+            const imgEl = document.getElementById(imgElementId);
+            if (!imgEl) return;
+            imgEl.src = '';
+            imgEl.style.display = 'none';
+            
+            const loader = document.getElementById('citation-page-loader');
+            if (loader) {
+                loader.style.display = 'block';
+                loader.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px; color: var(--accent-gold);"></i> Loading page scan...';
+            }
+
+            try {
+                const response = await apiFetch(`/api/page-image/${bookId}/${pageNum}`);
+                if (!response.ok) throw new Error("Failed to load image");
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                imgEl.src = objectUrl;
+                imgEl.style.display = 'block';
+                if (loader) loader.style.display = 'none';
+            } catch (err) {
+                console.error("Error loading page image:", err);
+                if (loader) {
+                    loader.innerText = "Error loading original page image.";
+                }
+            }
+        }
+
+        function showCitationCard(num, event) {
+            if (event) event.stopPropagation();
+            if (!currentActiveManifest) return;
+            const citation = currentActiveManifest.find(c => c.index === num);
+            if (!citation) return;
+
+            document.getElementById('citation-book-title').innerText = citation.book_title || "Unknown Book";
+            document.getElementById('citation-page-num').innerText = `Page ${citation.page_num + 1}`;
+            document.getElementById('citation-snippet').innerText = citation.snippet || "";
+
+            const modal = document.getElementById('citation-card-modal');
+            modal.style.display = 'flex';
+
+            loadCitationPageImage(citation.book_id, citation.page_num, 'citation-page-img');
+        }
+
+        function closeCitationCard() {
+            const modal = document.getElementById('citation-card-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const imgEl = document.getElementById('citation-page-img');
+            if (imgEl) {
+                imgEl.src = '';
+                imgEl.style.display = 'none';
+            }
+        }
+
+        // Dasa timeline variables & functions
+        let dasaTimelineZoom = 1.0;
+        let expandedMahaDasaIdx = -1;
+
+        function parseDasaDate(dateStr) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            }
+            return new Date(dateStr);
+        }
+
+        function zoomDasaTimeline(factor) {
+            dasaTimelineZoom = Math.min(10.0, Math.max(0.5, dasaTimelineZoom * factor));
+            renderDasaTimeline();
+        }
+
+        function resetDasaTimeline() {
+            dasaTimelineZoom = 1.0;
+            renderDasaTimeline();
+        }
+
+        function onDasaPeriodTap(type, mahaIdx, bhuktiIdx, event) {
+            if (type === 'maha') {
+                expandedMahaDasaIdx = mahaIdx;
+                renderDasaTimeline();
+            }
+            
+            const dasas = calculatedChartData.dasas;
+            const maha = dasas[mahaIdx];
+            let periodName = "";
+            let startDate = "";
+            let endDate = "";
+            let questionText = "";
+            
+            const tMahaLord = (planetTranslations[currentLang] || planetTranslations.en)[maha.dasa_lord] || maha.dasa_lord;
+
+            if (bhuktiIdx === null) {
+                periodName = `${tMahaLord} Mahadasa`;
+                startDate = maha.start_date;
+                endDate = maha.end_date;
+                questionText = `What are the astrological effects of my ${maha.dasa_lord} Mahadasa which runs from ${startDate} to ${endDate}?`;
+            } else {
+                const bhukti = maha.bhuktis[bhuktiIdx];
+                const tBhuktiLord = (planetTranslations[currentLang] || planetTranslations.en)[bhukti.bhukti_lord] || bhukti.bhukti_lord;
+                periodName = `${tMahaLord} - ${tBhuktiLord} Bhukti`;
+                startDate = bhukti.start_date;
+                endDate = bhukti.end_date;
+                questionText = `What are the astrological effects of my ${maha.dasa_lord} Mahadasa and ${bhukti.bhukti_lord} Bhukti from ${startDate} to ${endDate}?`;
+            }
+
+            const formattedStart = new Date(parseDasaDate(startDate)).toLocaleDateString(undefined, { dateStyle: 'medium' });
+            const formattedEnd = new Date(parseDasaDate(endDate)).toLocaleDateString(undefined, { dateStyle: 'medium' });
+
+            let contentHtml = `
+                <div style="margin-bottom: 6px;"><strong>Start Date:</strong> ${formattedStart}</div>
+                <div style="margin-bottom: 6px;"><strong>End Date:</strong> ${formattedEnd}</div>
+            `;
+            showDetailPopover(periodName, contentHtml, questionText, event);
+        }
+
+        function renderDasaTimeline() {
+            const container = document.getElementById('dasa-timeline-svg-container');
+            const timelineSection = document.getElementById('dasa-interactive-timeline-container');
+            if (!container || !timelineSection || !calculatedChartData || !calculatedChartData.dasas || calculatedChartData.dasas.length === 0) {
+                if (timelineSection) timelineSection.style.display = 'none';
+                return;
+            }
+            timelineSection.style.display = 'block';
+
+            const dasas = calculatedChartData.dasas;
+            const firstStartDate = parseDasaDate(dasas[0].start_date);
+            const lastEndDate = parseDasaDate(dasas[dasas.length - 1].end_date);
+            const totalDuration = lastEndDate.getTime() - firstStartDate.getTime();
+
+            if (expandedMahaDasaIdx === -1) {
+                const nowStr = todayISO();
+                expandedMahaDasaIdx = dasas.findIndex(d => d.start_date <= nowStr && nowStr < d.end_date);
+                if (expandedMahaDasaIdx === -1) expandedMahaDasaIdx = 0;
+            }
+
+            const baseWidth = 800;
+            const timelineWidth = Math.max(baseWidth, baseWidth * dasaTimelineZoom);
+            const timelineHeight = 110;
+
+            function getX(dateObj) {
+                const time = dateObj.getTime();
+                const pct = (time - firstStartDate.getTime()) / totalDuration;
+                return Math.max(0, Math.min(timelineWidth, pct * timelineWidth));
+            }
+
+            let svgContent = `<svg viewBox="0 0 ${timelineWidth} ${timelineHeight}" width="${timelineWidth}" height="${timelineHeight}" xmlns="http://www.w3.org/2000/svg" style="background: var(--bg-deep); border-radius: 6px; user-select: none;">`;
+
+            svgContent += `<line x1="0" y1="40" x2="${timelineWidth}" y2="40" stroke="rgba(0,0,0,0.06)" stroke-width="1" stroke-dasharray="2,2" />`;
+            svgContent += `<line x1="0" y1="80" x2="${timelineWidth}" y2="80" stroke="rgba(0,0,0,0.06)" stroke-width="1" stroke-dasharray="2,2" />`;
+
+            dasas.forEach((dasa, idx) => {
+                const xStart = getX(parseDasaDate(dasa.start_date));
+                const xEnd = getX(parseDasaDate(dasa.end_date));
+                const rectWidth = Math.max(2, xEnd - xStart);
+                const pColor = planetColor(dasa.dasa_lord);
+                const isCurrent = isActivePeriod(dasa.start_date, dasa.end_date);
+                const isExpanded = idx === expandedMahaDasaIdx;
+                
+                let stroke = "transparent";
+                let strokeWidth = 0;
+                if (isCurrent) {
+                    stroke = "var(--accent-gold)";
+                    strokeWidth = 2;
+                } else if (isExpanded) {
+                    stroke = "rgba(0,0,0,0.3)";
+                    strokeWidth = 1.5;
+                }
+
+                const translatedLord = (planetTranslations[currentLang] || planetTranslations.en)[dasa.dasa_lord] || dasa.dasa_lord;
+                const displayLabel = rectWidth > 55 ? `${translatedLord} (${dasa.duration_years}Y)` : (rectWidth > 25 ? translatedLord.slice(0, 3) : '');
+
+                svgContent += `
+                    <g class="dasa-period-group" style="cursor: pointer;" onclick="onDasaPeriodTap('maha', ${idx}, null, event)">
+                        <rect x="${xStart}" y="5" width="${rectWidth}" height="30" fill="${pColor}" fill-opacity="${isExpanded ? '1.0' : '0.6'}" stroke="${stroke}" stroke-width="${strokeWidth}" rx="4" />
+                        <text x="${xStart + rectWidth / 2}" y="24" font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">${displayLabel}</text>
+                    </g>
+                `;
+            });
+
+            const activeMaha = dasas[expandedMahaDasaIdx];
+            if (activeMaha && activeMaha.bhuktis) {
+                const mStart = getX(parseDasaDate(activeMaha.start_date));
+                const mEnd = getX(parseDasaDate(activeMaha.end_date));
+                
+                svgContent += `<rect x="${mStart}" y="42" width="${mEnd - mStart}" height="36" fill="rgba(0,0,0,0.02)" rx="4" stroke="rgba(0,0,0,0.05)" stroke-width="1" />`;
+
+                activeMaha.bhuktis.forEach((b, bIdx) => {
+                    const bStart = getX(parseDasaDate(b.start_date));
+                    const bEnd = getX(parseDasaDate(b.end_date));
+                    const rectWidth = Math.max(2, bEnd - bStart);
+                    const pColor = planetColor(b.bhukti_lord);
+                    const isCurrent = isActivePeriod(b.start_date, b.end_date);
+                    
+                    let stroke = "transparent";
+                    let strokeWidth = 0;
+                    if (isCurrent) {
+                        stroke = "var(--accent-gold)";
+                        strokeWidth = 2;
+                    }
+
+                    const translatedLord = (planetTranslations[currentLang] || planetTranslations.en)[b.bhukti_lord] || b.bhukti_lord;
+                    const displayLabel = rectWidth > 35 ? translatedLord : (rectWidth > 15 ? translatedLord.slice(0, 2) : '');
+
+                    svgContent += `
+                        <g class="dasa-period-group" style="cursor: pointer;" onclick="onDasaPeriodTap('bhukti', ${expandedMahaDasaIdx}, ${bIdx}, event)">
+                            <rect x="${bStart}" y="45" width="${rectWidth}" height="30" fill="${pColor}" fill-opacity="${isCurrent ? '1.0' : '0.6'}" stroke="${stroke}" stroke-width="${strokeWidth}" rx="4" />
+                            <text x="${bStart + rectWidth / 2}" y="64" font-family="'Space Grotesk', sans-serif" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">${displayLabel}</text>
+                        </g>
+                    `;
+                });
+            }
+
+            const intervalMs = totalDuration / 6;
+            for (let i = 0; i <= 6; i++) {
+                const time = firstStartDate.getTime() + i * intervalMs;
+                const dateVal = new Date(time);
+                const labelX = getX(dateVal);
+                const displayYear = dateVal.getFullYear();
+                svgContent += `
+                    <line x1="${labelX}" y1="80" x2="${labelX}" y2="85" stroke="rgba(0,0,0,0.06)" stroke-width="1" />
+                    <text x="${labelX}" y="98" font-family="sans-serif" font-size="8.5" fill="var(--text-secondary)" text-anchor="middle">${displayYear}</text>
+                `;
+            }
+
+            const nowTime = new Date();
+            if (nowTime >= firstStartDate && nowTime <= lastEndDate) {
+                const nowX = getX(nowTime);
+                svgContent += `
+                    <line x1="${nowX}" y1="0" x2="${nowX}" y2="85" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3" />
+                    <polygon points="${nowX},0 ${nowX-4},-4 ${nowX+4},-4" fill="#ef4444" />
+                    <rect x="${nowX - 15}" y="86" width="30" height="12" fill="#ef4444" rx="2" />
+                    <text x="${nowX}" y="95" font-family="sans-serif" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">NOW</text>
+                `;
+            }
+
+            svgContent += `</svg>`;
+            container.innerHTML = svgContent;
+
+            setTimeout(() => {
+                const scrollContainer = document.getElementById('dasa-timeline-scroll');
+                if (scrollContainer) {
+                    const nowX = getX(new Date());
+                    const viewportWidth = scrollContainer.clientWidth;
+                    scrollContainer.scrollLeft = nowX - viewportWidth / 2;
+                }
+            }, 50);
+        }
+
+        // Profile Manager helper functions
+        let currentSelectedProfileId = 'self';
+
+        async function refreshProfileChips() {
+            const container = document.getElementById('profile-chips-container');
+            const section = document.getElementById('profile-switcher-section');
+            if (!container || !section) return;
+
+            if (!currentUser) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            
+            let activeClass = currentSelectedProfileId === 'self' ? 'active' : '';
+            let html = `
+                <div class="profile-chip ${activeClass}" id="profile-chip-self" onclick="selectProfile('self')">
+                    <div class="profile-avatar"><i class="fa-solid fa-user-gear"></i></div>
+                    <div class="profile-name">Self</div>
+                </div>
+            `;
+
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch('/api/user/charts?saved=1', {
+                    headers: { 'x-session-token': token }
+                });
+                if (res.ok) {
+                    const charts = await res.json();
+                    charts.forEach(c => {
+                        const chipActive = currentSelectedProfileId === c.id ? 'active' : '';
+                        html += `
+                            <div class="profile-chip ${chipActive}" id="profile-chip-${c.id}" onclick="selectProfile(${JSON.stringify(c).replace(/"/g, '&quot;')})">
+                                <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="profile-name">${c.name}</span>
+                                    <span class="profile-rel">${c.relationship.toUpperCase()}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading profile chips:", e);
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function selectProfile(profile) {
+            closeActivePopover();
+            
+            document.querySelectorAll('.profile-chip').forEach(el => el.classList.remove('active'));
+            
+            if (profile === 'self') {
+                currentSelectedProfileId = 'self';
+                const chip = document.getElementById('profile-chip-self');
+                if (chip) chip.classList.add('active');
+                
+                if (currentUser) {
+                    document.getElementById('in-name').value = currentUser.full_name || "Self";
+                    document.getElementById('in-dob').value = currentUser.dob || "";
+                    document.getElementById('in-tob').value = currentUser.tob || "";
+                    document.getElementById('in-pob').value = currentUser.location_name || "";
+                    document.getElementById('in-lat').value = currentUser.latitude || "";
+                    document.getElementById('in-lon').value = currentUser.longitude || "";
+                    document.getElementById('in-gender').value = currentUser.gender || "male";
+                    document.getElementById('in-relationship').value = "self";
+                    document.getElementById('in-profile-name').value = "Self";
+                }
+            } else {
+                currentSelectedProfileId = profile.id;
+                const chip = document.getElementById(`profile-chip-${profile.id}`);
+                if (chip) chip.classList.add('active');
+                
+                document.getElementById('in-name').value = profile.name || "";
+                document.getElementById('in-dob').value = profile.dob || "";
+                document.getElementById('in-tob').value = profile.tob || "";
+                document.getElementById('in-pob').value = profile.pob || "";
+                document.getElementById('in-lat').value = profile.latitude || "";
+                document.getElementById('in-lon').value = profile.longitude || "";
+                document.getElementById('in-gender').value = profile.gender || "male";
+                document.getElementById('in-relationship').value = profile.relationship || "other";
+                document.getElementById('in-profile-name').value = profile.profile_name || "";
+                if (profile.ayanamsa) document.getElementById('in-ayanamsa').value = profile.ayanamsa;
+                if (profile.chart_style) document.getElementById('in-style').value = profile.chart_style;
+            }
+            
+            generateBirthChart();
+        }
+
+        function updateProfileTransitSummary() {
+            const summaryDiv = document.getElementById('profile-transit-summary');
+            const textSpan = document.getElementById('profile-transit-text');
+            if (!summaryDiv || !textSpan || !calculatedChartData) {
+                if (summaryDiv) summaryDiv.style.display = 'none';
+                return;
+            }
+
+            const nowStr = todayISO();
+            const runningMaha = (calculatedChartData.dasas || []).find(d => d.start_date <= nowStr && nowStr < d.end_date);
+            let runningBhukti = null;
+            if (runningMaha && runningMaha.bhuktis) {
+                runningBhukti = runningMaha.bhuktis.find(b => b.start_date <= nowStr && nowStr < b.end_date);
+            }
+
+            const lang = currentLang || 'en';
+            const tMahaLord = runningMaha ? ((planetTranslations[lang] || planetTranslations.en)[runningMaha.dasa_lord] || runningMaha.dasa_lord) : "";
+            const tBhuktiLord = runningBhukti ? ((planetTranslations[lang] || planetTranslations.en)[runningBhukti.bhukti_lord] || runningBhukti.bhukti_lord) : "";
+            const dasaStr = runningBhukti ? `${tMahaLord} - ${tBhuktiLord}` : (runningMaha ? tMahaLord : "");
+
+            let tithiStr = "";
+            if (dailyPanchangamData && dailyPanchangamData.panchangam) {
+                tithiStr = translateTithi(dailyPanchangamData.panchangam.tithi);
+            }
+
+            const parts = [];
+            if (tithiStr) parts.push(tithiStr);
+            if (dasaStr) parts.push(`Dasa: ${dasaStr}`);
+            
+            textSpan.innerText = parts.join(' | ') || "No transit information available.";
+            summaryDiv.style.display = 'flex';
+        }
+
+        function openProfileChatContext() {
+            navigateToPage('ai');
+            const name = document.getElementById('in-name').value;
+            const chatInput = document.getElementById('chat-user-textbox');
+            if (chatInput) {
+                const lang = currentLang || 'en';
+                const queryText = lang === 'ta' ? `${name} அவர்களின் ஜாதகத்தை விளக்குங்கள்` 
+                                : lang === 'te' ? `${name} గారి జాతకం వివరించండి` 
+                                : lang === 'ml' ? `${name}-ന്റെ ஜാതകം വിശദീകരിക്കുക`
+                                : lang === 'kn' ? `${name} ಅವರ ಜಾತಕವನ್ನು వివರಿಸಿ`
+                                : lang === 'hi' ? `${name} की कुंडली का विश्लेषण करें`
+                                : `Please analyze the birth chart details for ${name}.`;
+                chatInput.value = queryText;
+                chatInput.focus();
+            }
+        }
+
         async function saveCurrentChartToCloud() {
             if (!currentUser) return;
             const name = document.getElementById('in-name').value.trim();
@@ -10089,6 +10936,9 @@
             const ayanamsa = document.getElementById('in-ayanamsa').value;
             const style = document.getElementById('in-style').value;
             
+            const relationship = document.getElementById('in-relationship').value;
+            const profileName = document.getElementById('in-profile-name').value.trim();
+
             const token = localStorage.getItem('session_token');
             try {
                 const res = await fetch('/api/user/charts', {
@@ -10098,13 +10948,21 @@
                         'x-session-token': token
                     },
                     body: JSON.stringify({
-                        name, dob, tob, pob, latitude: lat, longitude: lon, gender, ayanamsa, chart_style: style, is_saved: 1
+                        name, dob, tob, pob, latitude: lat, longitude: lon, gender, ayanamsa, chart_style: style, is_saved: 1,
+                        relationship: relationship,
+                        profile_name: profileName
                     })
                 });
                 if (res.ok) {
                     alert("Chart saved successfully to your cloud profile!");
+                    refreshProfileChips();
                 } else {
-                    alert("Failed to save chart to cloud.");
+                    let errMsg = "Failed to save chart to cloud.";
+                    try {
+                        const errJson = await res.json();
+                        if (errJson.detail) errMsg = errJson.detail;
+                    } catch(e) {}
+                    alert(errMsg);
                 }
             } catch (e) {
                 alert("Error saving chart: " + e);
@@ -10419,6 +11277,41 @@
                 <button id="btn-cancel-sub" class="lang-select-btn" onclick="cancelSubscription()" style="width: 100%; justify-content: center; padding: 10px; font-size: 11px; border: 1px solid #e53e3e; color: #e53e3e; display: none; margin-top: 5px;">
                     Cancel Active Subscription
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Citation Card Overlay Modal -->
+    <div id="citation-card-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-container" style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; max-width: 650px; width: 100%; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; max-height: 90vh;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-glass);">
+                <h3 style="margin: 0; font-family: var(--font-heading); font-size: 15px; color: var(--accent-gold);"><i class="fa-solid fa-book-open-reader"></i> Classical Reference Citation</h3>
+                <button class="lang-select-btn" onclick="closeCitationCard()" style="font-size: 12px; padding: 4px 10px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <!-- Content Area -->
+            <div style="overflow-y: auto; padding: 20px; flex: 1;">
+                <div style="margin-bottom: 16px;">
+                    <span id="citation-book-title" style="font-family: var(--font-heading); font-size: 13px; font-weight: bold; color: var(--text-primary);">Book Title</span>
+                    <span id="citation-page-num" style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">Page X</span>
+                </div>
+                
+                <div style="background: rgba(0,0,0,0.02); border-left: 3px solid var(--accent-gold); padding: 12px; font-family: var(--font-serif); font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 20px; border-radius: 4px;">
+                    <span id="citation-snippet">Snippet text...</span>
+                </div>
+
+                <!-- original page image area -->
+                <div>
+                    <h4 style="font-family: var(--font-heading); font-size: 11px; color: var(--text-gold); margin-bottom: 8px;">Original PDF Page Scan:</h4>
+                    <div id="citation-image-container" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 8px; min-height: 150px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                        <div id="citation-page-loader" style="font-size: 11px; color: var(--text-muted); padding: 20px; text-align: center;">
+                            <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px; color: var(--accent-gold);"></i> Loading page scan...
+                        </div>
+                        <img id="citation-page-img" src="" alt="Original page image" style="max-width: 100%; height: auto; display: none; border-radius: 6px;" />
+                    </div>
+                </div>
             </div>
         </div>
     </div>

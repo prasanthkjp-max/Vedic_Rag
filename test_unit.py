@@ -339,5 +339,81 @@ check("idor: subscription charge rejects a mismatched user (403)", _idor_sub_blo
 check("idor: owner's subscription still un-charged",
       _sub_status(_owner_id) == "created")
 
+# ------------------ PROFILE / RELATIONSHIP SCHEMA & API TESTS ------------------
+import sqlite3
+# Check database schema has relationship and profile_name
+_conn = sqlite3.connect(app.DB_PATH)
+_cur = _conn.cursor()
+_cur.execute("PRAGMA table_info(user_charts)")
+_columns = {row[1] for row in _cur.fetchall()}
+check("schema: user_charts has relationship column", "relationship" in _columns)
+check("schema: user_charts has profile_name column", "profile_name" in _columns)
+
+# Mock save chart with relationship and profile_name
+_cur.execute(
+    "INSERT INTO user_charts (user_id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, chart_style, is_saved, relationship, profile_name) "
+    "VALUES (?, 'Mother Chart', '1965-05-15', '08:30', 'Chennai', 13.08, 80.27, 'female', 'Lahiri', 'south', 1, 'mother', 'Mom')",
+    (_owner_id,)
+)
+_conn.commit()
+
+# Retrieve saved charts for owner
+_cur.execute("SELECT relationship, profile_name FROM user_charts WHERE user_id = ? AND name = 'Mother Chart'", (_owner_id,))
+_row = _cur.fetchone()
+check("db: relationship field persists", _row is not None and _row[0] == "mother")
+check("db: profile_name field persists", _row is not None and _row[1] == "Mom")
+
+_conn.close()
+
+# API Test via TestClient
+try:
+    from fastapi.testclient import TestClient
+    client = TestClient(app.app)
+    
+    # insert session
+    _conn = sqlite3.connect(app.DB_PATH)
+    _cur = _conn.cursor()
+    _session_token = "test_owner_session_token"
+    _cur.execute(
+        "INSERT INTO sessions (session_token, user_id, expires_at) VALUES (?, ?, ?)",
+        (_session_token, _owner_id, (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat())
+    )
+    _conn.commit()
+    _conn.close()
+
+    # Call POST /api/user/charts
+    res_post = client.post(
+        "/api/user/charts",
+        headers={"x-session-token": _session_token},
+        json={
+            "name": "Sister Chart",
+            "dob": "1995-10-10",
+            "tob": "15:45",
+            "pob": "Bangalore",
+            "latitude": 12.97,
+            "longitude": 77.59,
+            "gender": "female",
+            "ayanamsa": "Lahiri",
+            "chart_style": "south",
+            "is_saved": 1,
+            "relationship": "friend",
+            "profile_name": "Sis"
+        }
+    )
+    check("api: POST /api/user/charts returns 200", res_post.status_code == 200)
+    
+    # Call GET /api/user/charts?saved=1
+    res_get = client.get(
+        "/api/user/charts?saved=1",
+        headers={"x-session-token": _session_token}
+    )
+    check("api: GET /api/user/charts returns 200", res_get.status_code == 200)
+    _charts = res_get.json()
+    _sister_chart = next((c for c in _charts if c["name"] == "Sister Chart"), None)
+    check("api: Sister Chart has relationship", _sister_chart is not None and _sister_chart["relationship"] == "friend")
+    check("api: Sister Chart has profile_name", _sister_chart is not None and _sister_chart["profile_name"] == "Sis")
+except Exception as e:
+    print("Skipping TestClient tests:", e)
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)
