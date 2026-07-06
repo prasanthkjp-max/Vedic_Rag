@@ -15,7 +15,15 @@ from datetime import datetime
 import fitz  # PyMuPDF
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
+from fastapi.responses import (
+    StreamingResponse,
+    FileResponse,
+    JSONResponse,
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
@@ -44,12 +52,27 @@ def _remove_quietly(path):
 from io import BytesIO
 from search_engine import VedicSearchEngine
 from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility, calculate_luni_solar_month_index, ephemeris_status
-from pdf_generator import generate_pdf_report, fonts_status
-from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context
+from pdf_generator import (
+    generate_pdf_report,
+    fonts_status,
+    translate_tithi,
+    translate_nakshatra,
+    translate_yogam,
+    translate_karanam,
+    PLANET_ABBR_LOCAL,
+    PLANET_TRANSLATIONS,
+    RASI_TRANSLATIONS,
+    DIGNITY_TRANSLATIONS,
+    DAYS_OF_WEEK_LOCAL,
+)
+from digest_engine import kalam_windows, LABELS as DIGEST_LABELS
+from cities import CITIES
+from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context, get_current_dasa
 from muhurtham_engine import calculate_muhurtham
 from datetime import date
 from config import (
     VERSION,
+    PORTAL_BASE_URL,
     BASE_DIR,
     DB_PATH,
     DB_RAG_PATH,
@@ -427,6 +450,37 @@ def init_user_db():
         is_saved INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Daily digest opt-ins: one per user, driven by the profile's saved birth
+    # info + location + language. `unsubscribe_token` powers the tokenless
+    # one-click opt-out link embedded in every digest email.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS digest_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        enabled INTEGER DEFAULT 1,
+        language TEXT DEFAULT 'en',
+        unsubscribe_token TEXT UNIQUE NOT NULL,
+        last_sent_date TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Public read-only chart shares. The slug is the only credential — it must
+    # stay unguessable (secrets.token_urlsafe). Revoking = deleting the row.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS shared_charts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chart_id INTEGER NOT NULL UNIQUE,
+        user_id INTEGER NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        hide_birth_details INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY(chart_id) REFERENCES user_charts(id) ON DELETE CASCADE
     )
     """)
 
@@ -3500,6 +3554,9 @@ def delete_user_chart(chart_id: int, request: Request):
     
     conn = connect_db(DB_PATH)
     cursor = conn.cursor()
+    # Revoke any public share first — SQLite foreign keys are off by default,
+    # so the ON DELETE CASCADE on shared_charts would not fire.
+    cursor.execute("DELETE FROM shared_charts WHERE chart_id = ? AND user_id = ?", (chart_id, user["id"]))
     cursor.execute("DELETE FROM user_charts WHERE id = ? AND user_id = ?", (chart_id, user["id"]))
     conn.commit()
     conn.close()
@@ -3518,6 +3575,630 @@ def mark_chart_saved(chart_id: int, request: Request):
     conn.commit()
     conn.close()
     return {"status": "success"}
+
+
+# =====================================================================
+# Growth features: daily digest opt-in, shareable chart links, and the
+# public SEO panchangam/festival pages (+ sitemap/robots).
+# =====================================================================
+import html as _htmlmod
+
+
+def _session_user_or_401(request: Request):
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
+
+
+# --- Daily digest subscription (free retention feature; the actual sending is
+# done by the cron-invoked tools/send_digests.py, never by this process) ---
+
+class DigestSubscribeRequest(BaseModel):
+    language: Optional[LangCode] = None
+
+
+@app.get("/api/user/digest")
+def digest_status(request: Request):
+    user = _session_user_or_401(request)
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT enabled, language, last_sent_date FROM digest_subscriptions WHERE user_id = ?",
+            (user["id"],),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return {"subscribed": False}
+    return {"subscribed": bool(row[0]), "language": row[1], "last_sent_date": row[2]}
+
+
+@app.post("/api/user/digest/subscribe")
+def digest_subscribe(req: DigestSubscribeRequest, request: Request):
+    user = _session_user_or_401(request)
+    # The digest is personalised to the natal chart — without saved birth
+    # details there is nothing to compute, so fail with a clear instruction.
+    if not (user.get("dob") and user.get("tob")):
+        raise HTTPException(
+            status_code=400,
+            detail="Save your birth details in your profile first — the daily digest is personalised to your chart.",
+        )
+    lang = req.language or user.get("language") or "en"
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        row = cursor.execute(
+            "SELECT id FROM digest_subscriptions WHERE user_id = ?", (user["id"],)
+        ).fetchone()
+        if row:
+            cursor.execute(
+                "UPDATE digest_subscriptions SET enabled = 1, language = ? WHERE user_id = ?",
+                (lang, user["id"]),
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO digest_subscriptions (user_id, enabled, language, unsubscribe_token) VALUES (?, 1, ?, ?)",
+                (user["id"], lang, secrets.token_urlsafe(16)),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"status": "success", "subscribed": True, "language": lang}
+
+
+@app.post("/api/user/digest/unsubscribe")
+def digest_unsubscribe(request: Request):
+    user = _session_user_or_401(request)
+    conn = connect_db(DB_PATH)
+    try:
+        conn.execute(
+            "UPDATE digest_subscriptions SET enabled = 0 WHERE user_id = ?", (user["id"],)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"status": "success", "subscribed": False}
+
+
+@app.get("/digest/unsubscribe/{token}")
+def digest_unsubscribe_link(token: str):
+    """Public one-click opt-out target for the link in every digest email.
+    The token is the credential; no session is required."""
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE digest_subscriptions SET enabled = 0 WHERE unsubscribe_token = ?",
+            (token,),
+        )
+        found = cursor.rowcount > 0
+        conn.commit()
+    finally:
+        conn.close()
+    if not found:
+        raise HTTPException(status_code=404, detail="Unknown unsubscribe link")
+    return HTMLResponse(
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Unsubscribed</title></head>"
+        "<body style='font-family:sans-serif;background:#12101c;color:#eee;display:flex;"
+        "align-items:center;justify-content:center;height:100vh'>"
+        "<div style='text-align:center'><h2>🙏 You have been unsubscribed.</h2>"
+        f"<p>You will no longer receive the daily digest.</p>"
+        f"<p><a style='color:#d4af37' href='{PORTAL_BASE_URL}/'>Back to the portal</a></p></div></body></html>"
+    )
+
+
+# --- Shareable public chart links ---
+
+class ShareChartRequest(BaseModel):
+    hide_birth_details: bool = False
+
+
+@app.post("/api/user/charts/{chart_id}/share")
+def create_chart_share(chart_id: int, req: ShareChartRequest, request: Request):
+    user = _session_user_or_401(request)
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        chart = cursor.execute(
+            "SELECT id FROM user_charts WHERE id = ? AND user_id = ?",
+            (chart_id, user["id"]),
+        ).fetchone()
+        if not chart:
+            raise HTTPException(status_code=404, detail="Chart not found")
+        row = cursor.execute(
+            "SELECT slug FROM shared_charts WHERE chart_id = ? AND user_id = ?",
+            (chart_id, user["id"]),
+        ).fetchone()
+        if row:
+            slug = row[0]
+            cursor.execute(
+                "UPDATE shared_charts SET hide_birth_details = ? WHERE slug = ?",
+                (1 if req.hide_birth_details else 0, slug),
+            )
+        else:
+            slug = secrets.token_urlsafe(9)
+            cursor.execute(
+                "INSERT INTO shared_charts (chart_id, user_id, slug, hide_birth_details) VALUES (?, ?, ?, ?)",
+                (chart_id, user["id"], slug, 1 if req.hide_birth_details else 0),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"status": "success", "slug": slug, "url": f"{PORTAL_BASE_URL}/share/{slug}"}
+
+
+@app.delete("/api/user/charts/{chart_id}/share")
+def revoke_chart_share(chart_id: int, request: Request):
+    user = _session_user_or_401(request)
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM shared_charts WHERE chart_id = ? AND user_id = ?",
+            (chart_id, user["id"]),
+        )
+        conn.commit()
+        revoked = cursor.rowcount > 0
+    finally:
+        conn.close()
+    return {"status": "success", "revoked": revoked}
+
+
+def _load_share(slug: str):
+    """Resolve a share slug to its chart row, or raise 404."""
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT s.hide_birth_details, c.name, c.dob, c.tob, c.pob, c.latitude, c.longitude, c.gender, c.ayanamsa "
+            "FROM shared_charts s JOIN user_charts c ON s.chart_id = c.id WHERE s.slug = ?",
+            (slug,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="This shared chart link does not exist or was revoked.")
+    return {
+        "hide": bool(row[0]), "name": row[1], "dob": row[2], "tob": row[3],
+        "pob": row[4], "latitude": row[5], "longitude": row[6],
+        "gender": row[7], "ayanamsa": row[8],
+    }
+
+
+def _compute_share_chart(share):
+    y, m, d = (int(x) for x in share["dob"].split("-"))
+    th, tm = (int(x) for x in share["tob"].split(":")[:2])
+    return get_astrological_chart(
+        y, m, d, th, tm, share["longitude"], share["latitude"], share["ayanamsa"],
+        gender=share["gender"],
+    )
+
+
+# South-Indian chart layout: rasi index occupying each cell of the 4x4 grid,
+# row-major; None cells form the 2x2 centre. This fixed arrangement (Meena at
+# top-left, clockwise) is the convention the frontend and PDF also draw.
+_SOUTH_GRID = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
+
+
+def _south_grid_html(placements, title, rasi_key="rasi_index"):
+    order = ["Lagna", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    abbr = PLANET_ABBR_LOCAL["en"]
+    cells = {}
+    for p in order:
+        pl = placements.get(p)
+        if not pl or rasi_key not in pl:
+            continue
+        cells.setdefault(pl[rasi_key] % 12, []).append(abbr.get(p, p[:2]))
+    boxes = []
+    for pos, rasi_idx in enumerate(_SOUTH_GRID):
+        if rasi_idx is None:
+            continue
+        r, c = pos // 4 + 1, pos % 4 + 1
+        content = " ".join(cells.get(rasi_idx, []))
+        boxes.append(f'<div class="cell" style="grid-row:{r};grid-column:{c}">{content}</div>')
+    return (
+        f'<div class="sgrid">{"".join(boxes)}'
+        f'<div class="scenter">{_htmlmod.escape(title)}</div></div>'
+    )
+
+
+# Rendering a share page recomputes the full chart (~100ms of ephemeris math);
+# crawlers hit these repeatedly, so cache per slug+settings. Bounded LRU.
+_SHARE_PAGE_CACHE = OrderedDict()
+_SHARE_PAGE_CACHE_MAX = 256
+
+
+@app.get("/share/{slug}", response_class=HTMLResponse)
+def public_shared_chart(slug: str):
+    """Public, read-only chart page for a share link. No API key, no session —
+    the unguessable slug is the credential. Never includes AI content."""
+    share = _load_share(slug)
+    cache_key = (slug, share["hide"], share["dob"], share["tob"], share["name"])
+    cached = _SHARE_PAGE_CACHE.get(cache_key)
+    if cached is not None:
+        _SHARE_PAGE_CACHE.move_to_end(cache_key)
+        return HTMLResponse(cached)
+
+    chart = _compute_share_chart(share)
+    placements = chart["placements"]
+    panch = chart["panchangam"]
+    name = _htmlmod.escape(share["name"])
+
+    dasa = get_current_dasa(chart.get("dasas", []))
+    dasa_line = ""
+    if dasa.get("mahadasa"):
+        dasa_line = f"{dasa['mahadasa']} Mahadasa"
+        if dasa.get("antardasa"):
+            dasa_line += f" / {dasa['antardasa']} Bhukti"
+        if dasa.get("maha_window"):
+            dasa_line += f" (until {dasa['maha_window'][1]})"
+
+    birth_line = ""
+    if not share["hide"]:
+        birth_line = (
+            f"<p class='muted'>📅 {_htmlmod.escape(share['dob'])} ⏰ {_htmlmod.escape(share['tob'])} "
+            f"📍 {_htmlmod.escape(share['pob'])} · {_htmlmod.escape(share['ayanamsa'])} Ayanamsa</p>"
+        )
+
+    rows = []
+    for p in ["Lagna", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]:
+        pl = placements.get(p)
+        if not pl:
+            continue
+        flags = ("℞" if pl.get("is_retrograde") else "") + ("☉" if pl.get("is_combust") else "")
+        dignity = DIGNITY_TRANSLATIONS["en"].get(pl.get("dignity", ""), pl.get("dignity", "") or "—")
+        rows.append(
+            f"<tr><td>{p} {flags}</td><td>{pl['rasi_name']}</td>"
+            f"<td>{pl['degree']:.2f}°</td><td>{pl.get('nakshatra', '—')}-{pl.get('pada', '')}</td>"
+            f"<td>{dignity}</td></tr>"
+        )
+
+    moon = placements.get("Moon", {})
+    og_desc = (
+        f"Moon in {moon.get('rasi_name', '?')} · {panch.get('nakshatra', '?')} nakshatra · "
+        f"{placements.get('Lagna', {}).get('rasi_name', '?')} lagna — sidereal Vedic birth chart."
+    )
+    page_url = f"{PORTAL_BASE_URL}/share/{slug}"
+
+    page = f"""<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{name} — Vedic Birth Chart</title>
+<meta name="robots" content="noindex">
+<meta property="og:title" content="{name} — Vedic Birth Chart">
+<meta property="og:description" content="{_htmlmod.escape(og_desc)}">
+<meta property="og:image" content="{page_url}/og.png">
+<meta property="og:url" content="{page_url}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+body{{font-family:Georgia,serif;background:#12101c;color:#e8e4da;margin:0;padding:24px;display:flex;justify-content:center}}
+.wrap{{max-width:720px;width:100%}}
+h1{{color:#d4af37;font-size:26px;margin:0 0 4px}}
+h2{{color:#d4af37;font-size:16px;margin:26px 0 10px}}
+.muted{{color:#9a94a8;font-size:13px}}
+.sgrid{{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,64px);gap:2px;background:#2c2740;border:2px solid #d4af37;border-radius:8px;padding:2px;position:relative;margin:10px 0}}
+.cell{{background:#191527;font-size:12px;padding:4px;color:#f0e6c8}}
+.scenter{{grid-row:2/4;grid-column:2/4;background:#191527;display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:14px}}
+table{{width:100%;border-collapse:collapse;font-size:13px}}
+td,th{{border-bottom:1px solid #2c2740;padding:6px 8px;text-align:left}}
+th{{color:#d4af37;font-weight:normal;font-size:12px}}
+.cta{{display:inline-block;margin-top:22px;padding:10px 18px;background:#d4af37;color:#12101c;border-radius:8px;text-decoration:none;font-weight:bold}}
+.grids{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
+@media(max-width:600px){{.grids{{grid-template-columns:1fr}}}}
+</style></head><body><div class="wrap">
+<h1>🕉️ {name}</h1>
+{birth_line}
+<p class="muted">Janma Nakshatra: <strong>{_htmlmod.escape(panch.get('nakshatra', '—'))}</strong> ·
+Tithi: {_htmlmod.escape(panch.get('tithi', '—'))} · Yogam: {_htmlmod.escape(panch.get('yogam', '—'))}</p>
+{f"<p class='muted'>🪐 Current period: <strong>{_htmlmod.escape(dasa_line)}</strong></p>" if dasa_line else ""}
+<div class="grids">
+{_south_grid_html(placements, "Rasi (D1)")}
+{_south_grid_html(placements, "Navamsha (D9)", rasi_key="navamsha_rasi_index")}
+</div>
+<h2>Planetary positions</h2>
+<table><tr><th>Graha</th><th>Rasi</th><th>Degree</th><th>Nakshatra</th><th>Dignity</th></tr>
+{"".join(rows)}</table>
+<a class="cta" href="{PORTAL_BASE_URL}/">✨ Get your own free birth chart & AI reading</a>
+<p class="muted" style="margin-top:18px">Computed with sidereal (Thirukanitha) precision · Swiss Ephemeris</p>
+</div></body></html>"""
+
+    _SHARE_PAGE_CACHE[cache_key] = page
+    if len(_SHARE_PAGE_CACHE) > _SHARE_PAGE_CACHE_MAX:
+        _SHARE_PAGE_CACHE.popitem(last=False)
+    return HTMLResponse(page)
+
+
+@app.get("/share/{slug}/og.png")
+def public_shared_chart_og(slug: str):
+    """1200x630 OpenGraph card for a share link, drawn with PyMuPDF (already a
+    dependency) — no extra imaging stack. Latin text only; Indic names fall
+    back to a generic title rather than tofu."""
+    share = _load_share(slug)
+    chart = _compute_share_chart(share)
+    moon = chart["placements"].get("Moon", {})
+    lagna = chart["placements"].get("Lagna", {})
+    naks = chart["panchangam"].get("nakshatra", "")
+
+    doc = fitz.open()
+    try:
+        page = doc.new_page(width=1200, height=630)
+        page.draw_rect(fitz.Rect(0, 0, 1200, 630), fill=(0.07, 0.06, 0.11), color=None)
+        page.draw_rect(fitz.Rect(24, 24, 1176, 606), color=(0.83, 0.69, 0.22), width=3)
+
+        def _text(pt, s, size, color, font="helv"):
+            try:
+                page.insert_text(pt, s, fontsize=size, color=color, fontname=font)
+            except Exception:
+                pass  # non-Latin glyphs unsupported by the base-14 fonts
+
+        _text(fitz.Point(70, 150), share["name"][:40], 58, (0.91, 0.76, 0.29), "hebo")
+        _text(fitz.Point(70, 215), "Vedic Birth Chart (Sidereal)", 30, (0.91, 0.89, 0.85))
+        _text(fitz.Point(70, 320), f"Moon: {moon.get('rasi_name', '?')}   Nakshatra: {naks}", 34, (0.95, 0.9, 0.78))
+        _text(fitz.Point(70, 380), f"Lagna: {lagna.get('rasi_name', '?')}", 34, (0.95, 0.9, 0.78))
+        _text(fitz.Point(70, 540), "Get your free chart + AI reading grounded in classical texts", 24, (0.65, 0.61, 0.72))
+        png = page.get_pixmap().tobytes("png")
+    finally:
+        doc.close()
+    return Response(content=png, media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=86400"})
+
+
+# --- Public SEO panchangam & festival pages ---
+
+_SEO_LANGS = ["en", "ta", "te", "ml", "kn", "hi"]
+
+# Page-only label strings the digest LABELS don't carry.
+_SEO_LABELS = {
+    "en": {"panchangam": "Panchangam", "festivals": "Today's specialities", "karanam": "Karanam",
+           "prev": "← Previous day", "next": "Next day →", "date_line": "Regional date",
+           "more": "Full interactive panchangam & free birth chart", "monthfest": "Festivals & observances"},
+    "ta": {"panchangam": "பஞ்சாங்கம்", "festivals": "இன்றைய சிறப்புகள்", "karanam": "கரணம்",
+           "prev": "← முந்தைய நாள்", "next": "அடுத்த நாள் →", "date_line": "பிராந்திய தேதி",
+           "more": "முழு பஞ்சாங்கம் & இலவச ஜாதகம்", "monthfest": "பண்டிகைகள் & விரதங்கள்"},
+    "te": {"panchangam": "పంచాంగం", "festivals": "నేటి విశేషాలు", "karanam": "కరణం",
+           "prev": "← ముందు రోజు", "next": "తర్వాతి రోజు →", "date_line": "ప్రాంతీయ తేదీ",
+           "more": "పూర్తి పంచాంగం & ఉచిత జాతకం", "monthfest": "పండుగలు & వ్రతాలు"},
+    "ml": {"panchangam": "പഞ്ചാംഗം", "festivals": "ഇന്നത്തെ വിശേഷങ്ങൾ", "karanam": "കരണം",
+           "prev": "← മുൻ ദിവസം", "next": "അടുത്ത ദിവസം →", "date_line": "പ്രാദേശിക തീയതി",
+           "more": "പൂർണ്ണ പഞ്ചാംഗം & സൗജന്യ ജാതകം", "monthfest": "ഉത്സവങ്ങൾ & വ്രതങ്ങൾ"},
+    "kn": {"panchangam": "ಪಂಚಾಂಗ", "festivals": "ಇಂದಿನ ವಿಶೇಷಗಳು", "karanam": "ಕರಣ",
+           "prev": "← ಹಿಂದಿನ ದಿನ", "next": "ಮುಂದಿನ ದಿನ →", "date_line": "ಪ್ರಾದೇಶಿಕ ದಿನಾಂಕ",
+           "more": "ಪೂರ್ಣ ಪಂಚಾಂಗ & ಉಚಿತ ಜಾತಕ", "monthfest": "ಹಬ್ಬಗಳು & ವ್ರತಗಳು"},
+    "hi": {"panchangam": "पंचांग", "festivals": "आज की विशेषताएँ", "karanam": "करण",
+           "prev": "← पिछला दिन", "next": "अगला दिन →", "date_line": "क्षेत्रीय तिथि",
+           "more": "पूर्ण पंचांग व निःशुल्क कुंडली", "monthfest": "पर्व एवं व्रत"},
+}
+
+# Panchangam for a past/current (city, date) never changes, so a plain bounded
+# LRU (no TTL) is correct.
+_SEO_PAGE_CACHE = OrderedDict()
+_SEO_PAGE_CACHE_MAX = 4096
+
+
+def _seo_page_shell(lang, title, canonical_path, body, desc=""):
+    alt_links = "".join(
+        f'<link rel="alternate" hreflang="{l}" href="{PORTAL_BASE_URL}{canonical_path.replace(f"/{lang}/", f"/{l}/", 1)}">'
+        for l in _SEO_LANGS
+    )
+    jsonld = json.dumps({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": title,
+        "description": desc or title,
+        "url": f"{PORTAL_BASE_URL}{canonical_path}",
+        "inLanguage": lang,
+    }, ensure_ascii=False)
+    return f"""<!DOCTYPE html>
+<html lang="{lang}"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{_htmlmod.escape(desc or title)}">
+<link rel="canonical" href="{PORTAL_BASE_URL}{canonical_path}">
+{alt_links}
+<script type="application/ld+json">{jsonld}</script>
+<style>
+body{{font-family:Georgia,serif;background:#12101c;color:#e8e4da;margin:0;padding:24px;display:flex;justify-content:center}}
+.wrap{{max-width:680px;width:100%}}
+h1{{color:#d4af37;font-size:24px;margin:0 0 6px}}
+h2{{color:#d4af37;font-size:16px;margin:22px 0 8px}}
+.muted{{color:#9a94a8;font-size:13px}}
+table{{width:100%;border-collapse:collapse;font-size:14px}}
+td{{border-bottom:1px solid #2c2740;padding:7px 8px}}
+td:first-child{{color:#9a94a8;width:44%}}
+.nav{{display:flex;justify-content:space-between;margin:18px 0;font-size:13px}}
+a{{color:#d4af37;text-decoration:none}}
+.badge{{display:inline-block;background:#2c2740;border:1px solid #d4af37;color:#f0e6c8;border-radius:14px;padding:3px 10px;margin:2px;font-size:12px}}
+.cta{{display:inline-block;margin-top:20px;padding:10px 18px;background:#d4af37;color:#12101c;border-radius:8px;text-decoration:none;font-weight:bold}}
+</style></head><body><div class="wrap">{body}</div></body></html>"""
+
+
+@app.get("/panchangam/{lang}/{city_slug}", response_class=HTMLResponse)
+def seo_panchangam_today(lang: LangCode, city_slug: str):
+    if city_slug not in CITIES:
+        raise HTTPException(status_code=404, detail="Unknown city")
+    return RedirectResponse(
+        url=f"/panchangam/{lang}/{city_slug}/{date.today().isoformat()}", status_code=302
+    )
+
+
+@app.get("/panchangam/{lang}/{city_slug}/{date_str}", response_class=HTMLResponse)
+def seo_panchangam_page(lang: LangCode, city_slug: str, date_str: str):
+    """Server-rendered public panchangam page for one city+date+language —
+    the SEO acquisition surface. Pure local math; no key, session, or credits."""
+    city = CITIES.get(city_slug)
+    if not city:
+        raise HTTPException(status_code=404, detail="Unknown city")
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date '{date_str}': use YYYY-MM-DD")
+    if not (1900 <= dt.year <= 2100):
+        raise HTTPException(status_code=400, detail="date must be within 1900-2100")
+
+    cache_key = (lang, city_slug, dt.isoformat())
+    cached = _SEO_PAGE_CACHE.get(cache_key)
+    if cached is not None:
+        _SEO_PAGE_CACHE.move_to_end(cache_key)
+        return HTMLResponse(cached)
+
+    city_name, lat, lon = city
+    L = DIGEST_LABELS.get(lang, DIGEST_LABELS["en"])
+    S = _SEO_LABELS.get(lang, _SEO_LABELS["en"])
+
+    res = get_day_panchangam_and_festivals(dt.year, dt.month, dt.day, lon, lat, lang)
+    panch = res["panchangam"]
+    weekday_sun0 = (dt.weekday() + 1) % 7
+    kalams = kalam_windows(panch.get("sunrise", ""), panch.get("sunset", ""), weekday_sun0)
+    weekday_local = DAYS_OF_WEEK_LOCAL.get(lang, DAYS_OF_WEEK_LOCAL["en"])[weekday_sun0]
+
+    specialities = list(res["specialities_all"])
+    try:
+        muh = calculate_muhurtham(
+            f"{dt.year}-{dt.month:02d}-{dt.day:02d}T06:00:00", lat, lon,
+            get_paradigm_from_lang(lang), "VIVAHA",
+        )
+        if muh["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+            specialities.insert(0, "Marriage Muhurtham")
+    except Exception as e:
+        logger.warning("SEO page muhurtham failed for %s %s: %s", city_slug, date_str, e)
+
+    badges = "".join(
+        f'<span class="badge">{_htmlmod.escape(translate_speciality(s, lang))}</span>'
+        for s in specialities
+    )
+
+    title = f"{city_name} {S['panchangam']} — {dt.isoformat()}"
+    prev_d, next_d = dt - timedelta(days=1), dt + timedelta(days=1)
+    path = f"/panchangam/{lang}/{city_slug}/{dt.isoformat()}"
+
+    def row(label, value):
+        return f"<tr><td>{_htmlmod.escape(label)}</td><td>{_htmlmod.escape(str(value or '—'))}</td></tr>"
+
+    table_rows = "".join([
+        row(L["tithi"], translate_tithi(panch.get("tithi", ""), lang)),
+        row(L["nakshatra"], translate_nakshatra(panch.get("nakshatra", ""), lang)),
+        row(L["yogam"], translate_yogam(panch.get("yogam", ""), lang)),
+        row(S["karanam"], translate_karanam(panch.get("karanam", ""), lang)),
+        row(L["sunrise"], panch.get("sunrise", "")),
+        row(L["sunset"], panch.get("sunset", "")),
+        row(L["rahu_kalam"], kalams.get("rahu_kalam", "")),
+        row(L["yamagandam"], kalams.get("yamagandam", "")),
+        row(L["gulika_kalam"], kalams.get("gulika_kalam", "")),
+        row(S["date_line"], f"{panch.get('tamil_date', '')} · {panch.get('tamil_year', '')}"),
+    ])
+
+    desc = (
+        f"{city_name} {S['panchangam']} {dt.isoformat()}: "
+        f"{translate_tithi(panch.get('tithi', ''), lang)}, "
+        f"{translate_nakshatra(panch.get('nakshatra', ''), lang)}, "
+        f"{L['rahu_kalam']} {kalams.get('rahu_kalam', '')}"
+    )
+
+    body = f"""
+<h1>🕉️ {title}</h1>
+<p class="muted">{weekday_local}</p>
+{f"<div>{badges}</div>" if badges else ""}
+<table>{table_rows}</table>
+<div class="nav">
+<a href="/panchangam/{lang}/{city_slug}/{prev_d.isoformat()}">{S['prev']}</a>
+<a href="/festivals/{lang}/{dt.year:04d}-{dt.month:02d}">{S['monthfest']}</a>
+<a href="/panchangam/{lang}/{city_slug}/{next_d.isoformat()}">{S['next']}</a>
+</div>
+<a class="cta" href="{PORTAL_BASE_URL}/">✨ {S['more']}</a>
+"""
+    page = _seo_page_shell(lang, title, path, body, desc)
+    _SEO_PAGE_CACHE[cache_key] = page
+    if len(_SEO_PAGE_CACHE) > _SEO_PAGE_CACHE_MAX:
+        _SEO_PAGE_CACHE.popitem(last=False)
+    return HTMLResponse(page)
+
+
+@app.get("/festivals/{lang}/{year_month}", response_class=HTMLResponse)
+def seo_festivals_page(lang: LangCode, year_month: str):
+    """Public month festival/vrat calendar (SEO page), derived from the same
+    engine as the in-app month calendar (and sharing its cache)."""
+    try:
+        y_str, m_str = year_month.split("-")
+        year, month = int(y_str), int(m_str)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Use YYYY-MM")
+    if not (1 <= month <= 12) or not (1900 <= year <= 2100):
+        raise HTTPException(status_code=400, detail="Month out of supported range")
+
+    # Chennai coordinates anchor the public festival page; observance days can
+    # shift by one day at other longitudes, which the per-city panchangam
+    # pages cover.
+    lat, lon = CITIES["chennai"][1], CITIES["chennai"][2]
+    key = _month_cache_key(year, month, lang, lat, lon)
+    month_data = _MONTH_CACHE.get(key)
+    if month_data is None:
+        month_data = _compute_month_panchangam(year, month, lang, lat, lon)
+        _MONTH_CACHE[key] = month_data
+        if len(_MONTH_CACHE) > _MONTH_CACHE_MAX:
+            _MONTH_CACHE.popitem(last=False)
+
+    S = _SEO_LABELS.get(lang, _SEO_LABELS["en"])
+    items = []
+    for d in month_data["days"]:
+        if not d["specialities"]:
+            continue
+        names = ", ".join(_htmlmod.escape(translate_speciality(s, lang)) for s in d["specialities"])
+        iso = f"{year:04d}-{month:02d}-{d['day']:02d}"
+        items.append(
+            f'<tr><td><a href="/panchangam/{lang}/chennai/{iso}">{iso}</a></td><td>{names}</td></tr>'
+        )
+
+    title = f"{S['monthfest']} — {year:04d}-{month:02d}"
+    path = f"/festivals/{lang}/{year:04d}-{month:02d}"
+    prev_y, prev_m = (year - 1, 12) if month == 1 else (year, month - 1)
+    next_y, next_m = (year + 1, 1) if month == 12 else (year, month + 1)
+    body = f"""
+<h1>🪔 {title}</h1>
+<table>{"".join(items) or '<tr><td colspan="2">—</td></tr>'}</table>
+<div class="nav">
+<a href="/festivals/{lang}/{prev_y:04d}-{prev_m:02d}">←</a>
+<a href="/festivals/{lang}/{next_y:04d}-{next_m:02d}">→</a>
+</div>
+<a class="cta" href="{PORTAL_BASE_URL}/">✨ {S['more']}</a>
+"""
+    return HTMLResponse(_seo_page_shell(lang, title, path, body))
+
+
+@app.get("/sitemap.xml")
+def sitemap_xml():
+    """Streamed sitemap over the public SEO surface: per-city panchangam pages
+    for a rolling window plus the festival months. Never materialised in
+    memory (cities x languages x days is tens of thousands of URLs)."""
+    def gen():
+        yield '<?xml version="1.0" encoding="UTF-8"?>'
+        yield '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        yield f"<url><loc>{PORTAL_BASE_URL}/</loc></url>"
+        today = date.today()
+        for off in range(-7, 31):
+            iso = (today + timedelta(days=off)).isoformat()
+            for slug in CITIES:
+                for lang in _SEO_LANGS:
+                    yield f"<url><loc>{PORTAL_BASE_URL}/panchangam/{lang}/{slug}/{iso}</loc></url>"
+        for moff in range(0, 3):
+            y = today.year + (today.month - 1 + moff) // 12
+            m = (today.month - 1 + moff) % 12 + 1
+            for lang in _SEO_LANGS:
+                yield f"<url><loc>{PORTAL_BASE_URL}/festivals/{lang}/{y:04d}-{m:02d}</loc></url>"
+        yield "</urlset>"
+    return StreamingResponse(gen(), media_type="application/xml")
+
+
+@app.get("/robots.txt")
+def robots_txt():
+    return PlainTextResponse(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "Disallow: /share/\n"
+        f"Sitemap: {PORTAL_BASE_URL}/sitemap.xml\n"
+    )
 
 
 @app.get("/api/version")

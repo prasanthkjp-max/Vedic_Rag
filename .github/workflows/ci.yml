@@ -38,6 +38,9 @@ jobs:
       - name: i18n single-source sync guard
         run: python test_i18n_sync.py
 
+      - name: Growth features (digest engine, kalam windows, SEO cities)
+        run: python test_growth_features.py
+
       - name: Razorpay payment layer (GST + signatures)
         run: python test_razorpay.py
 
