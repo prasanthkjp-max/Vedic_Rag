@@ -532,12 +532,19 @@ LABEL_LOCALIZATION = {
     }
 }
 
-def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", grid_size=220):
+def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", grid_size=220,
+                            index_key=None, center_main=None, center_sub=None):
     """
     Draw a traditional 4x4 South Indian chart using ReportLab canvas
     Each cell is dynamically sized. Total grid is grid_size x grid_size points.
+
+    `index_key` selects which sign index to plot (e.g. "drekkana_rasi_index" for
+    the D3 varga); when omitted it falls back to the legacy chart_type mapping so
+    existing D1/D9 callers are unchanged. `center_main`/`center_sub` override the
+    central label (used to name each divisional chart, e.g. "DASHAMSHA"/"D10").
     """
     FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
+    plot_key = index_key or ("navamsha_rasi_index" if chart_type == "navamsha" else "rasi_index")
 
     box_size = grid_size / 4
     
@@ -574,8 +581,12 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     
     lbl_d9 = "D9 NAVAMSHA" if lang != "ta" else "D9 நவாம்சம்"
     lbl_d1 = "D1 JANMA" if lang != "ta" else "D1 ஜனனம்"
-    
-    if chart_type == "navamsha":
+
+    if center_main is not None:
+        c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size + 4, center_main)
+        if center_sub:
+            c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size - 8, center_sub)
+    elif chart_type == "navamsha":
         c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size + 4, "NAVAMSHA")
         c.drawCentredString(x_offset + 2 * box_size, y_offset + 2 * box_size - 8, lbl_d9)
     else:
@@ -611,7 +622,7 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
             abbr += retro_sym
         if info.get("is_combust", False):
             abbr += combust_sym
-        rasi_idx = info["navamsha_rasi_index"] if chart_type == "navamsha" else info["rasi_index"]
+        rasi_idx = info.get(plot_key, info["rasi_index"])
         rasi_planets[rasi_idx].append(abbr)
         
     for rasi_idx, coords in cell_coords.items():
@@ -652,12 +663,19 @@ def draw_south_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
                     col_idx = 0
                     row_idx += 1
 
-def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", size=220):
+def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi", lang="en", size=220,
+                            index_key=None, center_main=None, center_sub=None):
     """
     Draw a traditional diamond-shaped North Indian chart
     Size is dynamically scaled to size x size points.
+
+    `index_key` selects which sign index to plot (e.g. "dashamsha_rasi_index");
+    when omitted it falls back to the legacy chart_type mapping. `center_main`/
+    `center_sub` are accepted for signature parity with the South drawer (the
+    North chart has no central label, so they are currently unused).
     """
     FONT_REGULAR, FONT_BOLD = resolve_fonts(lang)
+    plot_key = index_key or ("navamsha_rasi_index" if chart_type == "navamsha" else "rasi_index")
 
     c.setStrokeColor(HexColor("#7A1C0B")) # Deep royal crimson
     c.setLineWidth(1.5)
@@ -692,7 +710,7 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
     }
     
     # Get Lagna Rasi index (determines the zodiac sign of 1st house)
-    lagna_rasi = placements["Lagna"]["navamsha_rasi_index"] if chart_type == "navamsha" else placements["Lagna"]["rasi_index"]
+    lagna_rasi = placements["Lagna"].get(plot_key, placements["Lagna"]["rasi_index"])
     
     # Group planets by their North Indian house index (derived from Lagna Rasi)
     house_planets = {h: [] for h in range(1, 13)}
@@ -707,7 +725,7 @@ def draw_north_indian_chart(c, x_offset, y_offset, placements, chart_type="rasi"
             abbr += retro_sym
         if info.get("is_combust", False):
             abbr += combust_sym
-        p_rasi = info["navamsha_rasi_index"] if chart_type == "navamsha" else info["rasi_index"]
+        p_rasi = info.get(plot_key, info["rasi_index"])
         house = (p_rasi - lagna_rasi) % 12 + 1
         house_planets[house].append(abbr)
         
@@ -850,7 +868,131 @@ def clean_and_translate_place(place_name, lang):
             
     return main_place
 
-def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path=None, lang="en"):
+
+def _pdf_footer(c, FONT_REGULAR, lang):
+    """Standard bottom footer with a running page number (report length is now
+    variable because sections are selectable, so 'Page N' beats a fixed total)."""
+    c.setFont(FONT_REGULAR, 7)
+    c.setFillColor(HexColor("#94A3B8"))
+    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
+    c.drawRightString(576, 13, f"Page {c.getPageNumber()}")
+
+
+def _pdf_page_dcharts(c, chart_data, lang, FONT_REGULAR, FONT_BOLD, visual_style):
+    """A dedicated page showing every computed divisional (Varga) chart:
+    D1 Rasi, D3 Drekkana, D9 Navamsha, D10 Dashamsha, D12 Dwadashamsha,
+    D30 Trishamsha and D60 Shastiamsha — laid out in a 3-column grid."""
+    # Header card
+    c.setFillColor(HexColor("#FDFBF7")); c.setStrokeColor(HexColor("#7A1C0B")); c.setLineWidth(1.25)
+    c.rect(36, 710, 540, 50, fill=True, stroke=True)
+    c.setStrokeColor(HexColor("#C5A059")); c.setLineWidth(0.5)
+    c.rect(38.5, 712.5, 535, 45, fill=False, stroke=True)
+    c.setFillColor(HexColor("#7A1C0B")); c.setFont(FONT_BOLD, 13)
+    title = "DIVISIONAL (VARGA) CHARTS" if lang != "ta" else "வர்க்க ஜாதகங்கள் (பிரிவு சக்கரங்கள்)"
+    c.drawCentredString(306, 740, title)
+    c.setFillColor(HexColor("#2D3748")); c.setFont(FONT_REGULAR, 7.5)
+    sub = "Divisional charts used to validate planetary strength across life areas" if lang != "ta" else "வாழ்வின் பல்வேறு அம்சங்களை ஆராயப் பயன்படும் பிரிவு (வர்க்க) சக்கரங்கள்"
+    c.drawCentredString(306, 724, sub)
+
+    divisions = [
+        ("rasi_index", "D1", "RASI"),
+        ("drekkana_rasi_index", "D3", "DREKKANA"),
+        ("navamsha_rasi_index", "D9", "NAVAMSHA"),
+        ("dashamsha_rasi_index", "D10", "DASHAMSHA"),
+        ("dwadashamsha_rasi_index", "D12", "DWADASH"),
+        ("trishamsha_rasi_index", "D30", "TRIMSA"),
+        ("shastiamsha_rasi_index", "D60", "SHASTI"),
+    ]
+    style_str = (visual_style or "south").lower()
+    chart_sz = 150
+    col_w = 176
+    row_h = 205
+    start_x = 42
+    start_y = 545  # bottom-left y of the top row of charts
+    for i, (key, dnum, dname) in enumerate(divisions):
+        row = i // 3
+        col = i % 3
+        x = start_x + col * col_w
+        y = start_y - row * row_h
+        c.setFillColor(HexColor("#7A1C0B")); c.setFont(FONT_BOLD, 8)
+        c.drawString(x, y + chart_sz + 6, f"{dnum}  {dname}")
+        if style_str == "north":
+            draw_north_indian_chart(c, x, y, chart_data["placements"], lang=lang, size=chart_sz,
+                                    index_key=key, center_main=dname, center_sub=dnum)
+        else:
+            draw_south_indian_chart(c, x, y, chart_data["placements"], lang=lang, grid_size=chart_sz,
+                                    index_key=key, center_main=dname, center_sub=dnum)
+
+
+def _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, new_page_fn):
+    """Render the cached AI 'preview phala' markdown into flowing, paginated
+    body text. `new_page_fn` footers the current page and opens a fresh bordered
+    one when the reading overflows."""
+    import re
+    from reportlab.lib.utils import simpleSplit
+
+    left = 42
+    width = 528  # 570 - 42
+
+    # Header card
+    c.setFillColor(HexColor("#FDFBF7")); c.setStrokeColor(HexColor("#7A1C0B")); c.setLineWidth(1.25)
+    c.rect(36, 710, 540, 50, fill=True, stroke=True)
+    c.setStrokeColor(HexColor("#C5A059")); c.setLineWidth(0.5)
+    c.rect(38.5, 712.5, 535, 45, fill=False, stroke=True)
+    c.setFillColor(HexColor("#7A1C0B")); c.setFont(FONT_BOLD, 13)
+    title = "AI JYOTISHYAM PREVIEW PHALA" if lang != "ta" else "AI ஜோதிட பலன் முன்னோட்டம்"
+    c.drawCentredString(306, 740, title)
+    c.setFillColor(HexColor("#2D3748")); c.setFont(FONT_REGULAR, 7.5)
+    sub = "Grounded reading synthesised from the computed chart & classical texts" if lang != "ta" else "கணித ஜாதகம் மற்றும் சாஸ்திர நூல்களின் அடிப்படையில் உருவாக்கப்பட்ட பலன்"
+    c.drawCentredString(306, 724, sub)
+
+    def strip_md(s):
+        s = re.sub(r'\*\*(.*?)\*\*', r'\1', s)
+        s = re.sub(r'(?<!\*)\*(?!\*)(.+?)\*(?!\*)', r'\1', s)
+        s = s.replace('`', '').replace('__', '')
+        return s.strip()
+
+    state = {"y": 700}
+
+    def ensure(space):
+        if state["y"] - space < 42:
+            new_page_fn()
+            state["y"] = 748
+
+    for raw in (ai_phala or "").split('\n'):
+        stripped = raw.strip()
+        if not stripped:
+            state["y"] -= 5
+            continue
+
+        indent = 0
+        is_head = False
+        m = re.match(r'^(#{1,6})\s+(.*)$', stripped)
+        if m:
+            text = strip_md(m.group(2)); font = FONT_BOLD; size = 11; color = "#7A1C0B"; is_head = True
+        elif re.match(r'^\*\*[^*]+\*\*[:：]?\s*$', stripped):
+            text = strip_md(stripped); font = FONT_BOLD; size = 10; color = "#7A1C0B"; is_head = True
+        elif stripped[:2] in ('- ', '* ') or stripped.startswith('• '):
+            text = "•  " + strip_md(stripped[2:]); font = FONT_REGULAR; size = 8.5; color = "#2D3748"; indent = 12
+        elif stripped.startswith('>'):
+            text = strip_md(stripped.lstrip('>').strip()); font = FONT_REGULAR; size = 8.5; color = "#8A5A2B"; indent = 16
+        else:
+            text = strip_md(stripped); font = FONT_REGULAR; size = 8.5; color = "#2D3748"
+
+        if is_head:
+            ensure(size + 10)
+            state["y"] -= 7
+        for wl in simpleSplit(text, font, size, width - indent):
+            ensure(size + 3)
+            c.setFont(font, size); c.setFillColor(HexColor(color))
+            c.drawString(left + indent, state["y"], wl)
+            state["y"] -= size + 3
+        if is_head:
+            state["y"] -= 3
+
+
+def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path=None, lang="en",
+                        sections=None, ai_phala=""):
     """
     Generate a 2-page highly elegant, scholarly Vedic Astrology Report PDF in selected languages containing
     both Rasi D1 & Navamsha D9 charts side-by-side, Pillaiyar Suzhi & Lord Ganesha Invocation,
@@ -989,9 +1131,54 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
             labels["tamil_year"] = "Solar Year (Tamil)"
             labels["tamil_month"] = "Solar Month & Date"
     
-    # ------------------ PAGE 1 ------------------
-    draw_page_border_decorations(c, 1, lang)
-    
+    # --- Assemble the report from ordered, selectable sections ---
+    # The birth Moon nakshatra titles the Dasa page; capture it now because the
+    # planetary-positions loop on the chart page rebinds a local `naks_local`.
+    birth_naks_local = translate_nakshatra(chart_data['panchangam']['nakshatra'], lang)
+
+    def _footer():
+        _pdf_footer(c, FONT_REGULAR, lang)
+
+    def _new_page():
+        # Footer the current page, then open a fresh bordered one. Used by the
+        # phala renderer when a long reading overflows a single page.
+        _footer()
+        c.showPage()
+        draw_page_border_decorations(c, c.getPageNumber(), lang)
+
+    section_map = [
+        ("chart", lambda: _pdf_page_chart(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, client_name, place_name, visual_style)),
+        ("dcharts", lambda: _pdf_page_dcharts(c, chart_data, lang, FONT_REGULAR, FONT_BOLD, visual_style)),
+        ("strengths", lambda: _pdf_page_strengths(c, chart_data, lang, FONT_REGULAR, FONT_BOLD)),
+        ("phala", lambda: _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, _new_page)),
+        ("dasa", lambda: _pdf_page_dasa(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, birth_naks_local)),
+    ]
+    if sections is None:
+        sections = [k for k, _ in section_map]
+
+    active = []
+    for key, fn in section_map:
+        if key not in sections:
+            continue
+        # The phala page only renders when a cached reading was supplied.
+        if key == "phala" and not (ai_phala and str(ai_phala).strip()):
+            continue
+        active.append(fn)
+    if not active:
+        active = [section_map[0][1]]
+
+    for idx, fn in enumerate(active):
+        if idx > 0:
+            c.showPage()
+        draw_page_border_decorations(c, c.getPageNumber(), lang)
+        fn()
+        _footer()
+
+    c.save()
+    logger.info("Astrology PDF report generated at %s", output_path)
+
+
+def _pdf_page_chart(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, client_name, place_name, visual_style):
     # 1. Lord Ganesha Icon (Top Center, elegant)
     base_dir = os.path.dirname(os.path.abspath(__file__))
     ganesha_img_path = os.path.join(base_dir, "static", "assets", "lord_vinayaka.png")
@@ -1240,18 +1427,8 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         c.drawString(427, row_y, dig_local)
         row_y -= 11.0
         
-    # Footer on Page 1 (Outside the borders)
-    c.setFont(FONT_REGULAR, 7)
-    c.setFillColor(HexColor("#94A3B8"))
-    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 13, "Page 1 of 3")
-    
-    # Start Page 2
-    c.showPage()
-    
-    # ------------------ PAGE 2 ------------------
-    draw_page_border_decorations(c, 2, lang)
-    
+
+def _pdf_page_dasa(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, birth_naks_local):
     # 1. 120-Year Vimshottari Dasa Table Header - White background with golden double borders
     c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
     c.setStrokeColor(HexColor("#7A1C0B")) # Burgundy
@@ -1268,7 +1445,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     
     c.setFillColor(HexColor("#2D3748")) # Charcoal subtitle
     c.setFont(FONT_REGULAR, 7.5)
-    c.drawCentredString(306, 724, labels["dasa_subtitle"].format(naks_local))
+    c.drawCentredString(306, 724, labels["dasa_subtitle"].format(birth_naks_local))
     
     # Dasa Section Header
     c.setFillColor(HexColor("#7A1C0B"))
@@ -1418,16 +1595,8 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         c.drawString(48, gy, bullet)
         gy -= 12.5
         
-    # Footer on Page 2 (Outside the borders)
-    c.setFont(FONT_REGULAR, 7)
-    c.setFillColor(HexColor("#94A3B8"))
-    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 13, "Page 2 of 3")
-    
-    # ------------------ PAGE 3 ------------------
-    c.showPage()
-    draw_page_border_decorations(c, 3, lang)
-    
+
+def _pdf_page_strengths(c, chart_data, lang, FONT_REGULAR, FONT_BOLD):
     # 1. Page Header Card
     c.setFillColor(HexColor("#FDFBF7")) # Warm Ivory Card
     c.setStrokeColor(HexColor("#7A1C0B")) # Burgundy
@@ -1603,15 +1772,6 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     c.drawString(48, 204, quote_desc)
     c.drawString(48, 192, "Utilize periods of strong planetary transits through powerful signs to initiate business, education, or holy pilgrimages." if lang != "ta" else "வலிமையான கிரகங்கள் சுப புள்ளிகள் கொண்ட ராசிகளில் சஞ்சரிக்கும் காலத்தில் புதிய முயற்சிகளை துவங்க சுப பலன்கள் கைகூடும்.")
 
-    # Footer on Page 3 (Outside the borders)
-    c.setFont(FONT_REGULAR, 7)
-    c.setFillColor(HexColor("#94A3B8"))
-    c.drawString(36, 13, "Vedic Astrology AI Portal | Authoritative Astro Calculations" if lang != "ta" else "வைதிக ஜோதிட AI போர்டல் | திருக்கணித பஞ்சாங்க ஜனன ஜாதக கணிதம்")
-    c.drawRightString(576, 13, "Page 3 of 3")
-    
-    # Save Canvas Document
-    c.save()
-    logger.info("Astrology PDF report generated at %s", output_path)
 
 if __name__ == "__main__":
     # Test generation

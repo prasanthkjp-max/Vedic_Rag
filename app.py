@@ -82,6 +82,7 @@ from config import (
     CREDIT_COST_CHART,
     CREDIT_COST_MARRIAGE,
     CREDIT_COST_PDF,
+    CREDIT_COST_PDF_BASIC,
     CREDIT_COST_QUERY,
     CREDIT_COST_AI_PREDICT,
     SIGNUP_BONUS_CREDITS,
@@ -626,6 +627,16 @@ def record_subscriber_usage(user_id, now=None):
             user_id, count, period, SUBSCRIPTION_SOFT_CAP,
         )
     return count
+
+
+def _is_premium(user: dict) -> bool:
+    """A user is 'premium' (all sections/AI phala unlocked) when they hold an
+    active subscription (Astro Pass) or are on the unlimited allowlist."""
+    if not user:
+        return False
+    if (user.get("email") or "").lower() in UNLIMITED_EMAILS:
+        return True
+    return bool(user.get("subscription_active"))
 
 
 def check_credits_or_raise(token: str, cost: int, action_type: str):
@@ -1242,6 +1253,12 @@ class PdfDownloadRequest(BaseModel):
     place_name: str = Field(max_length=200)
     visual_style: VisualStyle = "south"
     lang: LangCode = "en"
+    # Which report sections to include. None => all available (premium). The set
+    # is intersected with the caller's entitlement server-side (non-premium users
+    # are limited to the free 'chart' section regardless of what they request).
+    sections: list[str] | None = None
+    # Cached AI 'preview phala' markdown to embed as its own section (premium).
+    ai_phala: str = Field(default="", max_length=40000)
 
 class AIPredictRequest(BaseModel):
     chart_data: dict
@@ -1447,6 +1464,12 @@ def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Ordered PDF report sections (report page order). 'chart' = chart details +
+# planet positions (the free tier); the rest are premium-only.
+PDF_ALL_SECTIONS = ["chart", "dcharts", "strengths", "phala", "dasa"]
+PDF_FREE_SECTIONS = ["chart"]
+
+
 @app.post("/api/download-pdf")
 def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     """Generate ReportLab PDF and stream it for download"""
@@ -1457,7 +1480,29 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     for k in ("metadata", "panchangam", "placements"):
         if k not in req.chart_data:
             raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
-    user = check_credits_or_raise(token, CREDIT_COST_PDF, "download_pdf")
+
+    # Resolve the caller and their entitlement BEFORE charging, since both the
+    # allowed sections and the price depend on premium status. Non-premium users
+    # get only the free 'chart' section (chart details + planet positions) at the
+    # basic price; premium users unlock every section they request.
+    prelim_user = get_user_by_session(token)
+    if not prelim_user:
+        raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
+    premium = _is_premium(prelim_user)
+
+    requested = req.sections if req.sections is not None else list(PDF_ALL_SECTIONS)
+    if premium:
+        sections = [s for s in PDF_ALL_SECTIONS if s in requested]
+        pdf_cost = CREDIT_COST_PDF
+    else:
+        sections = list(PDF_FREE_SECTIONS)
+        pdf_cost = CREDIT_COST_PDF_BASIC
+    if not sections:
+        sections = list(PDF_FREE_SECTIONS)
+    # The AI phala section is premium-only and needs the cached reading text.
+    ai_phala = req.ai_phala if (premium and "phala" in sections) else ""
+
+    user = check_credits_or_raise(token, pdf_cost, "download_pdf")
     try:
         # Create a secure temporary file path. The client name is slugified so a
         # crafted value (e.g. "../../etc/foo") cannot escape the temp directory,
@@ -1472,9 +1517,9 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
 
         # Generate the report
         generate_pdf_report(
-            localized_chart_data, req.client_name, req.place_name, 
+            localized_chart_data, req.client_name, req.place_name,
             visual_style=req.visual_style, output_path=pdf_path,
-            lang=req.lang
+            lang=req.lang, sections=sections, ai_phala=ai_phala
         )
         
         # Return the file response; delete the temp file after it is sent so
@@ -1500,6 +1545,13 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
     for k in ("metadata", "panchangam"):
         if k not in req.chart_data:
             raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
+    # The AI 'preview phala' reading is a premium feature. Gate it before charging
+    # so non-premium callers get a clear paywall (402) rather than a stream.
+    prelim_user = get_user_by_session(token)
+    if not prelim_user:
+        raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
+    if not _is_premium(prelim_user):
+        raise HTTPException(status_code=402, detail="The AI Preview Phala reading is available to Astro Pass (premium) members. Please subscribe to unlock unlimited AI predictions.")
     user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict")
     chart = req.chart_data
     client = req.client_name
@@ -1549,8 +1601,10 @@ A precise computational analysis of the chart is given below. You MUST reason fr
 CRITICAL REQUIREMENT: You MUST write the entire response, including headings, labels, sections, and descriptions, in the following language: {target_lang}. Use professional, grammatically correct, and astrologically appropriate phrasing in {target_lang}. Do not include English text unless it represents a standard untranslatable planet or coordinate abbreviation.
 
 CRITICAL VEDIC ASTROLOGY GUARDRAILS:
+- USE ONLY THE COMPUTED DATA ABOVE. Every planet's house (bhava), sign (rasi), degree, dignity, retrograde/combust state, the aspects it casts, its conjunctions, its Shadbala (including Sthana Bala / positional Sthana Phala and Drik Bala / aspectual Drik Phala), the Ashtakavarga points, and the running Dasa-Bhukti-Antaram are ALL given in the COMPUTED VEDIC CHART ANALYSIS. You MUST read these values verbatim from it. NEVER invent, guess, shift, or alter a planet's house, sign, degree, aspect, or strength. If a fact is not in the computed analysis, do not assert it.
+- Judge each planet's strength from its Shadbala components as computed — cite Sthana Phala (positional strength) and Drik Phala (aspectual strength) rather than fabricating them. Assess houses (bhavas) from the Ashtakavarga points given.
 - Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu) and the Lagna.
-- Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY classical Vedic Graha Drishti (all planets aspect the 7th house; Saturn aspects 3rd and 10th; Jupiter aspects 5th and 9th; Mars aspects 4th and 8th).
+- Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY the Vedic Graha Drishti exactly as listed under GRAHA DRISHTI in the computed analysis (all planets aspect the 7th house; Saturn aspects 3rd and 10th; Jupiter aspects 5th and 9th; Mars aspects 4th and 8th).
 - Ground every prediction directly in the provided CLASSICAL TEXT REFERENCES. Do NOT fabricate or hallucinate general astrological rules that contradict these texts.
 
 Using the classical rules from the retrieved texts AND standard Jyotish technique, write an exceptionally insightful, accurate reading in beautiful Markdown. You do not need to explicitly cite the book titles or page numbers in the text, but you MUST base your predictions and readings directly on the wisdom and rules from the provided CLASSICAL TEXT REFERENCES, synthesising them with the computed chart details (planets, bhava house placements, dignities, aspects, yogas, and the running Vimshottari Dasa-Bhukti-Pratyantardasa/Antaram). Structure it as:
@@ -2253,12 +2307,17 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
 You are in a live chat session with {client}, born at {birth_dt} in {place}.
 
-Input Variables Required from User: To perform this analysis, assume the user has provided the following calculated astrological data (or prompt the user for it if missing):
-- Rasi Chart (Lagna and planetary degrees).
-- Navamsa and other Shodasavarga (16 divisional) charts.
-- Planetary Strengths (Shadbala, Vimsopaka Bala, and Avasthas).
-- Ashtakavarga points (Sarvashtakavarga and Bhinnashtakavarga).
-- Current Vimshottari Dasa (Udu Dasa) and Kalachakra Dasa balances.
+CARDINAL RULE — GROUND EVERYTHING IN THE COMPUTED DATA BELOW:
+The COMPUTED VEDIC CHART ANALYSIS below already contains the exact, precisely-calculated data for this native. It provides, and you must read verbatim from it:
+- The Rasi (D1) chart: Lagna and every Graha's bhava (house), rasi (sign), degree, dignity, retrograde/combust state.
+- Divisional charts actually computed for each body: D3 (Drekkana), D9 (Navamsha), D10 (Dashamsha), D12 (Dwadashamsha), D30 (Trishamsha), D60 (Shastiamsha).
+- House lords, conjunctions, and the full Graha Drishti (aspects cast/received).
+- Shadbala for each planet with its components — Sthana Bala (positional / Sthana Phala), Dig Bala, Kala Bala, Cheshta Bala, Naisargika Bala, and Drik Bala (aspectual / Drik Phala) — plus totals and % of required strength.
+- Ashtakavarga (Sarvashtakavarga SAV points per sign, and Shodhya Pinda).
+- The currently running Vimshottari Mahadasa, Antardasa (Bhukti) and Pratyantar Dasa (Antaram), with dates.
+- Gochara (current transits, incl. Sade Sati) when available.
+
+You MUST NOT invent, alter, shift, or guess any planet's house, sign, degree, aspect, conjunction, dignity, or strength. Use ONLY what is given. If a technique needs data that is NOT present in the computed analysis (e.g. Vimsopaka Bala, Arudha Pada, Kalachakra Dasa, the 22nd Drekkana, Avasthas, or divisional charts other than those listed above), DO NOT fabricate values — either omit that technique or state plainly that the datum is not available, rather than inventing a placement. Never ask the user to supply chart data; it is all below.
 
 The calculated astrological data for {client} and retrieved classical scriptural excerpts are provided below.
 
@@ -2290,10 +2349,9 @@ Step 3: Comprehensive Yoga Deciphering
 - Raja Yogas: Identify connections (conjunction, mutual aspect, or exchange) between Kendra (1, 4, 7, 10) and Trikona (1, 5, 9) lords.
 - Yoga Bhangas (Cancellations): Before confirming any great fortune, explicitly check for Daridra, Reka, Preshya, or Kemadruma yogas that mar the horoscope. Check if exalted planets are obstructed by the Moon's combustion or debilitated planets.
 
-Step 4: Divisional Chart (Shodasavarga) Validation
-- Do not rely on the Rasi chart alone. Cross-reference planetary dignities across the 16 Vargas.
-- Use Hora for wealth, Drekkana for siblings, Chaturthamsa for fortunes, Saptamsa for progeny, Navamsa for spouse/inner strength, Dasamsa for power/profession, and Trimsamsa for evils.
-- Calculate the Vimsopaka Bala (20-point strength system) to see the true dignity of planets across all vargas.
+Step 4: Divisional Chart Validation (only the vargas provided in the computed data)
+- Do not rely on the Rasi chart alone. Cross-reference each planet's divisional signs AS GIVEN in the computed analysis: Drekkana (D3) for siblings/courage, Navamsa (D9) for spouse/inner strength & dharma, Dasamsa (D10) for power/profession, Dwadashamsa (D12) for parents, Trimsamsa (D30) for misfortunes, and Shastiamsha (D60) for overall karmic fruit.
+- Do NOT introduce vargas that are absent from the data (e.g. Hora, Saptamsa, Chaturthamsa) and do NOT compute a Vimsopaka Bala — use the Shadbala components actually provided (Sthana Phala, Drik Phala, etc.) to judge planetary strength.
 
 Step 5: Ayurdaya (Longevity) & Maraka (Death-Inflicting) Analysis
 - Warning: Treat longevity with caution. First, check for Balarishta (infant mortality) yogas (e.g., Moon afflicted in Dusthanas without Jupiter's aspect).

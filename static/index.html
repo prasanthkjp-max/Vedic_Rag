@@ -6648,6 +6648,9 @@
                 // Preload Cosmic AI chat welcome bubble specifically for this native!
                 preloadCosmicWelcomeMessage(name, pob, dob, tob);
 
+                // Auto-generate the AI preview phala for premium members (cached).
+                maybeAutoGeneratePhala();
+
             } catch (err) {
                 console.error("Calculation failed:", err);
                 alert("Failed to compute chart. Please ensure all coordinates and inputs are valid.");
@@ -7202,12 +7205,68 @@
             }
         }
 
-        // Trigger PDF Download
-        async function downloadReportPDF() {
+        // The report is composed of ordered sections. 'chart' (chart details +
+        // planet positions) is free; the rest require an Astro Pass. This mirrors
+        // the server-side gating in /api/download-pdf.
+        const PDF_SECTIONS = [
+            { key: 'chart',     icon: 'fa-table-list',    label: 'Chart Details & Planet Positions', free: true },
+            { key: 'dcharts',   icon: 'fa-diagram-project', label: 'Divisional (Varga) Charts — D1–D60', free: false },
+            { key: 'strengths', icon: 'fa-scale-balanced', label: 'Shadbala & Ashtakavarga', free: false },
+            { key: 'phala',     icon: 'fa-brain',         label: 'AI Preview Phala Reading', free: false, needsPhala: true },
+            { key: 'dasa',      icon: 'fa-timeline',      label: '120-Year Vimshottari Dasa', free: false },
+        ];
+
+        // Open the "choose sections" modal before downloading.
+        function downloadReportPDF() {
             if (!calculatedChartData) return;
+            const premium = isPremiumUser();
+            const hasPhala = !!(calculatedChartData.__aiPhala);
+            const listEl = document.getElementById('pdf-section-list');
+            listEl.innerHTML = '';
+
+            PDF_SECTIONS.forEach(sec => {
+                const unlocked = sec.free || premium;
+                const available = unlocked && (!sec.needsPhala || hasPhala);
+                const checked = available ? 'checked' : '';
+                const disabled = available ? '' : 'disabled';
+                let badge = '';
+                if (!sec.free && !premium) badge = '<span style="font-size:9px; color:var(--accent-gold); border:1px solid var(--accent-gold); border-radius:6px; padding:1px 6px; margin-left:8px;"><i class="fa-solid fa-crown"></i> PREMIUM</span>';
+                else if (sec.needsPhala && !hasPhala) badge = '<span style="font-size:9px; color:var(--text-muted); margin-left:8px;">(generate the AI reading first)</span>';
+                const row = document.createElement('label');
+                row.style.cssText = `display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid ${available ? 'var(--border-gold)' : 'var(--border-glass)'}; border-radius:8px; margin-bottom:8px; cursor:${available ? 'pointer' : 'not-allowed'}; opacity:${available ? '1' : '0.55'};`;
+                row.innerHTML = `
+                    <input type="checkbox" class="pdf-sec-cb" value="${sec.key}" ${checked} ${disabled} style="width:16px; height:16px; accent-color: var(--accent-gold);">
+                    <i class="fa-solid ${sec.icon}" style="color: var(--accent-gold); width:18px;"></i>
+                    <span style="flex:1; font-size:13px; color: var(--text-primary);">${sec.label}${badge}</span>`;
+                listEl.appendChild(row);
+            });
+
+            const upsell = document.getElementById('pdf-section-upsell');
+            if (upsell) upsell.style.display = premium ? 'none' : 'block';
+            const costNote = document.getElementById('pdf-section-cost');
+            if (costNote) costNote.innerText = premium ? 'Astro Pass: full report (all selected sections).' : 'Free report: chart details & planet positions.';
+
+            document.getElementById('pdf-section-modal').style.display = 'flex';
+        }
+
+        function closePdfSectionModal() {
+            document.getElementById('pdf-section-modal').style.display = 'none';
+        }
+
+        // Perform the actual download using the sections the user selected.
+        async function confirmPdfDownload() {
+            if (!calculatedChartData) return;
+            const sections = Array.from(document.querySelectorAll('.pdf-sec-cb'))
+                .filter(cb => cb.checked && !cb.disabled)
+                .map(cb => cb.value);
+            if (sections.length === 0) { alert("Please select at least one section to include."); return; }
+
             const name = document.getElementById('in-name').value;
             const pob = document.getElementById('in-pob').value;
             const style = document.getElementById('in-style').value;
+            const btn = document.getElementById('pdf-section-confirm-btn');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...'; }
 
             try {
                 const response = await apiFetch('/api/download-pdf', {
@@ -7218,7 +7277,9 @@
                         client_name: name,
                         place_name: pob,
                         visual_style: style,
-                        lang: currentLang
+                        lang: currentLang,
+                        sections: sections,
+                        ai_phala: (sections.includes('phala') ? (calculatedChartData.__aiPhala || '') : '')
                     })
                 });
 
@@ -7231,11 +7292,18 @@
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
+                    closePdfSectionModal();
+                } else if (response.status === 402) {
+                    closePdfSectionModal();
+                    showPaywall();
                 } else {
                     alert("Failed to generate PDF download.");
                 }
             } catch (err) {
                 console.error("PDF generation failed:", err);
+                alert("PDF generation failed. Please try again.");
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
             }
         }
 
@@ -7548,18 +7616,68 @@
             }
         }
 
-        // Jyothisyam tab: inline AI prediction session
-        async function generateJyothiAIReading() {
+        // A user is "premium" (AI phala + all PDF sections unlocked) when they
+        // hold an active Astro Pass subscription.
+        function isPremiumUser() {
+            return !!(currentUser && currentUser.subscription_active);
+        }
+
+        // The AI "preview phala" is auto-generated for premium members once per
+        // chart and cached on calculatedChartData so it is never regenerated (or
+        // re-charged) and can be embedded in the PDF. Non-premium members see a
+        // premium lock instead.
+        function maybeAutoGeneratePhala() {
             if (!calculatedChartData) return;
-            // Guard against a double-click firing two paid (25-credit) streams.
+            updatePhalaButtonState();
+            if (isPremiumUser()) {
+                generateJyothiAIReading(true); // auto + cached
+            }
+        }
+
+        // Reflect premium/lock state on the "Astro-AI Reading" button.
+        function updatePhalaButtonState() {
+            const lbl = document.getElementById('lbl-btn-astro-ai');
+            const btn = document.getElementById('btn-jyothi-ai-reading');
+            if (!lbl || !btn) return;
+            const icon = btn.querySelector('i');
+            if (isPremiumUser()) {
+                if (icon) icon.className = 'fa-solid fa-brain';
+                btn.title = '';
+            } else {
+                if (icon) icon.className = 'fa-solid fa-lock';
+                btn.title = 'Astro Pass (premium) feature';
+            }
+        }
+
+        // Jyothisyam tab: inline AI prediction session (premium preview phala).
+        // `auto` = triggered automatically after a chart is calculated; it stays
+        // silent for non-premium users and does not scroll the viewport.
+        async function generateJyothiAIReading(auto = false) {
+            if (!calculatedChartData) return;
+
+            const section = document.getElementById('jyothi-ai-reading-section');
+            const outputPane = document.getElementById('jyothi-ai-reading-output');
+
+            // Premium gate — the AI reading is an Astro Pass feature.
+            if (!isPremiumUser()) {
+                if (!auto) showPaywall();
+                return;
+            }
+
+            // Serve from cache (same chart + same language) so we never regenerate.
+            if (calculatedChartData.__aiPhala && calculatedChartData.__aiPhalaLang === currentLang) {
+                section.style.display = 'block';
+                outputPane.innerHTML = formatMarkdown(calculatedChartData.__aiPhala);
+                if (!auto) section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+
+            // Guard against a double-click firing two overlapping streams.
             if (isJyothiResponding) return;
             isJyothiResponding = true;
 
-            const section = document.getElementById('jyothi-ai-reading-section');
             section.style.display = 'block';
-            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            const outputPane = document.getElementById('jyothi-ai-reading-output');
+            if (!auto) section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             outputPane.innerHTML = '<span class="typing-cursor"></span>';
 
             const name = document.getElementById('in-name').value;
@@ -7578,7 +7696,12 @@
                     })
                 });
 
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    // 402 => premium/credits paywall. Stay silent on auto-gen.
+                    if (response.status === 402 && auto) { section.style.display = 'none'; return; }
+                    if (response.status === 402) { showPaywall(); section.style.display = 'none'; return; }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
@@ -7594,8 +7717,15 @@
                 }
 
                 outputPane.innerHTML = formatMarkdown(accumulatedText);
+                // Cache the generated reading (keyed to language) for reuse in the
+                // tab and for embedding into the downloaded PDF.
+                if (accumulatedText.trim()) {
+                    calculatedChartData.__aiPhala = accumulatedText;
+                    calculatedChartData.__aiPhalaLang = currentLang;
+                }
             } catch (err) {
-                outputPane.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`;
+                if (auto) { section.style.display = 'none'; }
+                else { outputPane.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`; }
             } finally {
                 isJyothiResponding = false;
             }
@@ -7889,6 +8019,7 @@
             
             renderBirthReportOutputs();
             navigateToPage('jyothisyam');
+            maybeAutoGeneratePhala();
         }
 
         async function generateMarriageCompatibility() {
@@ -9789,6 +9920,28 @@
             <div style="display: flex; gap: 10px;">
                 <button onclick="saveServerSettings()" style="flex: 1; background: var(--accent-gold); color: #000; border: none; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; font-size: 13px;">Save &amp; Reconnect</button>
                 <button onclick="closeServerSettings()" style="flex: 1; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-glass); border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Section Selector Modal -->
+    <div id="pdf-section-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: rgba(4,14,44,0.96); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 28px; width: 460px; max-width: 92vw; position: relative;">
+            <button onclick="closePdfSectionModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 17px; margin-bottom: 6px;">
+                <i class="fa-solid fa-file-pdf"></i> Choose Report Sections
+            </h3>
+            <p id="pdf-section-cost" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;">Select the sections to include in your PDF.</p>
+            <div id="pdf-section-list" style="margin-bottom: 12px; max-height: 46vh; overflow-y: auto;"></div>
+            <div id="pdf-section-upsell" style="display:none; font-size: 11px; color: var(--text-secondary); background: rgba(212,175,55,0.08); border: 1px solid var(--border-gold); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+                <i class="fa-solid fa-crown" style="color: var(--accent-gold);"></i>
+                Upgrade to <strong>Astro Pass</strong> to unlock all sections — divisional charts, Shadbala/Ashtakavarga, the AI phala reading and the full dasa timeline.
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="lang-select-btn" onclick="closePdfSectionModal()" style="padding: 10px 16px;">Cancel</button>
+                <button id="pdf-section-confirm-btn" class="calculate-btn" onclick="confirmPdfDownload()" style="padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-download"></i> Download PDF
+                </button>
             </div>
         </div>
     </div>
