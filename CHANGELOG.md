@@ -3,6 +3,39 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.19.0]
+
+### Fixed
+- **AI predictions no longer hallucinate positions/strengths.** The Astro-AI
+  chat prompt told the model to *"assume the user has provided"* Shodasavarga (16
+  divisional charts), Vimsopaka Bala, Arudha Pada, Kalachakra Dasa, the 22nd
+  Drekkana and Avasthas — none of which are computed — so it fabricated bhava
+  placements, aspects and strengths. Rewrote the prompt to describe exactly what
+  the computed analysis contains (D1 plus the D3/D9/D10/D12/D30/D60 vargas,
+  house lords, conjunctions, full graha drishti, Shadbala components,
+  Ashtakavarga, running Dasa-Bhukti-Antaram, gochara) and forbid inventing any
+  datum not present. The `/api/ai-predict` prompt gained the same
+  computed-data-only guardrail.
+- **Sthana Phala & Drik Phala are now fed to the LLM.** `build_analysis` only
+  exposed Shadbala *totals*; it now emits the full six-fold breakdown per planet
+  (Sthana/Dig/Kala/Cheshta/Naisargika/Drik), so readings reason from real
+  positional (Sthana) and aspectual (Drik) strengths instead of guessing them.
+
+### Added
+- **AI "preview phala" — auto-generated, cached, premium.** For Astro Pass
+  members the AI reading now generates automatically once a chart is calculated
+  and is cached on the chart (per language) so it is never regenerated or the
+  viewport re-scrolled; it is also embedded into the PDF. Non-premium users see a
+  locked button that opens the paywall. Enforced server-side on `/api/ai-predict`.
+- **Selectable, reordered PDF report.** The download icon now opens a section
+  picker. Report order changed to: chart details & planet positions → **all
+  divisional (Varga) charts D1–D60** → Shadbala & Ashtakavarga → **AI preview
+  phala** → **Vimshottari Dasa (now last)**. Premium members can include every
+  section; non-premium users are limited to *chart details & planet positions*
+  (free — `CREDIT_COST_PDF_BASIC=0`), with the full report still costing
+  `CREDIT_COST_PDF`. The dasa page's "Birth Moon Nakshatram" subtitle now shows
+  the birth nakshatra (previously leaked the last planet's nakshatra).
+
 ## [1.18.6]
 
 ### Fixed

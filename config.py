@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.18.6"
+VERSION = "1.19.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -214,6 +214,10 @@ GST_RATE = float(os.environ.get("VEDIC_GST_RATE", "0.18"))
 CREDIT_COST_CHART = int(os.environ.get("VEDIC_CREDIT_COST_CHART", "0"))
 CREDIT_COST_MARRIAGE = int(os.environ.get("VEDIC_CREDIT_COST_MARRIAGE", "50"))
 CREDIT_COST_PDF = int(os.environ.get("VEDIC_CREDIT_COST_PDF", "50"))
+# Section-limited PDF for non-premium users (chart details + planet positions
+# only). Free by default — the premium analysis/AI/dasa sections are what the
+# full-price PDF unlocks.
+CREDIT_COST_PDF_BASIC = int(os.environ.get("VEDIC_CREDIT_COST_PDF_BASIC", "0"))
 CREDIT_COST_QUERY = int(os.environ.get("VEDIC_CREDIT_COST_QUERY", "25"))
 CREDIT_COST_AI_PREDICT = int(os.environ.get("VEDIC_CREDIT_COST_AI_PREDICT", "25"))
 

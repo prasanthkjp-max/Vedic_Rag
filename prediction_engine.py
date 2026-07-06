@@ -642,13 +642,23 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
             for p, val in shodhya.items():
                 lines.append(f"  - {p}: Rasi Pinda={val['rasi_pinda']}, Graha Pinda={val['graha_pinda']}, Total Shodhya Pinda={val['shodhya_pinda']}")
 
-    # Expose Shadbala Strengths
+    # Expose Shadbala Strengths — including the Sthana Bala (positional / Sthana
+    # Phala) and Drik Bala (aspectual / Drik Phala) components explicitly, so the
+    # LLM reads real computed strengths instead of hallucinating them.
     shadbala = chart.get("shadbala", {})
     if shadbala:
-        lines.append("\nPLANETARY STRENGTHS (Shadbala points & percentage of required minimum):")
+        lines.append("\nPLANETARY STRENGTHS (Shadbala — Sthana/Dig/Kala/Cheshta/Naisargika/Drik components in Virupas, total & % of required minimum):")
         for p, score in shadbala.items():
             status = "Strong" if score["percentage_strength"] >= 100.0 else "Weak"
-            lines.append(f"  - {p}: {score['total_points']:.2f} points ({score['percentage_strength']:.1f}% of required {score['required_points']} - {status})")
+            lines.append(
+                f"  - {p}: Sthana Bala (positional Sthana Phala)={score.get('sthana_bala', 0.0)}, "
+                f"Dig Bala (directional)={score.get('dig_bala', 0.0)}, "
+                f"Kala Bala (temporal)={score.get('kala_bala', 0.0)}, "
+                f"Cheshta Bala (motional)={score.get('cheshta_bala', 0.0)}, "
+                f"Naisargika Bala (natural)={score.get('naisargika_bala', 0.0)}, "
+                f"Drik Bala (aspectual Drik Phala)={score.get('drik_bala', 0.0)} "
+                f"=> Total {score['total_points']:.2f} points "
+                f"({score['percentage_strength']:.1f}% of required {score['required_points']} - {status})")
 
     if gochara:
         lines.append("\nGOCHARA (current transits as of {}):".format(ref_date.isoformat()))
