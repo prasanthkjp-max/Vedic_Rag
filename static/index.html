@@ -7781,8 +7781,7 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
-                currentActiveManifest = null;
-                manifestPrefixLength = 0;
+                const manifestState = { manifest: null, prefixLength: 0 };
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -7791,14 +7790,14 @@
                     const chunk = decoder.decode(value, { stream: true });
                     accumulatedText += chunk;
 
-                    const processed = processStreamChunk(accumulatedText);
+                    const processed = processStreamChunk(accumulatedText, manifestState);
                     const renderText = processed.cleanText;
 
                     outputPane.innerHTML = formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
 
-                const processed = processStreamChunk(accumulatedText);
+                const processed = processStreamChunk(accumulatedText, manifestState);
                 const renderText = processed.cleanText;
                 outputPane.innerHTML = formatMarkdown(renderText);
 
@@ -7917,23 +7916,22 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
-                currentActiveManifest = null;
-                manifestPrefixLength = 0;
+                const manifestState = { manifest: null, prefixLength: 0 };
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
                     const chunk = decoder.decode(value, { stream: true });
                     accumulatedText += chunk;
-                    
-                    const processed = processStreamChunk(accumulatedText);
+
+                    const processed = processStreamChunk(accumulatedText, manifestState);
                     const renderText = processed.cleanText;
 
                     outputPane.innerHTML = formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
                     outputPane.scrollTop = outputPane.scrollHeight;
                 }
 
-                const processed = processStreamChunk(accumulatedText);
+                const processed = processStreamChunk(accumulatedText, manifestState);
                 const renderText = processed.cleanText;
                 outputPane.innerHTML = formatMarkdown(renderText);
                 // Cache the generated reading (keyed to language) for reuse in the
@@ -8478,8 +8476,7 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder("utf-8");
                 let resultText = "";
-                currentActiveManifest = null;
-                manifestPrefixLength = 0;
+                const manifestState = { manifest: null, prefixLength: 0 };
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -8489,7 +8486,7 @@
                     resultText += chunk;
                     // Strip the leading citation-manifest line (if any) before
                     // any further parsing, so it never renders as raw JSON.
-                    const displayText = processStreamChunk(resultText).cleanText;
+                    const displayText = processStreamChunk(resultText, manifestState).cleanText;
 
                     // Parse out FAQ block from streaming text to build interactive elements
                     let cleanText = displayText;
@@ -10510,14 +10507,21 @@
         });
 
         // Citation logic
+        // `currentActiveManifest` is the manifest behind the citation numbers
+        // the user can currently click on — shared on purpose (only one
+        // reading's citations are meant to be clickable at a time).
         let currentActiveManifest = null;
-        // Byte offset (within the accumulated stream) right after the manifest
-        // line's trailing newline, so every subsequent call — not just the one
-        // that first parses it — knows how much leading text to strip.
-        let manifestPrefixLength = 0;
 
-        function processStreamChunk(accumulatedText) {
-            if (currentActiveManifest === null && accumulatedText.includes('\n')) {
+        // The stream-prefix-stripping bookkeeping, in contrast, MUST be kept
+        // per-stream: two AI streams (e.g. an auto-generated Jyothi reading
+        // and a chat message) can be in flight concurrently, each awaiting
+        // reader.read() independently, so a single shared offset would let
+        // one stream's chunk update stomp another's — reintroducing the raw
+        // manifest JSON into whichever pane loses the race. Callers create
+        // their own `{ manifest: null, prefixLength: 0 }` state object per
+        // stream and pass it in.
+        function processStreamChunk(accumulatedText, streamState) {
+            if (streamState.manifest === null && accumulatedText.includes('\n')) {
                 let temp = accumulatedText;
                 let stripped = 0;
                 while (temp.startsWith('\n')) {
@@ -10529,8 +10533,9 @@
                     const firstLine = temp.substring(0, firstLineEnd);
                     if (firstLine.startsWith('{"manifest":')) {
                         try {
-                            currentActiveManifest = JSON.parse(firstLine).manifest;
-                            manifestPrefixLength = stripped + firstLineEnd + 1;
+                            streamState.manifest = JSON.parse(firstLine).manifest;
+                            streamState.prefixLength = stripped + firstLineEnd + 1;
+                            currentActiveManifest = streamState.manifest;
                         } catch (e) {
                             console.error("Error parsing manifest:", e);
                         }
@@ -10538,9 +10543,9 @@
                 }
             }
             return {
-                manifest: currentActiveManifest,
-                cleanText: currentActiveManifest !== null
-                    ? accumulatedText.substring(manifestPrefixLength)
+                manifest: streamState.manifest,
+                cleanText: streamState.manifest !== null
+                    ? accumulatedText.substring(streamState.prefixLength)
                     : accumulatedText
             };
         }
