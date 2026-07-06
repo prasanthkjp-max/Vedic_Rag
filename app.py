@@ -1037,6 +1037,7 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
 class QueryRequest(BaseModel):
     query: str = Field(max_length=4000)
     model: str = DEFAULT_LLM_MODEL
+    lang: LangCode = "en"
 
 @app.get("/api/local-key")
 def get_local_key(request: Request):
@@ -1292,6 +1293,7 @@ def query_rag(request: QueryRequest, raw_req: Request):
 
     query_text = request.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    target_lang = _LANG_MAP.get(request.lang, "English")
 
     def prompt_builder():
         # Reload engine to get latest pages
@@ -1321,6 +1323,8 @@ Cite the exact book title and page number when you make claims, using standard b
 Write out Sanskrit Devanagari verses (Shlokas) beautifully if retrieved, and provide a word-by-word or clear translation.
 
 If the retrieved pages do not contain the answer, explain the retrieved context, and then use your deep expertise in general Vedic Astrology to answer the user's question, clearly distinguishing your general knowledge from the book facts.
+
+CRITICAL REQUIREMENT: Write the entire response — headings, labels, and body — in {target_lang}, regardless of the language the user typed their question in (they may be typing in English for typing convenience while browsing the site in {target_lang}). Only the quoted original Sanskrit/Devanagari verses (and their bracketed citations) may remain untranslated; the surrounding explanation must be in {target_lang}.
 
 --- RETRIEVED BOOK PAGES ---
 {context_str}
@@ -1890,6 +1894,7 @@ class AIChatRequest(BaseModel):
     query: str = Field(max_length=4000)
     model: str = DEFAULT_LLM_MODEL
     history: list[AIChatMessage] = Field(default=[], max_length=50)
+    lang: LangCode = "en"
 
 # --- Translations and Helpers for Localized Daily Newsletters ---
 FESTIVAL_IMAGES = {
@@ -2427,6 +2432,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     query_text = req.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     history = req.history
+    target_lang = _LANG_MAP.get(req.lang, "English")
 
     def prompt_builder():
         # Validate and build context inside the deferred callback
@@ -2476,6 +2482,8 @@ The calculated astrological data for {client} and retrieved classical scriptural
 ---------------------------------------------
 {history_text}
 USER CHAT INQUIRY: {query_text}
+
+CRITICAL REQUIREMENT: Write the ENTIRE response — headings, labels, and body — in {target_lang}. This applies regardless of what language {client}'s question above was typed in (they may type in English for convenience while browsing the site in {target_lang}); always answer in {target_lang}. Do not switch to any other language, including languages that may appear in the retrieved classical text excerpts.
 
 ANALYTICAL FRAMEWORK & STEP-BY-STEP INSTRUCTIONS:
 When analyzing a nativity, strictly follow this chronological framework, drawing rules from your retrieved classical knowledge base:

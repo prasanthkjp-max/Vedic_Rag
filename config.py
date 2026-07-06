@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.21.0"
+VERSION = "1.21.1"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
