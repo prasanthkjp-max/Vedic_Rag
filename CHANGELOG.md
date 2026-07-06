@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.20.0]
+
+### Added
+- **Daily personalized transit digest (opt-in).** New `digest_engine.py` builds
+  a deterministic multilingual daily briefing from the user's saved birth info:
+  today's panchangam (tithi/nakshatra/yogam, sunrise/sunset, Rahu Kalam /
+  Yamagandam / Gulika Kalam — same weekday-part math as the frontend card),
+  the running Vimshottari maha/antar dasa, and gochara highlights (Sade Sati,
+  Ashtama/Kantaka Shani, Guru Bala, Chandrashtama) in all six languages.
+  Opt-in/out via `POST /api/user/digest/subscribe|unsubscribe` (session-gated,
+  free, requires saved birth details) and a toggle in the profile's Account
+  Preferences. Delivery is the cron-invoked `tools/send_digests.py` over SMTP
+  (`VEDIC_SMTP_*`, fails closed when unconfigured; `--dry-run` to preview);
+  every email carries a tokenless one-click unsubscribe link
+  (`/digest/unsubscribe/{token}`). Astro Pass subscribers optionally get the
+  text polished once by `MODEL_FAST` (`VEDIC_DIGEST_LLM=0` disables), with the
+  deterministic text always the fallback.
+- **Shareable public chart links.** `POST /api/user/charts/{id}/share` mints an
+  unguessable slug (revoked via DELETE, or automatically when the chart is
+  deleted); the new Share button on saved-chart cards copies the URL. The
+  public `/share/{slug}` page server-renders a read-only chart — South-Indian
+  Rasi + Navamsha grids, placements with dignities, current maha dasa, birth
+  panchangam — with OpenGraph tags and a generated `/share/{slug}/og.png`
+  preview card (PyMuPDF). No AI content; `noindex`; an optional
+  `hide_birth_details` flag redacts date/time/place.
+- **Public SEO panchangam pages.** `/panchangam/{lang}/{city}/{YYYY-MM-DD}`
+  (80 curated cities in `cities.py`, 6 languages) server-renders the full day
+  panchangam — tithi/nakshatra/yogam/karanam via the `translations.py` single
+  source, sunrise/sunset, Rahu/Yama/Gulika windows, regional date/year,
+  festival + marriage-muhurtham badges — with canonical + hreflang alternates,
+  JSON-LD, prev/next links, and a bounded LRU cache (day panchangam is
+  immutable). `/festivals/{lang}/{YYYY-MM}` lists the month's festivals/vratams
+  (reusing the month-calendar engine and its cache), and `/sitemap.xml`
+  (streamed) + `/robots.txt` expose it all to crawlers. `VEDIC_PORTAL_BASE_URL`
+  configures the public origin used in links.
+- **CI** now also runs `test_growth_features.py` (kalam windows, digest
+  builder + label-table alignment across languages, city table integrity).
+
 ## [1.19.0]
 
 ### Fixed

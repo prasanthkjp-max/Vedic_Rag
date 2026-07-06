@@ -9090,6 +9090,57 @@
             if (refEl) refEl.innerText = currentUser.referral_code || "--";
 
             loadUsageDashboard();
+            loadDigestStatus();
+        }
+
+        async function loadDigestStatus() {
+            const el = document.getElementById('profile-in-digest');
+            if (!el) return;
+            try {
+                const res = await apiFetch('/api/user/digest');
+                if (res.ok) {
+                    const d = await res.json();
+                    el.checked = !!d.subscribed;
+                }
+            } catch (e) { /* leave unchecked */ }
+        }
+
+        async function toggleDailyDigest(on) {
+            const el = document.getElementById('profile-in-digest');
+            try {
+                const res = await apiFetch(on ? '/api/user/digest/subscribe' : '/api/user/digest/unsubscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: on ? JSON.stringify({ language: currentLang }) : '{}'
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.detail || 'Could not update the digest preference.');
+                    if (el) el.checked = !on;
+                }
+            } catch (e) {
+                if (el) el.checked = !on;
+            }
+        }
+
+        async function shareSavedChart(id) {
+            try {
+                const res = await apiFetch(`/api/user/charts/${id}/share`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}'
+                });
+                if (!res.ok) { alert('Could not create the share link.'); return; }
+                const d = await res.json();
+                const note = 'Public link copied:\n' + d.url + '\n\nAnyone with this link can view the chart (birth details included, no AI content). Deleting the chart revokes the link.';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(d.url).then(() => alert(note)).catch(() => prompt('Copy the public link:', d.url));
+                } else {
+                    prompt('Copy the public link:', d.url);
+                }
+            } catch (e) {
+                alert('Could not create the share link.');
+            }
         }
 
         function copyReferralCode() {
@@ -9725,6 +9776,7 @@
                             </div>
                             <div style="display: flex; gap: 8px; margin-top: 5px;">
                                 <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
+                                <button class="lang-select-btn" onclick="shareSavedChart(${c.id})" title="Share public link" style="padding: 6px 10px; font-size: 10px; justify-content: center;"><i class="fa-solid fa-share-nodes"></i></button>
                                 <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'saved')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         `;
@@ -10100,6 +10152,10 @@
                     <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
                         <option value="sms">SMS</option>
                     </select>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <label for="profile-in-digest" id="lbl-digest-optin" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">🌅 Daily Panchangam &amp; Transit Digest (email)</label>
+                    <input type="checkbox" id="profile-in-digest" onchange="toggleDailyDigest(this.checked)" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
                 </div>
                 <button class="calculate-btn" onclick="saveProfilePreferences()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Preferences</button>
             </div>

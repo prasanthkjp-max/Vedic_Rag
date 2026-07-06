@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.19.0"
+VERSION = "1.20.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -263,6 +263,27 @@ def gst_breakdown(gross_paise, rate=None):
         rate = GST_RATE
     base = round(gross_paise / (1 + rate))
     return {"gross": gross_paise, "base": base, "gst": gross_paise - base, "rate": rate}
+
+# --- Public base URL ---
+# Absolute origin used wherever the app must emit a full URL that leaves the
+# browser context: shareable chart links, the sitemap, and links inside digest
+# emails. Set it to the real deployed origin in production.
+PORTAL_BASE_URL = os.environ.get("VEDIC_PORTAL_BASE_URL", "http://localhost:8008").rstrip("/")
+
+# --- Daily digest email (SMTP) ---
+# Used only by tools/send_digests.py (a cron-invoked script, never the web
+# process). Fails closed like the payment gateways: with no SMTP_HOST the
+# sender logs and exits instead of erroring per-user.
+SMTP_HOST = os.environ.get("VEDIC_SMTP_HOST", "")
+SMTP_PORT = _env_int("VEDIC_SMTP_PORT", 587)
+SMTP_USER = os.environ.get("VEDIC_SMTP_USER", "")
+SMTP_PASSWORD = os.environ.get("VEDIC_SMTP_PASSWORD", "")
+SMTP_FROM = os.environ.get("VEDIC_SMTP_FROM", SMTP_USER)
+SMTP_ENABLED = bool(SMTP_HOST and SMTP_FROM)
+# Subscribers (Astro Pass) can have their digest rewritten by MODEL_FAST for a
+# warmer tone; the deterministic text is always the fallback. One LLM call per
+# subscriber per day, made from the cron script only.
+DIGEST_LLM_ENABLED = os.environ.get("VEDIC_DIGEST_LLM", "1") == "1"
 
 # --- CORS ---
 # Comma-separated list of allowed origins, or "*" for any (the default, kept for
