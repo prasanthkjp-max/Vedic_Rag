@@ -3,6 +3,58 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.21.0]
+
+### Added
+- **Muhurtham for more life events.** `muhurtham_engine` gains declarative
+  electional profiles (`ACTIVITY_PROFILES`) and three new activities —
+  `BUSINESS_OPENING`, `NAMAKARANA`, `TRAVEL` — alongside strengthened
+  `GRAHAPRAVESHA`/`AKSHARABHYASAM`/`VAHAN_KHARIDI`: per-event nakshatra
+  whitelists (Bharani/Krittika hard-forbidden for travel), riktha-tithi +
+  Amavasya guards, weekday guards, and the universal Vishti-karana block.
+  `GET/POST /api/muhurtham` accepts the new `target_activity` values, and the
+  public SEO panchangam pages now show a localized "Auspicious today for"
+  line (housewarming, first learning, vehicle purchase, business opening,
+  naming, travel) — new search keywords per city/day. VIVAHA's dedicated rule
+  chain is unchanged.
+- **Varshaphala (Tajika annual chart).** `astro_engine.get_varshaphala_chart`
+  finds the exact sidereal solar-return moment (Newton search, natal
+  ayanamsa, ±seconds), casts the annual chart at the natal place, and derives
+  Muntha (natal lagna + one rasi per completed year, with its house from the
+  varsha lagna) and the year lord (strongest office-bearer candidate by
+  Shadbala). New `POST /api/ai-predict-varshaphala` streams the year-ahead
+  reading grounded via Tajika-targeted RAG queries
+  (`CREDIT_COST_VARSHAPHALA`=25, rate-limited LLM action).
+- **Grounded remedies (parihara).** `prediction_engine.derive_remedy_targets`
+  flags only computed afflictions — afflicted running dasa lords
+  (debilitated/combust/dusthana), Sade Sati / Ashtama / Kantaka Shani from
+  gochara, an afflicted lagna lord, malefics on the lagna. New
+  `POST /api/ai-remedies` retrieves remedy-focused passages and instructs the
+  model to recommend ONLY text-supported remedies with per-remedy citations
+  (never inventing mantras/gemstones), framed as traditional spiritual
+  guidance (`CREDIT_COST_REMEDIES`=25). A "Get Classical Remedies" button
+  appears on the astrology tab after a chart is calculated.
+- **In-depth AI compatibility (premium).**
+  `prediction_engine.build_compatibility_analysis` computes the cross-chart
+  layer beyond porutham: each native's 7th house/lord condition,
+  Venus/Jupiter karaka dignities, the mutual Moon-sign relation
+  (samasaptaka/dwirdwadasha/shashtashtama/trikona), the Kuja-dosha verdict
+  WITH the porutham engine's classical cancellations (never re-flagged from
+  bare placement), and 10-year simultaneous malefic-mahadasa windows (dasa
+  sandhi). New `POST /api/ai-predict-compatibility`
+  (`CREDIT_COST_COMPATIBILITY`=75) with an upsell button under the marriage
+  reading.
+- **Prashna (horary) mode.** `POST /api/ai-predict-prashna` answers a typed
+  question from the chart of the moment at the querent's location — no birth
+  details needed (the lowest-friction paid entry point). A keyword map (no
+  extra LLM call) routes the question to its judged house (career→10th,
+  marriage→7th, lost objects→2nd, …); `build_prashna_analysis` renders the
+  lagna lord / Moon / judged-house conditions for the prompt
+  (`CREDIT_COST_PRASHNA`=25). New "Ask a Question" card on the AI tab.
+- **CI** now also runs `test_depth_features.py` (muhurtham profile fixtures +
+  matrix consistency, solar-return accuracy ±2 min, Muntha progression,
+  remedy-target derivation, compatibility analysis, prashna classifier).
+
 ## [1.20.0]
 
 ### Added

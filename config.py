@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.20.0"
+VERSION = "1.21.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -220,6 +220,12 @@ CREDIT_COST_PDF = int(os.environ.get("VEDIC_CREDIT_COST_PDF", "50"))
 CREDIT_COST_PDF_BASIC = int(os.environ.get("VEDIC_CREDIT_COST_PDF_BASIC", "0"))
 CREDIT_COST_QUERY = int(os.environ.get("VEDIC_CREDIT_COST_QUERY", "25"))
 CREDIT_COST_AI_PREDICT = int(os.environ.get("VEDIC_CREDIT_COST_AI_PREDICT", "25"))
+# Depth features (v1.21): each is one grounded LLM reading. The in-depth
+# two-chart compatibility report is priced above a single-chart reading.
+CREDIT_COST_VARSHAPHALA = int(os.environ.get("VEDIC_CREDIT_COST_VARSHAPHALA", "25"))
+CREDIT_COST_REMEDIES = int(os.environ.get("VEDIC_CREDIT_COST_REMEDIES", "25"))
+CREDIT_COST_COMPATIBILITY = int(os.environ.get("VEDIC_CREDIT_COST_COMPATIBILITY", "75"))
+CREDIT_COST_PRASHNA = int(os.environ.get("VEDIC_CREDIT_COST_PRASHNA", "25"))
 
 # Credits granted to a brand-new account at signup. With chart generation free
 # and an AI overview costing 25, the default grant is one free AI reading.
