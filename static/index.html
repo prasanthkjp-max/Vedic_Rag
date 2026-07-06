@@ -7758,11 +7758,12 @@
                     client_name: name,
                     place_name: pob,
                     query: messageText,
-                    history: aiChatHistory
+                    history: aiChatHistory,
+                    lang: currentLang
                 };
             } else {
                 apiPath = '/api/query';
-                apiBody = { query: messageText };
+                apiBody = { query: messageText, lang: currentLang };
             }
 
             try {
@@ -7781,6 +7782,7 @@
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
                 currentActiveManifest = null;
+                manifestPrefixLength = 0;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -7916,6 +7918,7 @@
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
                 currentActiveManifest = null;
+                manifestPrefixLength = 0;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -8475,23 +8478,28 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder("utf-8");
                 let resultText = "";
-                
+                currentActiveManifest = null;
+                manifestPrefixLength = 0;
+
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    
+
                     const chunk = decoder.decode(value, { stream: true });
                     resultText += chunk;
-                    
+                    // Strip the leading citation-manifest line (if any) before
+                    // any further parsing, so it never renders as raw JSON.
+                    const displayText = processStreamChunk(resultText).cleanText;
+
                     // Parse out FAQ block from streaming text to build interactive elements
-                    let cleanText = resultText;
-                    const faqStartIndex = resultText.indexOf("Q: ");
+                    let cleanText = displayText;
+                    const faqStartIndex = displayText.indexOf("Q: ");
                     if (faqStartIndex !== -1) {
-                        cleanText = resultText.substring(0, faqStartIndex).trim();
+                        cleanText = displayText.substring(0, faqStartIndex).trim();
                         // Strip trailing titles like '### FAQ' or '### Frequently Asked Questions'
                         cleanText = cleanText.replace(/###\s*(Frequently Asked Questions|FAQ|அடிக்கடி கேட்கப்படும் கேள்விகள்|తరచుగా అడిగే ప్రశ్నలు|പതിവായി ചോദിക്കുന്ന ചോദ്യങ്ങൾ|ಪದೇ ಪದೇ ಕೇಳಲಾಗುವ ಪ್ರಶ್ನೆಗಳು|अक्सर पूछे जाने वाले प्रश्न).*$/i, "").trim();
                     }
-                    
+
                     // Render the markdown analysis text. Escape FIRST — the
                     // stream is LLM output grounded in user-supplied names and
                     // OCR text, so raw insertion into innerHTML is an XSS hole.
@@ -8499,11 +8507,11 @@
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
                         .replace(/\n/g, '<br>');
-                        
+
                     let finalHtml = `<div style="white-space: pre-wrap;">${htmlContent}</div>`;
-                    
+
                     // Render the accordion for FAQs if streaming has reached the questions section
-                    const faqAccordion = renderFAQAccordion(resultText);
+                    const faqAccordion = renderFAQAccordion(displayText);
                     if (faqAccordion) {
                         finalHtml += faqAccordion;
                     }
@@ -10503,12 +10511,18 @@
 
         // Citation logic
         let currentActiveManifest = null;
+        // Byte offset (within the accumulated stream) right after the manifest
+        // line's trailing newline, so every subsequent call — not just the one
+        // that first parses it — knows how much leading text to strip.
+        let manifestPrefixLength = 0;
 
         function processStreamChunk(accumulatedText) {
-            if (!currentActiveManifest && accumulatedText.includes('\n')) {
+            if (currentActiveManifest === null && accumulatedText.includes('\n')) {
                 let temp = accumulatedText;
+                let stripped = 0;
                 while (temp.startsWith('\n')) {
                     temp = temp.substring(1);
+                    stripped++;
                 }
                 if (temp.includes('\n')) {
                     const firstLineEnd = temp.indexOf('\n');
@@ -10516,10 +10530,7 @@
                     if (firstLine.startsWith('{"manifest":')) {
                         try {
                             currentActiveManifest = JSON.parse(firstLine).manifest;
-                            return {
-                                manifest: currentActiveManifest,
-                                cleanText: temp.substring(firstLineEnd + 1)
-                            };
+                            manifestPrefixLength = stripped + firstLineEnd + 1;
                         } catch (e) {
                             console.error("Error parsing manifest:", e);
                         }
@@ -10528,7 +10539,9 @@
             }
             return {
                 manifest: currentActiveManifest,
-                cleanText: accumulatedText
+                cleanText: currentActiveManifest !== null
+                    ? accumulatedText.substring(manifestPrefixLength)
+                    : accumulatedText
             };
         }
 
