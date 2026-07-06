@@ -415,5 +415,34 @@ try:
 except Exception as e:
     print("Skipping TestClient tests:", e)
 
+# ── Signed premium-report download links (WhatsApp delivery) ────────────────
+import time as _time
+
+_rid = "abc123report"
+_future = int(_time.time()) + 3600
+_sig = app._sign_report_token(_rid, _future)
+check("report token: a fresh signature verifies", app._verify_report_token(_rid, _future, _sig) is True)
+check("report token: tampered report id rejected",
+      app._verify_report_token("other", _future, _sig) is False)
+check("report token: tampered expiry rejected",
+      app._verify_report_token(_rid, _future + 1, _sig) is False)
+check("report token: empty signature rejected",
+      app._verify_report_token(_rid, _future, "") is False)
+_past = int(_time.time()) - 10
+check("report token: expired link rejected even with a valid signature",
+      app._verify_report_token(_rid, _past, app._sign_report_token(_rid, _past)) is False)
+
+# ── E.164 phone normalization (WhatsApp opt-in) ─────────────────────────────
+check("e164: canonical +number accepted", app._normalize_e164("+919876543210") == "+919876543210")
+check("e164: separators/spaces stripped", app._normalize_e164("+91 98765-43210") == "+919876543210")
+check("e164: 00 international prefix normalized", app._normalize_e164("0091 9876543210") == "+919876543210")
+try:
+    app._normalize_e164("98765")  # no country code / too short
+    _e164_bad = False
+except HTTPException as e:
+    _e164_bad = (e.status_code == 400)
+check("e164: invalid number rejected (400)", _e164_bad)
+
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

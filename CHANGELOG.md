@@ -3,6 +3,45 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.22.0]
+
+### Added
+- **Tiered PDF reports.** `/api/download-pdf` now takes a `tier` field. `basic`
+  is the existing selectable-section report (unchanged, synchronous). `premium`
+  (`CREDIT_COST_PDF_PREMIUM`=150) is a 20+ page chaptered life report —
+  personality (Lagna/Moon/Sun), career & wealth (10th/D10, 2nd/11th), marriage
+  & health (7th/D9, 6th/8th), and dasa outlook & remedies — each group written
+  by ONE grounded LLM call (≤4 total) with chapter-targeted RAG passages, atop
+  the existing deterministic tables (charts, Shadbala/Ashtakavarga, dasa) and
+  full Indic-font machinery. Premium generation is **async**: the POST debits
+  then returns a `report_id`; a background task builds the PDF into a gitignored
+  `reports/` dir with an unguessable name; `GET /api/report-status/{id}` polls;
+  `GET /api/report-file/{id}` serves it session-gated. On generation failure the
+  debit is **refunded** via the existing ledger round-trip. A tier chooser with
+  a page-count/contents preview and price drives it from the PDF button; a 402
+  opens the paywall.
+- **Gift a reading.** Buy a single-use gift code (`credit_pack` or
+  `premium_pdf_voucher`) via `POST /api/billing/create-gift-order` → Razorpay →
+  `verify-gift-payment` **and** the webhook, both converging on the idempotent
+  `_grant_gift_for_order` (atomic status flip on the `gift_orders.payment_intent_id`
+  UNIQUE, minting the code exactly once). GST via `config.gst_breakdown`;
+  unconfigured Razorpay → 503; `VEDIC_ALLOW_SIMULATED_PAYMENTS` enables a local
+  `buy-gift`. `POST /api/billing/redeem-gift` redeems atomically (single-use via
+  `UPDATE … WHERE redeemed_by_user_id IS NULL`), credits the redeemer, and blocks
+  self-redemption (`GIFT_SELF_REDEEM`=0). A shareable gift card + `/gift/{code}`
+  landing page routes to sign-in-then-redeem.
+- **WhatsApp delivery (Meta Cloud API).** New `whatsapp_sender.py` sends
+  pre-approved templates (`report_ready`, `daily_digest`) in all six languages,
+  failing closed unless `WHATSAPP_ENABLED`. Finished premium reports are
+  delivered over WhatsApp via a session-less, self-expiring **signed link**
+  (HMAC over `report_id|expiry`, `REPORT_LINK_TTL_HOURS`=72). Phone collection is
+  an optional, E.164-validated field on `/api/auth/profile/update` with an
+  explicit `whatsapp_opt_in` consent flag + timestamp; opt-out is honored
+  immediately. `/api/whatsapp/webhook` verifies the `X-Hub-Signature-256` HMAC
+  (GET handshake echoes the verify token) and auto-opts-out on inbound
+  STOP/UNSUBSCRIBE in any supported language. The daily digest gains a `whatsapp`
+  channel alongside `email`.
+
 ## [1.21.0]
 
 ### Added

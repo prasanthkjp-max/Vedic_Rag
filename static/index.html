@@ -7419,6 +7419,32 @@
             { key: 'dasa',      icon: 'fa-timeline',      label: '120-Year Vimshottari Dasa', free: false },
         ];
 
+        // The chosen PDF tier: 'basic' (selectable sections, instant) or
+        // 'premium' (async 20+ page life report at PREMIUM_PDF_CREDITS).
+        let selectedPdfTier = 'basic';
+        const PREMIUM_PDF_CREDITS = 150; // mirrors config.CREDIT_COST_PDF_PREMIUM
+
+        // Toggle the modal between the two tiers' UIs.
+        function selectPdfTier(tier) {
+            selectedPdfTier = tier;
+            const basicCard = document.getElementById('pdf-tier-basic-card');
+            const premCard = document.getElementById('pdf-tier-premium-card');
+            const isPrem = tier === 'premium';
+            basicCard.style.borderColor = isPrem ? 'var(--border-glass)' : 'var(--accent-gold)';
+            basicCard.style.background = isPrem ? 'transparent' : 'rgba(212,175,55,0.08)';
+            premCard.style.borderColor = isPrem ? 'var(--accent-gold)' : 'var(--border-glass)';
+            premCard.style.background = isPrem ? 'rgba(212,175,55,0.08)' : 'transparent';
+            // Basic shows section pickers; premium shows the fixed-contents preview.
+            document.getElementById('pdf-section-list').style.display = isPrem ? 'none' : 'block';
+            document.getElementById('pdf-section-cost').style.display = isPrem ? 'none' : 'block';
+            const upsell = document.getElementById('pdf-section-upsell');
+            if (upsell && isPrem) upsell.style.display = 'none';
+            else if (upsell) upsell.style.display = isPremiumUser() ? 'none' : 'block';
+            document.getElementById('pdf-premium-preview').style.display = isPrem ? 'block' : 'none';
+            const confirmLbl = document.getElementById('lbl-pdf-confirm');
+            if (confirmLbl) confirmLbl.innerText = isPrem ? `Generate (${PREMIUM_PDF_CREDITS} credits)` : 'Download PDF';
+        }
+
         // Open the "choose sections" modal before downloading.
         function downloadReportPDF() {
             if (!calculatedChartData) return;
@@ -7426,6 +7452,12 @@
             const hasPhala = !!(calculatedChartData.__aiPhala);
             const listEl = document.getElementById('pdf-section-list');
             listEl.innerHTML = '';
+            // Reset async UI + tier prices each time the modal opens.
+            document.getElementById('pdf-premium-progress').style.display = 'none';
+            const basicPrice = document.getElementById('pdf-tier-basic-price');
+            const premPrice = document.getElementById('pdf-tier-premium-price');
+            if (basicPrice) basicPrice.innerText = premium ? 'Astro Pass · all sections' : 'Free · chart section';
+            if (premPrice) premPrice.innerText = `${PREMIUM_PDF_CREDITS} credits`;
 
             PDF_SECTIONS.forEach(sec => {
                 const unlocked = sec.free || premium;
@@ -7449,6 +7481,7 @@
             const costNote = document.getElementById('pdf-section-cost');
             if (costNote) costNote.innerText = premium ? 'Astro Pass: full report (all selected sections).' : 'Free report: chart details & planet positions.';
 
+            selectPdfTier('basic');  // default to the instant tier
             document.getElementById('pdf-section-modal').style.display = 'flex';
         }
 
@@ -7456,9 +7489,11 @@
             document.getElementById('pdf-section-modal').style.display = 'none';
         }
 
-        // Perform the actual download using the sections the user selected.
+        // Perform the download — branches on the chosen tier.
         async function confirmPdfDownload() {
             if (!calculatedChartData) return;
+            if (selectedPdfTier === 'premium') return confirmPremiumReport();
+
             const sections = Array.from(document.querySelectorAll('.pdf-sec-cb'))
                 .filter(cb => cb.checked && !cb.disabled)
                 .map(cb => cb.value);
@@ -7481,6 +7516,7 @@
                         place_name: pob,
                         visual_style: style,
                         lang: currentLang,
+                        tier: 'basic',
                         sections: sections,
                         ai_phala: (sections.includes('phala') ? (calculatedChartData.__aiPhala || '') : '')
                     })
@@ -7508,6 +7544,85 @@
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
             }
+        }
+
+        // Premium tier: fire the async build, then poll report-status until the
+        // PDF is ready (or fails, which refunds server-side).
+        async function confirmPremiumReport() {
+            const name = document.getElementById('in-name').value;
+            const pob = document.getElementById('in-pob').value;
+            const style = document.getElementById('in-style').value;
+            const btn = document.getElementById('pdf-section-confirm-btn');
+            const originalHtml = btn ? btn.innerHTML : '';
+            const progress = document.getElementById('pdf-premium-progress');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting…'; }
+
+            try {
+                const start = await apiFetch('/api/download-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chart_data: calculatedChartData,
+                        client_name: name,
+                        place_name: pob,
+                        visual_style: style,
+                        lang: currentLang,
+                        tier: 'premium'
+                    })
+                });
+                if (start.status === 402) { closePdfSectionModal(); showPaywall(); return; }
+                if (!start.ok) { alert("Could not start the premium report."); return; }
+                const { report_id } = await start.json();
+                if (currentUser && !currentUser.subscription_active) {
+                    currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - PREMIUM_PDF_CREDITS);
+                    updateAuthUI();
+                }
+                if (progress) progress.style.display = 'block';
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Building…';
+                await pollPremiumReport(report_id, name);
+            } catch (err) {
+                console.error("Premium report failed:", err);
+                alert("Premium report failed to start. Please try again.");
+            } finally {
+                if (progress) progress.style.display = 'none';
+                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+            }
+        }
+
+        // Poll until the report is ready/failed. Backs off politely; caps the wait.
+        async function pollPremiumReport(reportId, name) {
+            const deadline = Date.now() + 5 * 60 * 1000; // 5 min ceiling
+            while (Date.now() < deadline) {
+                await new Promise(r => setTimeout(r, 3000));
+                let res;
+                try {
+                    res = await apiFetch(`/api/report-status/${reportId}`);
+                } catch (e) { continue; }
+                if (!res.ok) continue;
+                const data = await res.json();
+                if (data.status === 'ready') {
+                    const fileRes = await apiFetch(data.download_url);
+                    if (fileRes.ok) {
+                        const blob = await fileRes.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Premium_Life_Report_${name.replace(/ /g, '_')}.pdf`;
+                        document.body.appendChild(a); a.click(); a.remove();
+                        closePdfSectionModal();
+                    }
+                    return;
+                }
+                if (data.status === 'failed') {
+                    alert("The premium report could not be generated — your credits have been refunded. Please try again.");
+                    if (currentUser && !currentUser.subscription_active) {
+                        currentUser.credit_balance = (currentUser.credit_balance || 0) + PREMIUM_PDF_CREDITS;
+                        updateAuthUI();
+                    }
+                    return;
+                }
+            }
+            alert("The report is taking longer than expected. It will be delivered on WhatsApp if you've opted in; you can also check back shortly.");
         }
 
         // Debounced location lookup using Nominatim OpenStreetMap API
@@ -9062,8 +9177,15 @@
                 });
             }
             
+            // Capture any /gift/{code} redemption code from the URL before auth.
+            captureGiftFromUrl();
+
             // Initialise user session status
             await initAuth();
+
+            // If the visitor arrived via a gift link and is already signed in,
+            // redeem it now (otherwise it redeems right after they sign in).
+            await maybeRedeemPendingGift();
 
             // Honour the user's preferred landing page (Settings → Start page).
             applyDefaultPage();
@@ -9424,6 +9546,8 @@
             // Populate preferences
             document.getElementById('profile-in-phone').value = currentUser.phone_number || "";
             document.getElementById('profile-in-channel').value = currentUser.preferred_channel || "sms";
+            const waEl = document.getElementById('profile-in-whatsapp');
+            if (waEl) waEl.checked = !!currentUser.whatsapp_opt_in;
 
             // Populate birth details form fields in the user profile dashboard
             document.getElementById('profile-in-name').value = currentUser.full_name || "";
@@ -9589,6 +9713,7 @@
                     currentUser = data.user;
                     closeLoginModal();
                     updateAuthUI();
+                    maybeRedeemPendingGift();  // redeem a gift-link code, if any
                 } else {
                     const data = await res.json();
                     alert("Login failed: " + (data.detail || "Invalid credentials"));
@@ -9624,6 +9749,7 @@
                     currentUser = data.user;
                     closeLoginModal();
                     updateAuthUI();
+                    maybeRedeemPendingGift();  // redeem a gift-link code, if any
                 } else {
                     const data = await res.json();
                     alert("OAuth failed: " + data.detail);
@@ -9743,6 +9869,7 @@
                     currentUser = data.user;
                     closeLoginModal();
                     updateAuthUI();
+                    maybeRedeemPendingGift();  // redeem a gift-link code, if any
                     resetPhoneForm();
                 } else {
                     const data = await res.json();
@@ -9781,25 +9908,32 @@
         async function saveProfilePreferences() {
             const phone = document.getElementById('profile-in-phone').value.trim();
             const channel = document.getElementById('profile-in-channel').value;
-            
+            const waEl = document.getElementById('profile-in-whatsapp');
+            const whatsappOptIn = !!(waEl && waEl.checked);
+
             const token = localStorage.getItem('session_token');
             try {
                 const res = await fetch('/api/auth/profile/update', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         'x-session-token': token
                     },
                     body: JSON.stringify({
                         phone_number: phone,
-                        preferred_channel: channel
+                        preferred_channel: channel,
+                        whatsapp_opt_in: whatsappOptIn
                     })
                 });
                 if (res.ok) {
                     alert("Preferences saved successfully!");
                     await initAuth();
                 } else {
-                    alert("Failed to save preferences.");
+                    // Surface the server's validation message (bad E.164 / opt-in
+                    // without a number) instead of a generic failure.
+                    let msg = "Failed to save preferences.";
+                    try { const d = await res.json(); if (d.detail) msg = d.detail; } catch (e) {}
+                    alert(msg);
                 }
             } catch (e) {
                 alert("Error saving preferences: " + e);
@@ -9903,6 +10037,147 @@
                 rzp.open();
             } catch (e) {
                 alert("Error during purchase: " + e);
+            }
+        }
+
+        // ── Gift a reading ──────────────────────────────────────────────────
+        async function buyGift(giftType, amount) {
+            const token = localStorage.getItem('session_token');
+            if (!token) { openLoginModal(); return; }
+            if (typeof Razorpay === 'undefined') {
+                alert("Payment library failed to load. Check your connection and retry.");
+                return;
+            }
+            try {
+                const res = await fetch('/api/billing/create-gift-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+                    body: JSON.stringify({ gift_type: giftType, amount })
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    alert("Could not start gift checkout: " + (data.detail || res.status));
+                    return;
+                }
+                const order = await res.json();
+                const g = order.gst || {};
+                const rupees = (p) => '₹' + (p / 100).toFixed(2);
+                const label = giftType === 'premium_pdf_voucher' ? 'Premium Report Voucher' : `${order.credits.toLocaleString()} Token Gift`;
+
+                const rzp = new Razorpay({
+                    key: order.key_id,
+                    order_id: order.order_id,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: 'Vedic Astro AI — Gift',
+                    description: label + (g.gross ? `  (incl. ${rupees(g.gst)} GST)` : ''),
+                    prefill: order.prefill || {},
+                    theme: { color: '#d4af37' },
+                    handler: async function (response) {
+                        try {
+                            const vres = await fetch('/api/billing/verify-gift-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            const vd = await vres.json().catch(() => ({}));
+                            if (vres.ok && vd.code) {
+                                showGiftCard(vd.code, vd.share_url);
+                            } else {
+                                alert("Payment captured — your gift code will be available shortly once confirmed.");
+                            }
+                        } catch (e) {
+                            alert("Verification error: " + e + "\nYour gift code will be confirmed automatically.");
+                        }
+                    }
+                });
+                rzp.on('payment.failed', function (resp) {
+                    alert("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                });
+                rzp.open();
+            } catch (e) {
+                alert("Error during gift purchase: " + e);
+            }
+        }
+
+        function showGiftCard(code, shareUrl) {
+            document.getElementById('gift-card-code').innerText = code;
+            document.getElementById('gift-card-share-url').innerText = shareUrl || (window.location.origin + '/gift/' + code);
+            document.getElementById('gift-card-modal').style.display = 'flex';
+        }
+        function closeGiftCard() {
+            document.getElementById('gift-card-modal').style.display = 'none';
+        }
+        function copyGiftLink() {
+            const url = document.getElementById('gift-card-share-url').innerText;
+            navigator.clipboard.writeText(url).then(
+                () => alert("Share link copied!"),
+                () => alert("Copy failed — the link is: " + url)
+            );
+        }
+
+        function redeemGiftFromInput() {
+            const el = document.getElementById('gift-redeem-input');
+            const code = (el && el.value || '').trim().toUpperCase();
+            if (!code) { alert("Enter a gift code."); return; }
+            redeemGiftCode(code);
+        }
+
+        async function redeemGiftCode(code) {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                // Stash the code and prompt sign-in; we redeem right after auth.
+                pendingGiftCode = code;
+                openLoginModal();
+                return;
+            }
+            try {
+                const res = await fetch('/api/billing/redeem-gift', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+                    body: JSON.stringify({ code })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    alert(`🎁 Gift redeemed! ${(data.credits_added || 0).toLocaleString()} credits added to your account.`);
+                    await initAuth();
+                } else {
+                    alert(data.detail || "Could not redeem this gift code.");
+                }
+            } catch (e) {
+                alert("Error redeeming gift: " + e);
+            }
+        }
+
+        // A gift code carried in from a /gift/{code} landing link (?gift=CODE),
+        // held until the visitor is authenticated, then redeemed once.
+        let pendingGiftCode = null;
+
+        function captureGiftFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const code = (params.get('gift') || '').trim().toUpperCase();
+                if (code) {
+                    pendingGiftCode = code;
+                    // Clean the URL so a refresh doesn't re-trigger redemption.
+                    params.delete('gift');
+                    const clean = window.location.pathname + (params.toString() ? '?' + params : '');
+                    window.history.replaceState({}, '', clean);
+                }
+            } catch (e) { /* no-op */ }
+        }
+
+        // Redeem a stashed gift code once the user is signed in. Called after
+        // successful auth (initAuth / login handlers).
+        async function maybeRedeemPendingGift() {
+            if (pendingGiftCode && currentUser) {
+                const code = pendingGiftCode;
+                pendingGiftCode = null;
+                await redeemGiftCode(code);
             }
         }
 
@@ -11014,18 +11289,53 @@
         <div style="background: rgba(4,14,44,0.96); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 28px; width: 460px; max-width: 92vw; position: relative;">
             <button onclick="closePdfSectionModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 17px; margin-bottom: 6px;">
-                <i class="fa-solid fa-file-pdf"></i> Choose Report Sections
+                <i class="fa-solid fa-file-pdf"></i> <span id="lbl-pdf-modal-title">Download Report</span>
             </h3>
+
+            <!-- Tier chooser: Basic (selectable sections) vs Premium (async life report) -->
+            <div style="display: flex; gap: 10px; margin: 12px 0 16px;">
+                <label id="pdf-tier-basic-card" onclick="selectPdfTier('basic')" style="flex:1; cursor:pointer; border:2px solid var(--accent-gold); border-radius:10px; padding:11px 12px; background:rgba(212,175,55,0.08);">
+                    <div style="font-size:13px; font-weight:700; color:var(--text-primary);"><i class="fa-solid fa-file-lines" style="color:var(--accent-gold);"></i> Basic</div>
+                    <div style="font-size:10.5px; color:var(--text-secondary); margin-top:3px;">Pick the sections you want. Instant download.</div>
+                    <div id="pdf-tier-basic-price" style="font-size:11px; color:var(--accent-gold); margin-top:6px; font-weight:600;"></div>
+                </label>
+                <label id="pdf-tier-premium-card" onclick="selectPdfTier('premium')" style="flex:1; cursor:pointer; border:2px solid var(--border-glass); border-radius:10px; padding:11px 12px; background:transparent;">
+                    <div style="font-size:13px; font-weight:700; color:var(--text-primary);"><i class="fa-solid fa-crown" style="color:var(--accent-gold);"></i> Premium Life Report</div>
+                    <div style="font-size:10.5px; color:var(--text-secondary); margin-top:3px;">20+ page chaptered analysis. Built in the background.</div>
+                    <div id="pdf-tier-premium-price" style="font-size:11px; color:var(--accent-gold); margin-top:6px; font-weight:600;"></div>
+                </label>
+            </div>
+
             <p id="pdf-section-cost" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;">Select the sections to include in your PDF.</p>
             <div id="pdf-section-list" style="margin-bottom: 12px; max-height: 46vh; overflow-y: auto;"></div>
             <div id="pdf-section-upsell" style="display:none; font-size: 11px; color: var(--text-secondary); background: rgba(212,175,55,0.08); border: 1px solid var(--border-gold); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
                 <i class="fa-solid fa-crown" style="color: var(--accent-gold);"></i>
                 Upgrade to <strong>Astro Pass</strong> to unlock all sections — divisional charts, Shadbala/Ashtakavarga, the AI phala reading and the full dasa timeline.
             </div>
+
+            <!-- Premium tier: fixed contents + page-count preview (no section picking) -->
+            <div id="pdf-premium-preview" style="display:none; margin-bottom:14px;">
+                <div style="font-size:11px; color:var(--text-secondary); background:rgba(212,175,55,0.08); border:1px solid var(--border-gold); border-radius:8px; padding:12px 14px;">
+                    <div style="font-weight:700; color:var(--accent-gold); margin-bottom:6px;"><i class="fa-solid fa-book-open"></i> ~20–24 pages · 7 chapters</div>
+                    <div style="line-height:1.7;">
+                        Personality (Lagna, Moon, Sun) · Career &amp; Wealth (10th, D10, 2nd/11th) ·
+                        Marriage &amp; Health (7th, D9, 6th/8th) · Dasa outlook &amp; Remedies ·
+                        plus all deterministic tables: divisional charts, Shadbala/Ashtakavarga and the 120-year dasa timeline.
+                    </div>
+                    <div style="margin-top:8px; color:var(--text-muted); font-size:10px;"><i class="fa-solid fa-hourglass-half"></i> Generation takes ~1–2 minutes; keep this tab open.</div>
+                </div>
+            </div>
+
+            <!-- Premium tier: async progress -->
+            <div id="pdf-premium-progress" style="display:none; text-align:center; padding:8px 0 14px; font-size:12px; color:var(--text-secondary);">
+                <i class="fa-solid fa-spinner fa-spin" style="color:var(--accent-gold);"></i>
+                <span id="pdf-premium-progress-text">Weaving your life report from the classical texts…</span>
+            </div>
+
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="lang-select-btn" onclick="closePdfSectionModal()" style="padding: 10px 16px;">Cancel</button>
                 <button id="pdf-section-confirm-btn" class="calculate-btn" onclick="confirmPdfDownload()" style="padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-download"></i> Download PDF
+                    <i class="fa-solid fa-download"></i> <span id="lbl-pdf-confirm">Download PDF</span>
                 </button>
             </div>
         </div>
@@ -11190,6 +11500,10 @@
                     <label for="profile-in-digest" id="lbl-digest-optin" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">🌅 Daily Panchangam &amp; Transit Digest (email)</label>
                     <input type="checkbox" id="profile-in-digest" onchange="toggleDailyDigest(this.checked)" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
                 </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <label for="profile-in-whatsapp" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">💬 WhatsApp delivery (report-ready alerts &amp; digest). Requires a valid number above. Reply STOP anytime to opt out.</label>
+                    <input type="checkbox" id="profile-in-whatsapp" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
+                </div>
                 <button class="calculate-btn" onclick="saveProfilePreferences()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Preferences</button>
             </div>
 
@@ -11278,6 +11592,43 @@
                     Cancel Active Subscription
                 </button>
             </div>
+
+            <!-- Gift a reading -->
+            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin: 22px 0 10px;">🎁 Gift a Reading</h4>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 10.5px; color: var(--text-secondary);">Buy a gift code for a friend — a token pack or a premium life-report voucher. They redeem it after signing in.</div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="lang-select-btn" onclick="buyGift('credit_pack', 1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                        🎁 Token Gift<br>1,125 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span>
+                    </button>
+                    <button class="lang-select-btn" onclick="buyGift('premium_pdf_voucher', 0)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                        📜 Premium Report<br>Voucher<br><span style="font-size: 9px; color: var(--text-secondary);">₹249</span>
+                    </button>
+                </div>
+                <div style="border-top: 1px dashed var(--border-glass); padding-top: 10px; margin-top: 4px;">
+                    <label style="font-size: 10px; color: var(--text-secondary);">Have a gift code?</label>
+                    <div style="display: flex; gap: 6px; margin-top: 5px;">
+                        <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none; text-transform: uppercase;">
+                        <button class="calculate-btn" onclick="redeemGiftFromInput()" style="padding: 8px 14px; font-size: 11px;">Redeem</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gift card result modal (shown after a successful gift purchase) -->
+    <div id="gift-card-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); z-index: 1300; align-items: center; justify-content: center;">
+        <div style="background: linear-gradient(160deg, rgba(20,14,44,0.98), rgba(40,20,60,0.98)); border: 1px solid var(--border-gold); border-radius: 16px; padding: 26px 30px; width: 420px; max-width: 92vw; position: relative; text-align: center;">
+            <button onclick="closeGiftCard()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            <div style="font-size: 40px; margin-bottom: 6px;">🎁</div>
+            <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 18px; margin-bottom: 6px;">Your gift is ready!</h3>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 14px;">Share this code (or the link) with the lucky recipient.</p>
+            <div id="gift-card-code" style="font-family: monospace; font-size: 20px; letter-spacing: 2px; color: #fff; background: rgba(0,0,0,0.35); border: 1px dashed var(--accent-gold); border-radius: 10px; padding: 12px; margin-bottom: 12px;"></div>
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="lang-select-btn" onclick="copyGiftLink()" style="padding: 8px 14px; font-size: 11px;"><i class="fa-solid fa-link"></i> Copy share link</button>
+                <button class="calculate-btn" onclick="closeGiftCard()" style="padding: 8px 16px; font-size: 11px;">Done</button>
+            </div>
+            <div id="gift-card-share-url" style="display:none;"></div>
         </div>
     </div>
 
