@@ -14,6 +14,79 @@ VALID_PARADIGMS = {
 }
 VALID_ACTIVITIES = {
     "GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI",
+    "BUSINESS_OPENING", "NAMAKARANA", "TRAVEL",
+}
+
+# ── Non-VIVAHA electional profiles ────────────────────────────────────────────
+# Each activity declares its classical constraints; the compatibility matrix
+# applies them uniformly (plus the universal Saturday-nakshatra, nitya-yogam
+# first-ghati and Vishti-karana blocks). VIVAHA keeps its dedicated, stricter
+# rule chain above. Nakshatra whitelists follow the standard Muhurta
+# Chintamani / Kalaprakasika electional lists as commonly published in Tamil
+# and Telugu panchangams.
+#
+# Riktha tithis (4/9/14 of both pakshas) + Amavasya are avoided for every
+# new beginning; a profile may add more.
+RIKTHA_AMAVASYA_TITHIS = {4, 9, 14, 19, 24, 29, 30}
+
+ACTIVITY_PROFILES = {
+    "GRAHAPRAVESHA": {
+        "approved_nakshatras": {
+            "Rohini", "Mrigashira", "Pushya", "Uttara Phalguni", "Hasta",
+            "Chitra", "Anuradha", "Uttara Ashadha", "Shravana", "Dhanishta",
+            "Shatabhisha", "Uttara Bhadrapada", "Revati",
+        },
+        "forbidden_tithis": RIKTHA_AMAVASYA_TITHIS | {8, 23},
+        "forbidden_weekdays": {2},          # Tuesday
+    },
+    "AKSHARABHYASAM": {
+        "approved_nakshatras": {
+            "Ashwini", "Punarvasu", "Pushya", "Hasta", "Chitra", "Swati",
+            "Anuradha", "Shravana", "Revati",
+        },
+        "forbidden_tithis": RIKTHA_AMAVASYA_TITHIS,
+        "forbidden_weekdays": {2, 6},       # Tuesday, Saturday
+    },
+    "VAHAN_KHARIDI": {
+        "approved_nakshatras": {
+            "Ashwini", "Rohini", "Mrigashira", "Punarvasu", "Pushya", "Hasta",
+            "Chitra", "Swati", "Anuradha", "Shravana", "Dhanishta",
+            "Shatabhisha", "Revati",
+        },
+        "forbidden_tithis": RIKTHA_AMAVASYA_TITHIS,
+        "forbidden_weekdays": {2},          # Tuesday
+    },
+    "BUSINESS_OPENING": {
+        "approved_nakshatras": {
+            "Ashwini", "Rohini", "Mrigashira", "Punarvasu", "Pushya",
+            "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Anuradha",
+            "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
+            "Uttara Bhadrapada", "Revati",
+        },
+        "forbidden_tithis": RIKTHA_AMAVASYA_TITHIS,
+        "forbidden_weekdays": {2, 6},       # Tuesday, Saturday
+    },
+    "NAMAKARANA": {
+        "approved_nakshatras": {
+            "Ashwini", "Rohini", "Mrigashira", "Punarvasu", "Pushya",
+            "Uttara Phalguni", "Hasta", "Swati", "Anuradha", "Uttara Ashadha",
+            "Shravana", "Dhanishta", "Shatabhisha", "Uttara Bhadrapada",
+            "Revati",
+        },
+        "forbidden_tithis": RIKTHA_AMAVASYA_TITHIS | {8, 23},
+        "forbidden_weekdays": {2, 6},       # Tuesday, Saturday
+    },
+    "TRAVEL": {
+        # Yatra: Bharani and Krittika are the hard-forbidden stars (they are
+        # simply absent from the whitelist). Direction-wise Disha Shoola is
+        # not modelled — the API takes no travel direction.
+        "approved_nakshatras": {
+            "Ashwini", "Mrigashira", "Punarvasu", "Pushya", "Hasta",
+            "Anuradha", "Mula", "Shravana", "Dhanishta", "Revati",
+        },
+        "forbidden_tithis": RIKTHA_AMAVASYA_TITHIS,
+        "forbidden_weekdays": set(),
+    },
 }
 
 # ── Nitya Yogam first-ghati blocks (9 malefic yogams) ──────────────────────────
@@ -438,7 +511,9 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
     # ── Activity Compatibility Matrix ───────────────────────────────────────
     # ════════════════════════════════════════════════════════════════════════
     activity_compatibility = {}
-    for act in ("GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI"):
+    nak_clean_matrix = nakshatra_name.strip()
+    for act in ("GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM",
+                "VAHAN_KHARIDI", "BUSINESS_OPENING", "NAMAKARANA", "TRAVEL"):
         compat = True
 
         # Universal blockers
@@ -458,11 +533,22 @@ def calculate_muhurtham(timestamp_str, latitude, longitude,
             if panchaka_class == "Asubha" and regional_paradigm == "TELUGU_KANNADA_AMANTA":
                 compat = False
 
-        elif act == "GRAHAPRAVESHA":
-            if is_kartari:
+        elif act in ACTIVITY_PROFILES:
+            prof = ACTIVITY_PROFILES[act]
+            if nak_clean_matrix not in prof["approved_nakshatras"]:
                 compat = False
-            if panchaka_class == "Asubha" and regional_paradigm == "TELUGU_KANNADA_AMANTA":
+            if tithi_num in prof["forbidden_tithis"]:
                 compat = False
+            if day_idx in prof["forbidden_weekdays"]:
+                compat = False
+            # Vishti (Bhadra) karana voids every auspicious beginning.
+            if bhadra_blocked:
+                compat = False
+            if act == "GRAHAPRAVESHA":
+                if is_kartari:
+                    compat = False
+                if panchaka_class == "Asubha" and regional_paradigm == "TELUGU_KANNADA_AMANTA":
+                    compat = False
 
         activity_compatibility[act] = compat
 

@@ -3071,6 +3071,19 @@
                             <!-- Streamed AI reading output -->
                         </div>
                     </div>
+
+                    <!-- Grounded classical remedies (parihara) for detected afflictions -->
+                    <div id="remedies-section" style="display: none; margin-top: 24px; border-top: 1px solid var(--border-gold); padding-top: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3 style="font-family: var(--font-heading); font-size: 15px; color: var(--accent-gold);">
+                                <i class="fa-solid fa-hands-praying"></i> <span id="lbl-remedies-title">Classical Remedies (Parihara)</span>
+                            </h3>
+                        </div>
+                        <div id="remedies-output" class="ai-predict-display" style="min-height: 80px;"></div>
+                    </div>
+                    <button class="lang-select-btn" id="btn-remedies" onclick="generateRemedies()" style="display: none; width: 100%; margin-top: 14px; padding: 12px; font-size: 12px; justify-content: center; border: 1px solid var(--border-gold);">
+                        <i class="fa-solid fa-hands-praying"></i>&nbsp; <span id="lbl-remedies-btn">Get Classical Remedies (Parihara) — grounded in the scriptures</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -3293,6 +3306,12 @@
                                 Fill the details and click Calculate Compatibility to get the matching report and Ganesha prediction.
                             </p>
                         </div>
+
+                        <!-- In-depth premium compatibility (beyond porutham) -->
+                        <button class="calculate-btn" id="btn-deep-compat" onclick="generateDeepCompatibility()" style="width: 100%; margin-top: 12px; padding: 12px; font-size: 12px; justify-content: center;">
+                            <i class="fa-solid fa-gem"></i>&nbsp; <span id="lbl-deep-compat-btn">In-Depth AI Compatibility — 7th Houses, Kuja Dosha &amp; Dasa Overlap (Premium)</span>
+                        </button>
+                        <div class="ai-stream-card" id="deep-compat-output" style="display: none; margin-top: 12px; min-height: 100px; max-height: 600px; overflow-y: auto; background: var(--bg-darker); border: 1px dashed var(--border-gold); border-radius: 8px; padding: 20px; font-size: 13px; line-height: 1.7; color: var(--text-primary);"></div>
                     </div>
                 </div>
             </div>
@@ -3331,6 +3350,24 @@
                 <!-- Loaded birth details summary -->
                 <div class="ai-birth-summary-panel" id="ai-birth-loaded-summary" style="display: none;">
                     <!-- Populated dynamically -->
+                </div>
+
+                <!-- Prashna (horary): answers from the chart of THIS moment — no birth details needed -->
+                <div id="prashna-card" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-gold); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <i class="fa-solid fa-hand-sparkles" style="color: var(--accent-gold);"></i>
+                        <strong id="lbl-prashna-title" style="font-size: 13px; color: var(--accent-gold);">Prashna — Ask a Question (no birth details needed)</strong>
+                    </div>
+                    <p id="lbl-prashna-desc" class="muted" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
+                        Vedic horary astrology answers from the sky of this very moment at your location — perfect if you don't know your birth time.
+                    </p>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="prashna-question" maxlength="2000" placeholder="e.g. Will I get the job I interviewed for?" style="flex: 1; padding: 10px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none;" onkeydown="if(event.key==='Enter')submitPrashna()">
+                        <button class="calculate-btn" id="btn-prashna" onclick="submitPrashna()" style="padding: 10px 16px; font-size: 12px; justify-content: center;">
+                            <i class="fa-solid fa-om"></i>&nbsp; <span id="lbl-prashna-btn">Ask</span>
+                        </button>
+                    </div>
+                    <div id="prashna-output" class="ai-predict-display" style="display: none; margin-top: 12px; max-height: 420px; overflow-y: auto; font-size: 13px; line-height: 1.7;"></div>
                 </div>
 
                 <!-- Chat layout container -->
@@ -6651,6 +6688,12 @@
                 // Auto-generate the AI preview phala for premium members (cached).
                 maybeAutoGeneratePhala();
 
+                // Remedies are chart-specific — reveal the button, reset old output.
+                const btnRem = document.getElementById('btn-remedies');
+                if (btnRem) btnRem.style.display = 'flex';
+                const remSection = document.getElementById('remedies-section');
+                if (remSection) remSection.style.display = 'none';
+
             } catch (err) {
                 console.error("Calculation failed:", err);
                 alert("Failed to compute chart. Please ensure all coordinates and inputs are valid.");
@@ -8299,6 +8342,138 @@
                 chatBox.innerHTML = `<span style="color:#F56565;">*Prediction Streaming Error: ${err.message}*</span>`;
             } finally {
                 isMarriageAIResponding = false;
+            }
+        }
+
+        // Shared streamer for the depth-feature endpoints: streams plain-text
+        // markdown into a target element with the same escape-first discipline
+        // as the marriage reading. Returns true when the stream completed.
+        async function streamDepthReading(url, payload, outEl, opts = {}) {
+            outEl.style.display = 'block';
+            outEl.innerHTML = `<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> ${opts.loadingMsg || 'Consulting the classical texts and streaming the reading...'}</div>`;
+            try {
+                const response = await apiFetch(url, {
+                    method: 'POST',
+                    stream: true,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.status === 401) {
+                    outEl.innerHTML = `<span style="color:#F56565;">*Authentication required. Please sign in.*</span>`;
+                    return false;
+                }
+                if (response.status === 402) {
+                    outEl.style.display = 'none';
+                    if (typeof showPaywall === 'function') showPaywall();
+                    return false;
+                }
+                if (!response.ok) throw new Error(await response.text());
+
+                outEl.innerHTML = "";
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let resultText = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    resultText += decoder.decode(value, { stream: true });
+                    // Escape FIRST — the stream is LLM output over user text.
+                    const htmlContent = escapeHtml(resultText)
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/\n/g, '<br>');
+                    outEl.innerHTML = `<div style="white-space: pre-wrap;">${htmlContent}</div>`;
+                    outEl.scrollTop = outEl.scrollHeight;
+                }
+                return true;
+            } catch (err) {
+                outEl.innerHTML = `<span style="color:#F56565;">*Streaming error: ${escapeHtml(err.message || String(err))}*</span>`;
+                return false;
+            }
+        }
+
+        let isDeepCompatResponding = false; // double-submit guard (75-credit stream)
+        async function generateDeepCompatibility() {
+            if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
+                alert("Please calculate the compatibility report first.");
+                return;
+            }
+            if (isDeepCompatResponding) return;
+            isDeepCompatResponding = true;
+            const btn = document.getElementById('btn-deep-compat');
+            if (btn) btn.disabled = true;
+            try {
+                await streamDepthReading('/api/ai-predict-compatibility', {
+                    male_chart: calculatedMaleChartData,
+                    female_chart: calculatedFemaleChartData,
+                    compatibility: calculatedCompatibility,
+                    male_name: document.getElementById('in-m-name').value,
+                    female_name: document.getElementById('in-f-name').value,
+                    male_place: document.getElementById('in-m-pob').value,
+                    female_place: document.getElementById('in-f-pob').value,
+                    lang: currentLang
+                }, document.getElementById('deep-compat-output'));
+            } finally {
+                isDeepCompatResponding = false;
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        let isRemediesResponding = false; // double-submit guard (25-credit stream)
+        async function generateRemedies() {
+            if (!calculatedChartData) {
+                alert("Please calculate a birth chart first.");
+                return;
+            }
+            if (isRemediesResponding) return;
+            isRemediesResponding = true;
+            const btn = document.getElementById('btn-remedies');
+            if (btn) btn.disabled = true;
+            const section = document.getElementById('remedies-section');
+            if (section) {
+                section.style.display = 'block';
+                section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            try {
+                await streamDepthReading('/api/ai-remedies', {
+                    chart_data: calculatedChartData,
+                    client_name: document.getElementById('in-name').value,
+                    place_name: document.getElementById('in-pob').value,
+                    lang: currentLang
+                }, document.getElementById('remedies-output'));
+            } finally {
+                isRemediesResponding = false;
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        let isPrashnaResponding = false; // double-submit guard (25-credit stream)
+        async function submitPrashna() {
+            const input = document.getElementById('prashna-question');
+            const question = (input.value || '').trim();
+            if (question.length < 5) {
+                alert("Please type your question first (a full sentence works best).");
+                return;
+            }
+            if (!currentUser) {
+                openLoginModal();
+                return;
+            }
+            if (isPrashnaResponding) return;
+            isPrashnaResponding = true;
+            const btn = document.getElementById('btn-prashna');
+            if (btn) btn.disabled = true;
+            try {
+                await streamDepthReading('/api/ai-predict-prashna', {
+                    question: question,
+                    latitude: userLocation.lat,
+                    longitude: userLocation.lon,
+                    place_name: userLocation.name,
+                    lang: currentLang
+                }, document.getElementById('prashna-output'));
+            } finally {
+                isPrashnaResponding = false;
+                if (btn) btn.disabled = false;
             }
         }
 

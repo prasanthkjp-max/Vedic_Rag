@@ -39,7 +39,8 @@ RegionalParadigm = Literal[
     "TAMIL_SOLAR", "TELUGU_KANNADA_AMANTA", "NORTH_INDIAN_PURNIMANTA", "KERALA_DRIG"
 ]
 TargetActivity = Literal[
-    "GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI"
+    "GENERAL", "VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI",
+    "BUSINESS_OPENING", "NAMAKARANA", "TRAVEL"
 ]
 Tier = Literal["monthly", "annual"]
 
@@ -51,7 +52,15 @@ def _remove_quietly(path):
         pass
 from io import BytesIO
 from search_engine import VedicSearchEngine
-from astro_engine import get_astrological_chart, get_regional_panchangam, calculate_marriage_compatibility, calculate_luni_solar_month_index, ephemeris_status
+from astro_engine import (
+    get_astrological_chart,
+    get_regional_panchangam,
+    calculate_marriage_compatibility,
+    calculate_luni_solar_month_index,
+    ephemeris_status,
+    get_varshaphala_chart,
+    get_timezone_offset,
+)
 from pdf_generator import (
     generate_pdf_report,
     fonts_status,
@@ -67,7 +76,19 @@ from pdf_generator import (
 )
 from digest_engine import kalam_windows, LABELS as DIGEST_LABELS
 from cities import CITIES
-from prediction_engine import build_analysis, build_rag_queries, retrieve_rag_context, get_current_dasa
+from prediction_engine import (
+    build_analysis,
+    build_rag_queries,
+    retrieve_rag_context,
+    get_current_dasa,
+    derive_remedy_targets,
+    build_remedy_queries,
+    build_varshaphala_queries,
+    build_compatibility_analysis,
+    classify_prashna_question,
+    build_prashna_analysis,
+    build_prashna_queries,
+)
 from muhurtham_engine import calculate_muhurtham
 from datetime import date
 from config import (
@@ -108,6 +129,10 @@ from config import (
     CREDIT_COST_PDF_BASIC,
     CREDIT_COST_QUERY,
     CREDIT_COST_AI_PREDICT,
+    CREDIT_COST_VARSHAPHALA,
+    CREDIT_COST_REMEDIES,
+    CREDIT_COST_COMPATIBILITY,
+    CREDIT_COST_PRASHNA,
     SIGNUP_BONUS_CREDITS,
     RATE_LIMIT_AI_PER_MIN,
     SUBSCRIPTION_SOFT_CAP,
@@ -621,7 +646,11 @@ def debit_user_credits(user_id: int, amount: int, action_type: str, details: str
 # LLM-backed actions — the ones worth rate-limiting and counting against the
 # subscriber soft cap (each costs a real upstream API call). Free local math
 # (chart/panchangam) and the PDF report are deliberately excluded.
-LLM_ACTIONS = {"query", "ai_predict", "ai_predict_marriage", "ai_predict_chat"}
+LLM_ACTIONS = {
+    "query", "ai_predict", "ai_predict_marriage", "ai_predict_chat",
+    "ai_predict_varshaphala", "ai_remedies", "ai_predict_compatibility",
+    "ai_predict_prashna",
+}
 
 # Per-user sliding-window request log for rate limiting. In-memory is sufficient
 # for the single-process Uvicorn deployment; swap for Redis if it ever scales
@@ -3578,6 +3607,341 @@ def mark_chart_saved(chart_id: int, request: Request):
 
 
 # =====================================================================
+# Depth features (v1.21): varshaphala, grounded remedies, in-depth
+# compatibility, and prashna (horary) — all streamed, grounded readings.
+# =====================================================================
+
+_LANG_MAP = {
+    "en": "English",
+    "ta": "Tamil (தமிழ்)",
+    "te": "Telugu (తెలుగు)",
+    "ml": "Malayalam (മലയാളം)",
+    "kn": "Kannada (ಕನ್ನಡ)",
+    "hi": "Hindi (हिन्दी)",
+}
+
+# Shared guardrails for every depth-feature prompt: same discipline as the
+# main chart prompt — Vedic-only, computed-data-only, text-grounded.
+_VEDIC_GUARDRAILS = """CRITICAL VEDIC ASTROLOGY GUARDRAILS:
+- USE ONLY THE COMPUTED DATA ABOVE. Never invent, guess, shift, or alter a planet's house, sign, degree, aspect, dignity, or strength. If a fact is not in the computed analysis, do not assert it.
+- Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas and the Lagna.
+- Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY classical Vedic Graha Drishti (all planets aspect the 7th; Saturn aspects 3rd/10th; Jupiter aspects 5th/9th; Mars aspects 4th/8th).
+- Ground every claim in the provided CLASSICAL TEXT REFERENCES. Do NOT fabricate rules that contradict these texts."""
+
+
+class VarshaphalaRequest(BaseModel):
+    chart_data: dict
+    client_name: str = Field(max_length=200)
+    place_name: str = Field(max_length=200)
+    year: int = Field(ge=1900, le=2100)
+    lang: LangCode = "en"
+    model: str = DEFAULT_LLM_MODEL
+
+
+@app.post("/api/ai-predict-varshaphala")
+def ai_predict_varshaphala(req: VarshaphalaRequest, raw_req: Request):
+    """Stream the Tajika annual (Varshaphala) reading for one year: the solar-
+    return chart with Muntha and the year lord, grounded in retrieved texts."""
+    token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    for k in ("metadata", "placements"):
+        if k not in req.chart_data:
+            raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
+    user = check_credits_or_raise(token, CREDIT_COST_VARSHAPHALA, "ai_predict_varshaphala")
+    natal_chart = req.chart_data
+    year = req.year
+    client = req.client_name
+    place = req.place_name
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    target_lang = _LANG_MAP.get(req.lang, "English")
+
+    def prompt_builder():
+        try:
+            varsha = get_varshaphala_chart(natal_chart, year)
+        except (ValueError, KeyError, TypeError) as e:
+            raise ValueError(f"Could not compute the varshaphala chart: {e}")
+        v = varsha["varshaphala"]
+        ref = datetime.strptime(v["solar_return_local"].split(" ")[0], "%Y-%m-%d").date()
+        analysis = build_analysis(varsha, ref_date=ref)
+
+        # The natal Vimshottari periods running through this solar year.
+        natal_dasa = get_current_dasa(natal_chart.get("dasas", []), ref)
+        dasa_line = "Natal Vimshottari period active at the solar return: "
+        if natal_dasa.get("mahadasa"):
+            dasa_line += f"{natal_dasa['mahadasa']} mahadasa"
+            if natal_dasa.get("antardasa"):
+                dasa_line += f" / {natal_dasa['antardasa']} bhukti"
+        else:
+            dasa_line += "not resolved"
+
+        queries = build_varshaphala_queries(varsha, analysis)
+        rag_context, _ = retrieve_rag_context(search_engine, queries)
+
+        return f"""You are a divine and highly wise Vedic Astrologer (Jyotishi), a master of the Tajika Varshaphala (annual horoscopy) system.
+You are reading the year {year} (age {v['age']}) for {client} of {place}.
+
+The chart below is the EXACT solar-return (Varsha Pravesh) chart — cast for the moment the Sun returned to its natal sidereal longitude on {v['solar_return_local']} at the natal place.
+
+--- VARSHAPHALA OFFICE-BEARERS (computed) ---
+- Muntha: {v['muntha_rasi_name']} (lord {v['muntha_lord']}), falling in the {v['muntha_house_from_varsha_lagna']}th house from the varsha lagna.
+- Year Lord (Varshesha): {v['year_lord']} (chosen as the strongest by Shadbala among candidates {v['year_lord_candidates']}).
+- {dasa_line}
+
+--- COMPUTED VARSHA CHART ANALYSIS ---
+{analysis['analysis_text']}
+
+--- CLASSICAL TEXT REFERENCES ---
+{rag_context}
+---------------------------------------------
+
+CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}, professionally and grammatically.
+
+{_VEDIC_GUARDRAILS}
+
+Write an insightful year-ahead reading in beautiful Markdown, structured as:
+1. **Overview of the Year** (in {target_lang}) — the tone set by the varsha lagna, Muntha placement, and year lord's condition.
+2. **Muntha & Year Lord Judgement** (in {target_lang}) — what the Muntha house and the Varshesha's dignity/strength promise.
+3. **Career, Wealth & Home** (in {target_lang}) — from the varsha chart's 10th/2nd/11th/4th houses and their lords.
+4. **Relationships & Health** (in {target_lang}) — 7th and 6th/8th house factors.
+5. **Timing within the Year** (in {target_lang}) — how the running natal dasa/bhukti colours which months; be conservative where data is thin.
+6. **Guidance** (in {target_lang}) — practical, compassionate counsel for the year.
+
+Start directly with the overview in {target_lang}:
+"""
+
+    return StreamingResponse(
+        llm_stream(prompt_builder, model_name, user, "ai_predict_varshaphala"),
+        media_type="text/event-stream",
+    )
+
+
+class RemediesRequest(BaseModel):
+    chart_data: dict
+    client_name: str = Field(max_length=200)
+    place_name: str = Field(default="", max_length=200)
+    lang: LangCode = "en"
+    model: str = DEFAULT_LLM_MODEL
+
+
+@app.post("/api/ai-remedies")
+def ai_remedies(req: RemediesRequest, raw_req: Request):
+    """Stream classical remedies (parihara) ONLY for afflictions the engine
+    actually detected, and ONLY remedies supported by retrieved passages."""
+    token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    for k in ("metadata", "placements"):
+        if k not in req.chart_data:
+            raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
+    user = check_credits_or_raise(token, CREDIT_COST_REMEDIES, "ai_remedies")
+    chart = req.chart_data
+    client = req.client_name
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    target_lang = _LANG_MAP.get(req.lang, "English")
+
+    def prompt_builder():
+        today = date.today()
+        transit_chart = None
+        try:
+            meta = chart.get("metadata", {})
+            transit_chart = get_astrological_chart(
+                today.year, today.month, today.day, 12, 0,
+                float(meta.get("longitude")), float(meta.get("latitude")), light=True,
+            )
+        except Exception as e:
+            logger.warning("Remedies gochara skipped: %s", e)
+        analysis = build_analysis(chart, transit_chart=transit_chart, ref_date=today)
+        targets = derive_remedy_targets(analysis, chart)
+
+        if targets:
+            target_text = "\n".join(
+                f"  - {t['graha']}: {t['affliction']} (severity: {t['severity']})" for t in targets
+            )
+        else:
+            target_text = "  - None. The checked afflictions (dasa lord, Sade Sati, lagna lord, malefics on lagna) are all clear."
+
+        queries = build_remedy_queries(targets) if targets else ["general graha shanti daily worship"]
+        rag_context, _ = retrieve_rag_context(search_engine, queries)
+
+        return f"""You are a compassionate and learned Vedic Astrologer (Jyotishi) advising {client} on classical remedial measures (parihara).
+
+The computational engine has already analysed the chart. These are the ONLY afflictions detected:
+
+--- DETECTED AFFLICTIONS (computed — do not add others) ---
+{target_text}
+
+--- CLASSICAL REMEDY TEXT REFERENCES (retrieved) ---
+{rag_context}
+---------------------------------------------
+
+CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}.
+
+{_VEDIC_GUARDRAILS}
+
+STRICT REMEDY RULES:
+- Recommend a remedy ONLY if it is supported by the retrieved passages above, and QUOTE or closely paraphrase the supporting passage under each remedy, citing its source in brackets like [Book Title, Page N].
+- If the retrieved passages contain no remedy for a detected affliction, say so plainly for that graha — do NOT invent mantras, gemstones, yantras, or donation lists from general knowledge.
+- NEVER prescribe gemstones with claims of guaranteed results; if a passage mentions a gemstone, present it as the text's tradition, not a directive.
+- If no afflictions were detected, congratulate the native briefly and suggest only the universally traditional practices found in the retrieved passages (if any).
+- End with this framing (translated into {target_lang}): these are traditional spiritual observances from the classical texts, offered for devotion and peace of mind — not medical, financial, or legal advice.
+
+Structure: one section per afflicted graha (heading with the graha name in {target_lang}), each listing its text-supported remedies (mantra/japa, dana, vrata, worship) with citations. Start directly:
+"""
+
+    return StreamingResponse(
+        llm_stream(prompt_builder, model_name, user, "ai_remedies"),
+        media_type="text/event-stream",
+    )
+
+
+class AICompatibilityRequest(BaseModel):
+    male_chart: dict
+    female_chart: dict
+    compatibility: dict
+    male_name: str = Field(max_length=200)
+    female_name: str = Field(max_length=200)
+    male_place: str = Field(default="", max_length=200)
+    female_place: str = Field(default="", max_length=200)
+    lang: LangCode = "en"
+    model: str = DEFAULT_LLM_MODEL
+
+
+@app.post("/api/ai-predict-compatibility")
+def ai_predict_compatibility(req: AICompatibilityRequest, raw_req: Request):
+    """Stream the PREMIUM in-depth compatibility reading — the cross-chart layer
+    beyond the 10-porutham match: 7th houses/lords, karakas, Kuja dosha with
+    cancellations, mutual Moon relation, and 10-year malefic dasa overlap."""
+    token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    for label, ch in (("male_chart", req.male_chart), ("female_chart", req.female_chart)):
+        if "placements" not in ch:
+            raise HTTPException(status_code=400, detail=f"{label} missing required key: placements")
+    user = check_credits_or_raise(token, CREDIT_COST_COMPATIBILITY, "ai_predict_compatibility")
+    male_chart, female_chart, comp = req.male_chart, req.female_chart, req.compatibility
+    male_name, female_name = req.male_name, req.female_name
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    target_lang = _LANG_MAP.get(req.lang, "English")
+
+    def prompt_builder():
+        try:
+            cross_analysis = build_compatibility_analysis(male_chart, female_chart, comp)
+        except (KeyError, TypeError) as e:
+            raise ValueError(f"Invalid chart data for compatibility analysis: {e}")
+
+        score_line = ""
+        if isinstance(comp, dict) and "score" in comp:
+            score_line = f"Porutham score already computed: {comp.get('score')}/{comp.get('max_score')} ({comp.get('percentage')}%)."
+
+        queries = [
+            f"marriage compatibility seventh house lord condition bride groom",
+            "Kuja dosha Mangal dosha cancellation exceptions marriage",
+            "dasa sandhi malefic periods marriage timing",
+            f"Venus Jupiter dignity marriage happiness spouse",
+        ]
+        rag_context, _ = retrieve_rag_context(search_engine, queries, category="marriage")
+
+        return f"""You are a divine and highly wise Vedic Astrologer and master matchmaker performing an IN-DEPTH compatibility judgement for {male_name} and {female_name} — the analysis that goes BEYOND nakshatra porutham matching.
+{score_line}
+
+You MUST reason from houses, lords, dignities and dasas — never from sun signs. The precise cross-chart computation is below.
+
+--- COMPUTED CROSS-CHART COMPATIBILITY ANALYSIS ---
+{cross_analysis}
+
+--- CLASSICAL MARRIAGE TEXT REFERENCES ---
+{rag_context}
+---------------------------------------------
+
+CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}.
+
+{_VEDIC_GUARDRAILS}
+
+ADDITIONAL DISCIPLINE:
+- Kuja (Mangal) dosha: use ONLY the computed verdict above, which already applies the classical cancellations. NEVER declare Kuja dosha from a placement alone if the computation says an exception applies.
+- Treat the malefic dasa-overlap windows as periods needing patience, not doom — frame them constructively with classical support.
+
+Write an authoritative, compassionate reading in beautiful Markdown:
+1. **Marriage Houses Face-to-Face** (in {target_lang}) — each native's 7th house, its lord's condition, and what each seeks in partnership.
+2. **Karakas: Venus & Jupiter** (in {target_lang}) — the marriage karakas' dignities in both charts.
+3. **Mutual Moon Relation** (in {target_lang}) — the computed distance relation and its emotional meaning.
+4. **Kuja Dosha Verdict** (in {target_lang}) — the computed verdict with its cancellation reasoning explained.
+5. **The Decade Ahead Together** (in {target_lang}) — the running dasas and any malefic-overlap windows, with guidance.
+6. **Final Synthesis** (in {target_lang}) — an honest overall judgement combining this deep layer with the porutham score.
+
+Start directly with section 1 in {target_lang}:
+"""
+
+    return StreamingResponse(
+        llm_stream(prompt_builder, model_name, user, "ai_predict_compatibility"),
+        media_type="text/event-stream",
+    )
+
+
+class PrashnaRequest(BaseModel):
+    question: str = Field(min_length=5, max_length=2000)
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    place_name: str = Field(default="", max_length=200)
+    lang: LangCode = "en"
+    model: str = DEFAULT_LLM_MODEL
+
+
+@app.post("/api/ai-predict-prashna")
+def ai_predict_prashna(req: PrashnaRequest, raw_req: Request):
+    """Prashna (horary): answer a question from the chart of THIS moment at the
+    querent's location — no birth details needed. The lowest-friction paid
+    entry point, so it must work for a user who never entered birth data."""
+    token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    user = check_credits_or_raise(token, CREDIT_COST_PRASHNA, "ai_predict_prashna")
+    question = req.question.strip()
+    lat, lon = req.latitude, req.longitude
+    place = req.place_name or "the querent's location"
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    target_lang = _LANG_MAP.get(req.lang, "English")
+    domain_label, judged_house = classify_prashna_question(question)
+
+    def prompt_builder():
+        tz = get_timezone_offset(lon, lat)
+        now_local = datetime.utcnow() + timedelta(hours=tz)
+        chart = get_astrological_chart(
+            now_local.year, now_local.month, now_local.day,
+            now_local.hour, now_local.minute, lon, lat, "Lahiri",
+            timezone_offset=tz, light=True,
+        )
+        analysis_text = build_prashna_analysis(chart, domain_label, judged_house)
+        queries = build_prashna_queries(domain_label, judged_house)
+        rag_context, _ = retrieve_rag_context(search_engine, queries)
+
+        return f"""You are a master of Prashna Jyotisha (Vedic horary astrology). A querent at {place} asks, at this very moment ({now_local.strftime('%Y-%m-%d %H:%M')} local):
+
+"{question}"
+
+The prashna chart — the sky of the moment the question was received — has been computed precisely:
+
+--- COMPUTED PRASHNA CHART JUDGEMENT INPUTS ---
+{analysis_text}
+
+--- CLASSICAL PRASHNA TEXT REFERENCES ---
+{rag_context}
+---------------------------------------------
+
+CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}.
+
+{_VEDIC_GUARDRAILS}
+
+PRASHNA JUDGEMENT METHOD (follow it):
+1. Judge the lagna lord and the Moon (the querent and their mind): dignity, house, benefic/malefic association.
+2. Judge the house ruling the matter (given above): its lord's condition, occupants, and the aspects it receives.
+3. A favourable answer needs connection or strength between the lagna lord / Moon and the judged house or its lord; affliction of both denies.
+4. Be honest: give a clear YES / NO / MIXED verdict with the astrological reasoning, then practical guidance and (if the texts support one) a simple traditional observance.
+5. Do NOT ask for birth details — prashna is judged from this moment's chart alone.
+
+Structure: **The Question** (restated), **Chart Judgement**, **Verdict**, **Guidance** — all in {target_lang}. Be concise (under 500 words) and precise. Start directly:
+"""
+
+    return StreamingResponse(
+        llm_stream(prompt_builder, model_name, user, "ai_predict_prashna"),
+        media_type="text/event-stream",
+    )
+
+
+# =====================================================================
 # Growth features: daily digest opt-in, shareable chart links, and the
 # public SEO panchangam/festival pages (+ sitemap/robots).
 # =====================================================================
@@ -3971,6 +4335,28 @@ _SEO_LABELS = {
            "more": "पूर्ण पंचांग व निःशुल्क कुंडली", "monthfest": "पर्व एवं व्रत"},
 }
 
+# Localized names for the muhurtham event profiles surfaced as "auspicious
+# for" chips on the SEO pages (VIVAHA keeps its badge via specialities).
+_EVENT_LABELS = {
+    "GRAHAPRAVESHA": {"en": "Housewarming", "ta": "கிரகப்பிரவேசம்", "te": "గృహప్రవేశం",
+                      "ml": "ഗൃഹപ്രവേശം", "kn": "ಗೃಹಪ್ರವೇಶ", "hi": "गृहप्रवेश"},
+    "AKSHARABHYASAM": {"en": "First Learning", "ta": "வித்யாரம்பம்", "te": "అక్షరాభ్యాసం",
+                       "ml": "വിദ്യാരംഭം", "kn": "ಅಕ್ಷರಾಭ್ಯಾಸ", "hi": "विद्यारंभ"},
+    "VAHAN_KHARIDI": {"en": "Vehicle Purchase", "ta": "வாகனம் வாங்குதல்", "te": "వాహన కొనుగోలు",
+                      "ml": "വാഹനം വാങ്ങൽ", "kn": "ವಾಹನ ಖರೀದಿ", "hi": "वाहन खरीद"},
+    "BUSINESS_OPENING": {"en": "Business Opening", "ta": "தொழில் தொடக்கம்", "te": "వ్యాపార ఆరంభం",
+                         "ml": "ബിസിനസ് ആരംഭം", "kn": "ವ್ಯಾಪಾರ ಆರಂಭ", "hi": "व्यापार आरंभ"},
+    "NAMAKARANA": {"en": "Naming Ceremony", "ta": "பெயர் சூட்டு விழா", "te": "నామకరణం",
+                   "ml": "നാമകരണം", "kn": "ನಾಮಕರಣ", "hi": "नामकरण"},
+    "TRAVEL": {"en": "Travel", "ta": "பயணம்", "te": "ప్రయాణం",
+               "ml": "യാത്ര", "kn": "ಪ್ರಯಾಣ", "hi": "यात्रा"},
+}
+
+_AUSPICIOUS_FOR_LABEL = {
+    "en": "Auspicious today for", "ta": "இன்று உகந்தவை", "te": "నేడు అనుకూలం",
+    "ml": "ഇന്ന് അനുകൂലം", "kn": "ಇಂದು ಶುಭ", "hi": "आज शुभ",
+}
+
 # Panchangam for a past/current (city, date) never changes, so a plain bounded
 # LRU (no TTL) is correct.
 _SEO_PAGE_CACHE = OrderedDict()
@@ -4054,13 +4440,18 @@ def seo_panchangam_page(lang: LangCode, city_slug: str, date_str: str):
     weekday_local = DAYS_OF_WEEK_LOCAL.get(lang, DAYS_OF_WEEK_LOCAL["en"])[weekday_sun0]
 
     specialities = list(res["specialities_all"])
+    event_chips = []
     try:
         muh = calculate_muhurtham(
             f"{dt.year}-{dt.month:02d}-{dt.day:02d}T06:00:00", lat, lon,
             get_paradigm_from_lang(lang), "VIVAHA",
         )
-        if muh["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+        compat = muh["muhurtham_status"]["activity_compatibility"]
+        if compat.get("VIVAHA", False):
             specialities.insert(0, "Marriage Muhurtham")
+        for event, labels in _EVENT_LABELS.items():
+            if compat.get(event, False):
+                event_chips.append(labels.get(lang, labels["en"]))
     except Exception as e:
         logger.warning("SEO page muhurtham failed for %s %s: %s", city_slug, date_str, e)
 
@@ -4068,6 +4459,12 @@ def seo_panchangam_page(lang: LangCode, city_slug: str, date_str: str):
         f'<span class="badge">{_htmlmod.escape(translate_speciality(s, lang))}</span>'
         for s in specialities
     )
+    if event_chips:
+        aus_label = _AUSPICIOUS_FOR_LABEL.get(lang, _AUSPICIOUS_FOR_LABEL["en"])
+        badges += (
+            f'<p class="muted" style="margin:8px 0 2px">✅ {_htmlmod.escape(aus_label)}: '
+            + ", ".join(_htmlmod.escape(c) for c in event_chips) + "</p>"
+        )
 
     title = f"{city_name} {S['panchangam']} — {dt.isoformat()}"
     prev_d, next_d = dt - timedelta(days=1), dt + timedelta(days=1)

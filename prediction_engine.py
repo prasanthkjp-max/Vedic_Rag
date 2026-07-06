@@ -817,3 +817,329 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
         )
     context_str = "\n\n".join(parts) if parts else "No specific classical passages were retrieved."
     return context_str, [item["res"] for item in ranked]
+
+
+# ============================================================================
+# Depth features (v1.21): remedy targets, varshaphala, deep compatibility,
+# and prashna (horary) analysis.
+# ============================================================================
+
+NATURAL_MALEFICS = {"Sun", "Mars", "Saturn", "Rahu", "Ketu"}
+
+
+def derive_remedy_targets(analysis, chart):
+    """Afflictions worth classical remediation, derived from the computed
+    analysis: an afflicted running dasa lord, Sade Sati / Ashtama / Kantaka
+    Shani, an afflicted lagna lord, and malefics occupying the lagna.
+
+    Returns [{"graha", "affliction", "severity"}], strongest first, deduped
+    per graha (the worst affliction wins).
+    """
+    placements = chart["placements"]
+    houses = analysis["houses"]
+    targets = []
+
+    def add(graha, affliction, severity):
+        targets.append({"graha": graha, "affliction": affliction, "severity": severity})
+
+    # 1. Running dasa lords in trouble — the period lord colours the whole era.
+    cd = analysis["current_dasa"]
+    for role, lord in (("Mahadasa", cd.get("mahadasa")), ("Antardasa", cd.get("antardasa"))):
+        if not lord or lord not in placements:
+            continue
+        p = placements[lord]
+        dignity = p.get("dignity", "") or ""
+        if "Debilitated" in dignity:
+            add(lord, f"{role} lord {lord} is debilitated in {p['rasi_name']}", "high")
+        elif p.get("is_combust"):
+            add(lord, f"{role} lord {lord} is combust", "medium")
+        elif lord in houses and houses[lord] in (6, 8, 12):
+            add(lord, f"{role} lord {lord} occupies the {_ord(houses[lord])} house (dusthana)", "medium")
+
+    # 2. Saturn transits flagged by gochara.
+    gochara = analysis.get("gochara")
+    if gochara:
+        for note in gochara.get("notes", []):
+            if "Sade Sati" in note:
+                add("Saturn", "Sade Sati is running (Saturn transits 12th/1st/2nd from natal Moon)", "high")
+            elif "Ashtama" in note:
+                add("Saturn", "Ashtama Shani (Saturn transits the 8th from natal Moon)", "medium")
+            elif "Kantaka" in note or "Ardhashtama" in note:
+                add("Saturn", "Kantaka Shani (Saturn transits the 4th from natal Moon)", "medium")
+
+    # 3. Lagna lord afflicted (the chart's vitality carrier).
+    lagna_lord = analysis["house_lords"][1]
+    if lagna_lord in placements:
+        p = placements[lagna_lord]
+        dignity = p.get("dignity", "") or ""
+        if "Debilitated" in dignity:
+            add(lagna_lord, f"Lagna lord {lagna_lord} is debilitated in {p['rasi_name']}", "high")
+        elif p.get("is_combust"):
+            add(lagna_lord, f"Lagna lord {lagna_lord} is combust", "medium")
+        elif lagna_lord in houses and houses[lagna_lord] in (6, 8, 12):
+            add(lagna_lord, f"Lagna lord {lagna_lord} in the {_ord(houses[lagna_lord])} house (dusthana)", "medium")
+        else:
+            for conj in analysis["conjunctions"]:
+                if lagna_lord in conj["planets"]:
+                    mals = [x for x in conj["planets"] if x in NATURAL_MALEFICS and x != lagna_lord]
+                    if mals:
+                        add(lagna_lord, f"Lagna lord {lagna_lord} conjunct malefic {', '.join(mals)}", "medium")
+                    break
+
+    # 4. Malefics sitting on the lagna itself.
+    for graha in NATURAL_MALEFICS:
+        if houses.get(graha) == 1:
+            add(graha, f"Malefic {graha} occupies the lagna (1st house)", "medium")
+
+    # Dedupe per graha, keeping the most severe (high beats medium), then the
+    # earliest (dasa lords were added first — they matter most right now).
+    rank = {"high": 0, "medium": 1, "low": 2}
+    best = {}
+    for t in targets:
+        cur = best.get(t["graha"])
+        if cur is None or rank[t["severity"]] < rank[cur["severity"]]:
+            best[t["graha"]] = t
+    return sorted(best.values(), key=lambda t: rank[t["severity"]])
+
+
+def build_remedy_queries(remedy_targets, max_queries=8):
+    """Remedy-focused RAG queries: shanti/mantra/dana/vrata rules per afflicted
+    graha, plus the affliction itself."""
+    queries = []
+    for t in remedy_targets:
+        queries.append(f"{t['graha']} graha shanti remedy mantra dana propitiation")
+        if "Sade Sati" in t["affliction"]:
+            queries.append("Saturn Sade Sati remedies parihara worship")
+        elif "debilitated" in t["affliction"]:
+            queries.append(f"remedies for debilitated {t['graha']} neecha parihara")
+        elif "combust" in t["affliction"]:
+            queries.append(f"combust {t['graha']} astangata remedy")
+    seen, out = set(), []
+    for q in queries:
+        if q not in seen:
+            seen.add(q)
+            out.append(q)
+        if len(out) >= max_queries:
+            break
+    return out
+
+
+def build_varshaphala_queries(varsha_chart, analysis, max_queries=8):
+    """RAG queries targeted at Tajika annual-chart judgement: Muntha placement,
+    the year lord's condition, and the varsha lagna."""
+    v = varsha_chart.get("varshaphala", {})
+    queries = ["varshaphala annual chart tajika judgement year results"]
+    if v:
+        queries.append(f"Muntha in {_ord(v.get('muntha_house_from_varsha_lagna', 1))} house varshaphala effects")
+        queries.append(f"{v.get('year_lord', '')} as year lord varshesha annual results")
+    lagna_idx = analysis["lagna_idx"]
+    queries.append(f"{RASI_SHORT[lagna_idx]} lagna annual chart year ahead")
+    cd = analysis["current_dasa"]
+    if cd.get("mahadasa"):
+        queries.append(f"{cd['mahadasa']} mahadasa {cd.get('antardasa') or ''} bhukti year results")
+    return queries[:max_queries]
+
+
+def _moon_relation(idx_a, idx_b):
+    """Classify the mutual Moon-sign distance (counted inclusively both ways)."""
+    d1 = ((idx_b - idx_a) % 12) + 1
+    d2 = ((idx_a - idx_b) % 12) + 1
+    pair = tuple(sorted((d1, d2)))
+    if pair == (1, 1):
+        return d1, d2, "Same rasi (strong mutual understanding)"
+    if pair == (7, 7):
+        return d1, d2, "Samasaptaka 7/7 (natural partnership axis — favourable)"
+    if pair == (2, 12):
+        return d1, d2, "Dwirdwadasha 2/12 (friction over money/family — adverse)"
+    if pair == (6, 8):
+        return d1, d2, "Shashtashtama 6/8 (health/longevity friction — adverse)"
+    if pair == (5, 9):
+        return d1, d2, "Trikona 5/9 (dharmic harmony — favourable)"
+    if pair == (3, 11):
+        return d1, d2, "3/11 (gains through each other — favourable)"
+    return d1, d2, f"{pair[0]}/{pair[1]} (neutral)"
+
+
+def _malefic_dasa_windows(dasa_table, start, end):
+    """(lord, start_date, end_date) of maha dasas of natural malefics
+    overlapping [start, end]. Dates stay as the engine's ISO strings."""
+    windows = []
+    for dasa in dasa_table or []:
+        if dasa.get("dasa_lord") not in NATURAL_MALEFICS:
+            continue
+        ds, de = _parse(dasa.get("start_date")), _parse(dasa.get("end_date"))
+        if ds and de and ds < end and de > start:
+            windows.append((dasa["dasa_lord"], dasa["start_date"], dasa["end_date"]))
+    return windows
+
+
+def build_compatibility_analysis(male_chart, female_chart, compatibility=None, ref_date=None):
+    """Cross-chart analysis for the premium compatibility reading — the layer
+    the 10-porutham match does NOT cover: each native's 7th house and 7th
+    lord condition, Venus/Jupiter dignity, the mutual Moon-sign relation,
+    Kuja dosha WITH its computed cancellations (taken from the porutham
+    engine's verdict), and 10-year malefic dasa overlap (dasa sandhi risk).
+
+    Returns a text block for the LLM prompt.
+    """
+    if ref_date is None:
+        ref_date = date.today()
+    lines = []
+
+    charts = (("MALE", male_chart), ("FEMALE", female_chart))
+    for label, ch in charts:
+        placements = ch["placements"]
+        lagna_idx, houses = compute_houses(placements)
+        lords = house_lords(lagna_idx)
+        seventh_lord = lords[7]
+        lines.append(f"\n--- {label} NATIVE: MARRIAGE FACTORS ---")
+        lines.append(f"Lagna: {RASI_SHORT[lagna_idx]}; 7th house is {RASI_SHORT[(lagna_idx + 6) % 12]}, its lord is {seventh_lord}.")
+        occupants = [b for b in GRAHAS if b in houses and houses[b] == 7]
+        lines.append(f"7th house occupants: {', '.join(occupants) if occupants else 'none'}.")
+        if seventh_lord in placements:
+            p = placements[seventh_lord]
+            flags = []
+            if p.get("is_retrograde"):
+                flags.append("retrograde")
+            if p.get("is_combust"):
+                flags.append("combust")
+            lines.append(
+                f"7th lord {seventh_lord}: {_ord(houses[seventh_lord])} house, "
+                f"{p['rasi_name']}, {p.get('dignity', 'Neutral')}"
+                + (f" [{', '.join(flags)}]" if flags else "")
+            )
+        for karaka in ("Venus", "Jupiter"):
+            if karaka in placements:
+                p = placements[karaka]
+                lines.append(
+                    f"{karaka} (karaka): {_ord(houses[karaka])} house, {p['rasi_name']}, "
+                    f"{p.get('dignity', 'Neutral')}"
+                    + (" [combust]" if p.get("is_combust") else "")
+                )
+        cd = get_current_dasa(ch.get("dasas", []), ref_date)
+        if cd.get("mahadasa"):
+            lines.append(f"Running period: {cd['mahadasa']} mahadasa / {cd.get('antardasa') or '—'} bhukti.")
+
+    m_moon = male_chart["placements"]["Moon"]["rasi_index"]
+    f_moon = female_chart["placements"]["Moon"]["rasi_index"]
+    d1, d2, relation = _moon_relation(m_moon, f_moon)
+    lines.append("\n--- MUTUAL MOON RELATION ---")
+    lines.append(
+        f"Female Moon is {_ord(d1)} from male Moon; male Moon is {_ord(d2)} from female Moon: {relation}"
+    )
+
+    # Kuja dosha with cancellations — computed by the porutham engine
+    # (calculate_marriage_compatibility), never re-derived without exceptions.
+    kuja = (compatibility or {}).get("kuja_dosha")
+    if kuja:
+        lines.append("\n--- KUJA (MANGAL) DOSHA — WITH CLASSICAL CANCELLATIONS APPLIED ---")
+        for side in ("male", "female"):
+            k = kuja.get(side) or {}
+            lines.append(f"{side.capitalize()}: {k.get('details', 'n/a')}")
+        lines.append(f"Verdict: {kuja.get('compatibility_verdict', 'n/a')}")
+
+    # Dasa sandhi: years in the next decade when BOTH run malefic maha dasas.
+    end = date(ref_date.year + 10, ref_date.month, ref_date.day)
+    m_windows = _malefic_dasa_windows(male_chart.get("dasas"), ref_date, end)
+    f_windows = _malefic_dasa_windows(female_chart.get("dasas"), ref_date, end)
+    lines.append("\n--- MALEFIC DASA OVERLAP, NEXT 10 YEARS ---")
+    overlaps = []
+    for ml, ms, me in m_windows:
+        for fl, fs, fe in f_windows:
+            lo = max(_parse(ms), _parse(fs))
+            hi = min(_parse(me), _parse(fe))
+            if lo and hi and lo < hi:
+                overlaps.append(f"{lo.isoformat()} to {hi.isoformat()}: male in {ml} dasa AND female in {fl} dasa")
+    if overlaps:
+        lines.append("Windows where both natives run natural-malefic mahadasas simultaneously (extra care needed):")
+        lines.extend(f"  - {o}" for o in overlaps)
+    else:
+        lines.append("No simultaneous natural-malefic mahadasa window in the next 10 years.")
+
+    return "\n".join(lines)
+
+
+# --- Prashna (horary) ---
+
+# Question domain -> (house judged, keywords). First match wins; order puts
+# the more specific domains before the broad ones.
+PRASHNA_DOMAINS = [
+    ("lost object", 2, ["lost", "missing", "stolen", "theft", "misplaced", "find my"]),
+    ("litigation", 6, ["court", "case", "lawsuit", "legal", "litigation", "dispute"]),
+    ("health", 6, ["health", "illness", "disease", "surgery", "recovery", "hospital", "cure"]),
+    ("children", 5, ["child", "children", "pregnan", "baby", "conceive", "son", "daughter"]),
+    ("education", 5, ["exam", "study", "education", "degree", "college", "school", "results"]),
+    ("marriage", 7, ["marriage", "marry", "spouse", "husband", "wife", "partner", "relationship", "love", "divorce", "engagement"]),
+    ("career", 10, ["job", "career", "work", "promotion", "profession", "employment", "interview", "office", "business"]),
+    ("wealth", 11, ["money", "wealth", "finance", "loan", "debt", "profit", "gain", "income", "property", "investment", "salary"]),
+    ("foreign travel", 12, ["travel", "abroad", "foreign", "visa", "migrate", "relocat", "overseas", "onsite"]),
+]
+
+
+def classify_prashna_question(question):
+    """Map a free-text question to (domain_label, judged_house). Keyword map —
+    deliberately not an LLM call. Default: 1st house (the querent's own state)."""
+    q = (question or "").lower()
+    for label, house, keywords in PRASHNA_DOMAINS:
+        if any(k in q for k in keywords):
+            return label, house
+    return "general", 1
+
+
+def build_prashna_analysis(chart, domain_label, judged_house):
+    """Structured horary judgement inputs for the prashna chart (the chart of
+    the question's moment): prashna lagna + lord condition, the Moon (the
+    querent's mind), and the judged house's sign, lord, occupants and aspects."""
+    placements = chart["placements"]
+    lagna_idx, houses = compute_houses(placements)
+    lords = house_lords(lagna_idx)
+    aspects = compute_aspects(placements, houses)
+
+    lines = [f"PRASHNA DOMAIN: {domain_label} — judged primarily from the {_ord(judged_house)} house."]
+    lines.append(f"PRASHNA LAGNA: {RASI_SHORT[lagna_idx]} rising; lagna lord {lords[1]}.")
+
+    def condition(body):
+        p = placements.get(body)
+        if not p:
+            return f"{body}: not available"
+        flags = []
+        if p.get("is_retrograde"):
+            flags.append("retrograde")
+        if p.get("is_combust"):
+            flags.append("combust")
+        return (
+            f"{body}: {_ord(houses[body])} house, {p['rasi_name']} {p['degree']:.2f}°, "
+            f"{p.get('dignity', 'Neutral')}" + (f" [{', '.join(flags)}]" if flags else "")
+        )
+
+    lines.append("LAGNA LORD (the querent): " + condition(lords[1]))
+    lines.append("MOON (the querent's mind): " + condition("Moon"))
+    if "Moon" in placements:
+        lines.append(f"  Moon nakshatra: {placements['Moon'].get('nakshatra', '—')}")
+
+    judged_sign = (lagna_idx + judged_house - 1) % 12
+    judged_lord = lords[judged_house]
+    occupants = [b for b in GRAHAS if b in houses and houses[b] == judged_house]
+    lines.append(
+        f"JUDGED HOUSE ({_ord(judged_house)} — {HOUSE_SIGNIFICATIONS[judged_house]}): "
+        f"sign {RASI_SHORT[judged_sign]}, lord {judged_lord}, "
+        f"occupants: {', '.join(occupants) if occupants else 'none'}."
+    )
+    lines.append("JUDGED HOUSE LORD: " + condition(judged_lord))
+    aspecting = [b for b, a in aspects.items() if judged_house in a["houses"]]
+    lines.append(f"GRAHAS ASPECTING THE JUDGED HOUSE: {', '.join(aspecting) if aspecting else 'none'}.")
+
+    benefics_kendra = [b for b in ("Jupiter", "Venus", "Mercury") if houses.get(b) in (1, 4, 7, 10)]
+    malefics_kendra = [b for b in NATURAL_MALEFICS if houses.get(b) in (1, 4, 7, 10)]
+    lines.append(f"KENDRAS: benefics {', '.join(benefics_kendra) or 'none'}; malefics {', '.join(malefics_kendra) or 'none'}.")
+
+    return "\n".join(lines)
+
+
+def build_prashna_queries(domain_label, judged_house, max_queries=6):
+    return [
+        f"prashna horary {domain_label} question judgement rules",
+        f"prashna lagna lord Moon {domain_label} outcome",
+        f"{_ord(judged_house)} house lord strength prashna results",
+        "prashna moon nakshatra judgement",
+    ][:max_queries]

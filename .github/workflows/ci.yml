@@ -41,6 +41,9 @@ jobs:
       - name: Growth features (digest engine, kalam windows, SEO cities)
         run: python test_growth_features.py
 
+      - name: Depth features (muhurtham profiles, varshaphala, remedies, compatibility, prashna)
+        run: python test_depth_features.py
+
       - name: Razorpay payment layer (GST + signatures)
         run: python test_razorpay.py
 

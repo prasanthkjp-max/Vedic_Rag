@@ -2739,6 +2739,105 @@ def calculate_marriage_compatibility(male_chart, female_chart):
     }
 
 
+def find_solar_return_jd(natal_sun_sidereal_long, year, approx_month, approx_day,
+                         ayanamsa_name="Lahiri"):
+    """Exact JD (UT) in `year` when the Sun's SIDEREAL longitude returns to the
+    natal value. Newton iteration on the Sun's mean daily motion (~0.9856°/day)
+    starting from the Gregorian birthday converges to well under a minute.
+    """
+    if approx_month == 2 and approx_day == 29:
+        approx_day = 28  # leap-day births: safe seed in any year
+    jd = get_julian_date(year, approx_month, approx_day, 12.0)
+    for _ in range(20):
+        T = (jd - 2451545.0) / 36525.0
+        ayan = get_ayanamsa(T, ayanamsa_name, JD=jd)
+        res_sun, _ = swe.calc_ut(jd, swe.SUN)
+        sun_sid = (res_sun[0] - ayan) % 360.0
+        diff = ((sun_sid - natal_sun_sidereal_long + 180.0) % 360.0) - 180.0
+        if abs(diff) < 1e-6:  # ≈0.09s of time
+            break
+        jd -= diff / 0.9856
+    return jd
+
+
+# Weekday lords, 0=Sunday .. 6=Saturday (Vara adhipati).
+_VARA_LORDS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+
+
+def get_varshaphala_chart(natal_chart, year):
+    """Tajika annual (Varshaphala) chart: the chart of the exact moment the Sun
+    returns to its natal sidereal longitude in `year`, cast at the natal
+    location, in the natal ayanamsa.
+
+    Returns the same dict shape as get_astrological_chart (so build_analysis
+    can consume it) plus a "varshaphala" key: the solar-return moment, the
+    native's age, Muntha (natal lagna progressed one rasi per completed year)
+    and its house from the varsha lagna, and the year lord — chosen among the
+    classical office-bearer candidates (Muntha lord, varsha-lagna lord, natal
+    lagna lord, weekday lord of the return) as the one strongest by Shadbala
+    in the annual chart.
+    """
+    meta = natal_chart["metadata"]
+    dt_str = meta["datetime"]  # "YYYY-MM-DD HH:MM"
+    date_part = dt_str.split(" ")[0]
+    birth_year, birth_month, birth_day = (int(x) for x in date_part.split("-"))
+    if year < birth_year:
+        raise ValueError(f"varshaphala year {year} precedes the birth year {birth_year}")
+
+    latitude = float(meta["latitude"])
+    longitude = float(meta["longitude"])
+    ayanamsa_name = meta.get("ayanamsa_name", "Lahiri")
+    natal_sun = natal_chart["placements"]["Sun"]["longitude"]
+    natal_lagna_idx = natal_chart["placements"]["Lagna"]["rasi_index"]
+
+    jd_return = find_solar_return_jd(natal_sun, year, birth_month, birth_day, ayanamsa_name)
+
+    tz_offset = get_timezone_offset(longitude, latitude)
+    ry, rm, rd, local_hour = swe.revjul(jd_return + tz_offset / 24.0)
+    hour = int(local_hour)
+    minute = int((local_hour * 60) % 60)
+
+    chart = get_astrological_chart(
+        ry, rm, rd, hour, minute, longitude, latitude, ayanamsa_name,
+        timezone_offset=tz_offset, gender=meta.get("gender", "male"),
+    )
+
+    age = year - birth_year  # completed years at this solar return
+    muntha_idx = (natal_lagna_idx + age) % 12
+    varsha_lagna_idx = chart["placements"]["Lagna"]["rasi_index"]
+    muntha_house = ((muntha_idx - varsha_lagna_idx) % 12) + 1
+
+    lords = ["Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
+             "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter"]
+    day_idx = math.floor(jd_return + tz_offset / 24.0 + 1.5) % 7
+    candidates = {
+        "muntha_lord": lords[muntha_idx],
+        "varsha_lagna_lord": lords[varsha_lagna_idx],
+        "natal_lagna_lord": lords[natal_lagna_idx],
+        "dina_lord": _VARA_LORDS[day_idx],
+    }
+    shadbala = chart.get("shadbala", {})
+
+    def _strength(p):
+        return shadbala.get(p, {}).get("total_points", 0.0)
+
+    year_lord = max(set(candidates.values()), key=_strength)
+
+    chart["varshaphala"] = {
+        "year": year,
+        "age": age,
+        "solar_return_local": f"{ry:04d}-{rm:02d}-{rd:02d} {hour:02d}:{minute:02d}",
+        "solar_return_jd_ut": round(jd_return, 6),
+        "muntha_rasi_index": muntha_idx,
+        "muntha_rasi_name": RASIS[muntha_idx],
+        "muntha_lord": lords[muntha_idx],
+        "muntha_house_from_varsha_lagna": muntha_house,
+        "year_lord": year_lord,
+        "year_lord_candidates": candidates,
+    }
+    return chart
+
+
 if __name__ == "__main__":
     # Diagnostic test for current date transits (May 30, 2026 at Chennai 80.27E, 13.08N)
     chart = get_astrological_chart(2026, 5, 30, 9, 0, 80.27, 13.08)
