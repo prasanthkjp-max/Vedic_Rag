@@ -8201,9 +8201,8 @@
         ];
 
         // The chosen PDF tier: 'basic' (selectable sections, instant) or
-        // 'premium' (async 20+ page life report at PREMIUM_PDF_CREDITS).
+        // 'premium' (async 20+ page life report at pricing.pdf_premium credits).
         let selectedPdfTier = 'basic';
-        const PREMIUM_PDF_CREDITS = 150; // mirrors config.CREDIT_COST_PDF_PREMIUM
 
         // Toggle the modal between the two tiers' UIs.
         function selectPdfTier(tier) {
@@ -8223,7 +8222,7 @@
             else if (upsell) upsell.style.display = isPremiumUser() ? 'none' : 'block';
             document.getElementById('pdf-premium-preview').style.display = isPrem ? 'block' : 'none';
             const confirmLbl = document.getElementById('lbl-pdf-confirm');
-            if (confirmLbl) confirmLbl.innerText = isPrem ? `Generate (${PREMIUM_PDF_CREDITS} credits)` : 'Download PDF';
+            if (confirmLbl) confirmLbl.innerText = isPrem ? `Generate (${pricing.pdf_premium} credits)` : 'Download PDF';
         }
 
         // Open the "choose sections" modal before downloading.
@@ -8238,7 +8237,7 @@
             const basicPrice = document.getElementById('pdf-tier-basic-price');
             const premPrice = document.getElementById('pdf-tier-premium-price');
             if (basicPrice) basicPrice.innerText = premium ? 'Astro Pass · all sections' : 'Free · chart section';
-            if (premPrice) premPrice.innerText = `${PREMIUM_PDF_CREDITS} credits`;
+            if (premPrice) premPrice.innerText = `${pricing.pdf_premium} credits`;
 
             PDF_SECTIONS.forEach(sec => {
                 const unlocked = sec.free || premium;
@@ -8355,7 +8354,7 @@
                 if (!start.ok) { showToast("Could not start the premium report."); return; }
                 const { report_id } = await start.json();
                 if (currentUser && !currentUser.subscription_active) {
-                    currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - PREMIUM_PDF_CREDITS);
+                    currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - pricing.pdf_premium);
                     updateAuthUI();
                 }
                 if (progress) progress.style.display = 'block';
@@ -9460,6 +9459,8 @@
             try {
                 const success = await streamDepthReading('/api/ai-predict-varshaphala', {
                     chart_data: calculatedChartData,
+                    client_name: document.getElementById('in-name').value,
+                    place_name: document.getElementById('in-pob').value,
                     year: yearVal,
                     lang: currentLang
                 }, output, {
@@ -9967,16 +9968,20 @@
 
         // --- Initialize Page details on startup ---
         window.onload = async function() {
-            // Fetch pricing config from backend
-            try {
-                const res = await apiFetch('/api/pricing');
-                if (res.ok) {
-                    const data = await res.json();
-                    pricing = { ...pricing, ...data };
-                }
-            } catch (e) {
-                console.error("Failed to load pricing config, using fallbacks:", e);
-            }
+            // Pricing config: fire-and-forget rather than blocking the critical
+            // path (today's panchangam, calendar) on a round-trip the Readings
+            // Hub doesn't need until the user actually scrolls to it. `pricing`
+            // already has sensible hardcoded fallback defaults; refresh the hub
+            // UI in place once the real values arrive.
+            apiFetch('/api/pricing')
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data) {
+                        pricing = { ...pricing, ...data };
+                        updateReadingsHubUI();
+                    }
+                })
+                .catch(e => console.error("Failed to load pricing config, using fallbacks:", e));
             updateReadingsHubUI();
 
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
@@ -10367,6 +10372,10 @@
         function openProfileModalToTab(tabId) {
             openProfileModal();
             if (typeof switchProfileTab === 'function') switchProfileTab(tabId);
+            if (tabId === 'birth-info') {
+                const field = document.getElementById('profile-in-dob');
+                if (field) field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         function scrollToReadingsHub() {
@@ -10498,7 +10507,10 @@
         function openProfileModal() {
             if (!currentUser) return;
             document.getElementById('profile-modal').style.display = 'flex';
-            switchProfileTab('settings');
+            // Reopening after a billing action (buy credits / subscribe / cancel)
+            // should land back on whichever tab the user was viewing, not always
+            // reset to Settings — default to 'settings' only on a fresh open.
+            switchProfileTab(lastActiveProfileTab);
             
             document.getElementById('profile-full-name').innerText = currentUser.full_name || "Guest";
             document.getElementById('profile-email').innerText = currentUser.email || "";
@@ -10600,12 +10612,24 @@
             }
         }
 
+        // Remembers which profile sub-tab was last active, so reopening the
+        // modal (e.g. after a billing action refreshes it) returns to where the
+        // user was instead of always jumping back to Settings.
+        let lastActiveProfileTab = 'settings';
+
         function switchProfileTab(tabId) {
+            // The onboarding wizard's "Save your birth details" step links here
+            // via the pane's own logical name; the birth-info fields actually
+            // live inside the 'settings' pane, so alias it rather than adding a
+            // pane that doesn't exist.
+            if (tabId === 'birth-info') tabId = 'settings';
+            lastActiveProfileTab = tabId;
+
             // Reset tab button states and hide/show panes
             ['settings', 'saved', 'billing'].forEach(id => {
                 const btn = document.getElementById('profile-tab-btn-' + id);
                 if (btn) btn.className = id === tabId ? 'sub-tab-btn active' : 'sub-tab-btn';
-                
+
                 const pane = document.getElementById('profile-pane-' + id);
                 if (pane) pane.style.display = id === tabId ? 'block' : 'none';
             });
@@ -10633,9 +10657,6 @@
                 const res = await fetch('/api/user/charts?saved=1', {
                     headers: { 'x-session-token': token }
                 });
-                
-                // Add simulated delay (600ms) to showcase the skeleton shimmer
-                await new Promise(resolve => setTimeout(resolve, 600));
 
                 if (res.ok) {
                     const charts = await res.json();
@@ -10717,9 +10738,6 @@
             }
             try {
                 const res = await apiFetch('/api/billing/usage');
-                
-                // Add simulated delay (600ms) to showcase the skeleton shimmer
-                await new Promise(resolve => setTimeout(resolve, 600));
 
                 if (!res.ok) throw new Error('usage fetch failed');
                 const u = await res.json();
@@ -12835,8 +12853,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
         </div>
     </div>
 
