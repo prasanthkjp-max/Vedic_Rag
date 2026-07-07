@@ -32,6 +32,14 @@ RUN mkdir -p /app/static /app/data /app/books
 # Copy the rest of the application files (filtered via .dockerignore)
 COPY . .
 
+# Backup static files before any bind-mount can shadow them.
+# The entrypoint script will sync these to /app/static on container start.
+RUN cp -a /app/static /app/.static-original
+
+# Copy the entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Build the AGPL "corresponding source" tarball served by GET /api/source. The
 # image has no .git/git (stripped by .dockerignore), so bake it at build time.
 # The build context already excludes secrets (.env/.api_key) and .git; we also
@@ -55,6 +63,9 @@ EXPOSE 8008
 # it can still serve charts/panchangam/PDF.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8008/api/live || exit 1
+
+# Use entrypoint to sync static files to bind-mount before starting the app
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Start the application using app.py (which runs uvicorn under the hood)
 CMD ["python", "app.py"]
