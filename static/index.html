@@ -3234,10 +3234,10 @@
 
                 <!-- Config subtabs basic vs advanced vs saved vs history -->
                 <div class="sub-tab-bar">
-                    <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic">Basic Configuration</span></button>
-                    <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced">Advanced Features</span></button>
-                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span>Saved Charts</span></button>
-                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span>Chart History</span></button>
+                    <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic">Birth Details</span></button>
+                    <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced">Astro Settings</span></button>
+                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span id="lbl-subtab-saved-charts">Saved Charts</span></button>
+                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span id="lbl-subtab-chart-history">Chart History</span></button>
                 </div>
 
                 <div id="jyothisyam-form-container">
@@ -3369,6 +3369,16 @@
                     <div id="chart-history-auth-callout" style="display: none; text-align: center; padding: 30px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-gold); border-radius: 12px; margin-bottom: 20px;">
                         <p style="color: var(--text-secondary); margin-bottom: 15px;">Please Sign In to track your chart calculations and history.</p>
                         <button class="calculate-btn" onclick="openLoginModal()" style="display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;"><i class="fa-solid fa-sign-in"></i> Sign In / Sign Up</button>
+                    </div>
+                    <div id="chart-history-controls" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-glass); gap: 10px; flex-wrap: wrap; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="chart-history-select-all" onchange="toggleSelectAllHistory(this)" style="cursor: pointer; width: 15px; height: 15px;">
+                            <label for="chart-history-select-all" style="font-size: 11.5px; color: var(--text-secondary); cursor: pointer;" id="lbl-history-select-all">Select All</label>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="lang-select-btn" onclick="deleteSelectedHistory()" id="lbl-btn-clear-selected" style="padding: 5px 12px; font-size: 10.5px; border-color: #e53e3e; color: #e53e3e; min-height: auto;"><i class="fa-solid fa-trash-can"></i> Delete Selected</button>
+                            <button class="lang-select-btn" onclick="clearAllHistory()" id="lbl-btn-clear-all" style="padding: 5px 12px; font-size: 10.5px; border-color: #e53e3e; background: rgba(229, 62, 62, 0.1); color: #e53e3e; min-height: auto;"><i class="fa-solid fa-circle-xmark"></i> Clear All</button>
+                        </div>
                     </div>
                     <div id="chart-history-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
                         <!-- Populated dynamically -->
@@ -4174,10 +4184,21 @@
                 lbl_horas_desc: "Planetary rulers change hourly from sunrise. Click any hour to inspect its governing properties and qualities.",
                 lbl_festivals_title: "Festivals & Auspicious Days",
                 lbl_metadata_birth_title: "Janma Patrika Astronomical Coordinates",
-                lbl_subtab_basic: "Basic Configuration",
-                lbl_subtab_advanced: "Advanced Features",
-                lbl_astro_system: "Astrological System",
-                lbl_timing_system: "Timing Period System (Dasa)",
+                lbl_subtab_basic: "Birth Details",
+                lbl_subtab_advanced: "Astro Settings",
+                lbl_subtab_saved_charts: "Saved Charts",
+                lbl_subtab_chart_history: "Chart History",
+                lbl_history_select_all: "Select All",
+                lbl_btn_clear_selected: "Delete Selected",
+                lbl_btn_clear_all: "Clear All",
+                lbl_loading_saved_charts: "Loading saved charts...",
+                lbl_no_saved_charts: "No saved charts yet.",
+                lbl_error_saved_charts: "Error loading saved charts.",
+                lbl_loading_history: "Loading history...",
+                lbl_no_history: "No calculation history found.",
+                lbl_btn_load: "Load",
+                lbl_btn_save: "Save",
+                lbl_btn_share: "Share",
                 lbl_report_success: "Astrological Report Generated Successfully",
                 lbl_btn_astro_ai: "Astro-AI Reading",
                 lbl_btn_download_pdf: "Download PDF",
@@ -4242,7 +4263,7 @@
                 lbl_home_calendar: "வேத வானியல் பஞ்சாங்கம்",
                 lbl_jyothisyam_title: "ஜனன ஜாதகம் & ஜோதிடத் தகவல் பலகை",
                 lbl_ai_title: "ஆஸ்ட்ரோ AI ஜோதிடக் கலந்தாய்வு",
-                title_panch: "தினசரி பஞ்சாங்கம்",
+                title_panch: "பஞ்சாங்கக் குறிப்புகள்",
                 nav_btn_home: "பஞ்சாங்கம்",
                 nav_btn_jyothisyam: "ஜாதகம்",
                 nav_btn_ai: "ஆஸ்ட்ரோ AI",
@@ -4274,7 +4295,7 @@
                 chart_style: "ஜாதக வரைபட முறை",
                 btn_generate: "ஜாதக கணிதத்தை உருவாக்கு",
                 ai_p1: "எந்த வேத ஜோதிட கேள்வியையும் கேளுங்கள்! குறிப்பு: தனிப்பட்ட பலன்களுக்கு ஜோதிடம் தாவலில் ஜாதகம் கணிக்கவும்.",
-                lbl_ai_welcome_text: "அண்ட ஞானம் தேடும் அன்பரே, வரவேற்கிறோம்! வேத ஜோதிடம் குறித்த எந்த கேள்வியையும் கேளுங்கள் — கிரக பலன்கள், யோகங்கள், தசை விளைவுகள், நட்சத்திரங்கள். ஜோதிடம் தாவலில் ஜாதகம் கணித்தால், சாஸ்திர RAG ஆதாரங்களின் அடிப்படையில் தனிப்பட்ட பலன்கள் பெறலாம்.",
+                lbl_ai_welcome_text: "அண்ட ஞானம் தேடும் அன்பரே, வரவேல்கிறோம்! வேத ஜோதிடம் குறித்த எந்த கேள்வியையும் கேளுங்கள் — கிரக பலன்கள், யோகங்கள், தசை விளைவுகள், நட்சத்திரங்கள். ஜோதிடம் தாவலில் ஜாதகம் கணித்தால், சாஸ்திர RAG ஆதாரங்களின் அடிப்படையில் தனிப்பட்ட பலன்கள் பெறலாம்.",
                 lbl_chat_placeholder: "ஆஸ்ட்ரோ AI-யிடம் கேளுங்கள் (எ.கா: 7-ல் சூரியன் என்ன பலன்? சனி தசை விளைவுகள் விளக்கவும்)...",
                 th_planet: "கிரகம்",
                 th_longitude: "தீர்க்கரேகை",
@@ -4282,7 +4303,7 @@
                 th_degree: "ராசி பாகை",
                 th_rasi_lord: "ராசி அதிபதி",
                 th_nakshatra: "நட்சத்திரம்",
-                th_pada: "பாதம்",
+                th_pada: "பாகம்",
                 th_dignity: "கிரக பலம் / நிலை (Dignity)",
                 lbl_rasi_chart: "ராசி சக்கரம் (D1)",
                 lbl_navamsha_chart: "நவாம்ச சக்கரம் (D9)",
@@ -4313,12 +4334,27 @@
                 lbl_vedic_ritu: "வேத ரிது (பருவகாலம்)",
                 lbl_ayana: "அயனம் (சூரிய பயணம்)",
                 lbl_muhurtham_timings: "சுப முகூர்த்த நேரங்கள் (நல்ல நேரங்கள்)",
-                lbl_horas_title: "மணிநேர கிரக ஹோரைகள்",
+                lbl_horas_title: "ஆஸ்ட்ரோ ஹோரைகள்",
                 lbl_horas_desc: "சூரிய உதயத்திலிருந்து ஒவ்வொரு மணி நேரமும் ஹோர அதிபதிகள் மாறுகின்றனர். அந்தந்த ஹோரையின் குணங்களை அறிய மணிநேரத்தைத் தேர்ந்தெடுக்கவும்.",
                 lbl_festivals_title: "பண்டிகைகள் & சுப நாட்கள்",
                 lbl_metadata_birth_title: "ஜாதக கணிதம் & வானியல் குறியீடுகள்",
-                lbl_subtab_basic: "அடிப்படை அமைவு",
-                lbl_subtab_advanced: "மேம்பட்ட அம்சங்கள்",
+                lbl_subtab_basic: "பிறப்பு விவரங்கள்",
+                lbl_subtab_advanced: "ஜோதிட அமைப்புகள்",
+                lbl_subtab_saved_charts: "சேமித்த ஜாதகங்கள்",
+                lbl_subtab_chart_history: "ஜாதக வரலாறு",
+                lbl_history_select_all: "அனைத்தையும் தேர்ந்தெடு",
+                lbl_btn_clear_selected: "தேர்ந்தெடுத்ததை நீக்கு",
+                lbl_btn_clear_all: "அனைத்தையும் நீக்கு",
+                lbl_loading_saved_charts: "சேமித்த ஜாதகங்கள் ஏற்றப்படுகின்றன...",
+                lbl_no_saved_charts: "சேமித்த ஜாதகங்கள் ஏதுமில்லை.",
+                lbl_error_saved_charts: "ஜாதகங்களை ஏற்றுவதில் தோல்வி.",
+                lbl_loading_history: "வரலாறு ஏற்றப்படுகிறது...",
+                lbl_no_history: "ஜாதக வரலாறு ஏதுமில்லை.",
+                lbl_btn_load: "ஏற்று",
+                lbl_btn_save: "சேமி",
+                lbl_btn_share: "பகிர்",
+                lbl_subtab_basic_config: "அடிப்படை அமைவு",
+                lbl_subtab_advanced_features: "மேம்பட்ட அம்சங்கள்",
                 lbl_astro_system: "ஜோதிட முறை",
                 lbl_timing_system: "கால காரண முறை (தசா)",
                 lbl_report_success: "ஜோதிட அறிக்கை வெற்றிகரமாக உருவாக்கப்பட்டது",
@@ -4383,7 +4419,7 @@
                 title: "వైదిక జ్యోతిష్య AI పోర్టల్",
                 subtitle: "ఖచ్చితమైన వైదిక పంచాంగం & శాస్త్రోక్త AI విశ్లేషణలు",
                 lbl_home_calendar: "వైదిక ఖగోళ పంచాంగం",
-                lbl_jyothisyam_title: "జన్మ పత్రిక & జ్యోతిష్య డ్యాష్‌బోర్ڈ",
+                lbl_jyothisyam_title: "జన్మ పత్రిక & జ్యోతిష్య డ్యాష్‌బోర్డ్",
                 lbl_ai_title: "ఆస్ట్రో AI సంభాషణ",
                 title_panch: "పంచాంగ వివరాలు",
                 nav_btn_home: "పంచాంగం",
@@ -4397,7 +4433,7 @@
                 lbl_language: "భాష", lbl_location: "ప్రాంతం", lbl_settings: "సెట్టింగ్స్",
                 set_text_size: "అక్షరాల పరిమాణం", set_default_page: "ప్రారంభ పేజీ", set_panch_system: "పంచాంగం",
                 set_lock_location: "ప్రాంతాన్ని లాక్ చేయి", set_daily_reminder: "దినసరి రిమైండర్", set_about: "వెర్షన్",
-                lbl_marriage_intro: "వధూవరుల જન્મ వివరాలను నమోదు చేసి, సాంప్రదాయ నక్షత్ర పొంతన (కూట పొంతన) మరియు వైవాహిక జీవిత అనుకూలతను తెలుసుకోండి.",
+                lbl_marriage_intro: "వధూవరుల జన్మ వివరాలను నమోదు చేసి, సాంప్రదాయ నక్షత్ర పొంతన (కూట పొంతన) మరియు వైవాహిక జీవిత అనుకూలతను తెలుసుకోండి.",
                 lbl_marriage_title: "వివాహ పొంతన & వైవాహిక అనుకూలత",
                 lbl_male_partner_title: "వరుడి వివరాలు",
                 lbl_female_partner_title: "వధువు వివరాలు",
@@ -4424,20 +4460,20 @@
                 th_rasi: "రాశి",
                 th_degree: "రాశి భాగలు",
                 th_rasi_lord: "రాశ్యాధిపతి",
-                th_nakshatra: "నక్షत्रం",
+                th_nakshatra: "నక్షత్రం",
                 th_pada: "పాదం",
                 th_dignity: "గ్రహ బలం / స్థితి (Dignity)",
-                lbl_rasi_chart: "ರಾಶಿ ಚಕ್ರಂ (D1)",
-                lbl_navamsha_chart: "ನವಾංශ ಚಕ್ರಂ (D9)",
-                sunrise: "ಸೂರ್ಯೋದಯ",
-                sunset: "ಸೂರ್ಯಾಸ್ತಮಯಂ",
-                moonrise: "చంద్రోదయం",
+                lbl_rasi_chart: "రాశి చక్రం (D1)",
+                lbl_navamsha_chart: "నవాంశ చక్రం (D9)",
+                sunrise: "సూర్యోదయం",
+                sunset: "సూర్యాస్తమయం",
+                moonrise: "చन्द्रోదయం",
                 moonset: "చంద్రాస్తమయం",
                 godhuli_muhurta_label: "గోధూళి ముహూర్తం (శుభం)",
-                nishita_muhurta_label: "నిశిత ముహూర్తం (శుభం)",
+                nishita_muhurta_label: "निశిత ముహూర్తం (శుభం)",
                 vijaya_muhurta_label: "విజయ ముహూర్తం (శుభం)",
                 dur_muhurta_label: "దుర్ముహూర్తం (అశుభం)",
-                ahas: "పగటి ప్రమాణం (అಹಸ್)",
+                ahas: "పగటి ప్రమాణం (అहస్)",
                 udayadhi: "ఉదయాది ఘడియలు",
                 kali_year: "కలియుగ సంవత్సరం",
                 panch_wisdom_title: "పంచాంగ నియమాలు & క్యాలెండర్లు",
@@ -4447,7 +4483,7 @@
                 yamagandam_label: "యమగండం (అశుభ సమయం)",
                 gulika_kalam_label: "గుళికాకాలం (సాధారణ/శుభ సమయం)",
                 abhijit_label: "అభిజిత్ ముహూర్తం (శుభ సమయం)",
-                brahma_label: "బ్రహ్మ ముహూర్తం (ఉషఃకాలం)",
+                brahma_label: "బ్రహ్म ముహూర్తం (ఉషఃకాలం)",
                 strength_title: "ముహూర్త నేత్రం & జీవ బలం",
                 netram_label: "నేత్రం (రోజు దృష్టి)",
                 jeevan_label: "జీవన్ (రోజు ప్రాణం)",
@@ -4459,29 +4495,44 @@
                 lbl_horas_desc: "సూర్యోదయం నుండి ప్రతి గంటకు హోరా అధిపతులు మారుతారు. ఆ హోర స్వభావాలను తెలుసుకోవడానికి గంటను ఎంచుకోండి.",
                 lbl_festivals_title: "పండుగలు & శుభ దినాలు",
                 lbl_metadata_birth_title: "జన్మ పత్రిక ఖగోళ వివరాలు",
-                lbl_subtab_basic: "ప్రాథమిక కాన్ఫిగరేషన్",
-                lbl_subtab_advanced: "అధునాతన ఫీచర్లు",
-                lbl_astro_system: "ಜ್ಯೋತಿಷ್ಯ ಪದ್ಧತಿ",
-                lbl_timing_system: "ದಶ ಕಾಲ ಪದ್ಧತಿ",
-                lbl_report_success: "ಜ್ಯೋತಿಷ್ಯ ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಸಿದ್ಧಗೊಂಡಿದೆ",
-                lbl_btn_astro_ai: "ಜ್ಯೋತಿಷ್ಯ AI ವಿಶ್ಲೇಷಣೆ",
-                lbl_btn_download_pdf: "PDF డౌన్‌లోడ్",
-                lbl_shatbalam_title: "ಷಡ್ಬಲ (గ్రహ బలాలు)",
-                lbl_shatbalam_desc: "ಸಾಂದಾಯಿಕ ಜ್ಯೋತಿಷ್ಯ ಶಾಸ್ತ್ರ ನಿಯಮಗಳ ಪ್ರಕಾರ ಗ್ರಹಗಳ ಷಡ್ಬಲ ವಿಶ್ಲೇಷಣೆ.",
-                lbl_ashtakavarga_title: "ಅಷ್ಟಕವರ್ಗ ಬಿಂದುಗಳು",
-                lbl_ashtakavarga_desc: "ರಾಶಿ ಚಕ್ರದಲ್ಲಿ ಗ್ರಹಗಳ ಅನುಕೂಲತೆಯನ್ನು ತಿಳಿಸುವ ಅಷ್ಟಕವರ್ಗ ಬಿಂದುಗಳ ವಿವರ.",
-                lbl_dasa_timeline_title: "ವಿಂಶೋತ್ತರಿ ದಶಾ ಕಾಲಾವಧಿ",
-                lbl_dasa_timeline_desc: "ನಿಮ್ಮ ಜೀವಿತಾವಧಿಯ ಮಹಾದಶೆಗಳು ಮತ್ತು ಭುಕ್ತಿಗಳ ಕಾಲಾನುಕ್ರಮ ವಿಶ್ಲೇಷಣೆ.",
-                lbl_jyothi_ai_title: "AI ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆ",
+                lbl_subtab_basic: "జన్మ వివరాలు",
+                lbl_subtab_advanced: "జ్యోతిష్య సెట్టింగ్స్",
+                lbl_subtab_saved_charts: "సేవ్ చేసిన జాతకాలు",
+                lbl_subtab_chart_history: "గణన చరిత్ర",
+                lbl_history_select_all: "అన్నీ ఎంచుకో",
+                lbl_btn_clear_selected: "ఎంపిక చేసినవి తొలగించు",
+                lbl_btn_clear_all: "అన్నీ తొలగించు",
+                lbl_loading_saved_charts: "జాతకాలు లోడ్ అవుతున్నాయి...",
+                lbl_no_saved_charts: "సేవ్ చేసిన జాతకాలు ఏవీ లేవు.",
+                lbl_error_saved_charts: "జాతకాలను లోడ్ చేయడంలో విఫలమైంది.",
+                lbl_loading_history: "చరిత్ర లోడ్ అవుతోంది...",
+                lbl_no_history: "ఎలాంటి గణన చరిత్ర లేదు.",
+                lbl_btn_load: "లోడ్ చేయి",
+                lbl_btn_save: "సేవ్ చేయి",
+                lbl_btn_share: "షేర్ చేయి",
+                lbl_subtab_basic_config: "ప్రాథమిక కాన్ఫిగరేషన్",
+                lbl_subtab_advanced_features: "అధునాతన ఫీచర్లు",
+                lbl_astro_system: "జ్యోతిష్య పద్ధతి",
+                lbl_timing_system: "దశ కాల పద్ధతి",
+                lbl_report_success: "జ్యోతిష్య నివేదిక విజయవంతంగా రూపొందించబడింది",
+                lbl_btn_astro_ai: "జ్యోతిష్య AI విశ్లేషణ",
+                lbl_btn_download_pdf: "PDF డౌన్‌లోड",
+                lbl_shatbalam_title: "షడ్బలం (గ్రహ బలాలు)",
+                lbl_shatbalam_desc: "సాంప్రదాయ జ్యోతిష్య శాస్త్ర నియమాల ప్రకారం గ్రహాల షడ్బల విశ్లేషణ.",
+                lbl_ashtakavarga_title: "అష్టకవర్గ బిందువులు",
+                lbl_ashtakavarga_desc: "రాశి చక్రంలో గ్రహాల అనుకూలతను తెలిపే అష్టకవర్గ బిందువుల వివరాలు.",
+                lbl_dasa_timeline_title: "వింశోత్తరి దశా చక్రాలు",
+                lbl_dasa_timeline_desc: "మీ జీవితకాల మహాదశలు మరియు భుక్తుల కాలక్రమ విశ్లేషణ.",
+                lbl_jyothi_ai_title: "AI జ్యోతిష్య విశ్లేషణ",
                 lbl_btn_close_ai: "మూసివేయి",
-                lbl_hero_title: "ಸಾಂದಾಯಿಕ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯದಿಂದ ನಿಮ್ಮ ಜೀವನ ಮಾರ್ಗವನ್ನು ತಿಳಿಯಿರಿ",
-                lbl_hero_subtitle: "ವೇದ ಗ್ರಂಥಗಳ ಆಧಾರದ ಮೇಲೆ ರೂಪಿಸಿದ ನಿಖರ ತಿರುಕಣಿತ ಸಿದ್ಧಾಂತ ಜಾತಕ ಚಕ್ರಗಳು ಮತ್ತು ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳು. 6 ಭಾಷೆಗಳಲ್ಲಿ ಲಭ್ಯವಿದೆ.",
-                lbl_hero_cta_chart: "ಉಚಿತ ಜಾತಕ ಚಕ್ರಾನ್ನು ಪಡೆಯಿರಿ",
-                lbl_hero_cta_panchangam: "ನೇಟಿ ಪಂಚಾಂಗ",
-                lbl_hero_trust_texts: "📜 ವೇದ ಶಾಸ್ತ್ರಗಳ ಪ್ರಾಮಾಣಿಕತೆ",
-                lbl_hero_trust_langs: "🌐 ಬೌದ್ಧಿಕ ಭಾಷೆಗಳ ಬೆಂಬಲ",
-                lbl_hero_trust_free: "🪙 ಉಚಿತ ಜನ್ಮ ಕುಂಡಲಿ",
-                lbl_welcome_name: "ನಮಸ್ತೆ",
+                lbl_hero_title: "సాంప్రదాయ వైదిక జ్యోతిష్యంతో మీ జీవిత మార్గాన్ని తెలుసుకోండి",
+                lbl_hero_subtitle: "வேத ഗ്രంథాల ఆధారంగా రూపొందించిన ఖచ్చితమైన తిరుకణిత సిద్ధాంత జాతక చక్రాలు మరియు జ్యోతిష్య విశ్లేషణలు. 6 భాషలలో అందుబాటులో ఉంది.",
+                lbl_hero_cta_chart: "ఉచిత జాతక చక్రాన్ని పొందండి",
+                lbl_hero_cta_panchangam: "నేటి పంచాంగం",
+                lbl_hero_trust_texts: "📜 వేద శాస్త్రాల ప్రామాణికత",
+                lbl_hero_trust_langs: "🌐 బహుభాషా మద్దతు",
+                lbl_hero_trust_free: "🪙 ఉచిత జన్మ కుండలి",
+                lbl_welcome_name: "నమస్తే",
                 lbl_strip_today: "నేడు:",
                 lbl_wizard_title: "మీ జ్యోతిష్య ప్రయాణాన్ని 3 సులువైన దశల్లో ప్రారంభించండి:",
                 lbl_wizard_step_1: "① జన్మ వివరాలను నమోదు చేయండి",
@@ -4528,7 +4579,7 @@
                 lbl_jyothisyam_title: "ജനന ജാതകവും ജ്യോതിഷ ഡാഷ്‌ബോർഡും",
                 lbl_ai_title: "ആസ്ട്രോ AI സംശയനിവാരണം",
                 title_panch: "പഞ്ചാംഗ വിവരങ്ങൾ",
-                nav_btn_home: "പഞ്ചാംഗം",
+                nav_btn_home: "പঞ্চാംഗം",
                 nav_btn_jyothisyam: "ജാതകം",
                 nav_btn_ai: "ആസ്ട്രോ AI",
                 title_gochara: "ഗോചാര ഗ്രഹസ്ഥിതികൾ",
@@ -4537,7 +4588,7 @@
                 nav_btn_marriage: "ജാതകപ്പൊരുത്തം",
                 nav_sign_in: "ലോഗിൻ / രജിസ്ട്രേഷൻ", nav_logout: "ലോഗ് ഔട്ട്", lbl_credits: "ക്രെഡിറ്റുകൾ",
                 lbl_language: "ഭാഷ", lbl_location: "സ്ഥലം", lbl_settings: "ക്രമീകരണങ്ങൾ",
-                set_text_size: "അക്ഷര വലിപ്പം", set_default_page: "ആരംഭ പേജ്", set_panch_system: "പഞ്ചാംഗം",
+                set_text_size: "അക്ഷര വലിപ്പം", set_default_page: "ആരംഭ പേജ്", set_panch_system: "പঞ্চാംഗം",
                 set_lock_location: "സ്ഥലം ലോക്ക് ചെയ്യുക", set_daily_reminder: "ദൈനന്ദിന ഓർമ്മപ്പെടുത്തൽ", set_about: "പതിപ്പ്",
                 lbl_marriage_intro: "ദമ്പതികളുടെ ജനന വിവരങ്ങൾ നൽകി പരമ്പരാഗത നക്ഷത്രപ്പൊരുത്തവും (കൂട്ടപ്പൊരുത്തം) വിവാഹ പൊരുത്ത വിശകലനവും നേടുക.",
                 lbl_marriage_title: "വിവാഹ പൊരുത്തവും കുടുംബ ഐക്യവും",
@@ -4579,7 +4630,7 @@
                 nishita_muhurta_label: "നിശീഥ മുഹൂർത്തം (ശുഭം)",
                 vijaya_muhurta_label: "വിജയ മുഹൂർത്തം (ശുഭം)",
                 dur_muhurta_label: "ദുർമുഹൂർത്തം (അശുഭൻ)",
-                ahas: "പകലിന്റെ அளவு (അഹസ്)",
+                ahas: "പകലിന്റെ അളവ് (അഹസ്)",
                 udayadhi: "ഉദയാതി നാഴിക",
                 kali_year: "കലിയുഗ വർഷം",
                 panch_wisdom_title: "പഞ്ചാംഗ തത്വങ്ങളും കലണ്ടറുകളും",
@@ -4589,7 +4640,7 @@
                 yamagandam_label: "യമകണ്ടകം (അശുഭ സമയം)",
                 gulika_kalam_label: "ഗുളികകാലം (സാധാരണ/ശുഭ സമയം)",
                 abhijit_label: "അഭിജിത്ത് മുഹൂർത്തം (ശുഭ സമയം)",
-                brahma_label: "ബ്രഹ്മмуഹൂർത്തം (അതിരാവിലെ)",
+                brahma_label: "ബ്രഹ്മമുഹൂർത്തം (അതിരാവിലെ)",
                 strength_title: "മുഹൂർത്ത നേത്രവും ജീവബലവും",
                 netram_label: "നേത്രം (ദിവസ ദൃഷ്ടി)",
                 jeevan_label: "ജീവൻ (ദിവസ പ്രാണൻ)",
@@ -4601,8 +4652,23 @@
                 lbl_horas_desc: "സൂര്യോദയം മുതൽ ഓരോ മണിക്കൂറിലും ഹോരാധിപന്മാർ മാറുന്നു. ഹോരയുടെ സ്വഭാവം മനസ്സിലാക്കാൻ സമയം തിരഞ്ഞെടുക്കുക.",
                 lbl_festivals_title: "ഉത്സവങ്ങളും ശുഭദിനങ്ങളും",
                 lbl_metadata_birth_title: "ജാതക ഗണിത വിവരങ്ങൾ",
-                lbl_subtab_basic: "അടിസ്ഥാന ക്രമീകരണം",
-                lbl_subtab_advanced: "വിപുലമായ സവിശേഷತകൾ",
+                lbl_subtab_basic: "ജനന വിവരങ്ങൾ",
+                lbl_subtab_advanced: "ജ്യോതിഷ ക്രമീകരണങ്ങൾ",
+                lbl_subtab_saved_charts: "സേവ് ചെയ്ത ജാതകങ്ങൾ",
+                lbl_subtab_chart_history: "ജാതക ചരിത്രം",
+                lbl_history_select_all: "എല്ലാം തിരഞ്ഞെടുക്കുക",
+                lbl_btn_clear_selected: "തിരഞ്ഞെടുത്തവ ഇല്ലാതാക്കുക",
+                lbl_btn_clear_all: "എല്ലാം ഇല്ലാതാക്കുക",
+                lbl_loading_saved_charts: "ജാതകങ്ങൾ ലോഡ് ചെയ്യുന്നു...",
+                lbl_no_saved_charts: "ജാതകങ്ങൾ ഒന്നും സേവ് ചെയ്തിട്ടില്ല.",
+                lbl_error_saved_charts: "ജാതകങ്ങൾ ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു.",
+                lbl_loading_history: "ചരിത്രം ലോഡ് ചെയ്യുന്നു...",
+                lbl_no_history: "ജാതക ചരിത്രം ഒന്നും ലഭ്യമല്ല.",
+                lbl_btn_load: "തുറക്കുക",
+                lbl_btn_save: "സേവിക്കുക",
+                lbl_btn_share: "പങ്കിടുക",
+                lbl_subtab_basic_config: "അടിസ്ഥാന ക്രമീകരണം",
+                lbl_subtab_advanced_features: "വിപുലമായ സവിശേഷതകൾ",
                 lbl_astro_system: "ജ്യോതിഷ രീതി",
                 lbl_timing_system: "ദശ കാല രീതി",
                 lbl_report_success: "ജ്യോതിഷ റിപ്പോർട്ട് വിജയകരമായി തയ്യാറാക്കി",
@@ -4610,7 +4676,7 @@
                 lbl_btn_download_pdf: "PDF ഡൗൺലോഡ്",
                 lbl_shatbalam_title: "ഷഡ്ബലം (ഗ്രഹ ശക്തികൾ)",
                 lbl_shatbalam_desc: "പരമ്പരാഗത ജ്യോതിഷ ശാസ്ത്ര തത്വങ്ങൾ അനുസരിച്ച് ഗ്രഹങ്ങളുടെ ഷഡ്ബല വിശകലനം.",
-                lbl_ashtakavarga_title: "ಅಷ್ಟಕವರ್ಗ ಬಿಂದುಗಳು",
+                lbl_ashtakavarga_title: "അഷ്ടകവർഗ്ഗ ബിന്ദുക്കൾ",
                 lbl_ashtakavarga_desc: "രാശിചക്രത്തിൽ ഗ്രഹങ്ങളുടെ ശുഭസ്വാധീനം വ്യക്തമാക്കുന്ന അഷ്ടകവർഗ്ഗ ബിന്ദുക്കൾ.",
                 lbl_dasa_timeline_title: "വിംശോത്തരി ദശാകാലങ്ങൾ",
                 lbl_dasa_timeline_desc: "ജീവിതത്തിലെ മഹാദശകളുടെയും അപഹാരങ്ങളുടെയും കാലഗണന.",
@@ -4681,7 +4747,7 @@
                 lbl_language: "ಭಾಷೆ", lbl_location: "ಸ್ಥಳ", lbl_settings: "ಸೆಟ್ಟಿಂಗ್ಸ್",
                 set_text_size: "ಅಕ್ಷರಗಳ ಗಾತ್ರ", set_default_page: "ಪ್ರಾರಂಭ ಪುಟ", set_panch_system: "ಪಂಚಾಂಗ",
                 set_lock_location: "ಸ್ಥಳವನ್ನು ಲಾಕ್ ಮಾಡಿ", set_daily_reminder: "ದೈನಂದಿನ ಜ್ಞಾಪನೆ", set_about: "ಆವೃತ್ತಿ",
-                lbl_marriage_intro: "ವರ-ವಧುಗಳ ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ, ಸಾಂಪ್ರದಾಯಿಕ ನಕ್ಷತ್ರ ಹೊಂದಾಣಿಕೆ (ಕೂಟ ಹೊಂದಾಣಿಕೆ) ಮತ್ತು ವೈವಾಹಿಕ ಹೊಂದಾಣಿಕೆಯನ್ನು ತಿಳಿಯಿರಿ.",
+                lbl_marriage_intro: "ವರ-ವಧುಗಳ ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ, ಸಾंಪ್ರದಾಯಿಕ ನಕ್ಷತ್ರ ಹೊಂದಾಣಿಕೆ (ಕೂಟ ಹೊಂದಾಣಿಕೆ) ಮತ್ತು ವೈವಾಹಿಕ ಹೊಂದಾಣಿಕೆಯನ್ನು ತಿಳಿಯಿರಿ.",
                 lbl_marriage_title: "ವರ-ವಧು ಹೊಂದಾಣಿಕೆ ಮತ್ತು ದಾಂಪತ್ಯ ಸುಖ",
                 lbl_male_partner_title: "ವರನ ವಿವರಗಳು",
                 lbl_female_partner_title: "ವಧುವಿನ ವಿವರಗಳು",
@@ -4743,8 +4809,23 @@
                 lbl_horas_desc: "ಸೂರ್ಯೋದಯದಿಂದ ಪ್ರತಿ ಗಂಟೆಗೆ ಹೋರಾ ಅಧಿಪತಿಗಳು ಬದಲಾಗುತ್ತಾರೆ. ಹೋರಾದ ಸ್ವಭಾವ ತಿಳಿಯಲು ಗಂಟೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ.",
                 lbl_festivals_title: "ಹಬ್ಬಗಳು ಮತ್ತು ಶುಭ ದಿನಗಳು",
                 lbl_metadata_birth_title: "ಜನ್ಮ ಪತ್ರಿಕೆ ಖಗೋಳ ವಿವರಗಳು",
-                lbl_subtab_basic: "ಮೂಲ ಸಂರಚನೆ",
-                lbl_subtab_advanced: "ಸುಧಾರಿತ ವೈಶಿಷ್ಟ್ಯಗಳು",
+                lbl_subtab_basic: "ಜನ್ಮ ವಿವರಗಳು",
+                lbl_subtab_advanced: "ಜ್ಯೋತಿಷ್ಯ ಸೆಟ್ಟಿಂಗ್ಸ್",
+                lbl_subtab_saved_charts: "ಉಳಿಸಿದ ಜಾತಕಗಳು",
+                lbl_subtab_chart_history: "ಲೆಕ್ಕಾಚಾರದ ಇತಿಹಾಸ",
+                lbl_history_select_all: "ಎಲ್ಲವನ್ನೂ ಆಯ್ಕೆಮಾಡಿ",
+                lbl_btn_clear_selected: "ಆಯ್ಕೆ ಮಾಡಿದ್ದನ್ನು ಅಳಿಸಿ",
+                lbl_btn_clear_all: "ಎಲ್ಲವನ್ನೂ ಅಳಿಸಿ",
+                lbl_loading_saved_charts: "ಜಾತಕಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
+                lbl_no_saved_charts: "ಉಳಿಸಿದ ಜಾತಕಗಳು ಯಾವುವೂ ಇಲ್ಲ.",
+                lbl_error_saved_charts: "ಜಾತಕಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ.",
+                lbl_loading_history: "ಇತಿಹಾಸ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
+                lbl_no_history: "ಯಾವುದೇ ಲೆಕ್ಕಾಚಾರದ ಇತಿಹಾಸ ಕಂಡುಬಂದಿಲ್ಲ.",
+                lbl_btn_load: "ಲೋಡ್",
+                lbl_btn_save: "ಉಳಿಸು",
+                lbl_btn_share: "ಹಂಚು",
+                lbl_subtab_basic_config: "ಅಡಿಪಡೆ ಪ್ರೊಫೈಲ್",
+                lbl_subtab_advanced_features: "ಸುಧಾರಿತ ವೈಶಿಷ್ಟ್ಯಗಳು",
                 lbl_astro_system: "ಜ್ಯೋತಿಷ್ಯ ಪದ್ಧತಿ",
                 lbl_timing_system: "ದಶ ಕಾಲ ಪದ್ಧತಿ",
                 lbl_report_success: "ಜ್ಯೋತಿಷ್ಯ ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಸಿದ್ಧಗೊಂಡಿದೆ",
@@ -4771,7 +4852,7 @@
                 lbl_wizard_step_1: "① ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ",
                 lbl_wizard_step_2: "② ಜಾತಕ ಚಕ್ರವನ್ನು ಗಣಿಸಿ",
                 lbl_wizard_step_3: "③ ಉಚಿತ ಕ್ರೆಡಿಟ್‌ಗಳೊಂದಿಗೆ ಮೊದಲ AI ವಿಶ್ಲೇಷಣೆ ಪಡೆಯಿರಿ",
-                lbl_readings_hub_title: "ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳ ಕೇಂದ್ರ",
+                lbl_readings_hub_title: "ಜೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳ ಕೇಂದ್ರ",
                 lbl_hub_chat_title: "ಆಸ್ಟ್ರೋ AI ಸಮಾಲೋಚನೆ",
                 lbl_hub_chat_desc: "ನಿಮ್ಮ ಜಾತಕ ಆಧಾರದ ಮೇಲೆ ವೃತ್ತಿ, ಕೌಟುಂಬಿಕ ಮತ್ತು ವೈಯಕ್ತಿಕ ಸಂದೇಹಗಳನ್ನು ಆಸ್ಟ್ರೋ AI ಸಹಾಯದಿಂದ ನಿವಾರಿಸಿಕೊಳ್ಳಿ.",
                 lbl_hub_remedies_title: "ಗ್ರಹ ಬಲಗಳು ಮತ್ತು ಪರಿಹಾರಗಳು",
@@ -4807,7 +4888,7 @@
                 th_marriage_status: "स्थिति",
                 lbl_marriage_ai_loading: "सम्बन्धों के शास्त्र RAG डेटाबेस से संदर्भ प्राप्त कर गणेश फलादेश तैयार किया जा रहा है...",
                 title: "वैदिक ज्योतिष AI पोर्टल",
-                subtitle: "उच्च-सटीक वैदिक पंचांग एवं शास्त्रोक्त AI मार्गदर्शन",
+                subtitle: "उच्च-सटीक पंचांग एवं शास्त्रोक्त AI मार्गदर्शन",
                 lbl_home_calendar: "वैदिक खगोलीय पंचांग",
                 lbl_jyothisyam_title: "जन्म पत्रिका एवं ज्योतिषीय डैशबोर्ड",
                 lbl_ai_title: "एस्ट्रो AI परामर्श",
@@ -4885,8 +4966,23 @@
                 lbl_horas_desc: "सूर्योदय से प्रत्येक घंटे के शासक ग्रह बदलते हैं। होरा के प्रभाव और गुणों को जानने के लिए संबंधित घंटे पर क्लिक करें।",
                 lbl_festivals_title: "पर्व, त्योहार एवं शुभ दिन",
                 lbl_metadata_birth_title: "जन्म पत्रिका खगोलीय विवरण",
-                lbl_subtab_basic: "मूल सेटअप",
-                lbl_subtab_advanced: "उन्नत सुविधाएँ",
+                lbl_subtab_basic: "जन्म विवरण",
+                lbl_subtab_advanced: "ज्योतिष सेटिंग्स",
+                lbl_subtab_saved_charts: "सहेजे गए चार्ट",
+                lbl_subtab_chart_history: "गणना का इतिहास",
+                lbl_history_select_all: "सभी चुनें",
+                lbl_btn_clear_selected: "चयनित हटाएं",
+                lbl_btn_clear_all: "सभी हटाएं",
+                lbl_loading_saved_charts: "सहेजे गए चार्ट लोड किए जा रहे हैं...",
+                lbl_no_saved_charts: "कोई सहेजा गया चार्ट नहीं है।",
+                lbl_error_saved_charts: "सहेजे गए चार्ट लोड करने में त्रुटि।",
+                lbl_loading_history: "इतिहास लोड किया जा रहा है...",
+                lbl_no_history: "कोई गणना का इतिहास नहीं मिला।",
+                lbl_btn_load: "लोड करें",
+                lbl_btn_save: "सहेजें",
+                lbl_btn_share: "साझा करें",
+                lbl_subtab_basic_config: "बुनियादी विवरण",
+                lbl_subtab_advanced_features: "उन्नत सुविधाएँ",
                 lbl_astro_system: "ज्योतिष पद्धति",
                 lbl_timing_system: "दशा काल पद्धति",
                 lbl_report_success: "कुंडली रिपोर्ट सफलतापूर्वक तैयार हुई",
@@ -4926,6 +5022,7 @@
                 lbl_varshaphala_title: "वार्षिक वर्षफल ज्योतिष विश्लेषण"
             }
         };
+
 
 
         // Planetary translations mapping
@@ -5861,9 +5958,19 @@
             if (festivalsTitle) festivalsTitle.innerText = dict.lbl_festivals_title || "Auspicious Festivals & Observances";
 
             const subtabBasicLbl = document.getElementById('lbl-subtab-basic');
-            if (subtabBasicLbl) subtabBasicLbl.innerText = dict.lbl_subtab_basic || "Basic Configuration";
+            if (subtabBasicLbl) subtabBasicLbl.innerText = dict.lbl_subtab_basic || "Birth Details";
             const subtabAdvancedLbl = document.getElementById('lbl-subtab-advanced');
-            if (subtabAdvancedLbl) subtabAdvancedLbl.innerText = dict.lbl_subtab_advanced || "Advanced Features";
+            if (subtabAdvancedLbl) subtabAdvancedLbl.innerText = dict.lbl_subtab_advanced || "Astro Settings";
+            const subtabSavedChartsLbl = document.getElementById('lbl-subtab-saved-charts');
+            if (subtabSavedChartsLbl) subtabSavedChartsLbl.innerText = dict.lbl_subtab_saved_charts || "Saved Charts";
+            const subtabChartHistoryLbl = document.getElementById('lbl-subtab-chart-history');
+            if (subtabChartHistoryLbl) subtabChartHistoryLbl.innerText = dict.lbl_subtab_chart_history || "Chart History";
+            const historySelectAllLbl = document.getElementById('lbl-history-select-all');
+            if (historySelectAllLbl) historySelectAllLbl.innerText = dict.lbl_history_select_all || "Select All";
+            const btnClearSelectedLbl = document.getElementById('lbl-btn-clear-selected');
+            if (btnClearSelectedLbl) btnClearSelectedLbl.innerHTML = `<i class="fa-solid fa-trash-can"></i> ` + (dict.lbl_btn_clear_selected || "Delete Selected");
+            const btnClearAllLbl = document.getElementById('lbl-btn-clear-all');
+            if (btnClearAllLbl) btnClearAllLbl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ` + (dict.lbl_btn_clear_all || "Clear All");
             const astroSystemLbl = document.getElementById('lbl-astro-system');
             if (astroSystemLbl) astroSystemLbl.innerText = dict.lbl_astro_system || "Astrological System";
             const timingSystemLbl = document.getElementById('lbl-timing-system');
@@ -11348,7 +11455,8 @@
             if (!currentUser) return;
             const token = localStorage.getItem('session_token');
             const listDiv = document.getElementById('saved-charts-list');
-            listDiv.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1;">Loading saved charts...</p>';
+            const dict = localization[currentLang || 'en'] || localization.en;
+            listDiv.innerHTML = `<p style="color: var(--text-secondary); grid-column: 1/-1;">${dict.lbl_loading_saved_charts || "Loading saved charts..."}</p>`;
             
             try {
                 const res = await fetch('/api/user/charts?saved=1', {
@@ -11358,7 +11466,7 @@
                     const charts = await res.json();
                     listDiv.innerHTML = '';
                     if (charts.length === 0) {
-                        listDiv.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">No saved charts yet.</p>';
+                        listDiv.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">${dict.lbl_no_saved_charts || "No saved charts yet."}</p>`;
                         return;
                     }
                     charts.forEach(c => {
@@ -11372,10 +11480,14 @@
                         card.style.flexDirection = 'column';
                         card.style.gap = '8px';
                         
+                        const displayGender = c.gender === 'male' 
+                            ? (currentLang === 'hi' ? 'पुरुष' : currentLang === 'ta' ? 'ஆண்' : currentLang === 'te' ? 'పురుషుడు' : currentLang === 'ml' ? 'പുരുഷൻ' : currentLang === 'kn' ? 'ಪುರುಷ' : 'MALE')
+                            : (currentLang === 'hi' ? 'स्त्री' : currentLang === 'ta' ? 'பெண்' : currentLang === 'te' ? 'స్త్రీ' : currentLang === 'ml' ? 'സ്ത്രീ' : currentLang === 'kn' ? 'ಸ್ತ್ರೀ' : 'FEMALE');
+
                         card.innerHTML = `
                             <div style="font-weight: bold; color: var(--accent-gold); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
                                 <span><i class="fa-solid fa-user"></i> ${c.name}</span>
-                                <span style="font-size: 9px; color: var(--text-muted);">${c.gender.toUpperCase()}</span>
+                                <span style="font-size: 9px; color: var(--text-muted);">${displayGender}</span>
                             </div>
                             <div style="font-size: 11px; color: var(--text-secondary);">
                                 <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
@@ -11383,8 +11495,8 @@
                                 <div style="font-size: 9px; margin-top: 3px; color: var(--text-muted);">Ayanamsa: ${c.ayanamsa} | Style: ${c.chart_style}</div>
                             </div>
                             <div style="display: flex; gap: 8px; margin-top: 5px;">
-                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
-                                <button class="lang-select-btn" onclick="shareSavedChart(${c.id})" title="Share public link" style="padding: 6px 10px; font-size: 10px; justify-content: center;"><i class="fa-solid fa-share-nodes"></i></button>
+                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">${dict.lbl_btn_load || "Load"}</button>
+                                <button class="lang-select-btn" onclick="shareSavedChart(${c.id})" title="${dict.lbl_btn_share || "Share"}" style="padding: 6px 10px; font-size: 10px; justify-content: center;"><i class="fa-solid fa-share-nodes"></i></button>
                                 <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'saved')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         `;
@@ -11393,7 +11505,7 @@
                 }
             } catch (e) {
                 console.error("Error loading saved charts:", e);
-                listDiv.innerHTML = '<p style="color: #e53e3e; grid-column: 1/-1;">Error loading saved charts.</p>';
+                listDiv.innerHTML = `<p style="color: #e53e3e; grid-column: 1/-1;">${dict.lbl_error_saved_charts || "Error loading saved charts."}</p>`;
             }
         }
 
@@ -11401,7 +11513,11 @@
             if (!currentUser) return;
             const token = localStorage.getItem('session_token');
             const listDiv = document.getElementById('chart-history-list');
-            listDiv.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1;">Loading history...</p>';
+            const controlsDiv = document.getElementById('chart-history-controls');
+            const dict = localization[currentLang || 'en'] || localization.en;
+            
+            listDiv.innerHTML = `<p style="color: var(--text-secondary); grid-column: 1/-1;">${dict.lbl_loading_history || "Loading history..."}</p>`;
+            if (controlsDiv) controlsDiv.style.display = 'none';
             
             try {
                 const res = await fetch('/api/user/charts?saved=0', {
@@ -11411,9 +11527,12 @@
                     const charts = await res.json();
                     listDiv.innerHTML = '';
                     if (charts.length === 0) {
-                        listDiv.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">No calculation history found.</p>';
+                        listDiv.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">${dict.lbl_no_history || "No calculation history found."}</p>`;
                         return;
                     }
+                    
+                    if (controlsDiv) controlsDiv.style.display = 'flex';
+                    
                     charts.forEach(c => {
                         const card = document.createElement('div');
                         card.className = 'panchangam-widget';
@@ -11422,22 +11541,32 @@
                         card.style.background = 'rgba(255,255,255,0.01)';
                         card.style.borderRadius = '10px';
                         card.style.display = 'flex';
-                        card.style.flexDirection = 'column';
-                        card.style.gap = '8px';
+                        card.style.flexDirection = 'row';
+                        card.style.alignItems = 'flex-start';
+                        card.style.gap = '12px';
                         
+                        const displayGender = c.gender === 'male' 
+                            ? (currentLang === 'hi' ? 'पुरुष' : currentLang === 'ta' ? 'ஆண்' : currentLang === 'te' ? 'పురుషుడు' : currentLang === 'ml' ? 'പുരുഷൻ' : currentLang === 'kn' ? 'ಪುರುಷ' : 'MALE')
+                            : (currentLang === 'hi' ? 'स्त्री' : currentLang === 'ta' ? 'பெண்' : currentLang === 'te' ? 'స్త్రీ' : currentLang === 'ml' ? 'സ്ത്രീ' : currentLang === 'kn' ? 'ಸ್ತ್ರೀ' : 'FEMALE');
+
                         card.innerHTML = `
-                            <div style="font-weight: bold; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
-                                <span><i class="fa-solid fa-clock-rotate-left"></i> ${c.name}</span>
-                                <span style="font-size: 9px; color: var(--text-muted);">${c.gender.toUpperCase()}</span>
+                            <div style="padding-top: 2px;">
+                                <input type="checkbox" class="history-item-checkbox" data-id="${c.id}" style="cursor: pointer; width: 16px; height: 16px;">
                             </div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">
-                                <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
-                                <div>📍 ${c.pob}</div>
-                            </div>
-                            <div style="display: flex; gap: 8px; margin-top: 5px;">
-                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
-                                <button class="calculate-btn" onclick="saveHistoryChartToCloud(${c.id})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center; background: linear-gradient(135deg, var(--accent-gold), #b7791f); border: none; color: #000;">Save</button>
-                                <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'history')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                                <div style="font-weight: bold; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span><i class="fa-solid fa-clock-rotate-left"></i> ${c.name}</span>
+                                    <span style="font-size: 9px; color: var(--text-muted);">${displayGender}</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">
+                                    <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
+                                    <div>📍 ${c.pob}</div>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                                    <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">${dict.lbl_btn_load || "Load"}</button>
+                                    <button class="calculate-btn" onclick="saveHistoryChartToCloud(${c.id})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center; background: linear-gradient(135deg, var(--accent-gold), #b7791f); border: none; color: #000;">${dict.lbl_btn_save || "Save"}</button>
+                                    <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'history')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
                             </div>
                         `;
                         listDiv.appendChild(card);
@@ -11445,8 +11574,77 @@
                 }
             } catch (e) {
                 console.error("Error loading history:", e);
-                listDiv.innerHTML = '<p style="color: #e53e3e; grid-column: 1/-1;">Error loading history.</p>';
+                listDiv.innerHTML = `<p style="color: #e53e3e; grid-column: 1/-1;">${dict.lbl_error_saved_charts || "Error loading saved charts."}</p>`;
             }
+        }
+
+        function toggleSelectAllHistory(allCb) {
+            const checkboxes = document.querySelectorAll('.history-item-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = allCb.checked;
+            });
+        }
+
+        async function deleteSelectedHistory() {
+            const checkboxes = document.querySelectorAll('.history-item-checkbox:checked');
+            if (checkboxes.length === 0) {
+                showToast("No history records selected.");
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete the ${checkboxes.length} selected history records?`)) return;
+            
+            const token = localStorage.getItem('session_token');
+            let successCount = 0;
+            for (let cb of checkboxes) {
+                const chartId = cb.getAttribute('data-id');
+                try {
+                    const res = await fetch(`/api/user/charts/${chartId}`, {
+                        method: 'DELETE',
+                        headers: { 'x-session-token': token }
+                    });
+                    if (res.ok) {
+                        successCount++;
+                    }
+                } catch (e) {
+                    console.error("Error deleting selected history item:", chartId, e);
+                }
+            }
+            
+            showToast(`Deleted ${successCount} history records.`);
+            const allCb = document.getElementById('chart-history-select-all');
+            if (allCb) allCb.checked = false;
+            loadChartHistoryList();
+        }
+
+        async function clearAllHistory() {
+            const checkboxes = document.querySelectorAll('.history-item-checkbox');
+            if (checkboxes.length === 0) {
+                showToast("No history records found to clear.");
+                return;
+            }
+            if (!confirm("Are you sure you want to clear ALL calculation history? This action cannot be undone.")) return;
+            
+            const token = localStorage.getItem('session_token');
+            let successCount = 0;
+            for (let cb of checkboxes) {
+                const chartId = cb.getAttribute('data-id');
+                try {
+                    const res = await fetch(`/api/user/charts/${chartId}`, {
+                        method: 'DELETE',
+                        headers: { 'x-session-token': token }
+                    });
+                    if (res.ok) {
+                        successCount++;
+                    }
+                } catch (e) {
+                    console.error("Error clearing history item:", chartId, e);
+                }
+            }
+            
+            showToast(`Cleared all ${successCount} history records.`);
+            const allCb = document.getElementById('chart-history-select-all');
+            if (allCb) allCb.checked = false;
+            loadChartHistoryList();
         }
 
         function loadSavedChartDetails(c) {
