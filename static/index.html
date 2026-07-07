@@ -2585,6 +2585,94 @@
             font-size: 12px;
             color: var(--text-secondary);
         }
+
+        /* ════════════════════════════════════════
+           MOBILE BOTTOM NAV & TOUCH POLISH (PHASE 3)
+           ════════════════════════════════════════ */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(4, 14, 44, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-gold);
+            z-index: 1000;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .mobile-nav-item {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            flex: 1;
+            height: 100%;
+            padding: 6px 0;
+            font-size: 11px;
+            font-family: var(--font-body);
+            transition: color 0.2s, transform 0.2s;
+            min-height: 44px; /* Touch target */
+        }
+
+        .mobile-nav-item i {
+            font-size: 18px;
+            color: inherit;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--accent-gold);
+        }
+
+        .mobile-nav-item:active {
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: flex;
+            }
+            main, .page-home, .single-page-content {
+                padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+            }
+            #side-btn-home, #side-btn-jyothisyam, #side-btn-marriage, #side-btn-ai {
+                display: none !important;
+            }
+            button, .btn-primary, .btn-ghost, .btn-danger, .lang-select-btn, .calculate-btn, .sub-tab-btn {
+                min-height: 44px;
+            }
+            .sticky-mobile-calc {
+                position: fixed;
+                bottom: 60px; /* Right above the mobile bottom nav */
+                left: 0;
+                width: 100%;
+                background: rgba(4, 14, 44, 0.95);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                border-top: 1px solid var(--border-gold);
+                padding: 10px 16px;
+                box-sizing: border-box;
+                z-index: 999;
+                margin: 0 !important;
+                display: flex;
+                justify-content: center;
+            }
+            .sticky-mobile-calc button {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+        }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
@@ -3258,9 +3346,11 @@
                         </div>
                     </div>
 
-                    <button class="btn-primary" onclick="generateBirthChart()">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-btn-generate">Draft Birth Chart Report</span>
-                    </button>
+                    <div class="sticky-mobile-calc">
+                        <button class="btn-primary" onclick="generateBirthChart()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-btn-generate">Draft Birth Chart Report</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Saved Charts List Container -->
@@ -3701,7 +3791,7 @@
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-bottom: 25px;">
+                <div class="sticky-mobile-calc" style="text-align: center; margin-bottom: 25px;">
                     <button class="calculate-btn" id="btn-generate-marriage" onclick="generateMarriageCompatibility()" style="padding: 12px 28px; font-size: 13px; min-width: 250px;">
                         Calculate Compatibility
                     </button>
@@ -5482,6 +5572,12 @@
                 if (sideBtn) sideBtn.className = pageId === p ? 'side-nav-item active' : 'side-nav-item';
             });
 
+            // Mirror active state onto the mobile bottom nav items
+            ['home', 'jyothisyam', 'marriage', 'ai'].forEach(p => {
+                const mobBtn = document.getElementById('mob-btn-' + p);
+                if (mobBtn) mobBtn.className = pageId === p ? 'mobile-nav-item active' : 'mobile-nav-item';
+            });
+
             // Toggle page content blocks visibility
             document.getElementById('page-home').style.display = pageId === 'home' ? 'block' : 'none';
             document.getElementById('page-jyothisyam').style.display = pageId === 'jyothisyam' ? 'block' : 'none';
@@ -5625,6 +5721,12 @@
             setText('nav-btn-ai', dict.nav_btn_ai || "Astro AI Chat");
             const marriageNavBtn = document.getElementById('nav-btn-marriage');
             if (marriageNavBtn) marriageNavBtn.innerText = dict.nav_btn_marriage || "Marriage Matching";
+
+            // Mobile Nav
+            setText('lbl-mobile-nav-home', dict.nav_btn_home || "Home (Panchangam)");
+            setText('lbl-mobile-nav-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
+            setText('lbl-mobile-nav-marriage', dict.nav_btn_marriage || "Marriage Matching");
+            setText('lbl-mobile-nav-ai', dict.nav_btn_ai || "Astro AI Chat");
             const marriageIntro = document.getElementById('lbl-marriage-intro');
             if (marriageIntro) marriageIntro.innerText = dict.lbl_marriage_intro || "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.";
             const marriageTitle = document.getElementById('lbl-marriage-title');
@@ -12443,5 +12545,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+        <button class="mobile-nav-item active" id="mob-btn-home" onclick="navigateToPage('home')">
+            <i class="fa-solid fa-house"></i>
+            <span id="lbl-mobile-nav-home">Home</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
+            <i class="fa-solid fa-dharmachakra"></i>
+            <span id="lbl-mobile-nav-jyothisyam">Jyothisyam</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-btn-marriage" onclick="navigateToPage('marriage')">
+            <i class="fa-solid fa-heart"></i>
+            <span id="lbl-mobile-nav-marriage">Marriage</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-btn-ai" onclick="navigateToPage('ai')">
+            <i class="fa-solid fa-comments"></i>
+            <span id="lbl-mobile-nav-ai">AI Chat</span>
+        </button>
+    </nav>
 </body>
 </html>
