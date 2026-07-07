@@ -255,6 +255,10 @@ WHATSAPP_PHONE_ID = os.environ.get("WHATSAPP_PHONE_ID", "")
 WHATSAPP_ENABLED = int(os.environ.get("WHATSAPP_ENABLED", "0"))
 WHATSAPP_WEBHOOK_SECRET = os.environ.get("WHATSAPP_WEBHOOK_SECRET", "")
 WHATSAPP_VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "")
+# Meta Graph API base + version — env-overridable so a version bump (Meta
+# deprecates versions periodically) is config, not a code edit.
+WHATSAPP_GRAPH_BASE = os.environ.get("WHATSAPP_GRAPH_BASE", "https://graph.facebook.com")
+WHATSAPP_GRAPH_VERSION = os.environ.get("WHATSAPP_GRAPH_VERSION", "v19.0")
 
 # WhatsApp Templates
 WHATSAPP_TEMPLATE_REPORT_READY = {

@@ -203,22 +203,23 @@ check("gift: grant on unknown order id is a no-op", _gx is False and _infox is N
 # configured in the test env, chapter generation raises deterministically.
 _rep_user = _mk_user("report_fail@test", 300)
 _report_id = "testreport123"
+# Simulate the state after a 150-credit debit: the row records credits_charged
+# so the failure path can refund exactly that much.
+app.debit_user_credits(_rep_user, -150, "download_pdf_premium", "debit for test")
+_balance_after_debit = _balance(_rep_user)
 _conn = connect_db()
 _conn.execute(
-    "INSERT INTO pdf_reports (id, user_id, status, client_name, place_name) "
-    "VALUES (?, ?, 'pending', 'Tester', 'Chennai')",
+    "INSERT INTO pdf_reports (id, user_id, status, client_name, place_name, credits_charged) "
+    "VALUES (?, ?, 'pending', 'Tester', 'Chennai', 150)",
     (_report_id, _rep_user),
 )
 _conn.commit()
 _conn.close()
 
-# Simulate the state after a 150-credit debit, then run the (failing) builder.
-app.debit_user_credits(_rep_user, -150, "download_pdf_premium", "debit for test")
-_balance_after_debit = _balance(_rep_user)
 app._build_premium_report(
-    _report_id, _rep_user, 150, {"metadata": {"latitude": 13.0, "longitude": 80.0},
-                                 "panchangam": {}, "placements": {}},
-    "Tester", "Chennai", "south", "en", None, False,
+    _report_id, _rep_user, {"metadata": {"latitude": 13.0, "longitude": 80.0},
+                            "panchangam": {}, "placements": {}},
+    "Tester", "Chennai", "south", "en",
 )
 _conn = connect_db()
 _row = _conn.execute("SELECT status FROM pdf_reports WHERE id = ?", (_report_id,)).fetchone()
@@ -226,6 +227,31 @@ _conn.close()
 check("report: failed generation marks status 'failed'", _row and _row[0] == "failed")
 check("report: failed generation refunds the debit",
       _balance(_rep_user) == _balance_after_debit + 150)
+# Idempotent: the crash-recovery sweep on the same (already-failed) report must
+# NOT refund a second time.
+app._fail_and_refund_report(_report_id, "double-call guard")
+check("report: refund is idempotent (no double refund)",
+      _balance(_rep_user) == _balance_after_debit + 150)
+
+# Crash-recovery sweep: a report left 'pending' by a dead worker is failed and
+# refunded on the next startup.
+_reap_user = _mk_user("report_reap@test", 0)
+app.debit_user_credits(_reap_user, -150, "download_pdf_premium", "debit for reap test")
+_reap_after_debit = _balance(_reap_user)
+_conn = connect_db()
+_conn.execute(
+    "INSERT INTO pdf_reports (id, user_id, status, client_name, place_name, credits_charged) "
+    "VALUES ('reap123', ?, 'pending', 'Reap', 'Chennai', 150)",
+    (_reap_user,),
+)
+_conn.commit(); _conn.close()
+app._reap_stranded_reports()
+_conn = connect_db()
+_reap_status = _conn.execute("SELECT status FROM pdf_reports WHERE id = 'reap123'").fetchone()[0]
+_conn.close()
+check("report: startup sweep fails a stranded 'pending' report", _reap_status == "failed")
+check("report: startup sweep refunds the stranded debit",
+      _balance(_reap_user) == _reap_after_debit + 150)
 
 
 # ── WhatsApp webhook: signature verification + STOP auto opt-out ─────────────

@@ -9,7 +9,9 @@ from config import (
     WHATSAPP_ENABLED,
     WHATSAPP_TEMPLATE_REPORT_READY,
     WHATSAPP_TEMPLATE_DAILY_DIGEST,
-    WHATSAPP_WEBHOOK_SECRET
+    WHATSAPP_WEBHOOK_SECRET,
+    WHATSAPP_GRAPH_BASE,
+    WHATSAPP_GRAPH_VERSION,
 )
 
 logger = logging.getLogger("vedic.whatsapp")
@@ -41,7 +43,7 @@ def send_whatsapp_template(to_phone: str, template_name: str, language_code: str
         logger.warning("WhatsApp token or Phone ID not configured. Message not sent.")
         return False
 
-    url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_ID}/messages"
+    url = f"{WHATSAPP_GRAPH_BASE}/{WHATSAPP_GRAPH_VERSION}/{WHATSAPP_PHONE_ID}/messages"
     headers = {
         "Authorization": f"Bearer {WHATSAPP_TOKEN}",
         "Content-Type": "application/json"

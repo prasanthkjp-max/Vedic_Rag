@@ -7601,27 +7601,38 @@
                 if (!res.ok) continue;
                 const data = await res.json();
                 if (data.status === 'ready') {
-                    const fileRes = await apiFetch(data.download_url);
-                    if (fileRes.ok) {
-                        const blob = await fileRes.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `Premium_Life_Report_${name.replace(/ /g, '_')}.pdf`;
-                        document.body.appendChild(a); a.click(); a.remove();
-                        closePdfSectionModal();
+                    let downloaded = false;
+                    try {
+                        const fileRes = await apiFetch(data.download_url);
+                        if (fileRes.ok) {
+                            const blob = await fileRes.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `Premium_Life_Report_${name.replace(/ /g, '_')}.pdf`;
+                            document.body.appendChild(a); a.click(); a.remove();
+                            downloaded = true;
+                            closePdfSectionModal();
+                        }
+                    } catch (e) { /* fall through to the error notice */ }
+                    if (!downloaded) {
+                        alert("Your report is ready but the download didn't start. Open your profile and try the link again shortly.");
                     }
+                    // Reconcile the header balance with the server's truth so the
+                    // optimistic decrement can never drift.
+                    await initAuth();
                     return;
                 }
                 if (data.status === 'failed') {
                     alert("The premium report could not be generated — your credits have been refunded. Please try again.");
-                    if (currentUser && !currentUser.subscription_active) {
-                        currentUser.credit_balance = (currentUser.credit_balance || 0) + PREMIUM_PDF_CREDITS;
-                        updateAuthUI();
-                    }
+                    // Re-sync the true server balance (the refund landed server-side).
+                    await initAuth();
                     return;
                 }
             }
+            // Timed out waiting: reconcile the balance in case the server has
+            // since failed-and-refunded the job.
+            await initAuth();
             alert("The report is taking longer than expected. It will be delivered on WhatsApp if you've opted in; you can also check back shortly.");
         }
 
@@ -10109,16 +10120,19 @@
             }
         }
 
+        // Held in a JS var (not a hidden DOM node — innerText of a display:none
+        // element returns '' in Blink/WebKit, which would copy nothing).
+        let currentGiftShareUrl = '';
         function showGiftCard(code, shareUrl) {
             document.getElementById('gift-card-code').innerText = code;
-            document.getElementById('gift-card-share-url').innerText = shareUrl || (window.location.origin + '/gift/' + code);
+            currentGiftShareUrl = shareUrl || (window.location.origin + '/gift/' + code);
             document.getElementById('gift-card-modal').style.display = 'flex';
         }
         function closeGiftCard() {
             document.getElementById('gift-card-modal').style.display = 'none';
         }
         function copyGiftLink() {
-            const url = document.getElementById('gift-card-share-url').innerText;
+            const url = currentGiftShareUrl;
             navigator.clipboard.writeText(url).then(
                 () => alert("Share link copied!"),
                 () => alert("Copy failed — the link is: " + url)
@@ -11646,7 +11660,6 @@
                 <button class="lang-select-btn" onclick="copyGiftLink()" style="padding: 8px 14px; font-size: 11px;"><i class="fa-solid fa-link"></i> Copy share link</button>
                 <button class="calculate-btn" onclick="closeGiftCard()" style="padding: 8px 16px; font-size: 11px;">Done</button>
             </div>
-            <div id="gift-card-share-url" style="display:none;"></div>
         </div>
     </div>
 

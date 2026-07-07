@@ -567,10 +567,14 @@ def init_user_db():
         place_name TEXT NOT NULL,
         file_path TEXT,
         error_message TEXT,
+        credits_charged INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """)
+    # Older DBs created before the credits_charged column: add it idempotently
+    # so the crash-recovery sweep can refund stranded reports.
+    add_col("credits_charged", "INTEGER DEFAULT 0", "pdf_reports")
 
     # Feature C additions to existing tables
     add_col("whatsapp_opt_in", "INTEGER DEFAULT 0")
@@ -720,11 +724,13 @@ def debit_user_credits(user_id: int, amount: int, action_type: str, details: str
 
 # LLM-backed actions — the ones worth rate-limiting and counting against the
 # subscriber soft cap (each costs a real upstream API call). Free local math
-# (chart/panchangam) and the PDF report are deliberately excluded.
+# (chart/panchangam) and the deterministic basic PDF are deliberately excluded.
+# The premium PDF fans out to several LLM calls, so it IS metered — otherwise a
+# subscriber could spin up uncapped generations for free.
 LLM_ACTIONS = {
     "query", "ai_predict", "ai_predict_marriage", "ai_predict_chat",
     "ai_predict_varshaphala", "ai_remedies", "ai_predict_compatibility",
-    "ai_predict_prashna",
+    "ai_predict_prashna", "download_pdf_premium",
 }
 
 # Per-user sliding-window request log for rate limiting. In-memory is sufficient
@@ -1781,15 +1787,76 @@ def _set_report_status(report_id, status, file_path=None, error_message=None):
         conn.close()
 
 
-def _build_premium_report(report_id, user_id, charged, chart_data, client_name,
-                          place_name, visual_style, lang, phone, whatsapp_opt_in):
+def _fail_and_refund_report(report_id, error_message):
+    """Mark a report failed and refund its debit exactly once. Idempotent: the
+    refund is gated on the row's own `credits_charged`, which is zeroed inside
+    the same transaction, so a double call (worker + startup sweep) can't
+    double-refund. Safe to call from a background thread (own connection)."""
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("BEGIN IMMEDIATE")
+        row = cursor.execute(
+            "SELECT user_id, status, credits_charged FROM pdf_reports WHERE id = ?",
+            (report_id,),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            return
+        user_id, status, charged = row[0], row[1], (row[2] or 0)
+        if status == "ready":
+            conn.rollback()  # never refund a delivered report
+            return
+        if charged > 0:
+            cursor.execute(
+                "UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+                (charged, user_id),
+            )
+            cursor.execute(
+                "INSERT INTO credit_logs (user_id, amount, action_type, details) "
+                "VALUES (?, ?, 'refund', ?)",
+                (user_id, charged, f"Refunded {charged} credits after failed premium report {report_id}"),
+            )
+        cursor.execute(
+            "UPDATE pdf_reports SET status = 'failed', credits_charged = 0, error_message = ? WHERE id = ?",
+            (str(error_message)[:500], report_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _get_user_by_id(user_id):
+    """Fetch the WhatsApp-delivery fields for a user id (no session needed).
+    Used by the async report worker to re-check consent at delivery time."""
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT phone_number, whatsapp_opt_in FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    return {"phone_number": row[0], "whatsapp_opt_in": bool(row[1])}
+
+
+def _build_premium_report(report_id, user_id, chart_data, client_name,
+                          place_name, visual_style, lang):
     """Background worker: generate the premium PDF, mark the report ready, and
-    (if opted in) push a WhatsApp report_ready notification with a signed link.
-    On ANY failure, mark failed and refund the credits that were debited."""
+    (if the user is opted in AT DELIVERY TIME) push a WhatsApp report_ready
+    notification with a signed link. On ANY failure — including a model that
+    returns no chapter content — mark failed and refund via the idempotent
+    _fail_and_refund_report."""
     try:
         localized = chart_data.copy()
         localized["panchangam"] = get_regional_panchangam(chart_data, lang)
         chapters = _generate_premium_chapters(chart_data, client_name, place_name, lang)
+        # Guard against a silent empty reading: if the model returned no chapter
+        # text, the "life report" would ship with only the deterministic tables
+        # despite the premium charge. Treat that as a failure and refund.
+        if not any((c or "").strip() for c in chapters):
+            raise RuntimeError("AI chapter generation returned no content")
 
         safe_name = _safe_slug(client_name)
         pdf_path = os.path.join(REPORTS_DIR, f"premium_{report_id}_{safe_name}.pdf")
@@ -1802,20 +1869,18 @@ def _build_premium_report(report_id, user_id, charged, chart_data, client_name,
         _set_report_status(report_id, "ready", file_path=pdf_path)
         logger.info("Premium report %s ready for user %s", report_id, user_id)
 
-        # WhatsApp delivery — only when the user has explicitly opted in.
-        if WHATSAPP_ENABLED and whatsapp_opt_in and phone:
+        # WhatsApp delivery — re-read consent NOW (not at dispatch) so a STOP or
+        # profile opt-out during generation is honored.
+        fresh = _get_user_by_id(user_id)
+        if WHATSAPP_ENABLED and fresh and fresh.get("whatsapp_opt_in") and fresh.get("phone_number"):
             try:
                 link = _signed_report_url(report_id)
-                send_report_ready_notification(phone, lang, client_name, link)
+                send_report_ready_notification(fresh["phone_number"], lang, client_name, link)
             except Exception as e:
                 logger.warning("Report %s WhatsApp notify failed: %s", report_id, e)
     except Exception as e:
         logger.error("Premium report %s failed: %s", report_id, e)
-        _set_report_status(report_id, "failed", error_message=str(e)[:500])
-        # Refund the debit through the same ledger mechanism as sync failures.
-        if charged and charged > 0:
-            debit_user_credits(user_id, charged, "refund",
-                               f"Refunded {charged} credits after failed premium report {report_id}")
+        _fail_and_refund_report(report_id, str(e))
 
 
 class ReportStatusResponse(BaseModel):
@@ -1900,31 +1965,55 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
 
 def _start_premium_report(req: PdfDownloadRequest, token: str):
     """Debit the premium PDF cost, record a pending report, and dispatch async
-    generation. Returns the report_id immediately so the client can poll."""
+    generation. Returns the report_id immediately so the client can poll. If
+    anything between the debit and the worker launch fails, the debit is
+    refunded so a caller can never be charged for a job that never started."""
     user = check_credits_or_raise(token, CREDIT_COST_PDF_PREMIUM, "download_pdf_premium")
-    report_id = uuid.uuid4().hex
+    charged = user.get("charged") or 0
+    try:
+        report_id = uuid.uuid4().hex
+        conn = connect_db(DB_PATH)
+        try:
+            # Persist the charged amount so the crash-recovery sweep (and the
+            # failure path) can refund a stranded report exactly once.
+            conn.execute(
+                "INSERT INTO pdf_reports (id, user_id, status, client_name, place_name, credits_charged) "
+                "VALUES (?, ?, 'pending', ?, ?, ?)",
+                (report_id, user["id"], req.client_name, req.place_name, charged),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        # Run generation off the request thread. A daemon thread matches the
+        # existing llm_stream worker pattern and keeps the single-process
+        # deployment simple. Consent (phone/opt-in) is re-read at delivery time.
+        worker = threading.Thread(
+            target=_build_premium_report,
+            args=(report_id, user["id"], req.chart_data,
+                  req.client_name, req.place_name, req.visual_style, req.lang),
+            daemon=True,
+        )
+        worker.start()
+    except Exception as e:
+        logger.error("Failed to start premium report: %s", e)
+        refund_user_credits(user, "download_pdf_premium")
+        raise HTTPException(status_code=500, detail="Could not start the premium report.")
+    return {"report_id": report_id, "status": "pending"}
+
+
+def _reap_stranded_reports():
+    """On startup, fail-and-refund any report still 'pending' — its worker
+    thread died with the previous process and cannot be resumed. Idempotent via
+    _fail_and_refund_report (credits_charged is zeroed as it refunds)."""
     conn = connect_db(DB_PATH)
     try:
-        conn.execute(
-            "INSERT INTO pdf_reports (id, user_id, status, client_name, place_name) "
-            "VALUES (?, ?, 'pending', ?, ?)",
-            (report_id, user["id"], req.client_name, req.place_name),
-        )
-        conn.commit()
+        rows = conn.execute("SELECT id FROM pdf_reports WHERE status = 'pending'").fetchall()
     finally:
         conn.close()
-
-    # Run generation off the request thread. A daemon thread matches the existing
-    # llm_stream worker pattern and keeps the single-process deployment simple.
-    worker = threading.Thread(
-        target=_build_premium_report,
-        args=(report_id, user["id"], user.get("charged") or 0, req.chart_data,
-              req.client_name, req.place_name, req.visual_style, req.lang,
-              user.get("phone_number"), user.get("whatsapp_opt_in")),
-        daemon=True,
-    )
-    worker.start()
-    return {"report_id": report_id, "status": "pending"}
+    for (rid,) in rows:
+        logger.warning("Reaping stranded premium report %s (process restart)", rid)
+        _fail_and_refund_report(rid, "Server restarted during generation")
 
 
 @app.get("/api/report-status/{report_id}")
@@ -2781,6 +2870,11 @@ def profile_update(req: ProfileUpdateRequest, request: Request):
         params.append(1 if req.whatsapp_opt_in else 0)
         updates.append("whatsapp_opt_in_at = ?")
         params.append(datetime.utcnow().isoformat() if req.whatsapp_opt_in else None)
+    elif new_phone == "":
+        # Clearing the phone in this request revokes any standing consent so we
+        # never keep an opt-in flag with no number to deliver to.
+        updates.append("whatsapp_opt_in = 0")
+        updates.append("whatsapp_opt_in_at = NULL")
 
     if updates:
         params.append(user["id"])
@@ -4767,22 +4861,25 @@ def digest_subscribe(req: DigestSubscribeRequest, request: Request):
             detail="Save your birth details in your profile first — the daily digest is personalised to your chart.",
         )
     lang = req.language or user.get("language") or "en"
-    # Resolve delivery channels: default email-only; validate the enum; and
-    # never enable the whatsapp channel without a validated number + opt-in.
-    requested = req.channels if req.channels is not None else ["email"]
-    channels = [c for c in requested if c in DIGEST_CHANNELS] or ["email"]
-    if "whatsapp" in channels and not (user.get("whatsapp_opt_in") and user.get("phone_number")):
-        raise HTTPException(
-            status_code=400,
-            detail="Enable WhatsApp delivery (add a number and opt in) before choosing the WhatsApp channel.",
-        )
-    channels_str = ",".join(channels)
     conn = connect_db(DB_PATH)
     try:
         cursor = conn.cursor()
         row = cursor.execute(
-            "SELECT id FROM digest_subscriptions WHERE user_id = ?", (user["id"],)
+            "SELECT id, channels FROM digest_subscriptions WHERE user_id = ?", (user["id"],)
         ).fetchone()
+        # Resolve delivery channels: when the client omits `channels`, PRESERVE
+        # the existing selection (a plain re-subscribe must not silently drop a
+        # WhatsApp channel the user already enabled) rather than resetting to
+        # email-only. Validate the enum; never enable whatsapp without consent.
+        existing = (row[1].split(",") if (row and row[1]) else ["email"])
+        requested = req.channels if req.channels is not None else existing
+        channels = [c for c in requested if c in DIGEST_CHANNELS] or ["email"]
+        if "whatsapp" in channels and not (user.get("whatsapp_opt_in") and user.get("phone_number")):
+            raise HTTPException(
+                status_code=400,
+                detail="Enable WhatsApp delivery (add a number and opt in) before choosing the WhatsApp channel.",
+            )
+        channels_str = ",".join(channels)
         if row:
             cursor.execute(
                 "UPDATE digest_subscriptions SET enabled = 1, language = ?, channels = ? WHERE user_id = ?",
@@ -4914,9 +5011,11 @@ def whatsapp_webhook_verify(request: Request):
     token matches WHATSAPP_VERIFY_TOKEN. Fails closed when unconfigured."""
     params = request.query_params
     mode = params.get("hub.mode")
-    token = params.get("hub.verify_token")
+    token = params.get("hub.verify_token") or ""
     challenge = params.get("hub.challenge", "")
-    if mode == "subscribe" and WHATSAPP_VERIFY_TOKEN and token == WHATSAPP_VERIFY_TOKEN:
+    # Constant-time compare of the verify token (a secret), consistent with the
+    # signature checks elsewhere; fails closed when the token is unconfigured.
+    if mode == "subscribe" and WHATSAPP_VERIFY_TOKEN and secrets.compare_digest(token, WHATSAPP_VERIFY_TOKEN):
         # Meta expects the raw challenge echoed back as text/plain.
         return PlainTextResponse(challenge)
     raise HTTPException(status_code=403, detail="Verification failed.")
@@ -5635,6 +5734,10 @@ def read_root():
         os.path.join(STATIC_DIR, "index.html"),
         headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
     )
+
+# Recover any premium reports left 'pending' by a previous process (their
+# worker threads died on shutdown): fail-and-refund them so no credits are lost.
+_reap_stranded_reports()
 
 # Mount static files folder
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
