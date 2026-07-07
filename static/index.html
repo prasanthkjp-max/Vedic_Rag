@@ -10389,6 +10389,7 @@
         function openProfileModal() {
             if (!currentUser) return;
             document.getElementById('profile-modal').style.display = 'flex';
+            switchProfileTab('settings');
             
             document.getElementById('profile-full-name').innerText = currentUser.full_name || "Guest";
             document.getElementById('profile-email').innerText = currentUser.email || "";
@@ -10490,12 +10491,127 @@
             }
         }
 
+        function switchProfileTab(tabId) {
+            // Reset tab button states and hide/show panes
+            ['settings', 'saved', 'billing'].forEach(id => {
+                const btn = document.getElementById('profile-tab-btn-' + id);
+                if (btn) btn.className = id === tabId ? 'sub-tab-btn active' : 'sub-tab-btn';
+                
+                const pane = document.getElementById('profile-pane-' + id);
+                if (pane) pane.style.display = id === tabId ? 'block' : 'none';
+            });
+
+            if (tabId === 'saved') {
+                loadSavedProfilesTab();
+            } else if (tabId === 'billing') {
+                loadUsageDashboard();
+            }
+        }
+
+        async function loadSavedProfilesTab() {
+            const listDiv = document.getElementById('modal-saved-profiles-list');
+            if (!listDiv) return;
+
+            // Render skeleton shimmer loaders
+            listDiv.innerHTML = `
+                <div class="skeleton" style="height: 70px; border-radius: 10px; width: 100%; margin-bottom: 10px;"></div>
+                <div class="skeleton" style="height: 70px; border-radius: 10px; width: 100%; margin-bottom: 10px;"></div>
+                <div class="skeleton" style="height: 70px; border-radius: 10px; width: 100%; margin-bottom: 10px;"></div>
+            `;
+
+            const token = localStorage.getItem('session_token');
+            try {
+                const res = await fetch('/api/user/charts?saved=1', {
+                    headers: { 'x-session-token': token }
+                });
+                
+                // Add simulated delay (600ms) to showcase the skeleton shimmer
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                if (res.ok) {
+                    const charts = await res.json();
+                    listDiv.innerHTML = '';
+                    if (charts.length === 0) {
+                        listDiv.innerHTML = '<p style="color: var(--text-muted); font-style: italic; font-size: 11px;">No saved profiles yet.</p>';
+                        return;
+                    }
+                    charts.forEach(c => {
+                        const card = document.createElement('div');
+                        card.className = 'panchangam-widget';
+                        card.style.padding = '12px 15px';
+                        card.style.border = '1px solid var(--border-gold)';
+                        card.style.background = 'rgba(255,255,255,0.01)';
+                        card.style.borderRadius = '10px';
+                        card.style.display = 'flex';
+                        card.style.justifyContent = 'space-between';
+                        card.style.alignItems = 'center';
+                        card.style.gap = '10px';
+
+                        card.innerHTML = `
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <div style="font-weight: bold; color: var(--accent-gold); font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-user"></i> ${c.name}
+                                    <span style="font-size: 9px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${c.relationship.toUpperCase()}</span>
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">
+                                    <span>📅 ${c.dob}  ⏰ ${c.tob}</span> | <span>📍 ${c.pob}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="calculate-btn" onclick="selectProfile(${JSON.stringify(c).replace(/"/g, '&quot;')}); closeProfileModal();" style="padding: 4px 10px; font-size: 10px; min-height: 36px;">Select</button>
+                                <button class="lang-select-btn" onclick="deleteSavedProfileInModal(${c.id})" style="padding: 4px 8px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; min-width: 30px; min-height: 36px;"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        `;
+                        listDiv.appendChild(card);
+                    });
+                } else {
+                    listDiv.innerHTML = '<p style="color: #e53e3e; font-size: 11px;">Error loading saved profiles.</p>';
+                }
+            } catch (e) {
+                console.error("Error loading saved profiles:", e);
+                listDiv.innerHTML = '<p style="color: #e53e3e; font-size: 11px;">Error loading saved profiles.</p>';
+            }
+        }
+
+        async function deleteSavedProfileInModal(chartId) {
+            if (confirm("Are you sure you want to delete this profile?")) {
+                const token = localStorage.getItem('session_token');
+                try {
+                    const res = await fetch(`/api/user/charts/${chartId}`, {
+                        method: 'DELETE',
+                        headers: { 'x-session-token': token }
+                    });
+                    if (res.ok) {
+                        showToast("Profile deleted successfully.");
+                        loadSavedProfilesTab();
+                        if (typeof refreshProfileChips === 'function') refreshProfileChips();
+                        if (typeof refreshSavedChartsList === 'function') refreshSavedChartsList();
+                    } else {
+                        showToast("Failed to delete profile.");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast("Error deleting profile.");
+                }
+            }
+        }
+
         async function loadUsageDashboard() {
             const usedEl = document.getElementById('usage-used-month');
             const recentEl = document.getElementById('usage-recent');
-            if (recentEl) recentEl.innerHTML = '<span style="opacity: 0.7;">Loading recent activity…</span>';
+            if (recentEl) {
+                recentEl.innerHTML = `
+                    <div class="skeleton" style="height: 20px; border-radius: 4px; width: 100%; margin-bottom: 6px;"></div>
+                    <div class="skeleton" style="height: 20px; border-radius: 4px; width: 100%; margin-bottom: 6px;"></div>
+                    <div class="skeleton" style="height: 20px; border-radius: 4px; width: 100%; margin-bottom: 6px;"></div>
+                `;
+            }
             try {
                 const res = await apiFetch('/api/billing/usage');
+                
+                // Add simulated delay (600ms) to showcase the skeleton shimmer
+                await new Promise(resolve => setTimeout(resolve, 600));
+
                 if (!res.ok) throw new Error('usage fetch failed');
                 const u = await res.json();
                 if (usedEl) usedEl.innerText = (u.credits_used_this_month || 0).toLocaleString();
@@ -12325,174 +12441,202 @@
 
     <!-- User Dashboard / Profile Modal -->
     <div id="profile-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 420px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
+        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 480px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
             <button onclick="closeProfileModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-user-astronaut"></i> User Dashboard
             </h3>
-            
-            <!-- Profile Details -->
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Full Name:</span>
-                    <span id="profile-full-name" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Email Address:</span>
-                    <span id="profile-email" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Phone Number:</span>
-                    <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Credit Balance:</span>
-                    <span style="font-size: 11px; font-weight: bold; color: var(--accent-gold);"><span id="profile-credits-count">0</span> Credits</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Subscription Status:</span>
-                    <span id="profile-sub-status" style="font-size: 11px; font-weight: bold; color: #48BB78;">Free Tier</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Refer &amp; Earn:</span>
-                    <span style="display: inline-flex; align-items: center; gap: 6px;">
-                        <strong id="profile-referral-code" style="font-size: 11px; color: var(--accent-gold); letter-spacing: 1px;">--</strong>
-                        <button onclick="copyReferralCode()" title="Copy referral code" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold); border-radius: 5px; font-size: 10px; padding: 2px 6px; cursor: pointer;"><i class="fa-solid fa-copy"></i></button>
-                    </span>
-                </div>
-            </div>
 
-            <!-- Account Preferences -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Account Preferences</h4>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
-                <div class="input-group">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Phone Number</label>
-                    <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
-                </div>
-                <div class="input-group">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Preferred OTP/Alerts Channel</label>
-                    <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
-                        <option value="sms">SMS</option>
-                    </select>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                    <label for="profile-in-digest" id="lbl-digest-optin" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">🌅 Daily Panchangam &amp; Transit Digest (email)</label>
-                    <input type="checkbox" id="profile-in-digest" onchange="toggleDailyDigest(this.checked)" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                    <label for="profile-in-whatsapp" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">💬 WhatsApp delivery (report-ready alerts &amp; digest). Requires a valid number above. Reply STOP anytime to opt out.</label>
-                    <input type="checkbox" id="profile-in-whatsapp" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
-                </div>
-                <button class="calculate-btn" onclick="saveProfilePreferences()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Preferences</button>
-            </div>
-
-            <!-- Usage Dashboard (populated from /api/billing/usage) -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Usage</h4>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                    <span>Tokens used this month</span>
-                    <span><strong id="usage-used-month" style="color: #fff;">0</strong></span>
-                </div>
-                <div id="usage-recent" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: var(--text-secondary);">
-                    <span style="opacity: 0.7;">Loading recent activity…</span>
-                </div>
-            </div>
-
-            <!-- Astrology Personal Info Settings -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Personal Birth Info (For Auto-Chart Predictions)</h4>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
-                <div class="input-group">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Full Name</label>
-                    <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px;">
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="input-group">
-                        <label style="font-size: 10px; color: var(--text-secondary);">Birth Date</label>
-                        <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
-                    </div>
-                    <div class="input-group">
-                        <label style="font-size: 10px; color: var(--text-secondary);">Birth Time</label>
-                        <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
-                    </div>
-                </div>
-                <div class="input-group" style="position: relative;">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Place of Birth</label>
-                    <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
-                    <div id="profile-pob-suggestions" class="suggestions-dropdown" style="display: none; top: 100%;"></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="input-group">
-                        <label style="font-size: 10px; color: var(--text-secondary);">Longitude</label>
-                        <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
-                    </div>
-                    <div class="input-group">
-                        <label style="font-size: 10px; color: var(--text-secondary);">Latitude</label>
-                        <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Gender</label>
-                    <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </div>
-                <button class="calculate-btn" onclick="saveProfileBirthInfo()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Birth Info</button>
-            </div>
-            
-            <!-- Purchase Options -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Cosmic Tokens & Billing</h4>
-            
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <!-- Token Packs (INR) -->
-                <div style="display: flex; gap: 10px;">
-                    <button class="lang-select-btn" onclick="buyCreditPackage(500)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
-                        🪙 Pocket<br>500 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span>
-                    </button>
-                    <button class="lang-select-btn" onclick="buyCreditPackage(1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
-                        🪙 Kundli<br>1,125 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span>
-                    </button>
-                    <button class="lang-select-btn" onclick="buyCreditPackage(5000)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
-                        🪙 Astro Pro<br>5,000 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹199</span>
-                    </button>
-                </div>
-                <div style="font-size: 9px; color: var(--text-secondary); text-align: center; opacity: 0.85;">
-                    All prices inclusive of 18% GST · Secured by Razorpay · UPI / Cards / Netbanking
-                </div>
-
-                <!-- Subscription -->
-                <div style="display: flex; gap: 10px;">
-                    <button class="calculate-btn" onclick="subscribeTier('monthly')" style="flex: 1; padding: 12px 6px; font-size: 11px; text-align: center;">
-                        🌟 Astro Pass<br><span style="font-size: 9px; opacity: 0.8;">₹99 / mo</span>
-                    </button>
-                </div>
-                
-                <button id="btn-cancel-sub" class="lang-select-btn" onclick="cancelSubscription()" style="width: 100%; justify-content: center; padding: 10px; font-size: 11px; border: 1px solid #e53e3e; color: #e53e3e; display: none; margin-top: 5px;">
-                    Cancel Active Subscription
+            <!-- Modal Subtabs -->
+            <div class="sub-tab-bar" style="margin-bottom: 20px;">
+                <button class="sub-tab-btn active" id="profile-tab-btn-settings" onclick="switchProfileTab('settings')">
+                    <span>Profile &amp; Settings</span>
+                </button>
+                <button class="sub-tab-btn" id="profile-tab-btn-saved" onclick="switchProfileTab('saved')">
+                    <span>Saved Profiles</span>
+                </button>
+                <button class="sub-tab-btn" id="profile-tab-btn-billing" onclick="switchProfileTab('billing')">
+                    <span>Billing &amp; History</span>
                 </button>
             </div>
 
-            <!-- Gift a reading -->
-            <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin: 22px 0 10px;">🎁 Gift a Reading</h4>
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="font-size: 10.5px; color: var(--text-secondary);">Buy a gift code for a friend — a token pack or a premium life-report voucher. They redeem it after signing in.</div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="lang-select-btn" onclick="buyGift('credit_pack', 1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
-                        🎁 Token Gift<br>1,125 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span>
-                    </button>
-                    <button class="lang-select-btn" onclick="buyGift('premium_pdf_voucher', 0)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
-                        📜 Premium Report<br>Voucher<br><span style="font-size: 9px; color: var(--text-secondary);">₹249</span>
+            <!-- TAB 1: Profile & Settings -->
+            <div id="profile-pane-settings" class="profile-tab-pane">
+                <!-- Profile Details -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: var(--text-secondary);">Full Name:</span>
+                        <span id="profile-full-name" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: var(--text-secondary);">Email Address:</span>
+                        <span id="profile-email" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: var(--text-secondary);">Phone Number:</span>
+                        <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: var(--text-secondary);">Credit Balance:</span>
+                        <span style="font-size: 11px; font-weight: bold; color: var(--accent-gold);"><span id="profile-credits-count">0</span> Credits</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: var(--text-secondary);">Subscription Status:</span>
+                        <span id="profile-sub-status" style="font-size: 11px; font-weight: bold; color: #48BB78;">Free Tier</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 11px; color: var(--text-secondary);">Refer &amp; Earn:</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <strong id="profile-referral-code" style="font-size: 11px; color: var(--accent-gold); letter-spacing: 1px;">--</strong>
+                            <button onclick="copyReferralCode()" title="Copy referral code" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold); border-radius: 5px; font-size: 10px; padding: 2px 6px; cursor: pointer;"><i class="fa-solid fa-copy"></i></button>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Account Preferences -->
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Account Preferences</h4>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Phone Number</label>
+                        <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Preferred OTP/Alerts Channel</label>
+                        <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
+                            <option value="sms">SMS</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <label for="profile-in-digest" id="lbl-digest-optin" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">🌅 Daily Panchangam &amp; Transit Digest (email)</label>
+                        <input type="checkbox" id="profile-in-digest" onchange="toggleDailyDigest(this.checked)" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <label for="profile-in-whatsapp" style="font-size: 10px; color: var(--text-secondary); cursor: pointer;">💬 WhatsApp delivery (report-ready alerts &amp; digest). Requires a valid number above. Reply STOP anytime to opt out.</label>
+                        <input type="checkbox" id="profile-in-whatsapp" style="accent-color: var(--accent-gold); width: 16px; height: 16px; cursor: pointer;">
+                    </div>
+                    <button class="calculate-btn" onclick="saveProfilePreferences()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Preferences</button>
+                </div>
+
+                <!-- Astrology Personal Info Settings -->
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Personal Birth Info (For Auto-Chart Predictions)</h4>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Full Name</label>
+                        <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="input-group">
+                            <label style="font-size: 10px; color: var(--text-secondary);">Birth Date</label>
+                            <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        </div>
+                        <div class="input-group">
+                            <label style="font-size: 10px; color: var(--text-secondary);">Birth Time</label>
+                            <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        </div>
+                    </div>
+                    <div class="input-group" style="position: relative;">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Place of Birth</label>
+                        <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        <div id="profile-pob-suggestions" class="suggestions-dropdown" style="display: none; top: 100%;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="input-group">
+                            <label style="font-size: 10px; color: var(--text-secondary);">Longitude</label>
+                            <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        </div>
+                        <div class="input-group">
+                            <label style="font-size: 10px; color: var(--text-secondary);">Latitude</label>
+                            <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Gender</label>
+                        <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <button class="calculate-btn" onclick="saveProfileBirthInfo()" style="padding: 10px; font-size: 11px; margin-top: 5px; width: 100%; justify-content: center;">Save Birth Info</button>
+                </div>
+            </div>
+
+            <!-- TAB 2: Saved Profiles -->
+            <div id="profile-pane-saved" class="profile-tab-pane" style="display: none;">
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 12px;">Saved Profiles &amp; Charts</h4>
+                <div id="modal-saved-profiles-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Populated dynamically via JS with skeletons -->
+                </div>
+            </div>
+
+            <!-- TAB 3: Billing & History -->
+            <div id="profile-pane-billing" class="profile-tab-pane" style="display: none;">
+                <!-- Purchase Options -->
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Cosmic Tokens &amp; Billing</h4>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                    <!-- Token Packs (INR) -->
+                    <div style="display: flex; gap: 10px;">
+                        <button class="lang-select-btn" onclick="buyCreditPackage(500)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                            🪙 Pocket<br>500 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span>
+                        </button>
+                        <button class="lang-select-btn" onclick="buyCreditPackage(1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                            🪙 Kundli<br>1,125 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span>
+                        </button>
+                        <button class="lang-select-btn" onclick="buyCreditPackage(5000)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                            🪙 Astro Pro<br>5,000 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹199</span>
+                        </button>
+                    </div>
+                    <div style="font-size: 9px; color: var(--text-secondary); text-align: center; opacity: 0.85;">
+                        All prices inclusive of 18% GST · Secured by Razorpay · UPI / Cards / Netbanking
+                    </div>
+
+                    <!-- Subscription -->
+                    <div style="display: flex; gap: 10px;">
+                        <button class="calculate-btn" onclick="subscribeTier('monthly')" style="flex: 1; padding: 12px 6px; font-size: 11px; text-align: center;">
+                            🌟 Astro Pass<br><span style="font-size: 9px; opacity: 0.8;">₹99 / mo</span>
+                        </button>
+                    </div>
+                    
+                    <button id="btn-cancel-sub" class="lang-select-btn" onclick="cancelSubscription()" style="width: 100%; justify-content: center; padding: 10px; font-size: 11px; border: 1px solid #e53e3e; color: #e53e3e; display: none; margin-top: 5px;">
+                        Cancel Active Subscription
                     </button>
                 </div>
-                <div style="border-top: 1px dashed var(--border-glass); padding-top: 10px; margin-top: 4px;">
-                    <label style="font-size: 10px; color: var(--text-secondary);">Have a gift code?</label>
-                    <div style="display: flex; gap: 6px; margin-top: 5px;">
-                        <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none; text-transform: uppercase;">
-                        <button class="calculate-btn" onclick="redeemGiftFromInput()" style="padding: 8px 14px; font-size: 11px;">Redeem</button>
+
+                <!-- Gift a reading -->
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin: 22px 0 10px;">🎁 Gift a Reading</h4>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                    <div style="font-size: 10.5px; color: var(--text-secondary);">Buy a gift code for a friend — a token pack or a premium life-report voucher. They redeem it after signing in.</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="lang-select-btn" onclick="buyGift('credit_pack', 1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                            🎁 Token Gift<br>1,125 Tokens<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span>
+                        </button>
+                        <button class="lang-select-btn" onclick="buyGift('premium_pdf_voucher', 0)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
+                            📜 Premium Report<br>Voucher<br><span style="font-size: 9px; color: var(--text-secondary);">₹249</span>
+                        </button>
+                    </div>
+                    <div style="border-top: 1px dashed var(--border-glass); padding-top: 10px; margin-top: 4px;">
+                        <label style="font-size: 10px; color: var(--text-secondary);">Have a gift code?</label>
+                        <div style="display: flex; gap: 6px; margin-top: 5px;">
+                            <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none; text-transform: uppercase;">
+                            <button class="calculate-btn" onclick="redeemGiftFromInput()" style="padding: 8px 14px; font-size: 11px;">Redeem</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Dashboard (populated from /api/billing/usage) -->
+                <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Transaction &amp; Usage History</h4>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">
+                        <span>Tokens used this month</span>
+                        <span><strong id="usage-used-month" style="color: #fff;">0</strong></span>
+                    </div>
+                    <div id="usage-recent" style="display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: var(--text-secondary);">
+                        <!-- Populated dynamically via JS with skeletons -->
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 
