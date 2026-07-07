@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.21.1"
+VERSION = "1.22.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -77,6 +77,10 @@ EPHE_PATH = os.environ.get("VEDIC_EPHE_PATH", os.path.join(BASE_DIR, "ephe"))
 # path; override with VEDIC_BOOKS_DIR for a real corpus location.
 BOOKS_DIR = os.environ.get("VEDIC_BOOKS_DIR", os.path.join(BASE_DIR, "books"))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+# Async premium PDF reports are written here (gitignored) with unguessable
+# names and served session-gated (or via a signed link for WhatsApp delivery).
+REPORTS_DIR = os.environ.get("VEDIC_REPORTS_DIR", os.path.join(BASE_DIR, "reports"))
 
 # --- OpenRouter (OpenAI-compatible API) ---
 # All LLM chat and RAG embedding traffic goes through OpenRouter using the
@@ -225,7 +229,54 @@ CREDIT_COST_AI_PREDICT = int(os.environ.get("VEDIC_CREDIT_COST_AI_PREDICT", "25"
 CREDIT_COST_VARSHAPHALA = int(os.environ.get("VEDIC_CREDIT_COST_VARSHAPHALA", "25"))
 CREDIT_COST_REMEDIES = int(os.environ.get("VEDIC_CREDIT_COST_REMEDIES", "25"))
 CREDIT_COST_COMPATIBILITY = int(os.environ.get("VEDIC_CREDIT_COST_COMPATIBILITY", "75"))
+CREDIT_COST_PDF_PREMIUM = int(os.environ.get("VEDIC_CREDIT_COST_PDF_PREMIUM", "150"))
 CREDIT_COST_PRASHNA = int(os.environ.get("VEDIC_CREDIT_COST_PRASHNA", "25"))
+
+# Gift read configs
+# Whether a purchaser may redeem their own gift code (0 = forbidden, the
+# default — gifts are meant for someone else). Kept env-overridable for testing.
+GIFT_SELF_REDEEM = int(os.environ.get("VEDIC_GIFT_SELF_REDEEM", "0"))
+# The "premium PDF voucher" gift: a fixed-price code that grants the redeemer
+# exactly enough credits to generate one premium life report. Price is
+# GST-INCLUSIVE paise (like CREDIT_PACKAGES); the credits granted track
+# CREDIT_COST_PDF_PREMIUM so the voucher always covers one premium PDF.
+GIFT_PDF_VOUCHER_PRICE_PAISE = int(os.environ.get("VEDIC_GIFT_PDF_VOUCHER_PRICE_PAISE", "24900"))
+GIFT_PDF_VOUCHER_CREDITS = CREDIT_COST_PDF_PREMIUM
+
+# --- Async premium report delivery ---
+# A finished premium PDF can be delivered over WhatsApp via a session-less but
+# unguessable signed link: HMAC-SHA256(report_id|expiry_epoch) truncated, keyed
+# by REPORT_SIGNING_SECRET. The link expires after REPORT_LINK_TTL_HOURS.
+REPORT_LINK_TTL_HOURS = int(os.environ.get("VEDIC_REPORT_LINK_TTL_HOURS", "72"))
+
+# WhatsApp Meta API configs
+WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN", "")
+WHATSAPP_PHONE_ID = os.environ.get("WHATSAPP_PHONE_ID", "")
+WHATSAPP_ENABLED = int(os.environ.get("WHATSAPP_ENABLED", "0"))
+WHATSAPP_WEBHOOK_SECRET = os.environ.get("WHATSAPP_WEBHOOK_SECRET", "")
+WHATSAPP_VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "")
+# Meta Graph API base + version — env-overridable so a version bump (Meta
+# deprecates versions periodically) is config, not a code edit.
+WHATSAPP_GRAPH_BASE = os.environ.get("WHATSAPP_GRAPH_BASE", "https://graph.facebook.com")
+WHATSAPP_GRAPH_VERSION = os.environ.get("WHATSAPP_GRAPH_VERSION", "v19.0")
+
+# WhatsApp Templates
+WHATSAPP_TEMPLATE_REPORT_READY = {
+    "en": os.environ.get("WHATSAPP_TEMPLATE_REPORT_READY_EN", "report_ready_en"),
+    "ta": os.environ.get("WHATSAPP_TEMPLATE_REPORT_READY_TA", "report_ready_ta"),
+    "te": os.environ.get("WHATSAPP_TEMPLATE_REPORT_READY_TE", "report_ready_te"),
+    "ml": os.environ.get("WHATSAPP_TEMPLATE_REPORT_READY_ML", "report_ready_ml"),
+    "kn": os.environ.get("WHATSAPP_TEMPLATE_REPORT_READY_KN", "report_ready_kn"),
+    "hi": os.environ.get("WHATSAPP_TEMPLATE_REPORT_READY_HI", "report_ready_hi")
+}
+WHATSAPP_TEMPLATE_DAILY_DIGEST = {
+    "en": os.environ.get("WHATSAPP_TEMPLATE_DIGEST_EN", "daily_digest_en"),
+    "ta": os.environ.get("WHATSAPP_TEMPLATE_DIGEST_TA", "daily_digest_ta"),
+    "te": os.environ.get("WHATSAPP_TEMPLATE_DIGEST_TE", "daily_digest_te"),
+    "ml": os.environ.get("WHATSAPP_TEMPLATE_DIGEST_ML", "daily_digest_ml"),
+    "kn": os.environ.get("WHATSAPP_TEMPLATE_DIGEST_KN", "daily_digest_kn"),
+    "hi": os.environ.get("WHATSAPP_TEMPLATE_DIGEST_HI", "daily_digest_hi")
+}
 
 # Credits granted to a brand-new account at signup. With chart generation free
 # and an AI overview costing 25, the default grant is one free AI reading.
@@ -413,6 +464,12 @@ def _load_api_key():
 
 
 API_KEY = _load_api_key()
+
+# Secret used to sign session-less premium-report download links (WhatsApp
+# delivery). Defaults to the persisted operator API key so a single-host deploy
+# needs no extra config; override with VEDIC_REPORT_SIGNING_SECRET to rotate
+# report links independently of the corpus API key.
+REPORT_SIGNING_SECRET = os.environ.get("VEDIC_REPORT_SIGNING_SECRET", "") or API_KEY
 
 # Whether the shared operator API key gates the corpus/admin endpoints
 # (/api/search, /api/page-*, /api/status, /api/books). The rest of /api is

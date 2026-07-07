@@ -924,10 +924,11 @@ def _pdf_page_dcharts(c, chart_data, lang, FONT_REGULAR, FONT_BOLD, visual_style
                                     index_key=key, center_main=dname, center_sub=dnum)
 
 
-def _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, new_page_fn):
-    """Render the cached AI 'preview phala' markdown into flowing, paginated
-    body text. `new_page_fn` footers the current page and opens a fresh bordered
-    one when the reading overflows."""
+def _pdf_page_markdown(c, lang, FONT_REGULAR, FONT_BOLD, title, subtitle, body, new_page_fn):
+    """Render an arbitrary markdown blob into flowing, paginated body text under
+    a titled header card. Shared by the AI phala page and the premium life-report
+    chapters. `new_page_fn` footers the current page and opens a fresh bordered
+    one when the text overflows."""
     import re
     from reportlab.lib.utils import simpleSplit
 
@@ -940,11 +941,9 @@ def _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, new_page_fn):
     c.setStrokeColor(HexColor("#C5A059")); c.setLineWidth(0.5)
     c.rect(38.5, 712.5, 535, 45, fill=False, stroke=True)
     c.setFillColor(HexColor("#7A1C0B")); c.setFont(FONT_BOLD, 13)
-    title = "AI JYOTISHYAM PREVIEW PHALA" if lang != "ta" else "AI ஜோதிட பலன் முன்னோட்டம்"
     c.drawCentredString(306, 740, title)
     c.setFillColor(HexColor("#2D3748")); c.setFont(FONT_REGULAR, 7.5)
-    sub = "Grounded reading synthesised from the computed chart & classical texts" if lang != "ta" else "கணித ஜாதகம் மற்றும் சாஸ்திர நூல்களின் அடிப்படையில் உருவாக்கப்பட்ட பலன்"
-    c.drawCentredString(306, 724, sub)
+    c.drawCentredString(306, 724, subtitle)
 
     def strip_md(s):
         s = re.sub(r'\*\*(.*?)\*\*', r'\1', s)
@@ -959,7 +958,7 @@ def _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, new_page_fn):
             new_page_fn()
             state["y"] = 748
 
-    for raw in (ai_phala or "").split('\n'):
+    for raw in (body or "").split('\n'):
         stripped = raw.strip()
         if not stripped:
             state["y"] -= 5
@@ -991,8 +990,30 @@ def _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, new_page_fn):
             state["y"] -= 3
 
 
+def _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, new_page_fn):
+    """Render the cached AI 'preview phala' markdown (thin wrapper over the
+    shared markdown page renderer)."""
+    title = "AI JYOTISHYAM PREVIEW PHALA" if lang != "ta" else "AI ஜோதிட பலன் முன்னோட்டம்"
+    sub = ("Grounded reading synthesised from the computed chart & classical texts"
+           if lang != "ta"
+           else "கணித ஜாதகம் மற்றும் சாஸ்திர நூல்களின் அடிப்படையில் உருவாக்கப்பட்ட பலன்")
+    _pdf_page_markdown(c, lang, FONT_REGULAR, FONT_BOLD, title, sub, ai_phala, new_page_fn)
+
+
+def _pdf_page_chapters(c, lang, FONT_REGULAR, FONT_BOLD, premium_chapters, new_page_fn):
+    """Render the premium life-report: each chapter is a titled markdown block,
+    flowed and paginated. `premium_chapters` is a list of markdown strings (each
+    already carrying its own `## Chapter` headings)."""
+    title = "COMPREHENSIVE LIFE REPORT" if lang != "ta" else "விரிவான வாழ்க்கை அறிக்கை"
+    sub = ("A multi-chapter reading grounded in the computed chart & classical texts"
+           if lang != "ta"
+           else "கணித ஜாதகம் மற்றும் சாஸ்திர நூல்களை அடிப்படையாகக் கொண்ட பல அத்தியாய பலன்")
+    body = "\n\n".join(ch for ch in (premium_chapters or []) if ch and str(ch).strip())
+    _pdf_page_markdown(c, lang, FONT_REGULAR, FONT_BOLD, title, sub, body, new_page_fn)
+
+
 def generate_pdf_report(chart_data, client_name, place_name, visual_style="south", output_path=None, lang="en",
-                        sections=None, ai_phala=""):
+                        sections=None, ai_phala="", premium_chapters=None):
     """
     Generate a 2-page highly elegant, scholarly Vedic Astrology Report PDF in selected languages containing
     both Rasi D1 & Navamsha D9 charts side-by-side, Pillaiyar Suzhi & Lord Ganesha Invocation,
@@ -1150,6 +1171,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
         ("chart", lambda: _pdf_page_chart(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, client_name, place_name, visual_style)),
         ("dcharts", lambda: _pdf_page_dcharts(c, chart_data, lang, FONT_REGULAR, FONT_BOLD, visual_style)),
         ("strengths", lambda: _pdf_page_strengths(c, chart_data, lang, FONT_REGULAR, FONT_BOLD)),
+        ("chapters", lambda: _pdf_page_chapters(c, lang, FONT_REGULAR, FONT_BOLD, premium_chapters, _new_page)),
         ("phala", lambda: _pdf_page_phala(c, lang, FONT_REGULAR, FONT_BOLD, ai_phala, _new_page)),
         ("dasa", lambda: _pdf_page_dasa(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, birth_naks_local)),
     ]
@@ -1162,6 +1184,9 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
             continue
         # The phala page only renders when a cached reading was supplied.
         if key == "phala" and not (ai_phala and str(ai_phala).strip()):
+            continue
+        # The chapters page only renders when premium narratives were supplied.
+        if key == "chapters" and not (premium_chapters and any(str(x).strip() for x in premium_chapters)):
             continue
         active.append(fn)
     if not active:

@@ -99,6 +99,9 @@ from config import (
     DB_RAG_PATH,
     BOOKS_DIR,
     STATIC_DIR,
+    REPORTS_DIR,
+    REPORT_SIGNING_SECRET,
+    REPORT_LINK_TTL_HOURS,
     DEFAULT_LLM_MODEL,
     OPENROUTER_API_KEY,
     get_llm_client,
@@ -127,12 +130,16 @@ from config import (
     CREDIT_COST_MARRIAGE,
     CREDIT_COST_PDF,
     CREDIT_COST_PDF_BASIC,
+    CREDIT_COST_PDF_PREMIUM,
     CREDIT_COST_QUERY,
     CREDIT_COST_AI_PREDICT,
     CREDIT_COST_VARSHAPHALA,
     CREDIT_COST_REMEDIES,
     CREDIT_COST_COMPATIBILITY,
     CREDIT_COST_PRASHNA,
+    GIFT_SELF_REDEEM,
+    GIFT_PDF_VOUCHER_PRICE_PAISE,
+    GIFT_PDF_VOUCHER_CREDITS,
     SIGNUP_BONUS_CREDITS,
     RATE_LIMIT_AI_PER_MIN,
     SUBSCRIPTION_SOFT_CAP,
@@ -145,7 +152,14 @@ from config import (
     CREDIT_PACKAGES,
     CORS_ALLOW_ORIGINS,
     UNLIMITED_EMAILS,
+    WHATSAPP_ENABLED,
+    WHATSAPP_VERIFY_TOKEN,
+    WHATSAPP_TEMPLATE_REPORT_READY,
     connect_db,
+)
+from whatsapp_sender import (
+    verify_whatsapp_signature,
+    send_report_ready_notification,
 )
 import re
 
@@ -516,6 +530,57 @@ def init_user_db():
     )
     """)
 
+    # Feature B: Gift tables
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gift_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        purchaser_user_id INTEGER NOT NULL,
+        gift_type TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        payment_intent_id TEXT UNIQUE NOT NULL,
+        status TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(purchaser_user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gift_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        order_id INTEGER NOT NULL,
+        redeemed_by_user_id INTEGER,
+        redeemed_at TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(order_id) REFERENCES gift_orders(id) ON DELETE CASCADE,
+        FOREIGN KEY(redeemed_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+    """)
+
+    # Feature A: Async PDF report status table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS pdf_reports (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        client_name TEXT NOT NULL,
+        place_name TEXT NOT NULL,
+        file_path TEXT,
+        error_message TEXT,
+        credits_charged INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+    # Older DBs created before the credits_charged column: add it idempotently
+    # so the crash-recovery sweep can refund stranded reports.
+    add_col("credits_charged", "INTEGER DEFAULT 0", "pdf_reports")
+
+    # Feature C additions to existing tables
+    add_col("whatsapp_opt_in", "INTEGER DEFAULT 0")
+    add_col("whatsapp_opt_in_at", "TEXT")
+    add_col("channels", "TEXT DEFAULT 'email'", "digest_subscriptions")
+
     # Seed default subscription plans if empty
     cursor.execute("SELECT count(*) FROM subscription_plans")
     if cursor.fetchone()[0] == 0:
@@ -548,6 +613,9 @@ def init_user_db():
 # Idempotently ensure the user-management schemas exist
 init_user_db()
 
+# Async premium PDFs are written here (gitignored, unguessable names).
+os.makedirs(REPORTS_DIR, exist_ok=True)
+
 def hash_password(password: str) -> str:
     salt = os.urandom(16)
     key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
@@ -571,15 +639,18 @@ def get_user_by_session(token: str):
     cursor.execute("""
         SELECT u.id, u.email, u.full_name, u.credit_balance, s.expires_at,
                u.latitude, u.longitude, u.timezone, u.language, u.wants_newsletter, u.location_name,
-               u.dob, u.tob, u.gender, u.referral_code, u.phone_number, u.preferred_channel
+               u.dob, u.tob, u.gender, u.referral_code, u.phone_number, u.preferred_channel,
+               u.whatsapp_opt_in
         FROM sessions s
-        JOIN users u ON s.user_id = u.id 
+        JOIN users u ON s.user_id = u.id
         WHERE s.session_token = ?
     """, (token,))
     row = cursor.fetchone()
     conn.close()
     if row:
-        user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang, wants_news, loc_name, dob, tob, gender, referral_code, phone_number, preferred_channel = row
+        (user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang,
+         wants_news, loc_name, dob, tob, gender, referral_code, phone_number,
+         preferred_channel, whatsapp_opt_in) = row
         try:
             expires_at = datetime.fromisoformat(expires_str)
         except (ValueError, TypeError):
@@ -617,7 +688,8 @@ def get_user_by_session(token: str):
                 "gender": gender,
                 "referral_code": referral_code,
                 "phone_number": phone_number,
-                "preferred_channel": preferred_channel
+                "preferred_channel": preferred_channel,
+                "whatsapp_opt_in": bool(whatsapp_opt_in),
             }
         else:
             # Session has expired — drop the row so stale tokens don't accumulate.
@@ -652,11 +724,13 @@ def debit_user_credits(user_id: int, amount: int, action_type: str, details: str
 
 # LLM-backed actions — the ones worth rate-limiting and counting against the
 # subscriber soft cap (each costs a real upstream API call). Free local math
-# (chart/panchangam) and the PDF report are deliberately excluded.
+# (chart/panchangam) and the deterministic basic PDF are deliberately excluded.
+# The premium PDF fans out to several LLM calls, so it IS metered — otherwise a
+# subscriber could spin up uncapped generations for free.
 LLM_ACTIONS = {
     "query", "ai_predict", "ai_predict_marriage", "ai_predict_chat",
     "ai_predict_varshaphala", "ai_remedies", "ai_predict_compatibility",
-    "ai_predict_prashna",
+    "ai_predict_prashna", "download_pdf_premium",
 }
 
 # Per-user sliding-window request log for rate limiting. In-memory is sufficient
@@ -842,6 +916,18 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_order_id: str = Field(max_length=64)
     razorpay_payment_id: str = Field(max_length=64)
     razorpay_signature: str = Field(max_length=256)
+
+class CreateGiftOrderRequest(BaseModel):
+    gift_type: Literal["credit_pack", "premium_pdf_voucher"]
+    # Only meaningful for credit_pack (must be an advertised CREDIT_PACKAGES key);
+    # ignored for premium_pdf_voucher, which is a fixed-price item.
+    amount: int = 0
+
+class BuyGiftRequest(CreateGiftOrderRequest):
+    pass
+
+class RedeemGiftRequest(BaseModel):
+    code: str = Field(max_length=32)
 
 class VerifySubscriptionRequest(BaseModel):
     razorpay_subscription_id: str = Field(max_length=64)
@@ -1368,6 +1454,10 @@ class PdfDownloadRequest(BaseModel):
     place_name: str = Field(max_length=200)
     visual_style: VisualStyle = "south"
     lang: LangCode = "en"
+    # 'basic' = the existing selectable-section report (synchronous download).
+    # 'premium' = the 20+ page chaptered life report (async: returns a report_id
+    # to poll). Backend-enforced; an unknown tier falls back to 'basic'.
+    tier: Literal["basic", "premium"] = "basic"
     # Which report sections to include. None => all available (premium). The set
     # is intersected with the caller's entitlement server-side (non-premium users
     # are limited to the free 'chart' section regardless of what they request).
@@ -1595,9 +1685,217 @@ PDF_ALL_SECTIONS = ["chart", "dcharts", "strengths", "phala", "dasa"]
 PDF_FREE_SECTIONS = ["chart"]
 
 
+# Premium life-report chapter groups. Each group is ONE grounded LLM call
+# (kept to <=4 total per the batching requirement); each carries its focus
+# houses/vargas and the RAG queries that ground its narrative.
+PREMIUM_CHAPTER_GROUPS = [
+    {
+        "key": "personality",
+        "queries": [
+            "results of the ascendant lagna lord placement and strength",
+            "effects of the Moon sign and nakshatra on mind and temperament",
+            "Sun placement dignity and the soul karaka atmakaraka",
+        ],
+        "focus": "Personality & Inner Self (Lagna, Moon, Sun): ascendant and its lord, "
+                 "the Moon's sign/nakshatra and mental makeup, the Sun's dignity and vitality.",
+    },
+    {
+        "key": "career_wealth",
+        "queries": [
+            "tenth house karma bhava career profession and its lord",
+            "dashamsha D10 divisional chart for profession and status",
+            "second and eleventh house wealth dhana gains and their lords",
+        ],
+        "focus": "Career & Wealth (10th house + Dashamsha D10, 2nd & 11th houses): profession, "
+                 "status, sources of income, savings, and financial yogas.",
+    },
+    {
+        "key": "marriage_health",
+        "queries": [
+            "seventh house marriage spouse and its lord",
+            "navamsha D9 for marriage and dharma",
+            "sixth and eighth houses health disease longevity and afflictions",
+        ],
+        "focus": "Marriage & Health (7th house + Navamsha D9, 6th & 8th houses): partnership, "
+                 "the spouse, marital harmony, constitution, and health vulnerabilities.",
+    },
+    {
+        "key": "dasa_remedies",
+        "queries": [
+            "results of the current mahadasa and antardasa vimshottari",
+            "effects of the upcoming mahadasa period",
+            "classical remedies parihara for planetary afflictions",
+        ],
+        "focus": "Dasa Outlook & Remedies (current + next Mahadasa, remedial summary): what the "
+                 "running and forthcoming periods activate, and a grounded remedies summary.",
+    },
+]
+
+
+def _llm_complete(prompt: str, model_name: str) -> str:
+    """One non-streaming chat completion. Used by the async premium report where
+    there is no client stream to feed — just a full narrative string."""
+    client = get_llm_client()
+    resp = client.with_options(timeout=LLM_STREAM_TIMEOUT).chat.completions.create(
+        model=model_name,
+        messages=[{"role": "user", "content": prompt}],
+        stream=False,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
+def _generate_premium_chapters(chart, client_name, place_name, lang_code):
+    """Build the premium life-report narratives: one grounded LLM call per
+    chapter group (<=4 total). Each is grounded with chapter-targeted RAG
+    passages and written in the target language. Returns a list of markdown
+    strings, each carrying its own `## Chapter` headings."""
+    target_lang = _LANG_MAP.get(lang_code, "English")
+    analysis_text, _, _ = build_prediction_context(chart)
+    chapters = []
+    for group in PREMIUM_CHAPTER_GROUPS:
+        rag_context, _ = retrieve_rag_context(search_engine, group["queries"])
+        prompt = f"""You are a master Vedic astrologer (Jyotishi) writing a chapter of an in-depth life report for {client_name}, born in {place_name}.
+
+Write ONLY the following chapter group, in beautiful Markdown, using `## ` for each chapter heading:
+{group['focus']}
+
+Reason strictly from the COMPUTED CHART ANALYSIS below — each planet's bhava (house), dignity, conjunctions, aspects (Vedic graha drishti only), yogas, Shadbala and the running Vimshottari dasa. Never invent placements. Ground your statements in the CLASSICAL TEXT REFERENCES and cite them inline like [1], [2].
+
+--- COMPUTED VEDIC CHART ANALYSIS ---
+{analysis_text}
+
+--- CLASSICAL TEXT REFERENCES ---
+{rag_context}
+---------------------------------------------
+
+CRITICAL: Write the ENTIRE chapter in {target_lang}. Be specific, authoritative and compassionate. Produce several substantial paragraphs per chapter. Start directly with the first `## ` heading:
+"""
+        chapters.append(_llm_complete(prompt, DEFAULT_LLM_MODEL))
+    return chapters
+
+
+def _set_report_status(report_id, status, file_path=None, error_message=None):
+    conn = connect_db(DB_PATH)
+    try:
+        conn.execute(
+            "UPDATE pdf_reports SET status = ?, file_path = COALESCE(?, file_path), "
+            "error_message = ? WHERE id = ?",
+            (status, file_path, error_message, report_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _fail_and_refund_report(report_id, error_message):
+    """Mark a report failed and refund its debit exactly once. Idempotent: the
+    refund is gated on the row's own `credits_charged`, which is zeroed inside
+    the same transaction, so a double call (worker + startup sweep) can't
+    double-refund. Safe to call from a background thread (own connection)."""
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("BEGIN IMMEDIATE")
+        row = cursor.execute(
+            "SELECT user_id, status, credits_charged FROM pdf_reports WHERE id = ?",
+            (report_id,),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            return
+        user_id, status, charged = row[0], row[1], (row[2] or 0)
+        if status == "ready":
+            conn.rollback()  # never refund a delivered report
+            return
+        if charged > 0:
+            cursor.execute(
+                "UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+                (charged, user_id),
+            )
+            cursor.execute(
+                "INSERT INTO credit_logs (user_id, amount, action_type, details) "
+                "VALUES (?, ?, 'refund', ?)",
+                (user_id, charged, f"Refunded {charged} credits after failed premium report {report_id}"),
+            )
+        cursor.execute(
+            "UPDATE pdf_reports SET status = 'failed', credits_charged = 0, error_message = ? WHERE id = ?",
+            (str(error_message)[:500], report_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _get_user_by_id(user_id):
+    """Fetch the WhatsApp-delivery fields for a user id (no session needed).
+    Used by the async report worker to re-check consent at delivery time."""
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT phone_number, whatsapp_opt_in FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    return {"phone_number": row[0], "whatsapp_opt_in": bool(row[1])}
+
+
+def _build_premium_report(report_id, user_id, chart_data, client_name,
+                          place_name, visual_style, lang):
+    """Background worker: generate the premium PDF, mark the report ready, and
+    (if the user is opted in AT DELIVERY TIME) push a WhatsApp report_ready
+    notification with a signed link. On ANY failure — including a model that
+    returns no chapter content — mark failed and refund via the idempotent
+    _fail_and_refund_report."""
+    try:
+        localized = chart_data.copy()
+        localized["panchangam"] = get_regional_panchangam(chart_data, lang)
+        chapters = _generate_premium_chapters(chart_data, client_name, place_name, lang)
+        # Guard against a silent empty reading: if the model returned no chapter
+        # text, the "life report" would ship with only the deterministic tables
+        # despite the premium charge. Treat that as a failure and refund.
+        if not any((c or "").strip() for c in chapters):
+            raise RuntimeError("AI chapter generation returned no content")
+
+        safe_name = _safe_slug(client_name)
+        pdf_path = os.path.join(REPORTS_DIR, f"premium_{report_id}_{safe_name}.pdf")
+        generate_pdf_report(
+            localized, client_name, place_name,
+            visual_style=visual_style, output_path=pdf_path, lang=lang,
+            sections=["chart", "dcharts", "strengths", "chapters", "dasa"],
+            premium_chapters=chapters,
+        )
+        _set_report_status(report_id, "ready", file_path=pdf_path)
+        logger.info("Premium report %s ready for user %s", report_id, user_id)
+
+        # WhatsApp delivery — re-read consent NOW (not at dispatch) so a STOP or
+        # profile opt-out during generation is honored.
+        fresh = _get_user_by_id(user_id)
+        if WHATSAPP_ENABLED and fresh and fresh.get("whatsapp_opt_in") and fresh.get("phone_number"):
+            try:
+                link = _signed_report_url(report_id)
+                send_report_ready_notification(fresh["phone_number"], lang, client_name, link)
+            except Exception as e:
+                logger.warning("Report %s WhatsApp notify failed: %s", report_id, e)
+    except Exception as e:
+        logger.error("Premium report %s failed: %s", report_id, e)
+        _fail_and_refund_report(report_id, str(e))
+
+
+class ReportStatusResponse(BaseModel):
+    report_id: str
+    status: str
+
+
 @app.post("/api/download-pdf")
 def download_pdf(req: PdfDownloadRequest, raw_req: Request):
-    """Generate ReportLab PDF and stream it for download"""
+    """Generate ReportLab PDF and stream it for download.
+
+    tier='basic' streams the report synchronously (existing behavior).
+    tier='premium' debits CREDIT_COST_PDF_PREMIUM, kicks off async generation of
+    the 20+ page chaptered life report, and returns a report_id to poll.
+    """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
     # Validate chart_data shape up front so malformed input returns a clear 400
     # instead of a cryptic KeyError 500 from get_regional_panchangam/the PDF
@@ -1605,6 +1903,9 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     for k in ("metadata", "panchangam", "placements"):
         if k not in req.chart_data:
             raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
+
+    if req.tier == "premium":
+        return _start_premium_report(req, token)
 
     # Resolve the caller and their entitlement BEFORE charging, since both the
     # allowed sections and the price depend on premium status. Non-premium users
@@ -1660,6 +1961,132 @@ def download_pdf(req: PdfDownloadRequest, raw_req: Request):
     except Exception as e:
         refund_user_credits(user, "download_pdf")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _start_premium_report(req: PdfDownloadRequest, token: str):
+    """Debit the premium PDF cost, record a pending report, and dispatch async
+    generation. Returns the report_id immediately so the client can poll. If
+    anything between the debit and the worker launch fails, the debit is
+    refunded so a caller can never be charged for a job that never started."""
+    user = check_credits_or_raise(token, CREDIT_COST_PDF_PREMIUM, "download_pdf_premium")
+    charged = user.get("charged") or 0
+    try:
+        report_id = uuid.uuid4().hex
+        conn = connect_db(DB_PATH)
+        try:
+            # Persist the charged amount so the crash-recovery sweep (and the
+            # failure path) can refund a stranded report exactly once.
+            conn.execute(
+                "INSERT INTO pdf_reports (id, user_id, status, client_name, place_name, credits_charged) "
+                "VALUES (?, ?, 'pending', ?, ?, ?)",
+                (report_id, user["id"], req.client_name, req.place_name, charged),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        # Run generation off the request thread. A daemon thread matches the
+        # existing llm_stream worker pattern and keeps the single-process
+        # deployment simple. Consent (phone/opt-in) is re-read at delivery time.
+        worker = threading.Thread(
+            target=_build_premium_report,
+            args=(report_id, user["id"], req.chart_data,
+                  req.client_name, req.place_name, req.visual_style, req.lang),
+            daemon=True,
+        )
+        worker.start()
+    except Exception as e:
+        logger.error("Failed to start premium report: %s", e)
+        refund_user_credits(user, "download_pdf_premium")
+        raise HTTPException(status_code=500, detail="Could not start the premium report.")
+    return {"report_id": report_id, "status": "pending"}
+
+
+def _reap_stranded_reports():
+    """On startup, fail-and-refund any report still 'pending' — its worker
+    thread died with the previous process and cannot be resumed. Idempotent via
+    _fail_and_refund_report (credits_charged is zeroed as it refunds)."""
+    conn = connect_db(DB_PATH)
+    try:
+        rows = conn.execute("SELECT id FROM pdf_reports WHERE status = 'pending'").fetchall()
+    finally:
+        conn.close()
+    for (rid,) in rows:
+        logger.warning("Reaping stranded premium report %s (process restart)", rid)
+        _fail_and_refund_report(rid, "Server restarted during generation")
+
+
+@app.get("/api/report-status/{report_id}")
+def report_status(report_id: str, request: Request):
+    """Poll an async premium report. Owner-gated. Returns status and, when ready,
+    the session-gated download path."""
+    user = _session_user_or_401(request)
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT user_id, status, error_message FROM pdf_reports WHERE id = ?",
+            (report_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Unknown report.")
+    if row[0] != user["id"]:
+        raise HTTPException(status_code=403, detail="This report belongs to another account.")
+    status = row[1]
+    out = {"report_id": report_id, "status": status}
+    if status == "ready":
+        out["download_url"] = f"/api/report-file/{report_id}"
+    elif status == "failed":
+        out["error"] = "Generation failed and your credits were refunded."
+    return out
+
+
+def _report_row(report_id):
+    conn = connect_db(DB_PATH)
+    try:
+        return conn.execute(
+            "SELECT user_id, status, file_path, client_name FROM pdf_reports WHERE id = ?",
+            (report_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def _serve_report_file(row, report_id):
+    status, file_path, client_name = row[1], row[2], row[3]
+    if status != "ready" or not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Report not ready.")
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=f"Premium_Life_Report_{_safe_slug(client_name)}.pdf",
+    )
+
+
+@app.get("/api/report-file/{report_id}")
+def report_file(report_id: str, request: Request):
+    """Session-gated download of a finished premium report (owner only)."""
+    user = _session_user_or_401(request)
+    row = _report_row(report_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Unknown report.")
+    if row[0] != user["id"]:
+        raise HTTPException(status_code=403, detail="This report belongs to another account.")
+    return _serve_report_file(row, report_id)
+
+
+@app.get("/reports/{report_id}")
+def report_signed_download(report_id: str, exp: int = 0, sig: str = ""):
+    """Session-less download via a signed, self-expiring link (WhatsApp delivery).
+    The HMAC signature over report_id|exp is the only credential."""
+    if not _verify_report_token(report_id, exp, sig):
+        raise HTTPException(status_code=403, detail="This link is invalid or has expired.")
+    row = _report_row(report_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Unknown report.")
+    return _serve_report_file(row, report_id)
+
 
 @app.post("/api/ai-predict")
 def ai_predict(req: AIPredictRequest, raw_req: Request):
@@ -2355,6 +2782,29 @@ async def get_month_panchangam(year: int, month: int, lang: str = "en", lat: flo
         _MONTH_CACHE.popitem(last=False)  # evict oldest
     return result
 
+# E.164: a leading '+', a non-zero country-code digit, then up to 14 more
+# digits (15 total max). WhatsApp delivery requires this exact shape.
+_E164_RE = re.compile(r"^\+[1-9]\d{7,14}$")
+
+
+def _normalize_e164(raw: str) -> str:
+    """Coerce a user-entered phone to E.164 or raise 400.
+
+    Accepts common separators/spaces and a leading 00 international prefix,
+    strips them, then validates the canonical +<digits> form. Never trust the
+    client to have pre-formatted it.
+    """
+    s = re.sub(r"[\s().-]", "", (raw or "").strip())
+    if s.startswith("00"):
+        s = "+" + s[2:]
+    if not _E164_RE.match(s):
+        raise HTTPException(
+            status_code=400,
+            detail="Enter your phone in international E.164 format, e.g. +919876543210.",
+        )
+    return s
+
+
 class ProfileUpdateRequest(BaseModel):
     full_name: str = Field(default=None, max_length=200)
     latitude: float = Field(default=None, ge=-90.0, le=90.0)
@@ -2362,8 +2812,11 @@ class ProfileUpdateRequest(BaseModel):
     timezone: str = Field(default=None, max_length=64)
     language: LangCode = None
     location_name: str = Field(default=None, max_length=200)
-    phone_number: str = Field(default=None, max_length=20)
+    phone_number: str = Field(default=None, max_length=24)
     preferred_channel: str = Field(default=None, max_length=10)
+    # Explicit WhatsApp consent. True records a consent timestamp; False opts
+    # out immediately. None leaves the current setting untouched.
+    whatsapp_opt_in: Optional[bool] = None
 
 @app.post("/api/auth/profile/update")
 def profile_update(req: ProfileUpdateRequest, request: Request):
@@ -2392,13 +2845,37 @@ def profile_update(req: ProfileUpdateRequest, request: Request):
     if req.location_name is not None:
         updates.append("location_name = ?")
         params.append(req.location_name)
+    new_phone = None  # track for the opt-in guard below
     if req.phone_number is not None:
+        # Empty string clears the number (and any opt-in below); a non-empty
+        # value must validate as E.164 before we store it.
+        new_phone = _normalize_e164(req.phone_number) if req.phone_number.strip() else ""
         updates.append("phone_number = ?")
-        params.append(req.phone_number)
+        params.append(new_phone)
     if req.preferred_channel is not None:
         updates.append("preferred_channel = ?")
         params.append(req.preferred_channel)
-        
+    if req.whatsapp_opt_in:
+        # Can't consent to WhatsApp with no number on file — the number being
+        # set in this same request counts.
+        effective_phone = new_phone if new_phone is not None else user.get("phone_number")
+        if not effective_phone:
+            raise HTTPException(
+                status_code=400,
+                detail="Add a WhatsApp phone number before enabling WhatsApp delivery.",
+            )
+    if req.whatsapp_opt_in is not None:
+        # Consent is a record: opting in stamps the moment; opting out clears it.
+        updates.append("whatsapp_opt_in = ?")
+        params.append(1 if req.whatsapp_opt_in else 0)
+        updates.append("whatsapp_opt_in_at = ?")
+        params.append(datetime.utcnow().isoformat() if req.whatsapp_opt_in else None)
+    elif new_phone == "":
+        # Clearing the phone in this request revokes any standing consent so we
+        # never keep an opt-in flag with no number to deliver to.
+        updates.append("whatsapp_opt_in = 0")
+        updates.append("whatsapp_opt_in_at = NULL")
+
     if updates:
         params.append(user["id"])
         query = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
@@ -3070,6 +3547,75 @@ def _grant_credits_for_order(order_id, payment_id, gateway, expected_user_id=Non
         conn.close()
 
 
+# Unambiguous alphabet (no O/0/I/1/L) so a gift code can be read aloud / typed.
+_GIFT_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+def _new_gift_code(cursor) -> str:
+    """Generate a short, unguessable, human-typable gift code unique in
+    gift_codes. Format: GIFT-XXXX-XXXX over the unambiguous alphabet."""
+    for _ in range(20):
+        body = "".join(secrets.choice(_GIFT_CODE_ALPHABET) for _ in range(8))
+        code = f"GIFT-{body[:4]}-{body[4:]}"
+        exists = cursor.execute("SELECT 1 FROM gift_codes WHERE code = ?", (code,)).fetchone()
+        if not exists:
+            return code
+    # Astronomically unlikely; fall back to a longer random token.
+    return "GIFT-" + secrets.token_hex(8).upper()
+
+
+def _grant_gift_for_order(order_id, payment_id, gateway, expected_user_id=None):
+    """Atomically flip a pending gift order to 'succeeded' and mint its single
+    redemption code exactly once. Idempotent: verify-gift-payment and the webhook
+    both call this; whichever wins the status flip mints the code, and a later
+    call returns the SAME existing code (so the buyer's confirmation still shows
+    it). Returns (granted: bool, info: dict|None) where info carries the code.
+
+    When `expected_user_id` is set (user-facing verify path), the order is
+    asserted to belong to that user — an IDOR guard.
+    """
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("BEGIN IMMEDIATE")
+        row = cursor.execute(
+            "SELECT id, purchaser_user_id, gift_type, amount, status FROM gift_orders "
+            "WHERE payment_intent_id = ?",
+            (order_id,),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            return (False, None)
+        go_id, purchaser_id, gift_type, amount, status = row
+        if expected_user_id is not None and purchaser_id != expected_user_id:
+            conn.rollback()
+            raise HTTPException(status_code=403, detail="Gift order does not belong to this account.")
+        if status == "succeeded":
+            # Already granted — return the existing code (idempotent no-op).
+            existing = cursor.execute(
+                "SELECT code FROM gift_codes WHERE order_id = ?", (go_id,)
+            ).fetchone()
+            conn.rollback()
+            return (False, {"code": existing[0] if existing else None,
+                            "gift_type": gift_type, "amount": amount})
+        cursor.execute(
+            "UPDATE gift_orders SET status = 'succeeded' WHERE id = ? AND status != 'succeeded'",
+            (go_id,),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return (False, None)  # lost the race; winner mints the code
+        code = _new_gift_code(cursor)
+        cursor.execute(
+            "INSERT INTO gift_codes (code, order_id) VALUES (?, ?)",
+            (code, go_id),
+        )
+        conn.commit()
+        return (True, {"code": code, "gift_type": gift_type, "amount": amount})
+    finally:
+        conn.close()
+
+
 def _apply_subscription_charge(subscription_id, payment_id, expected_user_id=None):
     """Activate/renew an Astro Pass on a successful Razorpay charge, exactly once.
 
@@ -3280,6 +3826,201 @@ def verify_payment(req: VerifyPaymentRequest, request: Request):
     return {"status": "success", "credits": credits, "newly_granted": granted}
 
 
+# ── Gift a reading ──────────────────────────────────────────────────────────
+# A gift is a paid, single-use code the buyer shares. Redeeming it grants the
+# recipient credits (a credit pack, or exactly one premium-report's worth). The
+# purchase flow mirrors credit packs EXACTLY: Razorpay order -> verify + webhook
+# both converge on the idempotent _grant_gift_for_order.
+
+def _gift_price_and_credits(gift_type: str, amount: int):
+    """Resolve a gift's GST-inclusive price (paise) and the credits it grants.
+    Rejects a client-chosen price — only advertised packs / the fixed voucher."""
+    if gift_type == "credit_pack":
+        if amount not in CREDIT_PACKAGES:
+            raise HTTPException(status_code=400, detail=f"Unknown credit package: {amount}")
+        return CREDIT_PACKAGES[amount], amount
+    if gift_type == "premium_pdf_voucher":
+        return GIFT_PDF_VOUCHER_PRICE_PAISE, GIFT_PDF_VOUCHER_CREDITS
+    raise HTTPException(status_code=400, detail="Unknown gift type.")
+
+
+@app.post("/api/billing/create-gift-order")
+def create_gift_order(req: CreateGiftOrderRequest, request: Request):
+    """Create a Razorpay order for a gift and record it pending. Returns the
+    order id, public key, and GST breakdown (mirrors create-order)."""
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_razorpay_enabled()
+
+    gross_paise, credits = _gift_price_and_credits(req.gift_type, req.amount)
+    client = _get_razorpay_client()
+    try:
+        order = client.order.create({
+            "amount": gross_paise,
+            "currency": BILLING_CURRENCY,
+            "receipt": f"gift-u{user['id']}-{secrets.token_hex(6)}",
+            "notes": {"user_id": str(user["id"]), "gift_type": req.gift_type, "credits": str(credits)},
+        })
+    except Exception as e:
+        logger.error("Razorpay gift order creation failed: %s", e)
+        raise HTTPException(status_code=502, detail="Could not create gift order.")
+
+    conn = connect_db(DB_PATH)
+    try:
+        conn.execute(
+            "INSERT INTO gift_orders (purchaser_user_id, gift_type, amount, payment_intent_id, status) "
+            "VALUES (?, ?, ?, ?, 'created')",
+            (user["id"], req.gift_type, credits, order["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "order_id": order["id"],
+        "key_id": RAZORPAY_KEY_ID,
+        "amount": gross_paise,
+        "currency": BILLING_CURRENCY,
+        "gift_type": req.gift_type,
+        "credits": credits,
+        "gst": gst_breakdown(gross_paise),
+        "prefill": {"name": user.get("full_name") or "", "email": user.get("email") or "", "contact": user.get("phone_number") or ""},
+    }
+
+
+@app.post("/api/billing/verify-gift-payment")
+def verify_gift_payment(req: VerifyPaymentRequest, request: Request):
+    """Verify a gift-order Checkout signature and mint the gift code (idempotent
+    with the webhook via _grant_gift_for_order)."""
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_razorpay_enabled()
+
+    if not _verify_payment_signature(
+        req.razorpay_order_id, req.razorpay_payment_id, req.razorpay_signature
+    ):
+        raise HTTPException(status_code=400, detail="Invalid payment signature.")
+
+    granted, info = _grant_gift_for_order(
+        req.razorpay_order_id, req.razorpay_payment_id, "razorpay",
+        expected_user_id=user["id"],
+    )
+    if info is None:
+        raise HTTPException(status_code=404, detail="Unknown gift order.")
+    return {"status": "success", "newly_granted": granted,
+            "code": info["code"], "gift_type": info["gift_type"], "credits": info["amount"],
+            "share_url": f"{PORTAL_BASE_URL}/gift/{info['code']}"}
+
+
+@app.post("/api/billing/buy-gift")
+def buy_gift(req: BuyGiftRequest, request: Request):
+    """Legacy instant gift purchase — local dev / tests only (simulated)."""
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    _require_simulated_payments()
+
+    gross_paise, credits = _gift_price_and_credits(req.gift_type, req.amount)
+    payment_intent = "gi_" + secrets.token_hex(16)
+    conn = connect_db(DB_PATH)
+    try:
+        conn.execute(
+            "INSERT INTO gift_orders (purchaser_user_id, gift_type, amount, payment_intent_id, status) "
+            "VALUES (?, ?, ?, ?, 'created')",
+            (user["id"], req.gift_type, credits, payment_intent),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    granted, info = _grant_gift_for_order(payment_intent, payment_intent, "simulated",
+                                          expected_user_id=user["id"])
+    return {"status": "success", "code": info["code"], "gift_type": info["gift_type"],
+            "credits": info["amount"], "share_url": f"{PORTAL_BASE_URL}/gift/{info['code']}"}
+
+
+@app.post("/api/billing/redeem-gift")
+def redeem_gift(req: RedeemGiftRequest, request: Request):
+    """Redeem a gift code once, crediting the redeemer. Atomic single-use: the
+    conditional UPDATE (redeemed_by_user_id IS NULL) is the race guard — no
+    read-then-write. A purchaser cannot redeem their own code unless
+    GIFT_SELF_REDEEM is enabled."""
+    user = _session_user_or_401(request)
+    code = (req.code or "").strip().upper()
+    if not code:
+        raise HTTPException(status_code=400, detail="Enter a gift code.")
+
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("BEGIN IMMEDIATE")
+        row = cursor.execute(
+            "SELECT gc.id, gc.redeemed_by_user_id, go.purchaser_user_id, go.status, go.amount "
+            "FROM gift_codes gc JOIN gift_orders go ON gc.order_id = go.id "
+            "WHERE gc.code = ?",
+            (code,),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            raise HTTPException(status_code=404, detail="That gift code was not found.")
+        gc_id, redeemed_by, purchaser_id, order_status, amount = row
+        if order_status != "succeeded":
+            conn.rollback()
+            raise HTTPException(status_code=400, detail="This gift is not active yet.")
+        if redeemed_by is not None:
+            conn.rollback()
+            raise HTTPException(status_code=409, detail="This gift code has already been redeemed.")
+        if purchaser_id == user["id"] and not GIFT_SELF_REDEEM:
+            conn.rollback()
+            raise HTTPException(status_code=403, detail="You cannot redeem your own gift — share it with someone else.")
+        # Atomic claim: only succeeds if still unredeemed (race guard).
+        cursor.execute(
+            "UPDATE gift_codes SET redeemed_by_user_id = ?, redeemed_at = ? "
+            "WHERE id = ? AND redeemed_by_user_id IS NULL",
+            (user["id"], datetime.utcnow().isoformat(), gc_id),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            raise HTTPException(status_code=409, detail="This gift code has already been redeemed.")
+        cursor.execute(
+            "UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?",
+            (amount, user["id"]),
+        )
+        cursor.execute(
+            "INSERT INTO credit_logs (user_id, amount, action_type, details) "
+            "VALUES (?, ?, 'gift_redeem', ?)",
+            (user["id"], amount, f"Redeemed gift code {code}"),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"status": "success", "credits_added": amount}
+
+
+@app.get("/gift/{code}")
+def gift_landing(code: str):
+    """Public gift landing page. Routes the recipient to sign in / sign up and
+    then auto-redeem the code (the SPA reads ?gift= and calls redeem-gift)."""
+    safe_code = _safe_slug(code, fallback="")[:32].upper()
+    target = f"{PORTAL_BASE_URL}/?gift={safe_code}"
+    return HTMLResponse(
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<meta http-equiv='refresh' content='0; url={target}'>"
+        "<title>Your Vedic reading gift</title></head>"
+        "<body style='font-family:sans-serif;background:#12101c;color:#eee;display:flex;"
+        "align-items:center;justify-content:center;height:100vh;text-align:center'>"
+        "<div><h2>🎁 You've received a Vedic reading gift!</h2>"
+        f"<p>Redeeming code <strong style='color:#d4af37'>{safe_code}</strong>…</p>"
+        f"<p><a style='color:#d4af37' href='{target}'>Continue to the portal</a></p></div>"
+        "</body></html>"
+    )
+
+
 @app.post("/api/billing/create-subscription")
 def create_subscription(request: Request):
     """Create a Razorpay Subscription for the Astro Pass and record it pending.
@@ -3392,7 +4133,11 @@ async def razorpay_webhook(request: Request):
         # Subscription charges also arrive as payment.captured but carry no
         # order_id — skip those here; subscription.charged handles them.
         if order_id and payment_id:
+            # An order id belongs to EITHER a credit pack (transactions) or a
+            # gift (gift_orders); each grant is a no-op if the id isn't its own,
+            # so calling both is safe and idempotent.
             _grant_credits_for_order(order_id, payment_id, "razorpay")
+            _grant_gift_for_order(order_id, payment_id, "razorpay")
 
     elif event_type == "subscription.charged":
         sub_id = payload.get("subscription", {}).get("entity", {}).get("id")
@@ -4078,8 +4823,14 @@ def _session_user_or_401(request: Request):
 # --- Daily digest subscription (free retention feature; the actual sending is
 # done by the cron-invoked tools/send_digests.py, never by this process) ---
 
+# The channels a digest can be delivered on. 'email' is always available;
+# 'whatsapp' requires a validated number + explicit opt-in (checked at subscribe).
+DIGEST_CHANNELS = ("email", "whatsapp")
+
+
 class DigestSubscribeRequest(BaseModel):
     language: Optional[LangCode] = None
+    channels: Optional[list[str]] = None
 
 
 @app.get("/api/user/digest")
@@ -4088,14 +4839,15 @@ def digest_status(request: Request):
     conn = connect_db(DB_PATH)
     try:
         row = conn.execute(
-            "SELECT enabled, language, last_sent_date FROM digest_subscriptions WHERE user_id = ?",
+            "SELECT enabled, language, last_sent_date, channels FROM digest_subscriptions WHERE user_id = ?",
             (user["id"],),
         ).fetchone()
     finally:
         conn.close()
     if not row:
         return {"subscribed": False}
-    return {"subscribed": bool(row[0]), "language": row[1], "last_sent_date": row[2]}
+    channels = (row[3] or "email").split(",")
+    return {"subscribed": bool(row[0]), "language": row[1], "last_sent_date": row[2], "channels": channels}
 
 
 @app.post("/api/user/digest/subscribe")
@@ -4113,17 +4865,30 @@ def digest_subscribe(req: DigestSubscribeRequest, request: Request):
     try:
         cursor = conn.cursor()
         row = cursor.execute(
-            "SELECT id FROM digest_subscriptions WHERE user_id = ?", (user["id"],)
+            "SELECT id, channels FROM digest_subscriptions WHERE user_id = ?", (user["id"],)
         ).fetchone()
+        # Resolve delivery channels: when the client omits `channels`, PRESERVE
+        # the existing selection (a plain re-subscribe must not silently drop a
+        # WhatsApp channel the user already enabled) rather than resetting to
+        # email-only. Validate the enum; never enable whatsapp without consent.
+        existing = (row[1].split(",") if (row and row[1]) else ["email"])
+        requested = req.channels if req.channels is not None else existing
+        channels = [c for c in requested if c in DIGEST_CHANNELS] or ["email"]
+        if "whatsapp" in channels and not (user.get("whatsapp_opt_in") and user.get("phone_number")):
+            raise HTTPException(
+                status_code=400,
+                detail="Enable WhatsApp delivery (add a number and opt in) before choosing the WhatsApp channel.",
+            )
+        channels_str = ",".join(channels)
         if row:
             cursor.execute(
-                "UPDATE digest_subscriptions SET enabled = 1, language = ? WHERE user_id = ?",
-                (lang, user["id"]),
+                "UPDATE digest_subscriptions SET enabled = 1, language = ?, channels = ? WHERE user_id = ?",
+                (lang, channels_str, user["id"]),
             )
         else:
             cursor.execute(
-                "INSERT INTO digest_subscriptions (user_id, enabled, language, unsubscribe_token) VALUES (?, 1, ?, ?)",
-                (user["id"], lang, secrets.token_urlsafe(16)),
+                "INSERT INTO digest_subscriptions (user_id, enabled, language, unsubscribe_token, channels) VALUES (?, 1, ?, ?, ?)",
+                (user["id"], lang, secrets.token_urlsafe(16), channels_str),
             )
         conn.commit()
     finally:
@@ -4170,6 +4935,126 @@ def digest_unsubscribe_link(token: str):
         f"<p>You will no longer receive the daily digest.</p>"
         f"<p><a style='color:#d4af37' href='{PORTAL_BASE_URL}/'>Back to the portal</a></p></div></body></html>"
     )
+
+
+# --- Signed, session-less premium-report download links (WhatsApp delivery) ---
+# A finished premium PDF is delivered over WhatsApp as a link the recipient can
+# open without a session. The credential is an HMAC signature over
+# "<report_id>|<expiry_epoch>" keyed by REPORT_SIGNING_SECRET, so the link is
+# unforgeable and self-expiring — no DB lookup of a bearer token needed. Token
+# format in the URL: /reports/{report_id}?exp=<epoch>&sig=<hex>.
+
+def _sign_report_token(report_id: str, expiry_epoch: int) -> str:
+    msg = f"{report_id}|{expiry_epoch}".encode()
+    return hmac.new(REPORT_SIGNING_SECRET.encode(), msg, hashlib.sha256).hexdigest()
+
+
+def _verify_report_token(report_id: str, expiry_epoch: int, signature: str) -> bool:
+    """Constant-time verify a report link signature and reject expired links."""
+    if expiry_epoch < int(time.time()):
+        return False
+    expected = _sign_report_token(report_id, expiry_epoch)
+    return hmac.compare_digest(expected, signature or "")
+
+
+def _signed_report_url(report_id: str) -> str:
+    """Build an absolute, self-expiring download URL for WhatsApp delivery."""
+    expiry = int(time.time()) + REPORT_LINK_TTL_HOURS * 3600
+    sig = _sign_report_token(report_id, expiry)
+    return f"{PORTAL_BASE_URL}/reports/{report_id}?exp={expiry}&sig={sig}"
+
+
+# --- WhatsApp Business Cloud API webhook (delivery status + STOP opt-out) ---
+# Joins the open-paths list (no session/API key) but validates the Meta
+# X-Hub-Signature-256 HMAC strictly before trusting any payload. The GET is the
+# one-time Meta subscription handshake (echoes hub.challenge when the verify
+# token matches).
+
+# STOP keywords across the six supported languages (case/space-insensitive).
+_WHATSAPP_STOP_WORDS = {
+    "stop", "unsubscribe", "cancel",
+    "நிறுத்து", "நிறுத்தவும்",            # Tamil
+    "ఆపు", "ఆపండి",                       # Telugu
+    "നിർത്തുക", "നിര്‍ത്തുക",              # Malayalam
+    "ನಿಲ್ಲಿಸಿ", "ನಿಲ್ಲಿಸು",                # Kannada
+    "बंद", "बंदकरो", "रोको",              # Hindi
+}
+
+
+def _optout_whatsapp_by_phone(phone_e164: str) -> bool:
+    """Immediately revoke WhatsApp consent for the account holding this number.
+    Returns True if a row was updated. The number arrives from Meta without a
+    leading '+', so we match against the stored E.164 by digits."""
+    digits = "".join(c for c in (phone_e164 or "") if c.isdigit())
+    if not digits:
+        return False
+    conn = connect_db(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        # Stored numbers are +<digits>; Meta sends bare <digits>. Compare the
+        # digit tails so both forms match.
+        cursor.execute(
+            "UPDATE users SET whatsapp_opt_in = 0, whatsapp_opt_in_at = NULL "
+            "WHERE REPLACE(phone_number, '+', '') = ?",
+            (digits,),
+        )
+        changed = cursor.rowcount > 0
+        conn.commit()
+    finally:
+        conn.close()
+    return changed
+
+
+@app.get("/api/whatsapp/webhook")
+def whatsapp_webhook_verify(request: Request):
+    """Meta webhook subscription handshake: echo hub.challenge iff the verify
+    token matches WHATSAPP_VERIFY_TOKEN. Fails closed when unconfigured."""
+    params = request.query_params
+    mode = params.get("hub.mode")
+    token = params.get("hub.verify_token") or ""
+    challenge = params.get("hub.challenge", "")
+    # Constant-time compare of the verify token (a secret), consistent with the
+    # signature checks elsewhere; fails closed when the token is unconfigured.
+    if mode == "subscribe" and WHATSAPP_VERIFY_TOKEN and secrets.compare_digest(token, WHATSAPP_VERIFY_TOKEN):
+        # Meta expects the raw challenge echoed back as text/plain.
+        return PlainTextResponse(challenge)
+    raise HTTPException(status_code=403, detail="Verification failed.")
+
+
+@app.post("/api/whatsapp/webhook")
+async def whatsapp_webhook(request: Request):
+    """Receive delivery statuses and inbound messages from Meta.
+
+    Strictly verifies X-Hub-Signature-256 (HMAC-SHA256 of the raw body keyed by
+    WHATSAPP_WEBHOOK_SECRET) before trusting anything. An inbound "STOP"/
+    "UNSUBSCRIBE" (in any supported language) auto-revokes that number's opt-in.
+    """
+    raw = await request.body()
+    signature = request.headers.get("x-hub-signature-256", "")
+    if not verify_whatsapp_signature(raw, signature):
+        raise HTTPException(status_code=403, detail="Invalid webhook signature.")
+
+    try:
+        event = json.loads(raw)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Malformed webhook body.")
+
+    # Walk the standard Cloud API envelope: entry[].changes[].value.messages[].
+    for entry in event.get("entry", []):
+        for change in entry.get("changes", []):
+            value = change.get("value", {})
+            for msg in value.get("messages", []):
+                if msg.get("type") != "text":
+                    continue
+                body = (msg.get("text", {}).get("body") or "").strip().lower()
+                # Normalise: drop whitespace so "stop", "STOP", " stop " all match.
+                if body.replace(" ", "") in {w.lower().replace(" ", "") for w in _WHATSAPP_STOP_WORDS}:
+                    from_phone = msg.get("from", "")
+                    if _optout_whatsapp_by_phone(from_phone):
+                        logger.info("WhatsApp STOP honored for %s", from_phone[:6] + "…")
+
+    # Always 200 a verified event so Meta stops retrying.
+    return {"status": "ok"}
 
 
 # --- Shareable public chart links ---
@@ -4849,6 +5734,10 @@ def read_root():
         os.path.join(STATIC_DIR, "index.html"),
         headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
     )
+
+# Recover any premium reports left 'pending' by a previous process (their
+# worker threads died on shutdown): fail-and-refund them so no credits are lost.
+_reap_stranded_reports()
 
 # Mount static files folder
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
