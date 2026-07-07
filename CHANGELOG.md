@@ -42,6 +42,27 @@ All notable changes to this project are documented here. Versions follow
   STOP/UNSUBSCRIBE in any supported language. The daily digest gains a `whatsapp`
   channel alongside `email`.
 
+## [1.21.1]
+
+### Fixed
+- **Citation manifest JSON leaking into AI readings.** The frontend's shared
+  `processStreamChunk` only stripped the leading citation-manifest line on
+  the one call that first parsed it; every later stream chunk fell back to
+  the raw accumulated text, so the manifest JSON reappeared permanently
+  ahead of the rendered Astro-AI reading/chat/marriage-compatibility output.
+  It now tracks the manifest offset per-stream (in a state object owned by
+  each caller, not a shared global — two AI streams can be in flight at once,
+  e.g. an auto-generated Jyothi reading alongside a chat message) and always
+  strips it. The marriage compatibility reading never stripped the manifest
+  at all; wired in.
+- **Astro-AI chat answering in the wrong language.** `/api/ai-predict-chat`
+  and `/api/query` had no language instruction in their prompts (unlike
+  `/api/ai-predict`), so the model would drift into whichever language the
+  retrieved classical passages leaned toward — often Hindi/Sanskrit — instead
+  of the page's selected language, especially when the question was typed in
+  English. Both endpoints now accept `lang` and require the reply to stay in
+  that language regardless of the question's language.
+
 ## [1.21.0]
 
 ### Added
