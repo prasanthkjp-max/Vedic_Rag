@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#fdf6ea">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vedic Astro AI — Divine AI Vedic Astrology Portal</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
 
@@ -390,8 +388,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
-            padding-top: env(safe-area-inset-top);
-            height: calc(64px + env(safe-area-inset-top));
+            height: 64px;
             background: rgba(255, 252, 245, 0.96);
             border-bottom: 1px solid rgba(217, 119, 6, 0.30);
             backdrop-filter: blur(28px);
@@ -2107,7 +2104,6 @@
             left: -300px;
             width: 280px;
             height: 100%;
-            padding-top: env(safe-area-inset-top);
             background: var(--bg-card);
             border-right: 1px solid var(--border-gold);
             z-index: 1000;
@@ -2252,7 +2248,7 @@
         @media (max-width: 1024px) {
             .nav-top-bar, .header-controls .lang-selector { display: none; }
             .menu-toggle-btn { display: block; }
-            header { padding: 0 16px; padding-top: env(safe-area-inset-top); height: calc(56px + env(safe-area-inset-top)); }
+            header { padding: 0 16px; height: 56px; }
             .logo-section { gap: 8px; }
             .logo-section img { width: 34px; height: 34px; }
             #lbl-title { font-size: 16px; }
@@ -2268,50 +2264,9 @@
         @media (max-width: 768px) {
             .single-page-content { padding: 12px; }
             .card { padding: 16px 18px; }
-            .panchangam-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .panch-grid { grid-template-columns: repeat(2, 1fr); }
             .horas-grid { grid-template-columns: repeat(3, 1fr); }
             .form-grid { grid-template-columns: 1fr; }
-
-            /* Calendar responsiveness overrides */
-            .calendar-cell {
-                height: 75px !important;
-                padding: 4px 6px !important;
-            }
-            .calendar-day-header {
-                font-size: 11px !important;
-                padding: 4px 2px !important;
-            }
-            .cell-day-num {
-                font-size: 13px !important;
-            }
-            .cell-naks {
-                font-size: 8px !important;
-                margin-top: 2px !important;
-            }
-            .cell-regional-date {
-                font-size: 8px !important;
-                margin-top: 1px !important;
-            }
-            .cell-fest-img {
-                width: 24px !important;
-                height: 24px !important;
-            }
-            .cell-speciality {
-                font-size: 8px !important;
-                padding: 1px 3px !important;
-                margin-top: 2px !important;
-            }
-
-            /* Daily Panchangam subgrid column stack on mobile */
-            .panch-details-subgrid {
-                grid-template-columns: 1fr !important;
-            }
-
-            /* Shadbala & Ashtakavarga side-by-side stack to single column on mobile */
-            .strengths-section {
-                grid-template-columns: 1fr !important;
-                gap: 15px !important;
-            }
         }
 
         .chart-output-container {
@@ -2641,7 +2596,7 @@
             left: 0;
             width: 100%;
             height: 60px;
-            background: rgba(255, 251, 238, 0.96);
+            background: rgba(4, 14, 44, 0.95);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid var(--border-gold);
@@ -2649,7 +2604,7 @@
             justify-content: space-around;
             align-items: center;
             padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 20px rgba(67, 20, 7, 0.10);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
         }
 
         .mobile-nav-item {
@@ -2684,17 +2639,6 @@
             transform: scale(0.95);
         }
 
-        /* Native-app touch feel: kill the grey Android tap flash, the 300ms
-           double-tap-zoom delay, iOS/WebView font inflation, and the rubber-band
-           overscroll that makes the WebView feel like a website. */
-        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-        body { overscroll-behavior-y: none; }
-        button, a, .nav-tab, .mobile-nav-item, .side-nav-item,
-        .lang-select-btn, .calculate-btn, .sub-tab-btn, input, select, textarea {
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
         @media (max-width: 768px) {
             .mobile-bottom-nav {
                 display: flex;
@@ -2713,7 +2657,7 @@
                 bottom: 60px; /* Right above the mobile bottom nav */
                 left: 0;
                 width: 100%;
-                background: rgba(255, 251, 238, 0.96);
+                background: rgba(4, 14, 44, 0.95);
                 backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
                 border-top: 1px solid var(--border-gold);
@@ -2728,51 +2672,6 @@
                 width: 100% !important;
                 margin: 0 !important;
             }
-        }
-
-        /* Extremely narrow viewport adjustments */
-        @media (max-width: 480px) {
-            /* Simplify calendar day cells to prevent wrapping overflow */
-            .cell-speciality {
-                font-size: 0 !important; /* Hide text label */
-                width: 6px !important;
-                height: 6px !important;
-                min-width: 6px !important;
-                border-radius: 50% !important;
-                background: #ea580c !important; /* Orange event indicator dot */
-                padding: 0 !important;
-                margin: 4px auto 0 !important;
-                border: none !important;
-                display: block !important;
-                text-overflow: clip !important;
-                overflow: hidden !important;
-                white-space: nowrap !important;
-            }
-            .cell-naks {
-                display: none !important; /* Hide nakshatra text to save space */
-            }
-            .cell-fest-img {
-                width: 18px !important;
-                height: 18px !important;
-            }
-            .calendar-cell {
-                height: 55px !important;
-                padding: 3px 4px !important;
-            }
-
-            /* Stack Astrology tab metadata to 1 column */
-            .panchangam-grid {
-                grid-template-columns: 1fr !important;
-            }
-        }
-
-        /* Scroll container wrapper for planetary placements table to prevent clipping */
-        .astro-table-container {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin-top: 10px;
-            border-radius: 8px;
         }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -2814,9 +2713,6 @@
                 </button>
                 <button class="side-nav-item" id="side-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
                     <i class="fa-solid fa-circle-user"></i> <span data-i18n-key="nav_btn_jyothisyam">Astrology</span>
-                </button>
-                <button class="side-nav-item" id="side-btn-horoscope" onclick="navigateToPage('horoscope')">
-                    <i class="fa-solid fa-star"></i> <span data-i18n-key="nav_btn_horoscope">Horoscopes</span>
                 </button>
                 <button class="side-nav-item" id="side-btn-marriage" onclick="navigateToPage('marriage')">
                     <i class="fa-solid fa-heart"></i> <span data-i18n-key="nav_btn_marriage">Marriage Matching</span>
@@ -2918,7 +2814,6 @@
             <nav class="nav-top-bar">
                 <button class="nav-tab active" id="nav-btn-home" onclick="navigateToPage('home')">Home (Panchangam)</button>
                 <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Astrology</button>
-                <button class="nav-tab" id="nav-btn-horoscope" onclick="navigateToPage('horoscope')">Horoscopes</button>
                 <button class="nav-tab" id="nav-btn-marriage" onclick="navigateToPage('marriage')">Marriage Matching</button>
                 <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Astro AI Chat</button>
             </nav>
@@ -2944,7 +2839,7 @@
                             <i class="fa-solid fa-circle-user" style="color: var(--accent-gold);"></i>
                             <span id="user-display-name">User</span>
                         </button>
-                        <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: bold; color: var(--accent-gold); display: flex; align-items: center; gap: 6px;">
+                        <div style="background: rgba(4,14,44,0.6); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: bold; color: var(--accent-gold); display: flex; align-items: center; gap: 6px;">
                             <span style="font-size: 10px;">🪙</span> <span id="user-credits-count">0</span>
                         </div>
                         <button class="lang-select-btn" onclick="handleLogout()" style="padding: 6px 10px;" title="Logout">
@@ -3017,32 +2912,12 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Personal daily rasi phala (logged-in users with a saved birth profile) -->
-                <div id="home-daily-phala" class="card-soft mb-4" style="display: none; background: rgba(255, 251, 235, 0.92); border: 1px solid var(--border-gold); padding: 14px 20px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
-                        <div style="font-family: var(--font-heading); font-size: 13px; font-weight: 700; color: var(--accent-gold);">
-                            ✨ <span id="lbl-home-phala-title">Your Daily Rasi Phala</span> — <span id="home-phala-sign"></span>
-                        </div>
-                        <button class="btn-primary" id="lbl-home-phala-more" onclick="navigateToPage('horoscope')" style="font-size: 11px; padding: 4px 12px;">See all signs →</button>
-                    </div>
-                    <div id="home-phala-text" style="font-size: 12.5px; color: var(--text-primary); line-height: 1.65;"></div>
-                </div>
             </div>
 
             <!-- Onboarding Wizard Banner -->
             <div id="onboarding-wizard-card" class="card-soft mb-4" style="background: rgba(254, 243, 199, 0.6); border: 1px dashed var(--accent-gold); padding: 16px; margin-bottom: 20px; display: none; position: relative;">
                 <button onclick="dismissOnboardingWizard()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted);">&times;</button>
                 <h3 id="lbl-wizard-title" style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--text-gold); margin-bottom: 12px;">Welcome! Complete these 3 simple steps to start your journey:</h3>
-                <!-- Goal Gradient: thin progress bar, account creation counted as
-                     step 0 so a fresh signup never sees a literal 0% start. Width
-                     and label are set in updateHeroAndOnboardingUI(). -->
-                <div style="margin-bottom: 12px;">
-                    <div style="height: 5px; background: rgba(180, 120, 40, 0.12); border-radius: 3px; overflow: hidden;">
-                        <div id="wizard-progress-bar" style="height: 100%; width: 25%; background: var(--accent-gold); border-radius: 3px; transition: width 0.4s ease;"></div>
-                    </div>
-                    <div id="lbl-wizard-progress" style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Account created ✓</div>
-                </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div id="wizard-step-1" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-primary);">
                         <input type="checkbox" id="chk-wizard-step-1" disabled style="cursor: default;">
@@ -3335,7 +3210,7 @@
         <!-- ------------------ PAGE 2: JYOTHISYAM (BIRTH DETAILS INPUTS) ------------------ -->
         <div class="single-page-content" id="page-jyothisyam">
             <!-- Guest Lock Screen Overlay -->
-            <div class="login-wall-overlay" id="lock-jyothisyam" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
+            <div class="login-wall-overlay" id="lock-jyothisyam" style="display: none; text-align: center; padding: 60px 40px; background: rgba(4,14,44,0.92); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
                 <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,175,55,0.3);"></i>
                 <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 20px; margin-bottom: 12px;">Discover Your Cosmic Blueprint</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; max-width: 450px; margin-left: auto; margin-right: auto;">
@@ -3348,7 +3223,7 @@
                         <span style="font-size: 10px; color: var(--text-muted);">OR</span>
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
                 </div>
             </div>
 
@@ -3359,10 +3234,10 @@
 
                 <!-- Config subtabs basic vs advanced vs saved vs history -->
                 <div class="sub-tab-bar">
-                    <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic">Birth Details</span></button>
-                    <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced">Astro Settings</span></button>
-                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span id="lbl-subtab-saved-charts">Saved Charts</span></button>
-                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span id="lbl-subtab-chart-history">Chart History</span></button>
+                    <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic">Basic Configuration</span></button>
+                    <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced">Advanced Features</span></button>
+                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span>Saved Charts</span></button>
+                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span>Chart History</span></button>
                 </div>
 
                 <div id="jyothisyam-form-container">
@@ -3494,16 +3369,6 @@
                     <div id="chart-history-auth-callout" style="display: none; text-align: center; padding: 30px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-gold); border-radius: 12px; margin-bottom: 20px;">
                         <p style="color: var(--text-secondary); margin-bottom: 15px;">Please Sign In to track your chart calculations and history.</p>
                         <button class="calculate-btn" onclick="openLoginModal()" style="display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;"><i class="fa-solid fa-sign-in"></i> Sign In / Sign Up</button>
-                    </div>
-                    <div id="chart-history-controls" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-glass); gap: 10px; flex-wrap: wrap; width: 100%;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="chart-history-select-all" onchange="toggleSelectAllHistory(this)" style="cursor: pointer; width: 15px; height: 15px;">
-                            <label for="chart-history-select-all" style="font-size: 11.5px; color: var(--text-secondary); cursor: pointer;" id="lbl-history-select-all">Select All</label>
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="lang-select-btn" onclick="deleteSelectedHistory()" id="lbl-btn-clear-selected" style="padding: 5px 12px; font-size: 10.5px; border-color: #e53e3e; color: #e53e3e; min-height: auto;"><i class="fa-solid fa-trash-can"></i> Delete Selected</button>
-                            <button class="lang-select-btn" onclick="clearAllHistory()" id="lbl-btn-clear-all" style="padding: 5px 12px; font-size: 10.5px; border-color: #e53e3e; background: rgba(229, 62, 62, 0.1); color: #e53e3e; min-height: auto;"><i class="fa-solid fa-circle-xmark"></i> Clear All</button>
-                        </div>
                     </div>
                     <div id="chart-history-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
                         <!-- Populated dynamically -->
@@ -3722,7 +3587,7 @@
                                 </div>
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; border-top: 1px solid var(--border-glass); padding-top: 12px;">
                                     <span class="chip-price">🪙 <span id="val-hub-remedies-price">25</span></span>
-                                    <button class="btn-primary" id="btn-hub-remedies-nav" onclick="hubOpenRemedies()" style="padding: 6px 12px; font-size: 11px;">View Remedies</button>
+                                    <button class="btn-primary" id="btn-hub-remedies-nav" onclick="document.getElementById('lbl-remedies-btn').scrollIntoView({behavior: 'smooth'})" style="padding: 6px 12px; font-size: 11px;">View Remedies</button>
                                 </div>
                             </div>
 
@@ -3754,7 +3619,7 @@
                                     
                                     <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
                                         <label id="lbl-varsha-year-label" style="font-size: 11px; font-weight: 600; color: var(--text-gold);">Select Return Year:</label>
-                                        <input type="number" id="in-varsha-year" min="1900" max="2100" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); font-size: 13px;">
+                                        <input type="number" id="in-varsha-year" min="1900" max="2100" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-gold); color: #fff; font-size: 13px;">
                                     </div>
                                 </div>
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; border-top: 1px solid var(--border-glass); padding-top: 12px;">
@@ -3781,51 +3646,9 @@
 
         <!-- ------------------ PAGE 3: AI PREDICTIONS (RAG INTERACTIVE CHAT SCREEN) ------------------ -->
         <!-- ------------------ PAGE 4: MARRIAGE COMPATIBILITY ------------------ -->
-        <!-- ============ PAGE 2.5: HOROSCOPES (Rasi Phala) ============ -->
-        <div class="single-page-content" id="page-horoscope" style="display:none;">
-            <div class="card">
-                <div class="card-title">
-                    <i class="fa-solid fa-star"></i> <span id="lbl-horoscope-title">Rasi Phala — Sign Horoscopes</span>
-                </div>
-                <p id="lbl-horoscope-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
-                    Daily, monthly and yearly predictions for all 12 Moon signs — written by AI from the real planetary transits and grounded in the classical texts.
-                </p>
-
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
-                    <button class="sub-tab-btn active" id="horo-tab-daily" onclick="switchHoroScope('daily')"><span id="lbl-horo-tab-daily">Daily</span></button>
-                    <button class="sub-tab-btn" id="horo-tab-monthly" onclick="switchHoroScope('monthly')"><span id="lbl-horo-tab-monthly">Monthly</span></button>
-                    <button class="sub-tab-btn" id="horo-tab-yearly" onclick="switchHoroScope('yearly')"><span id="lbl-horo-tab-yearly">Yearly</span></button>
-                    <button class="sub-tab-btn" id="horo-tab-personal" onclick="switchHoroScope('personal')"><span id="lbl-horo-tab-personal">My Varsha Phala</span></button>
-                </div>
-
-                <!-- Universal (shared) horoscopes: daily / monthly / yearly -->
-                <div id="horo-universal-pane">
-                    <div id="horo-calendar-row" style="display: none; margin-bottom: 12px; max-width: 340px;">
-                        <label id="lbl-horo-calendar" style="font-size: 11px; font-weight: 600; color: var(--accent-gold); display: block; margin-bottom: 4px;">New Year Tradition</label>
-                        <select id="horo-calendar-select" onchange="onHoroCalendarChange()" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); font-size: 13px;"></select>
-                    </div>
-                    <div id="horo-period-label" style="font-size: 12px; font-weight: 600; color: var(--accent-gold); margin-bottom: 8px;"></div>
-                    <div id="horo-sign-chips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;"></div>
-                    <div id="horo-content" class="ai-predict-display" style="min-height: 120px;"></div>
-                </div>
-
-                <!-- Personal varsha phala: dasa-bhukti + gochara year reading -->
-                <div id="horo-personal-pane" style="display: none;">
-                    <p id="lbl-horo-personal-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
-                        A personal year-ahead reading computed from YOUR saved birth profile: the running dasa-bhukti timeline and the year's transits (gochara), grounded in the classical texts. Save your birth details in Settings first.
-                    </p>
-                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                        <span class="chip-price">🪙 <span id="val-horo-personal-price">25</span></span>
-                        <button class="btn-primary" id="btn-horo-personal" onclick="generatePersonalVarshaPhala()" style="padding: 8px 16px; font-size: 12px;"><span id="lbl-horo-personal-btn">Generate My Year Reading</span></button>
-                    </div>
-                    <div id="horo-personal-output" class="ai-predict-display" style="min-height: 80px; margin-top: 16px; display: none;"></div>
-                </div>
-            </div>
-        </div>
-
         <div class="single-page-content" id="page-marriage" style="display:none;">
             <!-- Guest Lock Screen Overlay -->
-            <div class="login-wall-overlay" id="lock-marriage" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
+            <div class="login-wall-overlay" id="lock-marriage" style="display: none; text-align: center; padding: 60px 40px; background: rgba(4,14,44,0.92); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
                 <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,175,55,0.3);"></i>
                 <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 20px; margin-bottom: 12px;">Discover Your Cosmic Blueprint</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; max-width: 450px; margin-left: auto; margin-right: auto;">
@@ -3838,7 +3661,7 @@
                         <span style="font-size: 10px; color: var(--text-muted);">OR</span>
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
                 </div>
             </div>
 
@@ -4052,7 +3875,7 @@
 
         <div class="single-page-content" id="page-ai">
             <!-- Guest Lock Screen Overlay -->
-            <div class="login-wall-overlay" id="lock-ai" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
+            <div class="login-wall-overlay" id="lock-ai" style="display: none; text-align: center; padding: 60px 40px; background: rgba(4,14,44,0.92); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
                 <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,175,55,0.3);"></i>
                 <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 20px; margin-bottom: 12px;">Discover Your Cosmic Blueprint</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; max-width: 450px; margin-left: auto; margin-right: auto;">
@@ -4065,7 +3888,7 @@
                         <span style="font-size: 10px; color: var(--text-muted);">OR</span>
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
                 </div>
             </div>
 
@@ -4095,7 +3918,7 @@
                         Vedic horary astrology answers from the sky of this very moment at your location — perfect if you don't know your birth time.
                     </p>
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" id="prashna-question" maxlength="2000" placeholder="e.g. Will I get the job I interviewed for?" style="flex: 1; padding: 10px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; outline: none;" onkeydown="if(event.key==='Enter')submitPrashna()">
+                        <input type="text" id="prashna-question" maxlength="2000" placeholder="e.g. Will I get the job I interviewed for?" style="flex: 1; padding: 10px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none;" onkeydown="if(event.key==='Enter')submitPrashna()">
                         <button class="calculate-btn" id="btn-prashna" onclick="submitPrashna()" style="padding: 10px 16px; font-size: 12px; justify-content: center;">
                             <i class="fa-solid fa-om"></i>&nbsp; <span id="lbl-prashna-btn">Ask</span>
                         </button>
@@ -4351,22 +4174,10 @@
                 lbl_horas_desc: "Planetary rulers change hourly from sunrise. Click any hour to inspect its governing properties and qualities.",
                 lbl_festivals_title: "Festivals & Auspicious Days",
                 lbl_metadata_birth_title: "Janma Patrika Astronomical Coordinates",
-                lbl_subtab_basic: "Birth Details",
-                lbl_subtab_advanced: "Astro Settings",
-                lbl_subtab_saved_charts: "Saved Charts",
-                lbl_subtab_chart_history: "Chart History",
-                lbl_history_select_all: "Select All",
-                lbl_btn_clear_selected: "Delete Selected",
-                lbl_btn_clear_all: "Clear All",
-                lbl_loading_saved_charts: "Loading saved charts...",
-                lbl_no_saved_charts: "No saved charts yet.",
-                lbl_error_saved_charts: "Error loading saved charts.",
-                lbl_error_history: "Error loading history.",
-                lbl_loading_history: "Loading history...",
-                lbl_no_history: "No calculation history found.",
-                lbl_btn_load: "Load",
-                lbl_btn_save: "Save",
-                lbl_btn_share: "Share",
+                lbl_subtab_basic: "Basic Configuration",
+                lbl_subtab_advanced: "Advanced Features",
+                lbl_astro_system: "Astrological System",
+                lbl_timing_system: "Timing Period System (Dasa)",
                 lbl_report_success: "Astrological Report Generated Successfully",
                 lbl_btn_astro_ai: "Astro-AI Reading",
                 lbl_btn_download_pdf: "Download PDF",
@@ -4391,24 +4202,6 @@
                 lbl_wizard_step_1: "① Enter birth details",
                 lbl_wizard_step_2: "② Generate birth chart",
                 lbl_wizard_step_3: "③ Use your {bonus} free credits for an AI reading",
-                lbl_wizard_progress_start: "Account created ✓",
-                lbl_wizard_progress_done: "{n} of 3 steps complete",
-                lbl_wizard_title_reappear: "Your birth chart is waiting for you — {n} steps left.",
-                lbl_reading_preview_banner: "Here's a free preview of your reading — subscribe to Astro Pass to unlock the full breakdown.",
-                lbl_reading_preview_cta: "Unlock your full Jyothi reading — Astro Pass",
-                lbl_auth_invested_header: "Save {name}'s chart — create a free account to keep it.",
-                lbl_your_chart_fallback: "your",
-                lbl_btn_save_chart: "Save My Chart",
-                lbl_btn_create_account: "Create Account",
-                lbl_auth_goal_prompt: "What brings you here?",
-                lbl_goal_career: "Career",
-                lbl_goal_marriage: "Marriage",
-                lbl_goal_general: "General",
-                lbl_paywall_subcopy_default: "Balance: {bal} tokens. Recharge to continue — pay via UPI, cards or netbanking.",
-                lbl_paywall_subcopy_reading: "Your AI reading is one recharge away. Balance: {bal} tokens.",
-                lbl_best_value: "Best Value",
-                lbl_per_credit_rate: "≈₹{rate}/credit",
-                lbl_pdf_premium_anchor: "≈₹{amount} at Astro Pro rates — a manual Jyothish consultation typically costs ₹1,500+",
                 lbl_readings_hub_title: "Astrology & Insights Hub",
                 lbl_hub_chat_title: "Consult Astro AI",
                 lbl_hub_chat_desc: "Consult Ganesha Astro-AI on career, relationship harmony, and life path guidance based on your chart.",
@@ -4419,29 +4212,7 @@
                 lbl_hub_varsha_title: "Varshaphala Annual Forecast",
                 lbl_hub_varsha_desc: "Preview your annual trends, challenges, and planetary influences for any selected year.",
                 lbl_varsha_year_label: "Select Forecast Year:",
-                lbl_varshaphala_title: "Annual Solar Return (Varshaphala) Analysis",
-                nav_btn_horoscope: "Horoscopes",
-                lbl_horoscope_title: "Rasi Phala — Sign Horoscopes",
-                lbl_horoscope_desc: "Daily, monthly and yearly predictions for all 12 Moon signs — written by AI from the real planetary transits and grounded in the classical texts.",
-                lbl_horo_tab_daily: "Daily",
-                lbl_horo_tab_monthly: "Monthly",
-                lbl_horo_tab_yearly: "Yearly",
-                lbl_horo_tab_personal: "My Varsha Phala",
-                lbl_horo_calendar: "New Year Tradition",
-                horo_cal_gregorian: "Calendar Year (Jan 1)",
-                horo_cal_tamil: "Tamil New Year (Chithirai)",
-                horo_cal_telugu: "Ugadi (Telugu)",
-                horo_cal_kannada: "Ugadi (Kannada)",
-                horo_cal_malayalam: "Vishu (Kerala)",
-                horo_cal_hindi: "Vikram Samvat (Hindi)",
-                lbl_horo_loading: "Consulting the planetary transits… the first view of a new period is written by AI and can take up to a minute.",
-                lbl_horo_error: "Could not load the horoscope. Please try again.",
-                lbl_horo_personal_desc: "A personal year-ahead reading computed from YOUR saved birth profile: the running dasa-bhukti timeline and the year's transits (gochara), grounded in the classical texts. Save your birth details in Settings first.",
-                lbl_horo_personal_btn: "Generate My Year Reading",
-                lbl_horo_personal_loading: "Computing your dasa-bhukti timeline and the year's transits…",
-                lbl_home_phala_title: "Your Daily Rasi Phala",
-                lbl_home_phala_more: "See all signs →",
-                lbl_horo_need_chart: "Please calculate a birth chart first."
+                lbl_varshaphala_title: "Annual Solar Return (Varshaphala) Analysis"
             },
             ta: {
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
@@ -4471,7 +4242,7 @@
                 lbl_home_calendar: "வேத வானியல் பஞ்சாங்கம்",
                 lbl_jyothisyam_title: "ஜனன ஜாதகம் & ஜோதிடத் தகவல் பலகை",
                 lbl_ai_title: "ஆஸ்ட்ரோ AI ஜோதிடக் கலந்தாய்வு",
-                title_panch: "பஞ்சாங்கக் குறிப்புகள்",
+                title_panch: "தினசரி பஞ்சாங்கம்",
                 nav_btn_home: "பஞ்சாங்கம்",
                 nav_btn_jyothisyam: "ஜாதகம்",
                 nav_btn_ai: "ஆஸ்ட்ரோ AI",
@@ -4503,7 +4274,7 @@
                 chart_style: "ஜாதக வரைபட முறை",
                 btn_generate: "ஜாதக கணிதத்தை உருவாக்கு",
                 ai_p1: "எந்த வேத ஜோதிட கேள்வியையும் கேளுங்கள்! குறிப்பு: தனிப்பட்ட பலன்களுக்கு ஜோதிடம் தாவலில் ஜாதகம் கணிக்கவும்.",
-                lbl_ai_welcome_text: "அண்ட ஞானம் தேடும் அன்பரே, வரவேல்கிறோம்! வேத ஜோதிடம் குறித்த எந்த கேள்வியையும் கேளுங்கள் — கிரக பலன்கள், யோகங்கள், தசை விளைவுகள், நட்சத்திரங்கள். ஜோதிடம் தாவலில் ஜாதகம் கணித்தால், சாஸ்திர RAG ஆதாரங்களின் அடிப்படையில் தனிப்பட்ட பலன்கள் பெறலாம்.",
+                lbl_ai_welcome_text: "அண்ட ஞானம் தேடும் அன்பரே, வரவேற்கிறோம்! வேத ஜோதிடம் குறித்த எந்த கேள்வியையும் கேளுங்கள் — கிரக பலன்கள், யோகங்கள், தசை விளைவுகள், நட்சத்திரங்கள். ஜோதிடம் தாவலில் ஜாதகம் கணித்தால், சாஸ்திர RAG ஆதாரங்களின் அடிப்படையில் தனிப்பட்ட பலன்கள் பெறலாம்.",
                 lbl_chat_placeholder: "ஆஸ்ட்ரோ AI-யிடம் கேளுங்கள் (எ.கா: 7-ல் சூரியன் என்ன பலன்? சனி தசை விளைவுகள் விளக்கவும்)...",
                 th_planet: "கிரகம்",
                 th_longitude: "தீர்க்கரேகை",
@@ -4511,7 +4282,7 @@
                 th_degree: "ராசி பாகை",
                 th_rasi_lord: "ராசி அதிபதி",
                 th_nakshatra: "நட்சத்திரம்",
-                th_pada: "பாகம்",
+                th_pada: "பாதம்",
                 th_dignity: "கிரக பலம் / நிலை (Dignity)",
                 lbl_rasi_chart: "ராசி சக்கரம் (D1)",
                 lbl_navamsha_chart: "நவாம்ச சக்கரம் (D9)",
@@ -4542,28 +4313,12 @@
                 lbl_vedic_ritu: "வேத ரிது (பருவகாலம்)",
                 lbl_ayana: "அயனம் (சூரிய பயணம்)",
                 lbl_muhurtham_timings: "சுப முகூர்த்த நேரங்கள் (நல்ல நேரங்கள்)",
-                lbl_horas_title: "ஆஸ்ட்ரோ ஹோரைகள்",
+                lbl_horas_title: "மணிநேர கிரக ஹோரைகள்",
                 lbl_horas_desc: "சூரிய உதயத்திலிருந்து ஒவ்வொரு மணி நேரமும் ஹோர அதிபதிகள் மாறுகின்றனர். அந்தந்த ஹோரையின் குணங்களை அறிய மணிநேரத்தைத் தேர்ந்தெடுக்கவும்.",
                 lbl_festivals_title: "பண்டிகைகள் & சுப நாட்கள்",
                 lbl_metadata_birth_title: "ஜாதக கணிதம் & வானியல் குறியீடுகள்",
-                lbl_subtab_basic: "பிறப்பு விவரங்கள்",
-                lbl_subtab_advanced: "ஜோதிட அமைப்புகள்",
-                lbl_subtab_saved_charts: "சேமித்த ஜாதகங்கள்",
-                lbl_subtab_chart_history: "ஜாதக வரலாறு",
-                lbl_history_select_all: "அனைத்தையும் தேர்ந்தெடு",
-                lbl_btn_clear_selected: "தேர்ந்தெடுத்ததை நீக்கு",
-                lbl_btn_clear_all: "அனைத்தையும் நீக்கு",
-                lbl_loading_saved_charts: "சேமித்த ஜாதகங்கள் ஏற்றப்படுகின்றன...",
-                lbl_no_saved_charts: "சேமித்த ஜாதகங்கள் ஏதுமில்லை.",
-                lbl_error_saved_charts: "ஜாதகங்களை ஏற்றுவதில் தோல்வி.",
-                lbl_error_history: "வரலாற்றை ஏற்றுவதில் தோல்வி.",
-                lbl_loading_history: "வரலாறு ஏற்றப்படுகிறது...",
-                lbl_no_history: "ஜாதக வரலாறு ஏதுமில்லை.",
-                lbl_btn_load: "ஏற்று",
-                lbl_btn_save: "சேமி",
-                lbl_btn_share: "பகிர்",
-                lbl_subtab_basic_config: "அடிப்படை அமைவு",
-                lbl_subtab_advanced_features: "மேம்பட்ட அம்சங்கள்",
+                lbl_subtab_basic: "அடிப்படை அமைவு",
+                lbl_subtab_advanced: "மேம்பட்ட அம்சங்கள்",
                 lbl_astro_system: "ஜோதிட முறை",
                 lbl_timing_system: "கால காரண முறை (தசா)",
                 lbl_report_success: "ஜோதிட அறிக்கை வெற்றிகரமாக உருவாக்கப்பட்டது",
@@ -4590,24 +4345,6 @@
                 lbl_wizard_step_1: "① பிறந்த விவரங்களை உள்ளிடவும்",
                 lbl_wizard_step_2: "② ஜாதகத்தைக் கணிக்கவும்",
                 lbl_wizard_step_3: "③ உங்களுக்கான இலவச கிரெடிட்களைப் பயன்படுத்தி AI ஜோதிடக் கலந்தாய்வு பெறவும்",
-                lbl_wizard_progress_start: "கணக்கு உருவாக்கப்பட்டது ✓",
-                lbl_wizard_progress_done: "3-இல் {n} படிகள் முடிந்தன",
-                lbl_wizard_title_reappear: "உங்கள் ஜாதகம் உங்களுக்காக காத்திருக்கிறது — {n} படிகள் மீதம்.",
-                lbl_reading_preview_banner: "இது உங்கள் பலனின் இலவச முன்னோட்டம் — முழு விரிவான பலனைப் பெற Astro Pass-க்கு குழுசேரவும்.",
-                lbl_reading_preview_cta: "முழு ஜோதிடப் பலனைப் பெறுங்கள் — Astro Pass",
-                lbl_auth_invested_header: "{name} அவர்களின் ஜாதகத்தைச் சேமிக்கவும் — இலவச கணக்கை உருவாக்கவும்.",
-                lbl_your_chart_fallback: "உங்கள்",
-                lbl_btn_save_chart: "என் ஜாதகத்தைச் சேமி",
-                lbl_btn_create_account: "கணக்கை உருவாக்கு",
-                lbl_auth_goal_prompt: "உங்களை இங்கு அழைத்து வந்தது என்ன?",
-                lbl_goal_career: "தொழில்",
-                lbl_goal_marriage: "திருமணம்",
-                lbl_goal_general: "பொது",
-                lbl_paywall_subcopy_default: "இருப்பு: {bal} டோக்கன்கள். தொடர மீண்டும் நிரப்பவும் — UPI, கார்டு அல்லது நெட்பேங்கிங் மூலம் செலுத்தலாம்.",
-                lbl_paywall_subcopy_reading: "உங்கள் AI பலன் ஒரு ரீசார்ஜ் தூரத்தில் உள்ளது. இருப்பு: {bal} டோக்கன்கள்.",
-                lbl_best_value: "சிறந்த மதிப்பு",
-                lbl_per_credit_rate: "≈₹{rate}/கிரெடிட்",
-                lbl_pdf_premium_anchor: "Astro Pro விகிதத்தில் ≈₹{amount} — நேரடி ஜோதிடர் ஆலோசனை பொதுவாக ₹1,500+ ஆகும்",
                 lbl_readings_hub_title: "ஜோதிடப் பலன்கள் & கலந்தாய்வு மையம்",
                 lbl_hub_chat_title: "ஆஸ்ட்ரோ AI ஆலோசனை",
                 lbl_hub_chat_desc: "உங்கள் ஜாதகத்தின் அடிப்படையில் தொழில், கல்வி, குடும்ப வாழ்க்கை குறித்த சந்தேகங்களை ஆஸ்ட்ரோ AI-யிடம் கேட்டுத் தெளிவுபெறலாம்.",
@@ -4618,29 +4355,7 @@
                 lbl_hub_varsha_title: "வர்ஷபலம் (வருடாந்திர ஜாதகம்)",
                 lbl_hub_varsha_desc: "குறிப்பிட்ட ஆண்டிற்கான உங்கள் வர்ஷபல ஜாதகம் மற்றும் பலன்களைக் கண்டறிக.",
                 lbl_varsha_year_label: "ஆண்டைத் தேர்ந்தெடுக்கவும்:",
-                lbl_varshaphala_title: "வருடாந்திர வர்ஷபல ஜோதிட ஆய்வு",
-                nav_btn_horoscope: "ராசி பலன்",
-                lbl_horoscope_title: "ராசி பலன்கள்",
-                lbl_horoscope_desc: "12 ராசிகளுக்கான தினசரி, மாத மற்றும் வருட பலன்கள் — உண்மையான கோள் பெயர்ச்சிகளின் அடிப்படையில், சாஸ்திர நூல்களை ஆதாரமாகக் கொண்டு AI எழுதுகிறது.",
-                lbl_horo_tab_daily: "தினப் பலன்",
-                lbl_horo_tab_monthly: "மாதப் பலன்",
-                lbl_horo_tab_yearly: "வருடப் பலன்",
-                lbl_horo_tab_personal: "எனது வருட பலன்",
-                lbl_horo_calendar: "புத்தாண்டு முறை",
-                horo_cal_gregorian: "ஆங்கில ஆண்டு (ஜனவரி 1)",
-                horo_cal_tamil: "தமிழ் புத்தாண்டு (சித்திரை)",
-                horo_cal_telugu: "உகாதி (தெலுங்கு)",
-                horo_cal_kannada: "உகாதி (கன்னடம்)",
-                horo_cal_malayalam: "விஷு (கேரளா)",
-                horo_cal_hindi: "விக்ரம சம்வத் (இந்தி)",
-                lbl_horo_loading: "கோள் பெயர்ச்சிகள் கணிக்கப்படுகின்றன… புதிய காலத்தின் முதல் பார்வை AI மூலம் எழுதப்படுவதால் ஒரு நிமிடம் வரை ஆகலாம்.",
-                lbl_horo_error: "பலன்களை ஏற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
-                lbl_horo_personal_desc: "உங்கள் சேமித்த ஜனன விவரங்களின் அடிப்படையில் தனிப்பட்ட வருட பலன்: நடப்பு தசா-புக்தி காலவரிசை மற்றும் ஆண்டின் கோச்சாரப் பெயர்ச்சிகள், சாஸ்திர நூல் ஆதாரத்துடன். முதலில் அமைப்புகளில் உங்கள் ஜனன விவரங்களைச் சேமிக்கவும்.",
-                lbl_horo_personal_btn: "எனது வருட பலனை உருவாக்கு",
-                lbl_horo_personal_loading: "உங்கள் தசா-புக்தி காலவரிசையும் ஆண்டின் கோள் பெயர்ச்சிகளும் கணக்கிடப்படுகின்றன…",
-                lbl_home_phala_title: "உங்கள் இன்றைய ராசி பலன்",
-                lbl_home_phala_more: "அனைத்து ராசிகளும் →",
-                lbl_horo_need_chart: "முதலில் ஜாதகத்தைக் கணிக்கவும்."
+                lbl_varshaphala_title: "வருடாந்திர வர்ஷபல ஜோதிட ஆய்வு"
             },
             te: {
                 lbl_calculating_alignments: "పొంతన లెక్కించబడుతోంది...",
@@ -4668,7 +4383,7 @@
                 title: "వైదిక జ్యోతిష్య AI పోర్టల్",
                 subtitle: "ఖచ్చితమైన వైదిక పంచాంగం & శాస్త్రోక్త AI విశ్లేషణలు",
                 lbl_home_calendar: "వైదిక ఖగోళ పంచాంగం",
-                lbl_jyothisyam_title: "జన్మ పత్రిక & జ్యోతిష్య డ్యాష్‌బోర్డ్",
+                lbl_jyothisyam_title: "జన్మ పత్రిక & జ్యోతిష్య డ్యాష్‌బోర్ڈ",
                 lbl_ai_title: "ఆస్ట్రో AI సంభాషణ",
                 title_panch: "పంచాంగ వివరాలు",
                 nav_btn_home: "పంచాంగం",
@@ -4682,7 +4397,7 @@
                 lbl_language: "భాష", lbl_location: "ప్రాంతం", lbl_settings: "సెట్టింగ్స్",
                 set_text_size: "అక్షరాల పరిమాణం", set_default_page: "ప్రారంభ పేజీ", set_panch_system: "పంచాంగం",
                 set_lock_location: "ప్రాంతాన్ని లాక్ చేయి", set_daily_reminder: "దినసరి రిమైండర్", set_about: "వెర్షన్",
-                lbl_marriage_intro: "వధూవరుల జన్మ వివరాలను నమోదు చేసి, సాంప్రదాయ నక్షత్ర పొంతన (కూట పొంతన) మరియు వైవాహిక జీవిత అనుకూలతను తెలుసుకోండి.",
+                lbl_marriage_intro: "వధూవరుల જન્મ వివరాలను నమోదు చేసి, సాంప్రదాయ నక్షత్ర పొంతన (కూట పొంతన) మరియు వైవాహిక జీవిత అనుకూలతను తెలుసుకోండి.",
                 lbl_marriage_title: "వివాహ పొంతన & వైవాహిక అనుకూలత",
                 lbl_male_partner_title: "వరుడి వివరాలు",
                 lbl_female_partner_title: "వధువు వివరాలు",
@@ -4709,20 +4424,20 @@
                 th_rasi: "రాశి",
                 th_degree: "రాశి భాగలు",
                 th_rasi_lord: "రాశ్యాధిపతి",
-                th_nakshatra: "నక్షత్రం",
+                th_nakshatra: "నక్షत्रం",
                 th_pada: "పాదం",
                 th_dignity: "గ్రహ బలం / స్థితి (Dignity)",
-                lbl_rasi_chart: "రాశి చక్రం (D1)",
-                lbl_navamsha_chart: "నవాంశ చక్రం (D9)",
-                sunrise: "సూర్యోదయం",
-                sunset: "సూర్యాస్తమయం",
+                lbl_rasi_chart: "ರಾಶಿ ಚಕ್ರಂ (D1)",
+                lbl_navamsha_chart: "ನವಾංශ ಚಕ್ರಂ (D9)",
+                sunrise: "ಸೂರ್ಯೋದಯ",
+                sunset: "ಸೂರ್ಯಾಸ್ತಮಯಂ",
                 moonrise: "చంద్రోదయం",
                 moonset: "చంద్రాస్తమయం",
                 godhuli_muhurta_label: "గోధూళి ముహూర్తం (శుభం)",
                 nishita_muhurta_label: "నిశిత ముహూర్తం (శుభం)",
                 vijaya_muhurta_label: "విజయ ముహూర్తం (శుభం)",
                 dur_muhurta_label: "దుర్ముహూర్తం (అశుభం)",
-                ahas: "పగటి ప్రమాణం (అహస్సు)",
+                ahas: "పగటి ప్రమాణం (అಹಸ್)",
                 udayadhi: "ఉదయాది ఘడియలు",
                 kali_year: "కలియుగ సంవత్సరం",
                 panch_wisdom_title: "పంచాంగ నియమాలు & క్యాలెండర్లు",
@@ -4744,68 +4459,34 @@
                 lbl_horas_desc: "సూర్యోదయం నుండి ప్రతి గంటకు హోరా అధిపతులు మారుతారు. ఆ హోర స్వభావాలను తెలుసుకోవడానికి గంటను ఎంచుకోండి.",
                 lbl_festivals_title: "పండుగలు & శుభ దినాలు",
                 lbl_metadata_birth_title: "జన్మ పత్రిక ఖగోళ వివరాలు",
-                lbl_subtab_basic: "జన్మ వివరాలు",
-                lbl_subtab_advanced: "జ్యోతిష్య సెట్టింగ్స్",
-                lbl_subtab_saved_charts: "సేవ్ చేసిన జాతకాలు",
-                lbl_subtab_chart_history: "గణన చరిత్ర",
-                lbl_history_select_all: "అన్నీ ఎంచుకో",
-                lbl_btn_clear_selected: "ఎంపిక చేసినవి తొలగించు",
-                lbl_btn_clear_all: "అన్నీ తొలగించు",
-                lbl_loading_saved_charts: "జాతకాలు లోడ్ అవుతున్నాయి...",
-                lbl_no_saved_charts: "సేవ్ చేసిన జాతకాలు ఏవీ లేవు.",
-                lbl_error_saved_charts: "జాతకాలను లోడ్ చేయడంలో విఫలమైంది.",
-                lbl_error_history: "చరిత్రను లోడ్ చేయడంలో విఫలమైంది.",
-                lbl_loading_history: "చరిత్ర లోడ్ అవుతోంది...",
-                lbl_no_history: "ఎలాంటి గణన చరిత్ర లేదు.",
-                lbl_btn_load: "లోడ్ చేయి",
-                lbl_btn_save: "సేవ్ చేయి",
-                lbl_btn_share: "షేర్ చేయి",
-                lbl_subtab_basic_config: "ప్రాథమిక కాన్ఫిగరేషన్",
-                lbl_subtab_advanced_features: "అధునాతన ఫీచర్లు",
-                lbl_astro_system: "జ్యోతిష్య పద్ధతి",
-                lbl_timing_system: "దశ కాల పద్ధతి",
-                lbl_report_success: "జ్యోతిష్య నివేదిక విజయవంతంగా రూపొందించబడింది",
-                lbl_btn_astro_ai: "జ్యోతిష్య AI విశ్లేషణ",
+                lbl_subtab_basic: "ప్రాథమిక కాన్ఫిగరేషన్",
+                lbl_subtab_advanced: "అధునాతన ఫీచర్లు",
+                lbl_astro_system: "ಜ್ಯೋತಿಷ್ಯ ಪದ್ಧತಿ",
+                lbl_timing_system: "ದಶ ಕಾಲ ಪದ್ಧತಿ",
+                lbl_report_success: "ಜ್ಯೋತಿಷ್ಯ ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಸಿದ್ಧಗೊಂಡಿದೆ",
+                lbl_btn_astro_ai: "ಜ್ಯೋತಿಷ್ಯ AI ವಿಶ್ಲೇಷಣೆ",
                 lbl_btn_download_pdf: "PDF డౌన్‌లోడ్",
-                lbl_shatbalam_title: "షడ్బలం (గ్రహ బలాలు)",
-                lbl_shatbalam_desc: "సాంప్రదాయ జ్యోతిష్య శాస్త్ర నియమాల ప్రకారం గ్రహాల షడ్బల విశ్లేషణ.",
-                lbl_ashtakavarga_title: "అష్టకవర్గ బిందువులు",
-                lbl_ashtakavarga_desc: "రాశి చక్రంలో గ్రహాల అనుకూలతను తెలిపే అష్టకవర్గ బిందువుల వివరాలు.",
-                lbl_dasa_timeline_title: "వింశోత్తరి దశా చక్రాలు",
-                lbl_dasa_timeline_desc: "మీ జీవితకాల మహాదశలు మరియు భుక్తుల కాలక్రమ విశ్లేషణ.",
-                lbl_jyothi_ai_title: "AI జ్యోతిష్య విశ్లేషణ",
+                lbl_shatbalam_title: "ಷಡ್ಬಲ (గ్రహ బలాలు)",
+                lbl_shatbalam_desc: "ಸಾಂದಾಯಿಕ ಜ್ಯೋತಿಷ್ಯ ಶಾಸ್ತ್ರ ನಿಯಮಗಳ ಪ್ರಕಾರ ಗ್ರಹಗಳ ಷಡ್ಬಲ ವಿಶ್ಲೇಷಣೆ.",
+                lbl_ashtakavarga_title: "ಅಷ್ಟಕವರ್ಗ ಬಿಂದುಗಳು",
+                lbl_ashtakavarga_desc: "ರಾಶಿ ಚಕ್ರದಲ್ಲಿ ಗ್ರಹಗಳ ಅನುಕೂಲತೆಯನ್ನು ತಿಳಿಸುವ ಅಷ್ಟಕವರ್ಗ ಬಿಂದುಗಳ ವಿವರ.",
+                lbl_dasa_timeline_title: "ವಿಂಶೋತ್ತರಿ ದಶಾ ಕಾಲಾವಧಿ",
+                lbl_dasa_timeline_desc: "ನಿಮ್ಮ ಜೀವಿತಾವಧಿಯ ಮಹಾದಶೆಗಳು ಮತ್ತು ಭುಕ್ತಿಗಳ ಕಾಲಾನುಕ್ರಮ ವಿಶ್ಲೇಷಣೆ.",
+                lbl_jyothi_ai_title: "AI ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆ",
                 lbl_btn_close_ai: "మూసివేయి",
-                lbl_hero_title: "సాంప్రదాయ వైదిక జ్యోతిష్యంతో మీ జీవిత మార్గాన్ని తెలుసుకోండి",
-                lbl_hero_subtitle: "వేద గ్రంథాల ఆధారంగా రూపొందించిన ఖచ్చితమైన తిరుకణిత సిద్ధాంత జాతక చక్రాలు మరియు జ్యోతిష్య విశ్లేషణలు. 6 భాషలలో అందుబాటులో ఉంది.",
-                lbl_hero_cta_chart: "ఉచిత జాతక చక్రాన్ని పొందండి",
-                lbl_hero_cta_panchangam: "నేటి పంచాంగం",
-                lbl_hero_trust_texts: "📜 వేద శాస్త్రాల ప్రామాణికత",
-                lbl_hero_trust_langs: "🌐 బహుభాషా మద్దతు",
-                lbl_hero_trust_free: "🪙 ఉచిత జన్మ కుండలి",
-                lbl_welcome_name: "నమస్తే",
+                lbl_hero_title: "ಸಾಂದಾಯಿಕ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯದಿಂದ ನಿಮ್ಮ ಜೀವನ ಮಾರ್ಗವನ್ನು ತಿಳಿಯಿರಿ",
+                lbl_hero_subtitle: "ವೇದ ಗ್ರಂಥಗಳ ಆಧಾರದ ಮೇಲೆ ರೂಪಿಸಿದ ನಿಖರ ತಿರುಕಣಿತ ಸಿದ್ಧಾಂತ ಜಾತಕ ಚಕ್ರಗಳು ಮತ್ತು ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳು. 6 ಭಾಷೆಗಳಲ್ಲಿ ಲಭ್ಯವಿದೆ.",
+                lbl_hero_cta_chart: "ಉಚಿತ ಜಾತಕ ಚಕ್ರಾನ್ನು ಪಡೆಯಿರಿ",
+                lbl_hero_cta_panchangam: "ನೇಟಿ ಪಂಚಾಂಗ",
+                lbl_hero_trust_texts: "📜 ವೇದ ಶಾಸ್ತ್ರಗಳ ಪ್ರಾಮಾಣಿಕತೆ",
+                lbl_hero_trust_langs: "🌐 ಬೌದ್ಧಿಕ ಭಾಷೆಗಳ ಬೆಂಬಲ",
+                lbl_hero_trust_free: "🪙 ಉಚಿತ ಜನ್ಮ ಕುಂಡಲಿ",
+                lbl_welcome_name: "ನಮಸ್ತೆ",
                 lbl_strip_today: "నేడు:",
                 lbl_wizard_title: "మీ జ్యోతిష్య ప్రయాణాన్ని 3 సులువైన దశల్లో ప్రారంభించండి:",
                 lbl_wizard_step_1: "① జన్మ వివరాలను నమోదు చేయండి",
                 lbl_wizard_step_2: "② జాతక చక్రాన్ని గణించండి",
                 lbl_wizard_step_3: "③ ఉచిత క్రెడిట్లతో మొదటి AI విశ్లేషణను పొందండి",
-                lbl_wizard_progress_start: "ఖాతా సృష్టించబడింది ✓",
-                lbl_wizard_progress_done: "3లో {n} దశలు పూర్తయ్యాయి",
-                lbl_wizard_title_reappear: "మీ జాతకం మీ కోసం వేచి ఉంది — {n} దశలు మిగిలి ఉన్నాయి.",
-                lbl_reading_preview_banner: "ఇది మీ పలన యొక్క ఉచిత మునుజూపు — పూర్తి విశ్లేషణ కోసం Astro Pass సభ్యత్వం తీసుకోండి.",
-                lbl_reading_preview_cta: "మీ పూర్తి జ్యోతిష్య పలన పొందండి — Astro Pass",
-                lbl_auth_invested_header: "{name} జాతకాన్ని సేవ్ చేయండి — ఉచిత ఖాతాను సృష్టించండి.",
-                lbl_your_chart_fallback: "మీ",
-                lbl_btn_save_chart: "నా జాతకాన్ని సేవ్ చేయి",
-                lbl_btn_create_account: "ఖాతా సృష్టించండి",
-                lbl_auth_goal_prompt: "మిమ్మల్ని ఇక్కడికి తీసుకువచ్చింది ఏమిటి?",
-                lbl_goal_career: "వృత్తి",
-                lbl_goal_marriage: "వివాహం",
-                lbl_goal_general: "సాధారణం",
-                lbl_paywall_subcopy_default: "నిల్వ: {bal} టోకెన్లు. కొనసాగించడానికి రీఛార్జ్ చేయండి — UPI, కార్డులు లేదా నెట్‌బ్యాంకింగ్ ద్వారా చెల్లించవచ్చు.",
-                lbl_paywall_subcopy_reading: "మీ AI పలన ఒక రీఛార్జ్ దూరంలో ఉంది. నిల్వ: {bal} టోకెన్లు.",
-                lbl_best_value: "ఉత్తమ విలువ",
-                lbl_per_credit_rate: "≈₹{rate}/క్రెడిట్",
-                lbl_pdf_premium_anchor: "Astro Pro రేటులో ≈₹{amount} — ప్రత్యక్ష జ్యోతిష్య సంప్రదింపు సాధారణంగా ₹1,500+ ఖర్చవుతుంది",
                 lbl_readings_hub_title: "జ్యోతిష్య విశ్లేషణల కేంద్రం",
                 lbl_hub_chat_title: "ఆస్ట్రో AI సంప్రదింపు",
                 lbl_hub_chat_desc: "మీ జాతకం ఆధారంగా కెరీర్, కుటుంబం మరియు వ్యక్తిగత సందేహాలను ఆస్ట్రో AI సహాయంతో నివృత్తి చేసుకోండి.",
@@ -4813,32 +4494,10 @@
                 lbl_hub_remedies_desc: "మీ జాతక గ్రహ బలాన్ని తెలుసుకుని, దోష నివారణకు తగిన వైదిక పరిహారాలను పొందండి.",
                 lbl_hub_compat_title: "గుణ మేళన పొంతన (కూట పొంతన)",
                 lbl_hub_compat_desc: "సాంప్రదాయ వివాహ పొంతన పద్ధతిలో వధూవరుల నక్షత్రాల అనుకూలతను పరీక్షించండి.",
-                lbl_hub_varsha_title: "వర్షఫల (సంవత్సర జాతకం)",
+                lbl_hub_varsha_title: "ವರ್ಷಫಲ (సంవత్సర జాతకం)",
                 lbl_hub_varsha_desc: "ఎంపిక చేసిన సంవత్సరంలో మీ వార్షిక జాతక ఫలితాలు మరియు గ్రహ ప్రభావాలను తెలుసుకోండి.",
                 lbl_varsha_year_label: "సంవత్సరాన్ని ఎంచుకోండి:",
-                lbl_varshaphala_title: "వార్షిక వర్షఫల జ్యోతిష్య విశ్లేషణ",
-                nav_btn_horoscope: "రాశి ఫలాలు",
-                lbl_horoscope_title: "రాశి ఫలాలు",
-                lbl_horoscope_desc: "12 రాశులకు దిన, మాస మరియు వార్షిక ఫలాలు — నిజమైన గ్రహ సంచారాల ఆధారంగా, శాస్త్ర గ్రంథాల ప్రామాణికతతో AI రచిస్తుంది.",
-                lbl_horo_tab_daily: "దిన ఫలం",
-                lbl_horo_tab_monthly: "మాస ఫలం",
-                lbl_horo_tab_yearly: "వర్ష ఫలం",
-                lbl_horo_tab_personal: "నా వర్షఫలం",
-                lbl_horo_calendar: "నూతన సంవత్సర పద్ధతి",
-                horo_cal_gregorian: "ఆంగ్ల సంవత్సరం (జనవరి 1)",
-                horo_cal_tamil: "తమిళ నూతన సంవత్సరం (చిత్తిరై)",
-                horo_cal_telugu: "ఉగాది (తెలుగు)",
-                horo_cal_kannada: "ఉగాది (కన్నడ)",
-                horo_cal_malayalam: "విషు (కేరళ)",
-                horo_cal_hindi: "విక్రమ సంవత్ (హిందీ)",
-                lbl_horo_loading: "గ్రహ సంచారాలను పరిశీలిస్తున్నాం… కొత్త కాలానికి మొదటి వీక్షణ AI ద్వారా రచించబడుతుంది, ఒక నిమిషం వరకు పట్టవచ్చు.",
-                lbl_horo_error: "ఫలాలను లోడ్ చేయలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
-                lbl_horo_personal_desc: "మీ సేవ్ చేసిన జనన వివరాల ఆధారంగా వ్యక్తిగత వార్షిక ఫలం: నడుస్తున్న దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలు, శాస్త్ర గ్రంథాల ప్రామాణికతతో. ముందుగా సెట్టింగ్స్‌లో మీ జనన వివరాలను సేవ్ చేయండి.",
-                lbl_horo_personal_btn: "నా వార్షిక ఫలం రూపొందించండి",
-                lbl_horo_personal_loading: "మీ దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలను లెక్కిస్తున్నాం…",
-                lbl_home_phala_title: "మీ నేటి రాశి ఫలం",
-                lbl_home_phala_more: "అన్ని రాశులు →",
-                lbl_horo_need_chart: "దయచేసి ముందుగా జాతకాన్ని లెక్కించండి."
+                lbl_varshaphala_title: "వార్షిక వర్షఫల జ్యోతిష్య విశ్లేషణ"
             },
             ml: {
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
@@ -4920,7 +4579,7 @@
                 nishita_muhurta_label: "നിശീഥ മുഹൂർത്തം (ശുഭം)",
                 vijaya_muhurta_label: "വിജയ മുഹൂർത്തം (ശുഭം)",
                 dur_muhurta_label: "ദുർമുഹൂർത്തം (അശുഭൻ)",
-                ahas: "പകലിന്റെ അളവ് (അഹസ്)",
+                ahas: "പകലിന്റെ அளவு (അഹസ്)",
                 udayadhi: "ഉദയാതി നാഴിക",
                 kali_year: "കലിയുഗ വർഷം",
                 panch_wisdom_title: "പഞ്ചാംഗ തത്വങ്ങളും കലണ്ടറുകളും",
@@ -4930,7 +4589,7 @@
                 yamagandam_label: "യമകണ്ടകം (അശുഭ സമയം)",
                 gulika_kalam_label: "ഗുളികകാലം (സാധാരണ/ശുഭ സമയം)",
                 abhijit_label: "അഭിജിത്ത് മുഹൂർത്തം (ശുഭ സമയം)",
-                brahma_label: "ബ്രഹ്മമുഹൂർത്തം (അതിരാവിലെ)",
+                brahma_label: "ബ്രഹ്മмуഹൂർത്തം (അതിരാവിലെ)",
                 strength_title: "മുഹൂർത്ത നേത്രവും ജീവബലവും",
                 netram_label: "നേത്രം (ദിവസ ദൃഷ്ടി)",
                 jeevan_label: "ജീവൻ (ദിവസ പ്രാണൻ)",
@@ -4942,24 +4601,8 @@
                 lbl_horas_desc: "സൂര്യോദയം മുതൽ ഓരോ മണിക്കൂറിലും ഹോരാധിപന്മാർ മാറുന്നു. ഹോരയുടെ സ്വഭാവം മനസ്സിലാക്കാൻ സമയം തിരഞ്ഞെടുക്കുക.",
                 lbl_festivals_title: "ഉത്സവങ്ങളും ശുഭദിനങ്ങളും",
                 lbl_metadata_birth_title: "ജാതക ഗണിത വിവരങ്ങൾ",
-                lbl_subtab_basic: "ജനന വിവരങ്ങൾ",
-                lbl_subtab_advanced: "ജ്യോതിഷ ക്രമീകരണങ്ങൾ",
-                lbl_subtab_saved_charts: "സേവ് ചെയ്ത ജാതകങ്ങൾ",
-                lbl_subtab_chart_history: "ജാതക ചരിത്രം",
-                lbl_history_select_all: "എല്ലാം തിരഞ്ഞെടുക്കുക",
-                lbl_btn_clear_selected: "തിരഞ്ഞെടുത്തവ ഇല്ലാതാക്കുക",
-                lbl_btn_clear_all: "എല്ലാം ഇല്ലാതാക്കുക",
-                lbl_loading_saved_charts: "ജാതകങ്ങൾ ലോഡ് ചെയ്യുന്നു...",
-                lbl_no_saved_charts: "ജാതകങ്ങൾ ഒന്നും സേവ് ചെയ്തിട്ടില്ല.",
-                lbl_error_saved_charts: "ജാതകങ്ങൾ ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു.",
-                lbl_error_history: "ചരിത്രം ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു.",
-                lbl_loading_history: "ചരിത്രം ലോഡ് ചെയ്യുന്നു...",
-                lbl_no_history: "ജാതക ചരിത്രം ഒന്നും ലഭ്യമല്ല.",
-                lbl_btn_load: "തുറക്കുക",
-                lbl_btn_save: "സേവിക്കുക",
-                lbl_btn_share: "പങ്കിടുക",
-                lbl_subtab_basic_config: "അടിസ്ഥാന ക്രമീകരണം",
-                lbl_subtab_advanced_features: "വിപുലമായ സവിശേഷതകൾ",
+                lbl_subtab_basic: "അടിസ്ഥാന ക്രമീകരണം",
+                lbl_subtab_advanced: "വിപുലമായ സവിശേഷತകൾ",
                 lbl_astro_system: "ജ്യോതിഷ രീതി",
                 lbl_timing_system: "ദശ കാല രീതി",
                 lbl_report_success: "ജ്യോതിഷ റിപ്പോർട്ട് വിജയകരമായി തയ്യാറാക്കി",
@@ -4967,7 +4610,7 @@
                 lbl_btn_download_pdf: "PDF ഡൗൺലോഡ്",
                 lbl_shatbalam_title: "ഷഡ്ബലം (ഗ്രഹ ശക്തികൾ)",
                 lbl_shatbalam_desc: "പരമ്പരാഗത ജ്യോതിഷ ശാസ്ത്ര തത്വങ്ങൾ അനുസരിച്ച് ഗ്രഹങ്ങളുടെ ഷഡ്ബല വിശകലനം.",
-                lbl_ashtakavarga_title: "അഷ്ടകവർഗ്ഗ ബിന്ദുക്കൾ",
+                lbl_ashtakavarga_title: "ಅಷ್ಟಕವರ್ಗ ಬಿಂದುಗಳು",
                 lbl_ashtakavarga_desc: "രാശിചക്രത്തിൽ ഗ്രഹങ്ങളുടെ ശുഭസ്വാധീനം വ്യക്തമാക്കുന്ന അഷ്ടകവർഗ്ഗ ബിന്ദുക്കൾ.",
                 lbl_dasa_timeline_title: "വിംശോത്തരി ദശാകാലങ്ങൾ",
                 lbl_dasa_timeline_desc: "ജീവിതത്തിലെ മഹാദശകളുടെയും അപഹാരങ്ങളുടെയും കാലഗണന.",
@@ -4986,24 +4629,6 @@
                 lbl_wizard_step_1: "① ജനന വിവരങ്ങൾ നൽകുക",
                 lbl_wizard_step_2: "② ജാതകം ഗണിക്കുക",
                 lbl_wizard_step_3: "③ സൗജന്യ ക്രെഡിറ്റുകൾ ഉപയോഗിച്ച് ആദ്യത്തെ AI വിശകലനം നേടുക",
-                lbl_wizard_progress_start: "അക്കൗണ്ട് സൃഷ്ടിച്ചു ✓",
-                lbl_wizard_progress_done: "3-ൽ {n} ഘട്ടങ്ങൾ പൂർത്തിയായി",
-                lbl_wizard_title_reappear: "നിങ്ങളുടെ ജാതകം നിങ്ങൾക്കായി കാത്തിരിക്കുന്നു — {n} ഘട്ടങ്ങൾ ബാക്കി.",
-                lbl_reading_preview_banner: "ഇത് നിങ്ങളുടെ വായനയുടെ സൗജന്യ പ്രിവ്യൂ ആണ് — പൂർണ്ണ വിശകലനത്തിന് Astro Pass സബ്സ്ക്രൈബ് ചെയ്യുക.",
-                lbl_reading_preview_cta: "നിങ്ങളുടെ പൂർണ്ണ ജ്യോതിഷ വായന നേടുക — Astro Pass",
-                lbl_auth_invested_header: "{name}-ന്റെ ജാതകം സേവ് ചെയ്യുക — സൗജന്യ അക്കൗണ്ട് സൃഷ്ടിക്കുക.",
-                lbl_your_chart_fallback: "നിങ്ങളുടെ",
-                lbl_btn_save_chart: "എന്റെ ജാതകം സേവ് ചെയ്യുക",
-                lbl_btn_create_account: "അക്കൗണ്ട് സൃഷ്ടിക്കുക",
-                lbl_auth_goal_prompt: "എന്താണ് നിങ്ങളെ ഇവിടെ എത്തിച്ചത്?",
-                lbl_goal_career: "ജോലി",
-                lbl_goal_marriage: "വിവാഹം",
-                lbl_goal_general: "പൊതുവായത്",
-                lbl_paywall_subcopy_default: "ബാലൻസ്: {bal} ടോക്കണുകൾ. തുടരാൻ റീചാർജ് ചെയ്യുക — UPI, കാർഡുകൾ അല്ലെങ്കിൽ നെറ്റ്ബാങ്കിംഗ് വഴി അടയ്ക്കാം.",
-                lbl_paywall_subcopy_reading: "നിങ്ങളുടെ AI വായന ഒരു റീചാർജ് അകലെയാണ്. ബാലൻസ്: {bal} ടോക്കണുകൾ.",
-                lbl_best_value: "മികച്ച മൂല്യം",
-                lbl_per_credit_rate: "≈₹{rate}/ക്രെഡിറ്റ്",
-                lbl_pdf_premium_anchor: "Astro Pro നിരക്കിൽ ≈₹{amount} — നേരിട്ടുള്ള ജ്യോതിഷ കൺസൾട്ടേഷന് സാധാരണയായി ₹1,500+ ചെലവാകും",
                 lbl_readings_hub_title: "ജ്യോതിഷ പഠനവും വിശകലനങ്ങളും",
                 lbl_hub_chat_title: "ആസ്ട്രോ AI കൂടിയാലോചന",
                 lbl_hub_chat_desc: "നിങ്ങളുടെ ജാതകത്തിന്റെ അടിസ്ഥാനത്തിൽ ജോലി, കുടുംബം, വ്യക്തിഗത സംശയങ്ങൾ എന്നിവ ആസ്ട്രോ AI വഴി ചോദിച്ചറിയാം.",
@@ -5014,29 +4639,7 @@
                 lbl_hub_varsha_title: "വർഷഫലം (വാർഷിക ജാതകം)",
                 lbl_hub_varsha_desc: "തിരഞ്ഞെടുത്ത വർഷത്തിലെ വാർഷിക ജാതക ഫലങ്ങളും ഗ്രഹസ്വാധീനങ്ങളും അറിയുക.",
                 lbl_varsha_year_label: "വർഷം തിരഞ്ഞെടുക്കുക:",
-                lbl_varshaphala_title: "വാർഷിക വർഷഫല ജ്യോതിഷ വിശകലനം",
-                nav_btn_horoscope: "രാശിഫലം",
-                lbl_horoscope_title: "രാശിഫലങ്ങൾ",
-                lbl_horoscope_desc: "12 രാശികൾക്കുള്ള ദിവസ, മാസ, വാർഷിക ഫലങ്ങൾ — യഥാർത്ഥ ഗ്രഹസഞ്ചാരങ്ങളെ അടിസ്ഥാനമാക്കി, ശാസ്ത്രഗ്രന്ഥങ്ങളുടെ പിൻബലത്തോടെ AI എഴുതുന്നു.",
-                lbl_horo_tab_daily: "ദിവസഫലം",
-                lbl_horo_tab_monthly: "മാസഫലം",
-                lbl_horo_tab_yearly: "വർഷഫലം",
-                lbl_horo_tab_personal: "എന്റെ വർഷഫലം",
-                lbl_horo_calendar: "പുതുവർഷ രീതി",
-                horo_cal_gregorian: "ഇംഗ്ലീഷ് വർഷം (ജനുവരി 1)",
-                horo_cal_tamil: "തമിഴ് പുതുവർഷം (ചിത്തിരൈ)",
-                horo_cal_telugu: "ഉഗാദി (തെലുങ്ക്)",
-                horo_cal_kannada: "ഉഗാദി (കന്നഡ)",
-                horo_cal_malayalam: "വിഷു (കേരളം)",
-                horo_cal_hindi: "വിക്രം സംവത് (ഹിന്ദി)",
-                lbl_horo_loading: "ഗ്രഹസഞ്ചാരങ്ങൾ പരിശോധിക്കുന്നു… പുതിയ കാലയളവിന്റെ ആദ്യ കാഴ്ച AI എഴുതുന്നതിനാൽ ഒരു മിനിറ്റ് വരെ എടുത്തേക്കാം.",
-                lbl_horo_error: "ഫലങ്ങൾ ലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.",
-                lbl_horo_personal_desc: "നിങ്ങളുടെ സേവ് ചെയ്ത ജനന വിവരങ്ങളെ അടിസ്ഥാനമാക്കിയ വ്യക്തിഗത വാർഷിക ഫലം: നടപ്പു ദശാ-ഭുക്തി കാലക്രമവും വർഷത്തിലെ ഗോചരങ്ങളും, ശാസ്ത്രഗ്രന്ഥങ്ങളുടെ പിൻബലത്തോടെ. ആദ്യം സെറ്റിംഗ്സിൽ ജനന വിവരങ്ങൾ സേവ് ചെയ്യുക.",
-                lbl_horo_personal_btn: "എന്റെ വർഷഫലം സൃഷ്ടിക്കുക",
-                lbl_horo_personal_loading: "നിങ്ങളുടെ ദശാ-ഭുക്തി കാലക്രമവും വർഷ ഗോചരങ്ങളും കണക്കാക്കുന്നു…",
-                lbl_home_phala_title: "നിങ്ങളുടെ ഇന്നത്തെ രാശിഫലം",
-                lbl_home_phala_more: "എല്ലാ രാശികളും →",
-                lbl_horo_need_chart: "ദയവായി ആദ്യം ജാതകം കണക്കാക്കുക."
+                lbl_varshaphala_title: "വാർഷിക വർഷഫല ജ്യോതിഷ വിശകലനം"
             },
             kn: {
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಿಸಲಾಗುತ್ತಿದೆ...",
@@ -5140,24 +4743,8 @@
                 lbl_horas_desc: "ಸೂರ್ಯೋದಯದಿಂದ ಪ್ರತಿ ಗಂಟೆಗೆ ಹೋರಾ ಅಧಿಪತಿಗಳು ಬದಲಾಗುತ್ತಾರೆ. ಹೋರಾದ ಸ್ವಭಾವ ತಿಳಿಯಲು ಗಂಟೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ.",
                 lbl_festivals_title: "ಹಬ್ಬಗಳು ಮತ್ತು ಶುಭ ದಿನಗಳು",
                 lbl_metadata_birth_title: "ಜನ್ಮ ಪತ್ರಿಕೆ ಖಗೋಳ ವಿವರಗಳು",
-                lbl_subtab_basic: "ಜನ್ಮ ವಿವರಗಳು",
-                lbl_subtab_advanced: "ಜ್ಯೋತಿಷ್ಯ ಸೆಟ್ಟಿಂಗ್ಸ್",
-                lbl_subtab_saved_charts: "ಉಳಿಸಿದ ಜಾತಕಗಳು",
-                lbl_subtab_chart_history: "ಲೆಕ್ಕಾಚಾರದ ಇತಿಹಾಸ",
-                lbl_history_select_all: "ಎಲ್ಲವನ್ನೂ ಆಯ್ಕೆಮಾಡಿ",
-                lbl_btn_clear_selected: "ಆಯ್ಕೆ ಮಾಡಿದ್ದನ್ನು ಅಳಿಸಿ",
-                lbl_btn_clear_all: "ಎಲ್ಲವನ್ನೂ ಅಳಿಸಿ",
-                lbl_loading_saved_charts: "ಜಾತಕಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
-                lbl_no_saved_charts: "ಉಳಿಸಿದ ಜಾತಕಗಳು ಯಾವುವೂ ಇಲ್ಲ.",
-                lbl_error_saved_charts: "ಜಾತಕಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ.",
-                lbl_error_history: "ಇತಿಹಾಸವನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ.",
-                lbl_loading_history: "ಇತಿಹಾಸ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
-                lbl_no_history: "ಯಾವುದೇ ಲೆಕ್ಕಾಚಾರದ ಇತಿಹಾಸ ಕಂಡುಬಂದಿಲ್ಲ.",
-                lbl_btn_load: "ಲೋಡ್",
-                lbl_btn_save: "ಉಳಿಸು",
-                lbl_btn_share: "ಹಂಚು",
-                lbl_subtab_basic_config: "ಅಡಿಪಡೆ ಪ್ರೊಫೈಲ್",
-                lbl_subtab_advanced_features: "ಸುಧಾರಿತ ವೈಶಿಷ್ಟ್ಯಗಳು",
+                lbl_subtab_basic: "ಮೂಲ ಸಂರಚನೆ",
+                lbl_subtab_advanced: "ಸುಧಾರಿತ ವೈಶಿಷ್ಟ್ಯಗಳು",
                 lbl_astro_system: "ಜ್ಯೋತಿಷ್ಯ ಪದ್ಧತಿ",
                 lbl_timing_system: "ದಶ ಕಾಲ ಪದ್ಧತಿ",
                 lbl_report_success: "ಜ್ಯೋತಿಷ್ಯ ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಸಿದ್ಧಗೊಂಡಿದೆ",
@@ -5184,25 +4771,7 @@
                 lbl_wizard_step_1: "① ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ",
                 lbl_wizard_step_2: "② ಜಾತಕ ಚಕ್ರವನ್ನು ಗಣಿಸಿ",
                 lbl_wizard_step_3: "③ ಉಚಿತ ಕ್ರೆಡಿಟ್‌ಗಳೊಂದಿಗೆ ಮೊದಲ AI ವಿಶ್ಲೇಷಣೆ ಪಡೆಯಿರಿ",
-                lbl_wizard_progress_start: "ಖಾತೆ ರಚಿಸಲಾಗಿದೆ ✓",
-                lbl_wizard_progress_done: "3ರಲ್ಲಿ {n} ಹಂತಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ",
-                lbl_wizard_title_reappear: "ನಿಮ್ಮ ಜಾತಕ ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿದೆ — {n} ಹಂತಗಳು ಬಾಕಿ ಉಳಿದಿವೆ.",
-                lbl_reading_preview_banner: "ಇದು ನಿಮ್ಮ ಓದಿನ ಉಚಿತ ಪೂರ್ವವೀಕ್ಷಣೆ — ಸಂಪೂರ್ಣ ವಿಶ್ಲೇಷಣೆಗಾಗಿ Astro Pass ಚಂದಾದಾರರಾಗಿ.",
-                lbl_reading_preview_cta: "ನಿಮ್ಮ ಸಂಪೂರ್ಣ ಜ್ಯೋತಿಷ್ಯ ಓದನ್ನು ಪಡೆಯಿರಿ — Astro Pass",
-                lbl_auth_invested_header: "{name} ಅವರ ಜಾತಕವನ್ನು ಉಳಿಸಿ — ಉಚಿತ ಖಾತೆಯನ್ನು ರಚಿಸಿ.",
-                lbl_your_chart_fallback: "ನಿಮ್ಮ",
-                lbl_btn_save_chart: "ನನ್ನ ಜಾತಕವನ್ನು ಉಳಿಸಿ",
-                lbl_btn_create_account: "ಖಾತೆ ರಚಿಸಿ",
-                lbl_auth_goal_prompt: "ನಿಮ್ಮನ್ನು ಇಲ್ಲಿಗೆ ಕರೆತಂದದ್ದು ಏನು?",
-                lbl_goal_career: "ವೃತ್ತಿ",
-                lbl_goal_marriage: "ವಿವಾಹ",
-                lbl_goal_general: "ಸಾಮಾನ್ಯ",
-                lbl_paywall_subcopy_default: "ಬಾಕಿ: {bal} ಟೋಕನ್‌ಗಳು. ಮುಂದುವರಿಸಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ — UPI, ಕಾರ್ಡ್‌ಗಳು ಅಥವಾ ನೆಟ್‌ಬ್ಯಾಂಕಿಂಗ್ ಮೂಲಕ ಪಾವತಿಸಬಹುದು.",
-                lbl_paywall_subcopy_reading: "ನಿಮ್ಮ AI ಓದು ಒಂದು ರೀಚಾರ್ಜ್ ದೂರದಲ್ಲಿದೆ. ಬಾಕಿ: {bal} ಟೋಕನ್‌ಗಳು.",
-                lbl_best_value: "ಅತ್ಯುತ್ತಮ ಮೌಲ್ಯ",
-                lbl_per_credit_rate: "≈₹{rate}/ಕ್ರೆಡಿಟ್",
-                lbl_pdf_premium_anchor: "Astro Pro ದರದಲ್ಲಿ ≈₹{amount} — ನೇರ ಜ್ಯೋತಿಷ್ಯ ಸಮಾಲೋಚನೆ ಸಾಮಾನ್ಯವಾಗಿ ₹1,500+ ವೆಚ್ಚವಾಗುತ್ತದೆ",
-                lbl_readings_hub_title: "ಜೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳ ಕೇಂದ್ರ",
+                lbl_readings_hub_title: "ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳ ಕೇಂದ್ರ",
                 lbl_hub_chat_title: "ಆಸ್ಟ್ರೋ AI ಸಮಾಲೋಚನೆ",
                 lbl_hub_chat_desc: "ನಿಮ್ಮ ಜಾತಕ ಆಧಾರದ ಮೇಲೆ ವೃತ್ತಿ, ಕೌಟುಂಬಿಕ ಮತ್ತು ವೈಯಕ್ತಿಕ ಸಂದೇಹಗಳನ್ನು ಆಸ್ಟ್ರೋ AI ಸಹಾಯದಿಂದ ನಿವಾರಿಸಿಕೊಳ್ಳಿ.",
                 lbl_hub_remedies_title: "ಗ್ರಹ ಬಲಗಳು ಮತ್ತು ಪರಿಹಾರಗಳು",
@@ -5212,29 +4781,7 @@
                 lbl_hub_varsha_title: "ವರ್ಷಫಲ (ವಾರ್ಷಿಕ ಜಾತಕ)",
                 lbl_hub_varsha_desc: "ಆಯ್ಕೆ ಮಾಡಿದ ವರ್ಷದಲ್ಲಿ ನಿಮ್ಮ ವಾರ್ಷಿಕ ಜಾತಕ ಫಲಿತಾಂಶಗಳು ಮತ್ತು ಗ್ರಹ ಪ್ರಭಾವಗಳನ್ನು ತಿಳಿಯಿರಿ.",
                 lbl_varsha_year_label: "ವರ್ಷವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ:",
-                lbl_varshaphala_title: "ವಾರ್ಷಿಕ ವರ್ಷಫಲ ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆ",
-                nav_btn_horoscope: "ರಾಶಿ ಫಲ",
-                lbl_horoscope_title: "ರಾಶಿ ಫಲಗಳು",
-                lbl_horoscope_desc: "12 ರಾಶಿಗಳಿಗೆ ದಿನ, ಮಾಸ ಮತ್ತು ವಾರ್ಷಿಕ ಫಲಗಳು — ನೈಜ ಗ್ರಹ ಸಂಚಾರಗಳ ಆಧಾರದ ಮೇಲೆ, ಶಾಸ್ತ್ರ ಗ್ರಂಥಗಳ ಆಧಾರದೊಂದಿಗೆ AI ಬರೆಯುತ್ತದೆ.",
-                lbl_horo_tab_daily: "ದಿನ ಫಲ",
-                lbl_horo_tab_monthly: "ಮಾಸ ಫಲ",
-                lbl_horo_tab_yearly: "ವರ್ಷ ಫಲ",
-                lbl_horo_tab_personal: "ನನ್ನ ವರ್ಷಫಲ",
-                lbl_horo_calendar: "ಹೊಸ ವರ್ಷ ಪದ್ಧತಿ",
-                horo_cal_gregorian: "ಇಂಗ್ಲಿಷ್ ವರ್ಷ (ಜನವರಿ 1)",
-                horo_cal_tamil: "ತಮಿಳು ಹೊಸ ವರ್ಷ (ಚಿತ್ತಿರೈ)",
-                horo_cal_telugu: "ಯುಗಾದಿ (ತೆಲುಗು)",
-                horo_cal_kannada: "ಯುಗಾದಿ (ಕನ್ನಡ)",
-                horo_cal_malayalam: "ವಿಷು (ಕೇರಳ)",
-                horo_cal_hindi: "ವಿಕ್ರಮ ಸಂವತ್ (ಹಿಂದಿ)",
-                lbl_horo_loading: "ಗ್ರಹ ಸಂಚಾರಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ… ಹೊಸ ಅವಧಿಯ ಮೊದಲ ವೀಕ್ಷಣೆಯನ್ನು AI ಬರೆಯುವುದರಿಂದ ಒಂದು ನಿಮಿಷದವರೆಗೆ ತೆಗೆದುಕೊಳ್ಳಬಹುದು.",
-                lbl_horo_error: "ಫಲಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
-                lbl_horo_personal_desc: "ನಿಮ್ಮ ಉಳಿಸಿದ ಜನನ ವಿವರಗಳ ಆಧಾರದ ವೈಯಕ್ತಿಕ ವಾರ್ಷಿಕ ಫಲ: ನಡೆಯುತ್ತಿರುವ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷದ ಗೋಚಾರಗಳು, ಶಾಸ್ತ್ರ ಗ್ರಂಥಗಳ ಆಧಾರದೊಂದಿಗೆ. ಮೊದಲು ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಜನನ ವಿವರಗಳನ್ನು ಉಳಿಸಿ.",
-                lbl_horo_personal_btn: "ನನ್ನ ವರ್ಷಫಲ ರಚಿಸಿ",
-                lbl_horo_personal_loading: "ನಿಮ್ಮ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷ ಗೋಚಾರಗಳನ್ನು ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ…",
-                lbl_home_phala_title: "ನಿಮ್ಮ ಇಂದಿನ ರಾಶಿ ಫಲ",
-                lbl_home_phala_more: "ಎಲ್ಲಾ ರಾಶಿಗಳು →",
-                lbl_horo_need_chart: "ದಯವಿಟ್ಟು ಮೊದಲು ಜಾತಕವನ್ನು ಲೆಕ್ಕಹಾಕಿ."
+                lbl_varshaphala_title: "ವಾರ್ಷಿಕ ವರ್ಷಫಲ ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆ"
             },
             hi: {
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
@@ -5260,7 +4807,7 @@
                 th_marriage_status: "स्थिति",
                 lbl_marriage_ai_loading: "सम्बन्धों के शास्त्र RAG डेटाबेस से संदर्भ प्राप्त कर गणेश फलादेश तैयार किया जा रहा है...",
                 title: "वैदिक ज्योतिष AI पोर्टल",
-                subtitle: "उच्च-सटीक पंचांग एवं शास्त्रोक्त AI मार्गदर्शन",
+                subtitle: "उच्च-सटीक वैदिक पंचांग एवं शास्त्रोक्त AI मार्गदर्शन",
                 lbl_home_calendar: "वैदिक खगोलीय पंचांग",
                 lbl_jyothisyam_title: "जन्म पत्रिका एवं ज्योतिषीय डैशबोर्ड",
                 lbl_ai_title: "एस्ट्रो AI परामर्श",
@@ -5338,24 +4885,8 @@
                 lbl_horas_desc: "सूर्योदय से प्रत्येक घंटे के शासक ग्रह बदलते हैं। होरा के प्रभाव और गुणों को जानने के लिए संबंधित घंटे पर क्लिक करें।",
                 lbl_festivals_title: "पर्व, त्योहार एवं शुभ दिन",
                 lbl_metadata_birth_title: "जन्म पत्रिका खगोलीय विवरण",
-                lbl_subtab_basic: "जन्म विवरण",
-                lbl_subtab_advanced: "ज्योतिष सेटिंग्स",
-                lbl_subtab_saved_charts: "सहेजे गए चार्ट",
-                lbl_subtab_chart_history: "गणना का इतिहास",
-                lbl_history_select_all: "सभी चुनें",
-                lbl_btn_clear_selected: "चयनित हटाएं",
-                lbl_btn_clear_all: "सभी हटाएं",
-                lbl_loading_saved_charts: "सहेजे गए चार्ट लोड किए जा रहे हैं...",
-                lbl_no_saved_charts: "कोई सहेजा गया चार्ट नहीं है।",
-                lbl_error_saved_charts: "सहेजे गए चार्ट लोड करने में त्रुटि।",
-                lbl_error_history: "इतिहास लोड करने में त्रुटि।",
-                lbl_loading_history: "इतिहास लोड किया जा रहा है...",
-                lbl_no_history: "कोई गणना का इतिहास नहीं मिला।",
-                lbl_btn_load: "लोड करें",
-                lbl_btn_save: "सहेजें",
-                lbl_btn_share: "साझा करें",
-                lbl_subtab_basic_config: "बुनियादी विवरण",
-                lbl_subtab_advanced_features: "उन्नत सुविधाएँ",
+                lbl_subtab_basic: "मूल सेटअप",
+                lbl_subtab_advanced: "उन्नत सुविधाएँ",
                 lbl_astro_system: "ज्योतिष पद्धति",
                 lbl_timing_system: "दशा काल पद्धति",
                 lbl_report_success: "कुंडली रिपोर्ट सफलतापूर्वक तैयार हुई",
@@ -5382,24 +4913,6 @@
                 lbl_wizard_step_1: "① जन्म विवरण दर्ज करें",
                 lbl_wizard_step_2: "② जन्म कुंडली तैयार करें",
                 lbl_wizard_step_3: "③ अपने {bonus} निःशुल्क क्रेडिट के साथ पहला AI परामर्श प्राप्त करें",
-                lbl_wizard_progress_start: "खाता बनाया गया ✓",
-                lbl_wizard_progress_done: "3 में से {n} चरण पूर्ण",
-                lbl_wizard_title_reappear: "आपकी कुंडली आपकी प्रतीक्षा कर रही है — {n} चरण शेष हैं।",
-                lbl_reading_preview_banner: "यह आपके पठन का निःशुल्क पूर्वावलोकन है — पूर्ण विश्लेषण के लिए Astro Pass सदस्यता लें।",
-                lbl_reading_preview_cta: "अपना पूर्ण ज्योतिष पठन प्राप्त करें — Astro Pass",
-                lbl_auth_invested_header: "{name} की कुंडली सहेजें — निःशुल्क खाता बनाएं।",
-                lbl_your_chart_fallback: "अपनी",
-                lbl_btn_save_chart: "मेरी कुंडली सहेजें",
-                lbl_btn_create_account: "खाता बनाएं",
-                lbl_auth_goal_prompt: "आपको यहाँ क्या लाया?",
-                lbl_goal_career: "करियर",
-                lbl_goal_marriage: "विवाह",
-                lbl_goal_general: "सामान्य",
-                lbl_paywall_subcopy_default: "शेष: {bal} टोकन। जारी रखने के लिए रीचार्ज करें — UPI, कार्ड या नेटबैंकिंग से भुगतान करें।",
-                lbl_paywall_subcopy_reading: "आपका AI पठन एक रीचार्ज दूर है। शेष: {bal} टोकन।",
-                lbl_best_value: "सर्वश्रेष्ठ मूल्य",
-                lbl_per_credit_rate: "≈₹{rate}/क्रेडिट",
-                lbl_pdf_premium_anchor: "Astro Pro दर पर ≈₹{amount} — प्रत्यक्ष ज्योतिष परामर्श की लागत आमतौर पर ₹1,500+ होती है",
                 lbl_readings_hub_title: "ज्योतिषीय फलादेश एवं परामर्श केंद्र",
                 lbl_hub_chat_title: "एस्ट्रो AI परामर्श",
                 lbl_hub_chat_desc: "अपनी कुंडली के आधार पर करियर, परिवार और व्यक्तिगत विषयों पर एस्ट्रो AI से परामर्श लें।",
@@ -5410,32 +4923,9 @@
                 lbl_hub_varsha_title: "वर्षफल (वार्षिक कुंडली)",
                 lbl_hub_varsha_desc: "चयनित वर्ष के लिए अपना वर्षफल और वार्षिक ग्रहों का प्रभाव जानें।",
                 lbl_varsha_year_label: "वर्ष का चयन करें:",
-                lbl_varshaphala_title: "वार्षिक वर्षफल ज्योतिष विश्लेषण",
-                nav_btn_horoscope: "राशिफल",
-                lbl_horoscope_title: "राशिफल",
-                lbl_horoscope_desc: "सभी 12 राशियों के लिए दैनिक, मासिक और वार्षिक भविष्यफल — वास्तविक ग्रह गोचर पर आधारित, शास्त्रीय ग्रंथों के प्रमाण के साथ AI द्वारा लिखित।",
-                lbl_horo_tab_daily: "दैनिक",
-                lbl_horo_tab_monthly: "मासिक",
-                lbl_horo_tab_yearly: "वार्षिक",
-                lbl_horo_tab_personal: "मेरा वर्षफल",
-                lbl_horo_calendar: "नववर्ष पद्धति",
-                horo_cal_gregorian: "अंग्रेज़ी वर्ष (1 जनवरी)",
-                horo_cal_tamil: "तमिल नववर्ष (चित्तिरै)",
-                horo_cal_telugu: "उगादि (तेलुगु)",
-                horo_cal_kannada: "उगादि (कन्नड़)",
-                horo_cal_malayalam: "विषु (केरल)",
-                horo_cal_hindi: "विक्रम संवत (हिंदी)",
-                lbl_horo_loading: "ग्रह गोचर की गणना हो रही है… नई अवधि का पहला दृश्य AI द्वारा लिखा जाता है, इसमें एक मिनट तक लग सकता है।",
-                lbl_horo_error: "राशिफल लोड नहीं हो सका। कृपया पुनः प्रयास करें।",
-                lbl_horo_personal_desc: "आपकी सहेजी गई जन्म जानकारी पर आधारित व्यक्तिगत वार्षिक फल: चल रही दशा-भुक्ति समयरेखा और वर्ष के गोचर, शास्त्रीय ग्रंथों के प्रमाण सहित। पहले सेटिंग्स में अपनी जन्म जानकारी सहेजें।",
-                lbl_horo_personal_btn: "मेरा वर्षफल बनाएं",
-                lbl_horo_personal_loading: "आपकी दशा-भुक्ति समयरेखा और वर्ष के गोचर की गणना हो रही है…",
-                lbl_home_phala_title: "आपका आज का राशिफल",
-                lbl_home_phala_more: "सभी राशियाँ →",
-                lbl_horo_need_chart: "कृपया पहले जन्म कुंडली की गणना करें।"
+                lbl_varshaphala_title: "वार्षिक वर्षफल ज्योतिष विश्लेषण"
             }
         };
-
 
 
         // Planetary translations mapping
@@ -6075,18 +5565,17 @@
             // Toggle navigation button active states (desktop top bar)
             document.getElementById('nav-btn-home').className = pageId === 'home' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-jyothisyam').className = pageId === 'jyothisyam' ? 'nav-tab active' : 'nav-tab';
-            document.getElementById('nav-btn-horoscope').className = pageId === 'horoscope' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-marriage').className = pageId === 'marriage' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-ai').className = pageId === 'ai' ? 'nav-tab active' : 'nav-tab';
 
             // Mirror active state onto the sidebar items (mobile drawer)
-            ['home', 'jyothisyam', 'horoscope', 'marriage', 'ai'].forEach(p => {
+            ['home', 'jyothisyam', 'marriage', 'ai'].forEach(p => {
                 const sideBtn = document.getElementById('side-btn-' + p);
                 if (sideBtn) sideBtn.className = pageId === p ? 'side-nav-item active' : 'side-nav-item';
             });
 
             // Mirror active state onto the mobile bottom nav items
-            ['home', 'jyothisyam', 'horoscope', 'marriage', 'ai'].forEach(p => {
+            ['home', 'jyothisyam', 'marriage', 'ai'].forEach(p => {
                 const mobBtn = document.getElementById('mob-btn-' + p);
                 if (mobBtn) mobBtn.className = pageId === p ? 'mobile-nav-item active' : 'mobile-nav-item';
             });
@@ -6094,17 +5583,11 @@
             // Toggle page content blocks visibility
             document.getElementById('page-home').style.display = pageId === 'home' ? 'block' : 'none';
             document.getElementById('page-jyothisyam').style.display = pageId === 'jyothisyam' ? 'block' : 'none';
-            document.getElementById('page-horoscope').style.display = pageId === 'horoscope' ? 'block' : 'none';
             document.getElementById('page-marriage').style.display = pageId === 'marriage' ? 'block' : 'none';
             document.getElementById('page-ai').style.display = pageId === 'ai' ? 'block' : 'none';
-
+            
             if (pageId === 'home') {
                 renderMonthlyCalendar();
-            }
-            if (pageId === 'horoscope') {
-                // Lazy-load the current scope's horoscopes on first open (and
-                // keep chips/labels in the active language on every open).
-                switchHoroScope(horoScopeTab);
             }
         }
 
@@ -6214,13 +5697,6 @@
             if (pricing && pricing.signup_bonus) {
                 setText('lbl-wizard-step-3', (dict.lbl_wizard_step_3 || "").replace("{bonus}", pricing.signup_bonus));
             }
-            // IKEA Effect: goal chips shown above the (empty) signup form.
-            setText('lbl-auth-goal-prompt', dict.lbl_auth_goal_prompt);
-            setText('lbl-goal-career', dict.lbl_goal_career);
-            setText('lbl-goal-marriage', dict.lbl_goal_marriage);
-            setText('lbl-goal-general', dict.lbl_goal_general);
-            // Contrast Effect: static "Best Value" chip on the paywall sheet.
-            setText('lbl-best-value', dict.lbl_best_value);
 
             // Readings Hub & Varshaphala Translations
             setText('lbl-readings-hub-title', dict.lbl_readings_hub_title);
@@ -6244,7 +5720,6 @@
             setText('lbl-ai-title', dict.lbl_ai_title);
             setText('nav-btn-home', dict.nav_btn_home || "Home (Panchangam)");
             setText('nav-btn-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
-            setText('nav-btn-horoscope', dict.nav_btn_horoscope || "Horoscopes");
             setText('nav-btn-ai', dict.nav_btn_ai || "Astro AI Chat");
             const marriageNavBtn = document.getElementById('nav-btn-marriage');
             if (marriageNavBtn) marriageNavBtn.innerText = dict.nav_btn_marriage || "Marriage Matching";
@@ -6252,34 +5727,8 @@
             // Mobile Nav
             setText('lbl-mobile-nav-home', dict.nav_btn_home || "Home (Panchangam)");
             setText('lbl-mobile-nav-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
-            setText('lbl-mobile-nav-horoscope', dict.nav_btn_horoscope || "Horoscopes");
             setText('lbl-mobile-nav-marriage', dict.nav_btn_marriage || "Marriage Matching");
             setText('lbl-mobile-nav-ai', dict.nav_btn_ai || "Astro AI Chat");
-
-            // Horoscopes tab labels + language-sensitive dynamic content
-            setText('lbl-horoscope-title', dict.lbl_horoscope_title);
-            setText('lbl-horoscope-desc', dict.lbl_horoscope_desc);
-            setText('lbl-horo-tab-daily', dict.lbl_horo_tab_daily);
-            setText('lbl-horo-tab-monthly', dict.lbl_horo_tab_monthly);
-            setText('lbl-horo-tab-yearly', dict.lbl_horo_tab_yearly);
-            setText('lbl-horo-tab-personal', dict.lbl_horo_tab_personal);
-            setText('lbl-horo-calendar', dict.lbl_horo_calendar);
-            setText('lbl-horo-personal-desc', dict.lbl_horo_personal_desc);
-            setText('lbl-horo-personal-btn', dict.lbl_horo_personal_btn);
-            if (typeof renderHoroCalendarOptions === 'function') {
-                renderHoroCalendarOptions();
-                renderHoroSignChips();
-                // The predictions themselves are per-language: refetch when the
-                // tab is currently visible so its content switches too.
-                const horoPage = document.getElementById('page-horoscope');
-                if (horoPage && horoPage.style.display !== 'none' && horoScopeTab !== 'personal') {
-                    loadHoroscope();
-                }
-            }
-            // Home welcome window daily phala (per-language content)
-            setText('lbl-home-phala-title', dict.lbl_home_phala_title);
-            setText('lbl-home-phala-more', dict.lbl_home_phala_more);
-            if (typeof loadHomeDailyPhala === 'function') loadHomeDailyPhala();
             const marriageIntro = document.getElementById('lbl-marriage-intro');
             if (marriageIntro) marriageIntro.innerText = dict.lbl_marriage_intro || "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.";
             const marriageTitle = document.getElementById('lbl-marriage-title');
@@ -6412,19 +5861,9 @@
             if (festivalsTitle) festivalsTitle.innerText = dict.lbl_festivals_title || "Auspicious Festivals & Observances";
 
             const subtabBasicLbl = document.getElementById('lbl-subtab-basic');
-            if (subtabBasicLbl) subtabBasicLbl.innerText = dict.lbl_subtab_basic || "Birth Details";
+            if (subtabBasicLbl) subtabBasicLbl.innerText = dict.lbl_subtab_basic || "Basic Configuration";
             const subtabAdvancedLbl = document.getElementById('lbl-subtab-advanced');
-            if (subtabAdvancedLbl) subtabAdvancedLbl.innerText = dict.lbl_subtab_advanced || "Astro Settings";
-            const subtabSavedChartsLbl = document.getElementById('lbl-subtab-saved-charts');
-            if (subtabSavedChartsLbl) subtabSavedChartsLbl.innerText = dict.lbl_subtab_saved_charts || "Saved Charts";
-            const subtabChartHistoryLbl = document.getElementById('lbl-subtab-chart-history');
-            if (subtabChartHistoryLbl) subtabChartHistoryLbl.innerText = dict.lbl_subtab_chart_history || "Chart History";
-            const historySelectAllLbl = document.getElementById('lbl-history-select-all');
-            if (historySelectAllLbl) historySelectAllLbl.innerText = dict.lbl_history_select_all || "Select All";
-            const btnClearSelectedLbl = document.getElementById('lbl-btn-clear-selected');
-            if (btnClearSelectedLbl) btnClearSelectedLbl.innerHTML = `<i class="fa-solid fa-trash-can"></i> ` + (dict.lbl_btn_clear_selected || "Delete Selected");
-            const btnClearAllLbl = document.getElementById('lbl-btn-clear-all');
-            if (btnClearAllLbl) btnClearAllLbl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ` + (dict.lbl_btn_clear_all || "Clear All");
+            if (subtabAdvancedLbl) subtabAdvancedLbl.innerText = dict.lbl_subtab_advanced || "Advanced Features";
             const astroSystemLbl = document.getElementById('lbl-astro-system');
             if (astroSystemLbl) astroSystemLbl.innerText = dict.lbl_astro_system || "Astrological System";
             const timingSystemLbl = document.getElementById('lbl-timing-system');
@@ -6516,12 +5955,6 @@
             
             // Re-render Gochara description and layout in the new language
             setGocharaStyle(currentGocharaStyle);
-
-            // Refresh state-dependent wizard text (progress label, and the
-            // Loss Aversion "waiting for you" reappear title) that the
-            // static setText() calls above can't set — they depend on
-            // runtime progress, not just the selected language.
-            if (currentUser) updateHeroAndOnboardingUI();
         }
 
         // Switch config sub-tabs (Basic vs Advanced vs Saved vs History)
@@ -8115,17 +7548,7 @@
         // Renders placements table and graphics with regional language translations!
         function renderBirthReportOutputs() {
             if (!calculatedChartData) return;
-
-            // Reveal the report container + the chart-specific remedies button
-            // here (the shared render path) rather than only in
-            // generateBirthChart(): charts loaded via the marriage page's
-            // "load individual chart" arrived with both still hidden, which
-            // left the hub's strengths/remedies actions dead.
-            const reportOut = document.getElementById('birth-report-output');
-            if (reportOut) reportOut.style.display = 'flex';
-            const btnRem = document.getElementById('btn-remedies');
-            if (btnRem) btnRem.style.display = 'flex';
-
+            
             // Render Birth Metadata Grid dynamically
             const metaGrid = document.getElementById('birth-metadata-grid-rendered');
             if (metaGrid) {
@@ -8564,8 +7987,6 @@
 
         function renderShadbalaTable(container) {
             container.style.display = 'block';
-            container.style.overflowX = 'auto';
-            container.style.webkitOverflowScrolling = 'touch';
             let rows = '';
             SHADBALA_PLANETS.forEach(p => {
                 const d = calculatedChartData.shadbala[p];
@@ -8673,15 +8094,13 @@
         ];
 
         // The chosen PDF tier: 'basic' (selectable sections, instant) or
-        // 'premium' (async 20+ page life report at pricing.pdf_premium credits).
+        // 'premium' (async 20+ page life report at PREMIUM_PDF_CREDITS).
         let selectedPdfTier = 'basic';
+        const PREMIUM_PDF_CREDITS = 150; // mirrors config.CREDIT_COST_PDF_PREMIUM
 
         // Toggle the modal between the two tiers' UIs.
         function selectPdfTier(tier) {
             selectedPdfTier = tier;
-            // Smart Default (Decision Fatigue): remember this pick for next time
-            // so the modal doesn't always reopen on 'basic'.
-            localStorage.setItem('vedic_pdf_tier_preferred', tier);
             const basicCard = document.getElementById('pdf-tier-basic-card');
             const premCard = document.getElementById('pdf-tier-premium-card');
             const isPrem = tier === 'premium';
@@ -8697,7 +8116,7 @@
             else if (upsell) upsell.style.display = isPremiumUser() ? 'none' : 'block';
             document.getElementById('pdf-premium-preview').style.display = isPrem ? 'block' : 'none';
             const confirmLbl = document.getElementById('lbl-pdf-confirm');
-            if (confirmLbl) confirmLbl.innerText = isPrem ? `Generate (${pricing.pdf_premium} credits)` : 'Download PDF';
+            if (confirmLbl) confirmLbl.innerText = isPrem ? `Generate (${PREMIUM_PDF_CREDITS} credits)` : 'Download PDF';
         }
 
         // Open the "choose sections" modal before downloading.
@@ -8712,19 +8131,7 @@
             const basicPrice = document.getElementById('pdf-tier-basic-price');
             const premPrice = document.getElementById('pdf-tier-premium-price');
             if (basicPrice) basicPrice.innerText = premium ? 'Astro Pass · all sections' : 'Free · chart section';
-            if (premPrice) premPrice.innerText = `${pricing.pdf_premium} credits`;
-
-            // Contrast Effect: anchor the premium report's price (converted
-            // to ₹ using the best available per-credit rate — never a
-            // hardcoded credit cost) against a typical manual consultation.
-            const anchorEl = document.getElementById('pdf-premium-anchor');
-            if (anchorEl && pricing.pdf_premium && pricing.packages && pricing.packages[5000]) {
-                const bestRate = pricing.packages[5000] / 100 / 5000; // ₹ per credit, Astro Pro pack
-                const approxRupees = Math.round(pricing.pdf_premium * bestRate);
-                const dict = localization[currentLang] || localization.en;
-                const tmpl = dict.lbl_pdf_premium_anchor || "≈₹{amount} at Astro Pro rates — a manual Jyothish consultation typically costs ₹1,500+";
-                anchorEl.innerText = tmpl.replace('{amount}', approxRupees);
-            }
+            if (premPrice) premPrice.innerText = `${PREMIUM_PDF_CREDITS} credits`;
 
             PDF_SECTIONS.forEach(sec => {
                 const unlocked = sec.free || premium;
@@ -8748,10 +8155,7 @@
             const costNote = document.getElementById('pdf-section-cost');
             if (costNote) costNote.innerText = premium ? 'Astro Pass: full report (all selected sections).' : 'Free report: chart details & planet positions.';
 
-            // Smart Default (Decision Fatigue): reopen on whichever tier the
-            // user picked last time instead of always resetting to 'basic'.
-            const preferredTier = localStorage.getItem('vedic_pdf_tier_preferred') === 'premium' ? 'premium' : 'basic';
-            selectPdfTier(preferredTier);
+            selectPdfTier('basic');  // default to the instant tier
             document.getElementById('pdf-section-modal').style.display = 'flex';
         }
 
@@ -8844,7 +8248,7 @@
                 if (!start.ok) { showToast("Could not start the premium report."); return; }
                 const { report_id } = await start.json();
                 if (currentUser && !currentUser.subscription_active) {
-                    currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - pricing.pdf_premium);
+                    currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - PREMIUM_PDF_CREDITS);
                     updateAuthUI();
                 }
                 if (progress) progress.style.display = 'block';
@@ -8943,18 +8347,10 @@
                 }
                 
                 suggestionsDiv.innerHTML = '';
-                results.forEach((item, idx) => {
+                results.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'suggestion-item';
                     div.innerText = item.display_name;
-                    // Smart Default: Nominatim already ranks by relevance, so the
-                    // top result is pre-applied to lat/lon below without waiting
-                    // for a click — highlight it so the default is visible and
-                    // still overridable by picking any other row.
-                    if (idx === 0) {
-                        div.style.background = 'rgba(245, 158, 11, 0.12)';
-                        div.style.borderLeft = '3px solid var(--accent-gold)';
-                    }
                     div.onclick = function() {
                         document.getElementById('in-pob').value = item.display_name;
                         document.getElementById('in-lat').value = parseFloat(item.lat).toFixed(4);
@@ -8963,14 +8359,7 @@
                     };
                     suggestionsDiv.appendChild(div);
                 });
-
-                // Smart Default (Decision Fatigue): pre-fill lat/lon from the top
-                // match so a user who doesn't click a suggestion still has a
-                // usable value, instead of requiring an exact pick.
-                const top = results[0];
-                document.getElementById('in-lat').value = parseFloat(top.lat).toFixed(4);
-                document.getElementById('in-lon').value = parseFloat(top.lon).toFixed(4);
-
+                
                 suggestionsDiv.style.display = 'block';
                 
             } catch (err) {
@@ -9255,7 +8644,7 @@
             }
         }
 
-        // Reflect premium/lock/free-preview state on the "Astro-AI Reading" button.
+        // Reflect premium/lock state on the "Astro-AI Reading" button.
         function updatePhalaButtonState() {
             const lbl = document.getElementById('lbl-btn-astro-ai');
             const btn = document.getElementById('btn-jyothi-ai-reading');
@@ -9264,15 +8653,10 @@
             if (isPremiumUser()) {
                 if (icon) icon.className = 'fa-solid fa-brain';
                 btn.title = '';
-                return;
+            } else {
+                if (icon) icon.className = 'fa-solid fa-lock';
+                btn.title = 'Astro Pass (premium) feature';
             }
-            // Reciprocity: distinguish "hasn't tried a reading yet" (a free
-            // preview is one click away) from "already tried" (now needs a
-            // subscription) instead of a flat lock for every non-premium user.
-            const userId = currentUser && currentUser.id;
-            const previewUsed = userId && localStorage.getItem(`reading_generated_${userId}`) === 'true';
-            if (icon) icon.className = previewUsed ? 'fa-solid fa-lock' : 'fa-solid fa-sparkles';
-            btn.title = previewUsed ? 'Astro Pass (premium) feature' : 'Free preview available';
         }
 
         // Jyothisyam tab: inline AI prediction session (premium preview phala).
@@ -9284,24 +8668,9 @@
             const section = document.getElementById('jyothi-ai-reading-section');
             const outputPane = document.getElementById('jyothi-ai-reading-output');
 
-            // Premium gate — the full AI reading is an Astro Pass feature.
+            // Premium gate — the AI reading is an Astro Pass feature.
             if (!isPremiumUser()) {
-                if (auto) return;
-                // Reciprocity: a non-premium user who hasn't tasted an AI
-                // reading yet (on ANY reading surface — this flag is shared
-                // with Varshaphala/Remedies/Compatibility/Prashna) gets one
-                // real, clearly-labelled free preview via the credit-gated
-                // chat endpoint before ever seeing a paywall.
-                const userId = currentUser && currentUser.id;
-                const previewUsed = userId && localStorage.getItem(`reading_generated_${userId}`) === 'true';
-                if (!previewUsed) {
-                    return generateFreeReadingPreview(section, outputPane);
-                }
-                // Preview already used — only an Astro Pass subscription
-                // unlocks the full reading, so route to Billing rather than
-                // the generic credit paywall (buying credits alone wouldn't
-                // unlock this).
-                openProfileModalToTab('billing');
+                if (!auto) showPaywall();
                 return;
             }
 
@@ -9375,97 +8744,6 @@
             } catch (err) {
                 if (auto) { section.style.display = 'none'; }
                 else { outputPane.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`; }
-            } finally {
-                isJyothiResponding = false;
-            }
-        }
-
-        // Reciprocity: one real, clearly-labelled free reading for a
-        // non-premium user who hasn't tasted an AI reading yet. Uses the
-        // credit-gated (not premium-gated) chat endpoint — the user's real
-        // signup-bonus credits are spent transparently, same as any other
-        // chat message, and the result is visually framed as a preview so
-        // it's never mistaken for the full paid reading.
-        async function generateFreeReadingPreview(section, outputPane) {
-            if (!currentUser) { openLoginModal(); return; }
-            if (isJyothiResponding) return;
-            isJyothiResponding = true;
-
-            section.style.display = 'block';
-            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            const dict = localization[currentLang] || localization.en;
-            const bannerText = dict.lbl_reading_preview_banner
-                || "Here's a free preview of your reading — subscribe to Astro Pass to unlock the full breakdown.";
-            outputPane.innerHTML = `
-                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 11px; color: var(--text-gold);">
-                    <i class="fa-solid fa-sparkles"></i> ${escapeHtml(bannerText)}
-                </div>
-                <div id="jyothi-preview-stream-body"><span class="typing-cursor"></span></div>`;
-            const streamBody = () => document.getElementById('jyothi-preview-stream-body');
-
-            const name = document.getElementById('in-name').value;
-            const pob = document.getElementById('in-pob').value;
-            // A short, scoped question — the backend already forces the
-            // response language to `lang` regardless of the query's own
-            // language, so this canned English prompt is safe to send as-is.
-            const previewQuery = "In 3-4 sentences, give me a short preview of my core personality based on my Lagna, Moon sign, and Sun placement.";
-
-            try {
-                const response = await apiFetch('/api/ai-predict-chat', {
-                    method: 'POST',
-                    stream: true,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chart_data: calculatedChartData,
-                        client_name: name,
-                        place_name: pob,
-                        query: previewQuery,
-                        history: [],
-                        lang: currentLang
-                    })
-                });
-
-                if (!response.ok) {
-                    if (response.status === 402) { showPaywall(); section.style.display = 'none'; return; }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let accumulatedText = '';
-                const manifestState = { manifest: null, prefixLength: 0 };
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    const chunk = decoder.decode(value, { stream: true });
-                    accumulatedText += chunk;
-                    const processed = processStreamChunk(accumulatedText, manifestState);
-                    const body = streamBody();
-                    if (body) body.innerHTML = formatMarkdown(processed.cleanText) + '<span class="typing-cursor"></span>';
-                    outputPane.scrollTop = outputPane.scrollHeight;
-                }
-
-                const processed = processStreamChunk(accumulatedText, manifestState);
-                const finalText = processed.cleanText;
-                const body = streamBody();
-                if (body) body.innerHTML = formatMarkdown(finalText);
-
-                if (finalText.trim()) {
-                    markReadingGenerated();
-                    updatePhalaButtonState();
-                    const ctaText = dict.lbl_reading_preview_cta || "Unlock your full Jyothi reading — Astro Pass";
-                    const cta = document.createElement('div');
-                    cta.style.cssText = 'margin-top: 14px; text-align: center;';
-                    cta.innerHTML = `<button class="calculate-btn" onclick="openProfileModalToTab('billing')" style="padding: 10px 18px; font-size: 12px;">
-                        <i class="fa-solid fa-crown"></i> ${escapeHtml(ctaText)}
-                    </button>`;
-                    outputPane.appendChild(cta);
-                }
-            } catch (err) {
-                const body = streamBody();
-                if (body) body.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`;
             } finally {
                 isJyothiResponding = false;
             }
@@ -10049,8 +9327,7 @@
         let isVarshaphalaResponding = false;
         async function generateVarshaphala() {
             if (!calculatedChartData) {
-                showToast((localization[currentLang] || localization.en).lbl_horo_need_chart
-                    || "Please calculate a birth chart first.");
+                showToast("Please calculate a birth chart first.");
                 return;
             }
             const yearInput = document.getElementById('in-varsha-year');
@@ -10076,8 +9353,6 @@
             try {
                 const success = await streamDepthReading('/api/ai-predict-varshaphala', {
                     chart_data: calculatedChartData,
-                    client_name: document.getElementById('in-name').value,
-                    place_name: document.getElementById('in-pob').value,
                     year: yearVal,
                     lang: currentLang
                 }, output, {
@@ -10136,129 +9411,6 @@
             } catch (err) {
                 outEl.innerHTML = `<span style="color:#F56565;">*Streaming error: ${escapeHtml(err.message || String(err))}*</span>`;
                 return false;
-            }
-        }
-
-        // ===== Horoscopes tab (universal rasi phala + personal varsha phala) =====
-        const HORO_SIGNS = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanus", "Makara", "Kumbha", "Meena"];
-        const HORO_CALENDARS = ["gregorian", "tamil", "telugu", "kannada", "malayalam", "hindi"];
-        let horoScopeTab = 'daily';        // daily | monthly | yearly | personal
-        let horoCalendar = 'gregorian';    // yearly anchor calendar
-        let horoSign = 'Mesha';
-        const horoCache = {};              // "scope|calendar|lang" -> API payload
-
-        function horoDict() { return localization[currentLang] || localization.en; }
-        function horoCacheKey() { return `${horoScopeTab}|${horoScopeTab === 'yearly' ? horoCalendar : '-'}|${currentLang}`; }
-
-        function switchHoroScope(scope) {
-            horoScopeTab = scope;
-            ['daily', 'monthly', 'yearly', 'personal'].forEach(s => {
-                const b = document.getElementById('horo-tab-' + s);
-                if (b) b.className = s === scope ? 'sub-tab-btn active' : 'sub-tab-btn';
-            });
-            document.getElementById('horo-universal-pane').style.display = scope === 'personal' ? 'none' : 'block';
-            document.getElementById('horo-personal-pane').style.display = scope === 'personal' ? 'block' : 'none';
-            document.getElementById('horo-calendar-row').style.display = scope === 'yearly' ? 'block' : 'none';
-            if (scope !== 'personal') loadHoroscope();
-        }
-
-        function onHoroCalendarChange() {
-            const sel = document.getElementById('horo-calendar-select');
-            if (sel) horoCalendar = sel.value;
-            loadHoroscope();
-        }
-
-        function renderHoroCalendarOptions() {
-            const sel = document.getElementById('horo-calendar-select');
-            if (!sel) return;
-            const dict = horoDict();
-            sel.innerHTML = '';
-            HORO_CALENDARS.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c;
-                opt.text = dict['horo_cal_' + c] || c;
-                sel.appendChild(opt);
-            });
-            sel.value = horoCalendar;
-        }
-
-        function renderHoroSignChips() {
-            const wrap = document.getElementById('horo-sign-chips');
-            if (!wrap) return;
-            const names = rasiTranslations[currentLang] || rasiTranslations.en;
-            wrap.innerHTML = '';
-            HORO_SIGNS.forEach((k, i) => {
-                const b = document.createElement('button');
-                b.className = 'sub-tab-btn' + (k === horoSign ? ' active' : '');
-                b.style.padding = '5px 10px';
-                b.style.fontSize = '12px';
-                b.innerText = names[i];
-                b.onclick = () => { horoSign = k; renderHoroSignChips(); renderHoroContent(); };
-                wrap.appendChild(b);
-            });
-        }
-
-        async function loadHoroscope(force = false) {
-            renderHoroSignChips();
-            renderHoroCalendarOptions();
-            const key = horoCacheKey();
-            const content = document.getElementById('horo-content');
-            if (!content) return;
-            if (!force && horoCache[key]) { renderHoroPeriod(); renderHoroContent(); return; }
-            const dict = horoDict();
-            setText('horo-period-label', '');
-            content.innerHTML = `<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> ${escapeHtml(dict.lbl_horo_loading || 'Consulting the planetary transits… the first view of a new period is written by AI and can take up to a minute.')}</div>`;
-            try {
-                const params = new URLSearchParams({ scope: horoScopeTab, lang: currentLang });
-                if (horoScopeTab === 'yearly') params.set('calendar', horoCalendar);
-                // Generation of a fresh period runs a full grounded LLM call
-                // server-side, so allow well beyond the default 30s abort.
-                const res = await apiFetch(`/api/horoscope?${params.toString()}`, { timeoutMs: 240000 });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                horoCache[key] = await res.json();
-                renderHoroPeriod();
-                renderHoroContent();
-            } catch (err) {
-                content.innerHTML = `<span style="color:#F56565;">${escapeHtml(dict.lbl_horo_error || 'Could not load the horoscope. Please try again.')}</span> <button class="btn-primary" style="padding:4px 12px; font-size:11px; margin-left:8px;" onclick="loadHoroscope(true)"><i class="fa-solid fa-rotate-right"></i></button>`;
-            }
-        }
-
-        function renderHoroPeriod() {
-            const data = horoCache[horoCacheKey()];
-            const el = document.getElementById('horo-period-label');
-            if (!el || !data || !data.period) return;
-            let txt = data.period.label || '';
-            if (data.scope === 'yearly' && data.period.year_name) {
-                txt = `${data.period.year_name} — ${data.period.era_name} ${data.period.era_year} (${data.period.start} → ${data.period.end})`;
-            }
-            el.innerText = txt;
-        }
-
-        function renderHoroContent() {
-            const data = horoCache[horoCacheKey()];
-            const content = document.getElementById('horo-content');
-            if (!content || !data || !data.predictions) return;
-            const text = data.predictions[horoSign];
-            if (!text) return;
-            const names = rasiTranslations[currentLang] || rasiTranslations.en;
-            const title = names[HORO_SIGNS.indexOf(horoSign)] || horoSign;
-            content.innerHTML = `<h3 style="color: var(--accent-gold); font-family: var(--font-heading); margin-bottom: 8px;">${escapeHtml(title)}</h3><div style="white-space: pre-wrap; line-height: 1.7; font-size: 13px;">${escapeHtml(text)}</div>`;
-        }
-
-        let isPersonalVarshaResponding = false; // double-submit guard (paid stream)
-        async function generatePersonalVarshaPhala() {
-            if (isPersonalVarshaResponding) return;
-            isPersonalVarshaResponding = true;
-            const btn = document.getElementById('btn-horo-personal');
-            if (btn) btn.disabled = true;
-            const out = document.getElementById('horo-personal-output');
-            try {
-                await streamDepthReading('/api/ai-varsha-phala', { lang: currentLang }, out, {
-                    loadingMsg: horoDict().lbl_horo_personal_loading || "Computing your dasa-bhukti timeline and the year's transits…"
-                });
-            } finally {
-                isPersonalVarshaResponding = false;
-                if (btn) btn.disabled = false;
             }
         }
 
@@ -10704,28 +9856,20 @@
 
             const varshaPrice = document.getElementById('val-hub-varsha-price');
             if (varshaPrice) varshaPrice.innerText = pricing.varshaphala || 25;
-
-            // Horoscopes tab: the personal varsha phala shares the varshaphala price
-            const horoPersonalPrice = document.getElementById('val-horo-personal-price');
-            if (horoPersonalPrice) horoPersonalPrice.innerText = pricing.varshaphala || 25;
         }
 
         // --- Initialize Page details on startup ---
         window.onload = async function() {
-            // Pricing config: fire-and-forget rather than blocking the critical
-            // path (today's panchangam, calendar) on a round-trip the Readings
-            // Hub doesn't need until the user actually scrolls to it. `pricing`
-            // already has sensible hardcoded fallback defaults; refresh the hub
-            // UI in place once the real values arrive.
-            apiFetch('/api/pricing')
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
-                    if (data) {
-                        pricing = { ...pricing, ...data };
-                        updateReadingsHubUI();
-                    }
-                })
-                .catch(e => console.error("Failed to load pricing config, using fallbacks:", e));
+            // Fetch pricing config from backend
+            try {
+                const res = await apiFetch('/api/pricing');
+                if (res.ok) {
+                    const data = await res.json();
+                    pricing = { ...pricing, ...data };
+                }
+            } catch (e) {
+                console.error("Failed to load pricing config, using fallbacks:", e);
+            }
             updateReadingsHubUI();
 
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
@@ -10751,19 +9895,8 @@
             // pick). Adaptive-by-region in detectLocation() may override it below
             // unless the user previously chose a language manually.
             const savedLang = localStorage.getItem('vedic_lang');
-            // Smart Default (Decision Fatigue): a brand-new visitor with no saved
-            // preference gets the browser's own language instead of always
-            // defaulting to English. Not marked explicit, so the GPS/IP-based
-            // regional adaptation below (applyLocation -> adaptiveLanguageFor)
-            // can still refine it moments later.
-            const browserLang = !savedLang && !localStorage.getItem('vedic_lang_explicit')
-                ? (navigator.language || navigator.userLanguage || '').slice(0, 2).toLowerCase()
-                : null;
-            const SUPPORTED_LANGS = ['en', 'ta', 'te', 'ml', 'kn', 'hi'];
             if (savedLang && savedLang !== 'en') {
                 await changeLanguage(savedLang, false);
-            } else if (browserLang && browserLang !== 'en' && SUPPORTED_LANGS.includes(browserLang)) {
-                await changeLanguage(browserLang, false);
             } else {
                 fetchDailyPanchangam(today);
                 renderMonthlyCalendar();
@@ -11056,9 +10189,6 @@
                 if (guestHero) guestHero.style.display = 'block';
                 if (userStrip) userStrip.style.display = 'none';
                 if (onboardingCard) onboardingCard.style.display = 'none';
-                const phalaBox = document.getElementById('home-daily-phala');
-                if (phalaBox) phalaBox.style.display = 'none';
-                homePhalaLoadedKey = null;
                 return;
             }
 
@@ -11067,41 +10197,18 @@
 
             // Onboarding Wizard progress check
             const userId = currentUser.id;
-            // Stored as an ISO timestamp so we know HOW LONG it's been
-            // dismissed (legacy accounts may still hold the old literal
-            // 'true' with no timestamp — treat that as "dismissed just now"
-            // so it doesn't immediately reappear for existing users).
-            const dismissedRaw = localStorage.getItem(`onboarding_dismissed_${userId}`);
-            const dismissedAt = dismissedRaw === 'true' ? new Date()
-                : (dismissedRaw ? new Date(dismissedRaw) : null);
-            const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-            const dismissedRecently = !!dismissedAt && (Date.now() - dismissedAt.getTime()) < SEVEN_DAYS_MS;
+            const wizardDismissed = localStorage.getItem(`onboarding_dismissed_${userId}`) === 'true';
 
             // Check step completions
             const dobSaved = !!(currentUser.dob && currentUser.tob && currentUser.latitude && currentUser.longitude);
             const chartCalculated = localStorage.getItem(`chart_calculated_${userId}`) === 'true';
             const readingGenerated = localStorage.getItem(`reading_generated_${userId}`) === 'true';
-            const completedSteps = [dobSaved, chartCalculated, readingGenerated].filter(Boolean).length;
-            const allStepsDone = completedSteps === 3;
 
-            if (allStepsDone || dismissedRecently) {
+            if (wizardDismissed || (dobSaved && chartCalculated && readingGenerated)) {
                 if (onboardingCard) onboardingCard.style.display = 'none';
             } else {
                 if (onboardingCard) onboardingCard.style.display = 'block';
-
-                // Loss Aversion: a wizard dismissed with steps still left
-                // reappears after 7 days with "waiting for you" framing —
-                // never "expiring", since user_charts has no TTL/cleanup in
-                // the backend and that claim would be false.
-                const isReappear = !!dismissedAt && !dismissedRecently;
-                const dict = localization[currentLang] || localization.en;
-                const titleEl = document.getElementById('lbl-wizard-title');
-                if (titleEl) {
-                    titleEl.innerText = isReappear
-                        ? (dict.lbl_wizard_title_reappear || "Your birth chart is waiting for you — {n} steps left.").replace('{n}', 3 - completedSteps)
-                        : (dict.lbl_wizard_title || "Welcome! Complete these 3 simple steps to start your journey:");
-                }
-
+                
                 // Update checkboxes
                 const chk1 = document.getElementById('chk-wizard-step-1');
                 const chk2 = document.getElementById('chk-wizard-step-2');
@@ -11122,18 +10229,6 @@
                     document.getElementById('lbl-wizard-step-3').style.textDecoration = readingGenerated ? 'line-through' : 'none';
                     document.getElementById('lbl-wizard-step-3').style.opacity = readingGenerated ? '0.6' : '1';
                 }
-
-                // Goal Gradient: account creation counts as step 0, so a fresh
-                // user's bar starts at 25% (not 0%) and climbs with each of the
-                // same three completion checks already computed above.
-                const progressBar = document.getElementById('wizard-progress-bar');
-                const progressLbl = document.getElementById('lbl-wizard-progress');
-                if (progressBar) progressBar.style.width = `${(completedSteps + 1) / 4 * 100}%`;
-                if (progressLbl) {
-                    progressLbl.innerText = completedSteps === 0
-                        ? (dict.lbl_wizard_progress_start || "Account created ✓")
-                        : (dict.lbl_wizard_progress_done || "{n} of 3 steps complete").replace("{n}", completedSteps);
-                }
             }
 
             // Welcome name & credits count
@@ -11145,43 +10240,11 @@
             if (stripCredits) {
                 stripCredits.innerText = currentUser.subscription_active ? 'UNLIMITED' : (currentUser.credit_balance || 0);
             }
-
-            // Welcome window: the user's own daily rasi phala (fire-and-forget)
-            loadHomeDailyPhala();
-        }
-
-        // Loads today's daily prediction for the logged-in user's Moon sign
-        // (from the saved birth profile) into the home welcome window. The
-        // key guard makes repeat UI refreshes free: one fetch per
-        // user+language+day. Backend serves from the shared daily cache.
-        let homePhalaLoadedKey = null;
-        async function loadHomeDailyPhala() {
-            const box = document.getElementById('home-daily-phala');
-            if (!box) return;
-            if (!currentUser) { box.style.display = 'none'; homePhalaLoadedKey = null; return; }
-            const key = `${currentUser.id}|${currentLang}|${new Date().toDateString()}`;
-            if (homePhalaLoadedKey === key) return;
-            try {
-                const res = await apiFetch(`/api/horoscope/me?lang=${currentLang}`, { timeoutMs: 240000 });
-                if (!res.ok) { box.style.display = 'none'; return; }
-                const data = await res.json();
-                if (!data.available || !data.prediction) { box.style.display = 'none'; return; }
-                const names = rasiTranslations[currentLang] || rasiTranslations.en;
-                setText('home-phala-sign', names[data.sign_index] || data.sign);
-                setText('home-phala-text', data.prediction);
-                box.style.display = 'block';
-                homePhalaLoadedKey = key;
-            } catch (e) {
-                box.style.display = 'none';
-            }
         }
 
         function dismissOnboardingWizard() {
             if (currentUser) {
-                // Loss Aversion: store WHEN it was dismissed (not just that it
-                // was) so updateHeroAndOnboardingUI() can bring it back after
-                // 7 days for a user who still has steps left.
-                localStorage.setItem(`onboarding_dismissed_${currentUser.id}`, new Date().toISOString());
+                localStorage.setItem(`onboarding_dismissed_${currentUser.id}`, 'true');
                 updateHeroAndOnboardingUI();
             }
         }
@@ -11197,31 +10260,6 @@
         function openProfileModalToTab(tabId) {
             openProfileModal();
             if (typeof switchProfileTab === 'function') switchProfileTab(tabId);
-            if (tabId === 'birth-info') {
-                const field = document.getElementById('profile-in-dob');
-                if (field) field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-
-        // Hub "Remedies & Strengths" card. The old inline handler scrolled to
-        // a button that is display:none until a chart is calculated — a
-        // silent no-op that made the card look broken. Now: with a chart,
-        // scroll to the Shadbala strengths section (the remedies button sits
-        // right below it); without one, explain and take the user to the
-        // birth-details form instead.
-        function hubOpenRemedies() {
-            if (!calculatedChartData) {
-                showToast((localization[currentLang] || localization.en).lbl_horo_need_chart
-                    || "Please calculate a birth chart first.");
-                const form = document.getElementById('in-name');
-                if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            const strengths = document.getElementById('shadbala-bars-container');
-            const remBtn = document.getElementById('btn-remedies');
-            const target = (strengths && strengths.offsetParent) ? strengths
-                : (remBtn && remBtn.offsetParent) ? remBtn : null;
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function scrollToReadingsHub() {
@@ -11345,60 +10383,15 @@
 
         function openLoginModal() {
             document.getElementById('login-modal').style.display = 'flex';
-
-            // IKEA / Endowment Effect: a guest who already built a chart sees
-            // the modal reframed around saving what they made — defaults
-            // straight to Signup with the name pre-filled — instead of a
-            // blank "create account" form where they've invested nothing yet.
-            const investedHeader = document.getElementById('auth-modal-invested-header');
-            const goalChips = document.getElementById('auth-signup-goal-chips');
-            const submitBtn = document.getElementById('btn-submit-signup');
-            const dict = localization[currentLang] || localization.en;
-            if (calculatedChartData) {
-                const nameInput = document.getElementById('in-name');
-                const name = (nameInput && nameInput.value || '').trim();
-                if (investedHeader) {
-                    const tmpl = dict.lbl_auth_invested_header || "Save {name}'s chart — create a free account to keep it.";
-                    document.getElementById('lbl-auth-invested-header').innerText =
-                        tmpl.replace('{name}', name || (dict.lbl_your_chart_fallback || 'your'));
-                    investedHeader.style.display = 'block';
-                }
-                if (goalChips) goalChips.style.display = 'none';
-                if (submitBtn) submitBtn.innerText = dict.lbl_btn_save_chart || 'Save My Chart';
-                const signupName = document.getElementById('auth-signup-name');
-                if (signupName && !signupName.value) signupName.value = name;
-                switchAuthTab('signup');
-            } else {
-                if (investedHeader) investedHeader.style.display = 'none';
-                if (goalChips) goalChips.style.display = 'block';
-                if (submitBtn) submitBtn.innerText = dict.lbl_btn_create_account || 'Create Account';
-                switchAuthTab('phone');
-            }
+            switchAuthTab('phone');
         }
-
-        // IKEA Effect: an optional pre-commitment tap before the signup
-        // fields. Purely local — SignupRequest has no field for this, so it
-        // is not sent to the backend, only kept for potential frontend
-        // personalization (e.g. scrolling to a relevant reading after signup).
-        function selectAuthGoal(goal) {
-            localStorage.setItem('vedic_stated_goal', goal);
-            document.querySelectorAll('.goal-chip').forEach(btn => {
-                const active = btn.getAttribute('data-goal') === goal;
-                btn.style.borderColor = active ? 'var(--accent-gold)' : '';
-                btn.style.background = active ? 'rgba(245, 158, 11, 0.15)' : '';
-            });
-        }
-
         function closeLoginModal() {
             document.getElementById('login-modal').style.display = 'none';
         }
         function openProfileModal() {
             if (!currentUser) return;
             document.getElementById('profile-modal').style.display = 'flex';
-            // Reopening after a billing action (buy credits / subscribe / cancel)
-            // should land back on whichever tab the user was viewing, not always
-            // reset to Settings — default to 'settings' only on a fresh open.
-            switchProfileTab(lastActiveProfileTab);
+            switchProfileTab('settings');
             
             document.getElementById('profile-full-name').innerText = currentUser.full_name || "Guest";
             document.getElementById('profile-email').innerText = currentUser.email || "";
@@ -11427,11 +10420,9 @@
             document.getElementById('profile-in-name').value = currentUser.full_name || "";
             document.getElementById('profile-in-dob').value = currentUser.dob || "";
             document.getElementById('profile-in-tob').value = currentUser.tob || "";
-            // Prefill from the dedicated birth_* fields (legacy fallback for
-            // profiles saved before birth place was split from location).
-            document.getElementById('profile-in-pob').value = currentUser.birth_place || currentUser.location_name || "";
-            document.getElementById('profile-in-lon').value = (currentUser.birth_longitude ?? currentUser.longitude) || "";
-            document.getElementById('profile-in-lat').value = (currentUser.birth_latitude ?? currentUser.latitude) || "";
+            document.getElementById('profile-in-pob').value = currentUser.location_name || "";
+            document.getElementById('profile-in-lon').value = currentUser.longitude || "";
+            document.getElementById('profile-in-lat').value = currentUser.latitude || "";
             document.getElementById('profile-in-gender').value = currentUser.gender || "male";
 
             const refEl = document.getElementById('profile-referral-code');
@@ -11481,10 +10472,6 @@
                 if (!res.ok) { showToast('Could not create the share link.'); return; }
                 const d = await res.json();
                 const note = 'Public link copied:\n' + d.url + '\n\nAnyone with this link can view the chart (birth details included, no AI content). Deleting the chart revokes the link.';
-                if (navigator.share) {
-                    navigator.share({ title: 'Vedic birth chart', url: d.url }).catch(() => {});
-                    return;
-                }
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(d.url).then(() => showToast(note)).catch(() => prompt('Copy the public link:', d.url));
                 } else {
@@ -11499,10 +10486,6 @@
             const code = currentUser && currentUser.referral_code;
             if (!code) return;
             const done = () => showToast("Referral code copied: " + code + "\nShare it — your friend gets bonus tokens, and so do you!");
-            if (navigator.share) {
-                navigator.share({ title: 'Vedic Astro AI', text: 'Join me on Vedic Astro AI — sign up with my referral code ' + code + ' and we both get bonus tokens 🪔' }).catch(() => {});
-                return;
-            }
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(code).then(done).catch(done);
             } else {
@@ -11510,24 +10493,12 @@
             }
         }
 
-        // Remembers which profile sub-tab was last active, so reopening the
-        // modal (e.g. after a billing action refreshes it) returns to where the
-        // user was instead of always jumping back to Settings.
-        let lastActiveProfileTab = 'settings';
-
         function switchProfileTab(tabId) {
-            // The onboarding wizard's "Save your birth details" step links here
-            // via the pane's own logical name; the birth-info fields actually
-            // live inside the 'settings' pane, so alias it rather than adding a
-            // pane that doesn't exist.
-            if (tabId === 'birth-info') tabId = 'settings';
-            lastActiveProfileTab = tabId;
-
             // Reset tab button states and hide/show panes
             ['settings', 'saved', 'billing'].forEach(id => {
                 const btn = document.getElementById('profile-tab-btn-' + id);
                 if (btn) btn.className = id === tabId ? 'sub-tab-btn active' : 'sub-tab-btn';
-
+                
                 const pane = document.getElementById('profile-pane-' + id);
                 if (pane) pane.style.display = id === tabId ? 'block' : 'none';
             });
@@ -11555,6 +10526,9 @@
                 const res = await fetch('/api/user/charts?saved=1', {
                     headers: { 'x-session-token': token }
                 });
+                
+                // Add simulated delay (600ms) to showcase the skeleton shimmer
+                await new Promise(resolve => setTimeout(resolve, 600));
 
                 if (res.ok) {
                     const charts = await res.json();
@@ -11636,6 +10610,9 @@
             }
             try {
                 const res = await apiFetch('/api/billing/usage');
+                
+                // Add simulated delay (600ms) to showcase the skeleton shimmer
+                await new Promise(resolve => setTimeout(resolve, 600));
 
                 if (!res.ok) throw new Error('usage fetch failed');
                 const u = await res.json();
@@ -11961,38 +10938,8 @@
         // Out-of-tokens paywall bottom sheet (triggered by a 402 in apiFetch).
         function showPaywall() {
             if (!currentUser) { openLoginModal(); return; }
-            const dict = localization[currentLang] || localization.en;
-            const balValue = (currentUser.credit_balance || 0).toLocaleString();
-            const balHtml = `<strong id="paywall-balance" style="color: var(--accent-gold);">${balValue}</strong>`;
-
-            // Loss Aversion: name the concrete next step recharging unlocks
-            // when it's genuinely known (chart calculated but no reading
-            // yet — the same state already tracked for the onboarding
-            // wizard), instead of only a generic balance line.
-            const subEl = document.getElementById('paywall-subcopy');
-            if (subEl) {
-                const userId = currentUser.id;
-                const readingGenerated = localStorage.getItem(`reading_generated_${userId}`) === 'true';
-                const hasStalledReading = !!calculatedChartData && !readingGenerated;
-                const tmpl = hasStalledReading
-                    ? (dict.lbl_paywall_subcopy_reading || "Your AI reading is one recharge away. Balance: {bal} tokens.")
-                    : (dict.lbl_paywall_subcopy_default || "Balance: {bal} tokens. Recharge to continue — pay via UPI, cards or netbanking.");
-                subEl.innerHTML = tmpl.replace('{bal}', balHtml);
-            }
-
-            // Contrast Effect: per-credit cost for each pack, computed from
-            // the live `pricing.packages` (never hardcoded) so ₹199 for
-            // Astro Pro reads as cheap-per-unit next to ₹29 for Pocket.
-            const packages = (pricing && pricing.packages) || {};
-            const rateTmpl = dict.lbl_per_credit_rate || "≈₹{rate}/credit";
-            [500, 1125, 5000].forEach(credits => {
-                const el = document.getElementById(`paywall-rate-${credits}`);
-                const paise = packages[credits];
-                if (el && paise) {
-                    el.innerText = rateTmpl.replace('{rate}', (paise / 100 / credits).toFixed(3));
-                }
-            });
-
+            const bal = document.getElementById('paywall-balance');
+            if (bal) bal.innerText = (currentUser.credit_balance || 0).toLocaleString();
             const sheet = document.getElementById('paywall-sheet');
             if (sheet) sheet.style.display = 'block';
         }
@@ -12152,12 +11099,6 @@
         }
         function copyGiftLink() {
             const url = currentGiftShareUrl;
-            // Native share sheet on Android/mobile (WhatsApp, SMS, …);
-            // clipboard fallback everywhere else.
-            if (navigator.share) {
-                navigator.share({ title: 'Vedic Astro AI gift', text: 'A gift of Vedic Astro AI tokens for you 🪔', url: url }).catch(() => {});
-                return;
-            }
             navigator.clipboard.writeText(url).then(
                 () => showToast("Share link copied!"),
                 () => showToast("Copy failed — the link is: " + url)
@@ -12407,8 +11348,7 @@
             if (!currentUser) return;
             const token = localStorage.getItem('session_token');
             const listDiv = document.getElementById('saved-charts-list');
-            const dict = localization[currentLang || 'en'] || localization.en;
-            listDiv.innerHTML = `<p style="color: var(--text-secondary); grid-column: 1/-1;">${dict.lbl_loading_saved_charts || "Loading saved charts..."}</p>`;
+            listDiv.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1;">Loading saved charts...</p>';
             
             try {
                 const res = await fetch('/api/user/charts?saved=1', {
@@ -12418,7 +11358,7 @@
                     const charts = await res.json();
                     listDiv.innerHTML = '';
                     if (charts.length === 0) {
-                        listDiv.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">${dict.lbl_no_saved_charts || "No saved charts yet."}</p>`;
+                        listDiv.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">No saved charts yet.</p>';
                         return;
                     }
                     charts.forEach(c => {
@@ -12432,14 +11372,10 @@
                         card.style.flexDirection = 'column';
                         card.style.gap = '8px';
                         
-                        const displayGender = c.gender === 'male' 
-                            ? (currentLang === 'hi' ? 'पुरुष' : currentLang === 'ta' ? 'ஆண்' : currentLang === 'te' ? 'పురుషుడు' : currentLang === 'ml' ? 'പുരുഷൻ' : currentLang === 'kn' ? 'ಪುರುಷ' : 'MALE')
-                            : (currentLang === 'hi' ? 'स्त्री' : currentLang === 'ta' ? 'பெண்' : currentLang === 'te' ? 'స్త్రీ' : currentLang === 'ml' ? 'സ്ത്രീ' : currentLang === 'kn' ? 'ಸ್ತ್ರೀ' : 'FEMALE');
-
                         card.innerHTML = `
                             <div style="font-weight: bold; color: var(--accent-gold); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
                                 <span><i class="fa-solid fa-user"></i> ${c.name}</span>
-                                <span style="font-size: 9px; color: var(--text-muted);">${displayGender}</span>
+                                <span style="font-size: 9px; color: var(--text-muted);">${c.gender.toUpperCase()}</span>
                             </div>
                             <div style="font-size: 11px; color: var(--text-secondary);">
                                 <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
@@ -12447,8 +11383,8 @@
                                 <div style="font-size: 9px; margin-top: 3px; color: var(--text-muted);">Ayanamsa: ${c.ayanamsa} | Style: ${c.chart_style}</div>
                             </div>
                             <div style="display: flex; gap: 8px; margin-top: 5px;">
-                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">${dict.lbl_btn_load || "Load"}</button>
-                                <button class="lang-select-btn" onclick="shareSavedChart(${c.id})" title="${dict.lbl_btn_share || "Share"}" style="padding: 6px 10px; font-size: 10px; justify-content: center;"><i class="fa-solid fa-share-nodes"></i></button>
+                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
+                                <button class="lang-select-btn" onclick="shareSavedChart(${c.id})" title="Share public link" style="padding: 6px 10px; font-size: 10px; justify-content: center;"><i class="fa-solid fa-share-nodes"></i></button>
                                 <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'saved')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         `;
@@ -12457,7 +11393,7 @@
                 }
             } catch (e) {
                 console.error("Error loading saved charts:", e);
-                listDiv.innerHTML = `<p style="color: #e53e3e; grid-column: 1/-1;">${dict.lbl_error_saved_charts || "Error loading saved charts."}</p>`;
+                listDiv.innerHTML = '<p style="color: #e53e3e; grid-column: 1/-1;">Error loading saved charts.</p>';
             }
         }
 
@@ -12465,11 +11401,7 @@
             if (!currentUser) return;
             const token = localStorage.getItem('session_token');
             const listDiv = document.getElementById('chart-history-list');
-            const controlsDiv = document.getElementById('chart-history-controls');
-            const dict = localization[currentLang || 'en'] || localization.en;
-            
-            listDiv.innerHTML = `<p style="color: var(--text-secondary); grid-column: 1/-1;">${dict.lbl_loading_history || "Loading history..."}</p>`;
-            if (controlsDiv) controlsDiv.style.display = 'none';
+            listDiv.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1;">Loading history...</p>';
             
             try {
                 const res = await fetch('/api/user/charts?saved=0', {
@@ -12479,12 +11411,9 @@
                     const charts = await res.json();
                     listDiv.innerHTML = '';
                     if (charts.length === 0) {
-                        listDiv.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">${dict.lbl_no_history || "No calculation history found."}</p>`;
+                        listDiv.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; font-style: italic;">No calculation history found.</p>';
                         return;
                     }
-                    
-                    if (controlsDiv) controlsDiv.style.display = 'flex';
-                    
                     charts.forEach(c => {
                         const card = document.createElement('div');
                         card.className = 'panchangam-widget';
@@ -12493,32 +11422,22 @@
                         card.style.background = 'rgba(255,255,255,0.01)';
                         card.style.borderRadius = '10px';
                         card.style.display = 'flex';
-                        card.style.flexDirection = 'row';
-                        card.style.alignItems = 'flex-start';
-                        card.style.gap = '12px';
+                        card.style.flexDirection = 'column';
+                        card.style.gap = '8px';
                         
-                        const displayGender = c.gender === 'male' 
-                            ? (currentLang === 'hi' ? 'पुरुष' : currentLang === 'ta' ? 'ஆண்' : currentLang === 'te' ? 'పురుషుడు' : currentLang === 'ml' ? 'പുരുഷൻ' : currentLang === 'kn' ? 'ಪುರುಷ' : 'MALE')
-                            : (currentLang === 'hi' ? 'स्त्री' : currentLang === 'ta' ? 'பெண்' : currentLang === 'te' ? 'స్త్రీ' : currentLang === 'ml' ? 'സ്ത്രീ' : currentLang === 'kn' ? 'ಸ್ತ್ರೀ' : 'FEMALE');
-
                         card.innerHTML = `
-                            <div style="padding-top: 2px;">
-                                <input type="checkbox" class="history-item-checkbox" data-id="${c.id}" style="cursor: pointer; width: 16px; height: 16px;">
+                            <div style="font-weight: bold; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                                <span><i class="fa-solid fa-clock-rotate-left"></i> ${c.name}</span>
+                                <span style="font-size: 9px; color: var(--text-muted);">${c.gender.toUpperCase()}</span>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                                <div style="font-weight: bold; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
-                                    <span><i class="fa-solid fa-clock-rotate-left"></i> ${c.name}</span>
-                                    <span style="font-size: 9px; color: var(--text-muted);">${displayGender}</span>
-                                </div>
-                                <div style="font-size: 11px; color: var(--text-secondary);">
-                                    <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
-                                    <div>📍 ${c.pob}</div>
-                                </div>
-                                <div style="display: flex; gap: 8px; margin-top: 5px;">
-                                    <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">${dict.lbl_btn_load || "Load"}</button>
-                                    <button class="calculate-btn" onclick="saveHistoryChartToCloud(${c.id})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center; background: linear-gradient(135deg, var(--accent-gold), #b7791f); border: none; color: #000;">${dict.lbl_btn_save || "Save"}</button>
-                                    <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'history')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
-                                </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">
+                                <div>📅 ${c.dob}  ⏰ ${c.tob}</div>
+                                <div>📍 ${c.pob}</div>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 5px;">
+                                <button class="calculate-btn" onclick="loadSavedChartDetails(${JSON.stringify(c).replace(/"/g, '&quot;')})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center;">Load</button>
+                                <button class="calculate-btn" onclick="saveHistoryChartToCloud(${c.id})" style="flex: 1; padding: 6px; font-size: 10px; justify-content: center; background: linear-gradient(135deg, var(--accent-gold), #b7791f); border: none; color: #000;">Save</button>
+                                <button class="lang-select-btn" onclick="deleteSavedChart(${c.id}, 'history')" style="padding: 6px 10px; font-size: 10px; border-color: #e53e3e; color: #e53e3e; justify-content: center;"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         `;
                         listDiv.appendChild(card);
@@ -12526,61 +11445,8 @@
                 }
             } catch (e) {
                 console.error("Error loading history:", e);
-                listDiv.innerHTML = `<p style="color: #e53e3e; grid-column: 1/-1;">${dict.lbl_error_history || "Error loading history."}</p>`;
+                listDiv.innerHTML = '<p style="color: #e53e3e; grid-column: 1/-1;">Error loading history.</p>';
             }
-        }
-
-        function toggleSelectAllHistory(allCb) {
-            const checkboxes = document.querySelectorAll('.history-item-checkbox');
-            checkboxes.forEach(cb => {
-                cb.checked = allCb.checked;
-            });
-        }
-
-        // Shared by "delete selected" and "clear all": deletes every given
-        // history row's chart in parallel (rather than one round-trip at a
-        // time) and reports how many succeeded.
-        async function _deleteHistoryCharts(checkboxes, successMsg) {
-            const token = localStorage.getItem('session_token');
-            const results = await Promise.allSettled(
-                Array.from(checkboxes).map(cb => {
-                    const chartId = cb.getAttribute('data-id');
-                    return fetch(`/api/user/charts/${chartId}`, {
-                        method: 'DELETE',
-                        headers: { 'x-session-token': token }
-                    }).then(res => {
-                        if (!res.ok) throw new Error(`delete failed for ${chartId}: ${res.status}`);
-                    });
-                })
-            );
-            const successCount = results.filter(r => r.status === 'fulfilled').length;
-            results.filter(r => r.status === 'rejected')
-                   .forEach(r => console.error("Error deleting history item:", r.reason));
-
-            showToast(successMsg(successCount));
-            const allCb = document.getElementById('chart-history-select-all');
-            if (allCb) allCb.checked = false;
-            loadChartHistoryList();
-        }
-
-        async function deleteSelectedHistory() {
-            const checkboxes = document.querySelectorAll('.history-item-checkbox:checked');
-            if (checkboxes.length === 0) {
-                showToast("No history records selected.");
-                return;
-            }
-            if (!confirm(`Are you sure you want to delete the ${checkboxes.length} selected history records?`)) return;
-            await _deleteHistoryCharts(checkboxes, n => `Deleted ${n} history records.`);
-        }
-
-        async function clearAllHistory() {
-            const checkboxes = document.querySelectorAll('.history-item-checkbox');
-            if (checkboxes.length === 0) {
-                showToast("No history records found to clear.");
-                return;
-            }
-            if (!confirm("Are you sure you want to clear ALL calculation history? This action cannot be undone.")) return;
-            await _deleteHistoryCharts(checkboxes, n => `Cleared all ${n} history records.`);
         }
 
         function loadSavedChartDetails(c) {
@@ -13253,12 +12119,9 @@
                     document.getElementById('in-name').value = currentUser.full_name || "Self";
                     document.getElementById('in-dob').value = currentUser.dob || "";
                     document.getElementById('in-tob').value = currentUser.tob || "";
-                    // Birth place (birth_*), NOT the volatile current-location
-                    // fields — those change with location detection and were
-                    // silently shifting the natal chart & dasa timings.
-                    document.getElementById('in-pob').value = currentUser.birth_place || currentUser.location_name || "";
-                    document.getElementById('in-lat').value = (currentUser.birth_latitude ?? currentUser.latitude) || "";
-                    document.getElementById('in-lon').value = (currentUser.birth_longitude ?? currentUser.longitude) || "";
+                    document.getElementById('in-pob').value = currentUser.location_name || "";
+                    document.getElementById('in-lat').value = currentUser.latitude || "";
+                    document.getElementById('in-lon').value = currentUser.longitude || "";
                     document.getElementById('in-gender').value = currentUser.gender || "male";
                     document.getElementById('in-relationship').value = "self";
                     document.getElementById('in-profile-name').value = "Self";
@@ -13379,133 +12242,11 @@
             }
         }
 
-        // ══════════════════════════════════════════════════════════════
-        // ANDROID / MOBILE APP UX
-        // Installed last so every open/close function above is defined.
-        // ══════════════════════════════════════════════════════════════
-
-        // Hardware back-button support (also improves browser back).
-        // Opening an overlay pushes a history entry; the Android back key
-        // (a popstate in the Capacitor WebView) closes the topmost overlay
-        // instead of killing the app. Closing via ✕/backdrop consumes that
-        // same entry so history never drifts. Leaving the Home tab pushes a
-        // single '@page' entry, so back returns to Home first and only a
-        // second press at the root exits — the standard bottom-nav pattern.
-        (function () {
-            const stack = [];   // open overlay keys, topmost last
-            const closers = {}; // key -> original (unwrapped) close fn
-            let skipPop = 0;    // history.back() calls we triggered ourselves
-
-            const byId = (id) => document.getElementById(id);
-            const isShown = (id) => { const n = byId(id); return !!n && n.style.display !== 'none'; };
-            const drawerOpen = () => { const n = byId('side-nav'); return !!n && n.classList.contains('open'); };
-
-            function opened(key, visible) {
-                if (!visible || stack.indexOf(key) !== -1) return;
-                stack.push(key);
-                try { history.pushState({ vxOverlay: key }, ''); } catch (e) {}
-            }
-            function closed(key) {
-                const i = stack.lastIndexOf(key);
-                if (i === -1) return;
-                stack.splice(i, 1);
-                skipPop++;
-                try { history.back(); } catch (e) { skipPop--; }
-            }
-            window.addEventListener('popstate', function () {
-                if (skipPop > 0) { skipPop--; return; }
-                const key = stack.pop();
-                const close = key && closers[key];
-                if (close) close();
-            });
-
-            // Wrap an open/close pair. The close registered for popstate is
-            // the ORIGINAL, so back-key closes don't call history.back() again.
-            function hook(openNames, closeName, key, elId) {
-                const origClose = window[closeName];
-                if (typeof origClose !== 'function') return;
-                closers[key] = origClose;
-                openNames.forEach(function (name) {
-                    const orig = window[name];
-                    if (typeof orig !== 'function') return;
-                    window[name] = function () {
-                        const r = orig.apply(this, arguments);
-                        opened(key, isShown(elId));
-                        return r;
-                    };
-                });
-                window[closeName] = function () {
-                    const r = origClose.apply(this, arguments);
-                    closed(key);
-                    return r;
-                };
-            }
-
-            hook(['openLoginModal'], 'closeLoginModal', 'login', 'login-modal');
-            hook(['openProfileModal', 'openProfileModalToTab'], 'closeProfileModal', 'profile', 'profile-modal');
-            hook(['showPaywall'], 'dismissPaywall', 'paywall', 'paywall-sheet');
-            hook(['openServerSettings'], 'closeServerSettings', 'server', 'server-settings-modal');
-            hook(['downloadReportPDF'], 'closePdfSectionModal', 'pdf', 'pdf-section-modal');
-            hook(['showGiftCard'], 'closeGiftCard', 'gift', 'gift-card-modal');
-            hook(['showCitationCard'], 'closeCitationCard', 'citation', 'citation-card-modal');
-
-            // The drawer is a toggle, not an open/close pair.
-            const origToggle = window.toggleSideNav;
-            if (typeof origToggle === 'function') {
-                closers.sideNav = function () { if (drawerOpen()) origToggle(); };
-                window.toggleSideNav = function () {
-                    const r = origToggle.apply(this, arguments);
-                    if (drawerOpen()) opened('sideNav', true); else closed('sideNav');
-                    return r;
-                };
-            }
-
-            // Page-level back: Home is the root; any other tab is one entry
-            // deep. Re-tapping the tab you are already on scrolls to top —
-            // the native bottom-nav convention.
-            const origNavigate = window.navigateToPage;
-            if (typeof origNavigate === 'function') {
-                closers['@page'] = function () { origNavigate('home'); };
-                window.navigateToPage = function (pageId) {
-                    const prev = activeMainTab;
-                    const hadDrawer = drawerOpen();
-                    const r = origNavigate.apply(this, arguments);
-                    if (hadDrawer && !drawerOpen()) closed('sideNav'); // navigateToPage closes it directly
-                    if (pageId === prev) {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    } else if (pageId === 'home') {
-                        closed('@page');
-                    } else if (prev === 'home') {
-                        opened('@page', true);
-                    }
-                    return r;
-                };
-            }
-        })();
-
-        // Light haptic tick on primary touch surfaces (Android WebView
-        // supports navigator.vibrate; a silent no-op everywhere else).
-        function hapticTap() {
-            try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {}
-        }
-        document.addEventListener('click', function (e) {
-            if (e.target.closest && e.target.closest('.mobile-nav-item, .menu-toggle-btn, .calculate-btn')) hapticTap();
-        }, { passive: true });
-
-        // Connectivity awareness: fetch failures alone read as bugs; name
-        // the actual condition the moment it starts and ends.
-        window.addEventListener('offline', function () {
-            showToast("You're offline. Panchangam, charts and AI need a connection.", 'error');
-        });
-        window.addEventListener('online', function () {
-            showToast("Back online.", 'success');
-        });
-
     </script>
 
     <!-- Server Settings Modal (Capacitor / self-host backend configuration) -->
     <div id="server-settings-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 400px; max-width: 92vw; position: relative;">
+        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 400px; max-width: 92vw; position: relative;">
             <button onclick="closeServerSettings()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); margin: 0 0 4px;">Backend Server</h3>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 18px;">Select the Vedic Astro AI server this app connects to.</p>
@@ -13543,7 +12284,7 @@
 
     <!-- PDF Section Selector Modal -->
     <div id="pdf-section-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 28px; width: 460px; max-width: 92vw; position: relative;">
+        <div style="background: rgba(4,14,44,0.96); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 28px; width: 460px; max-width: 92vw; position: relative;">
             <button onclick="closePdfSectionModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 17px; margin-bottom: 6px;">
                 <i class="fa-solid fa-file-pdf"></i> <span id="lbl-pdf-modal-title">Download Report</span>
@@ -13581,12 +12322,6 @@
                     </div>
                     <div style="margin-top:8px; color:var(--text-muted); font-size:10px;"><i class="fa-solid fa-hourglass-half"></i> Generation takes ~1–2 minutes; keep this tab open.</div>
                 </div>
-                <!-- Contrast Effect: anchor the premium price against what a
-                     manual astrologer consultation typically costs, so it
-                     doesn't sit priced in isolation. Rupee figure is computed
-                     from `pricing` (never hardcoded); populated by
-                     downloadReportPDF(). -->
-                <div id="pdf-premium-anchor" style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 8px;"></div>
             </div>
 
             <!-- Premium tier: async progress -->
@@ -13606,30 +12341,21 @@
 
     <!-- Sign In / Sign Up Modal -->
     <div id="login-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 380px; max-width: 90vw; position: relative;">
+        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 380px; max-width: 90vw; position: relative;">
             <button onclick="closeLoginModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-
-            <!-- IKEA / Endowment Effect: shown only when the guest already
-                 built a chart (calculatedChartData truthy) — reframes the
-                 modal around saving what they made, instead of a blank
-                 "create account" ask. Populated by openLoginModal(). -->
-            <div id="auth-modal-invested-header" style="display:none; margin-bottom: 14px; padding: 10px 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid var(--accent-gold); border-radius: 8px; font-size: 12px; color: var(--text-gold);">
-                <i class="fa-solid fa-bookmark"></i> <span id="lbl-auth-invested-header"></span>
-            </div>
-
             <div style="display: flex; gap: 15px; border-bottom: 1px solid var(--border-glass); margin-bottom: 20px; padding-bottom: 5px;">
                 <h3 id="tab-phone" onclick="switchAuthTab('phone')" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 14px; cursor: pointer; border-bottom: 2px solid var(--accent-gold); padding-bottom: 5px;">Phone OTP</h3>
                 <h3 id="tab-login" onclick="switchAuthTab('login')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 14px; cursor: pointer; padding-bottom: 5px;">Email Sign In</h3>
                 <h3 id="tab-signup" onclick="switchAuthTab('signup')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 14px; cursor: pointer; padding-bottom: 5px;">Email Sign Up</h3>
             </div>
-
+            
             <!-- Phone OTP Form -->
             <div id="form-phone-fields" style="display: flex; flex-direction: column; gap: 12px;">
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Phone Number</label>
                     <div style="display: flex; gap: 5px;">
                         <span style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: var(--text-secondary); padding: 8px 10px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; font-weight: bold;">+91</span>
-                        <input type="tel" id="auth-phone-number" placeholder="9876543210" style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; outline: none; font-size: 13px;">
+                        <input type="tel" id="auth-phone-number" placeholder="9876543210" style="flex: 1; background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; font-size: 13px;">
                     </div>
                 </div>
                 
@@ -13639,7 +12365,7 @@
                 <div id="otp-input-container" style="display: none; flex-direction: column; gap: 12px; margin-top: 5px; border-top: 1px dashed var(--border-glass); padding-top: 12px;">
                     <div class="input-group">
                         <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block; color: var(--accent-gold);">Enter 6-Digit OTP</label>
-                        <input type="text" id="auth-otp-code" placeholder="123456" maxlength="6" style="background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; letter-spacing: 4px; text-align: center; font-size: 16px; font-weight: bold;">
+                        <input type="text" id="auth-otp-code" placeholder="123456" maxlength="6" style="background: var(--bg-darker); border: 1px solid var(--border-gold); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; letter-spacing: 4px; text-align: center; font-size: 16px; font-weight: bold;">
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
                         <span id="otp-timer" style="color: var(--text-secondary);">Resend OTP in 59s</span>
@@ -13655,47 +12381,34 @@
             <div id="form-login-fields" style="display: none; flex-direction: column; gap: 12px;">
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Email Address</label>
-                    <input type="email" id="auth-login-email" placeholder="email@example.com" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="email" id="auth-login-email" placeholder="email@example.com" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Password</label>
-                    <input type="password" id="auth-login-pass" placeholder="••••••••" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="password" id="auth-login-pass" placeholder="••••••••" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <button class="calculate-btn" onclick="submitLogin()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Sign In</button>
             </div>
             
             <!-- Signup Form -->
             <div id="form-signup-fields" style="display: none; flex-direction: column; gap: 12px;">
-                <!-- IKEA Effect: shown only when there's no chart yet (the
-                     invested-header banner above covers the "already built
-                     something" case instead). A lightweight, OPTIONAL
-                     pre-commitment before the blank form — stored locally
-                     only, since the backend has no field for it. -->
-                <div id="auth-signup-goal-chips">
-                    <label id="lbl-auth-goal-prompt" style="font-size: 10px; text-transform: uppercase; margin-bottom: 6px; display: block; color: var(--text-secondary);">What brings you here?</label>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-                        <button type="button" class="lang-select-btn goal-chip" data-goal="career" onclick="selectAuthGoal('career')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-career">Career</span></button>
-                        <button type="button" class="lang-select-btn goal-chip" data-goal="marriage" onclick="selectAuthGoal('marriage')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-marriage">Marriage</span></button>
-                        <button type="button" class="lang-select-btn goal-chip" data-goal="general" onclick="selectAuthGoal('general')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-general">General</span></button>
-                    </div>
-                </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Full Name</label>
-                    <input type="text" id="auth-signup-name" placeholder="e.g. Name" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="text" id="auth-signup-name" placeholder="e.g. Name" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Email Address</label>
-                    <input type="email" id="auth-signup-email" placeholder="email@example.com" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="email" id="auth-signup-email" placeholder="email@example.com" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Password</label>
-                    <input type="password" id="auth-signup-pass" placeholder="••••••••" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="password" id="auth-signup-pass" placeholder="••••••••" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Referral Code (optional)</label>
-                    <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
+                    <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
                 </div>
-                <button class="calculate-btn" id="btn-submit-signup" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Create Account</button>
+                <button class="calculate-btn" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Create Account</button>
             </div>
             
             <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
@@ -13705,36 +12418,23 @@
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 8px; font-size: 11px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 8px; font-size: 11px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
             </div>
         </div>
     </div>
 
     <!-- Out-of-tokens paywall bottom sheet (shown on a 402 from any paid action) -->
     <div id="paywall-sheet" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); z-index: 1200;" onclick="if(event.target===this) dismissPaywall()">
-        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg-void); border-top: 1px solid var(--border-gold); border-radius: 18px 18px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: rgba(4,14,44,0.98); border-top: 1px solid var(--border-gold); border-radius: 18px 18px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;">
             <div style="width: 38px; height: 4px; background: var(--border-gold); border-radius: 2px; margin: 0 auto 16px; opacity: 0.6;"></div>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin: 0 0 4px;">You're out of tokens</h3>
-            <!-- Loss Aversion: names the concrete next step recharging
-                 unlocks when it's genuinely known (chart calculated but no
-                 reading yet — the same state already tracked for the
-                 onboarding wizard), instead of only a generic balance line.
-                 Populated by showPaywall(). -->
-            <p id="paywall-subcopy" style="font-size: 11px; color: var(--text-secondary); margin: 0 0 14px;">
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 14px;">
                 Balance: <strong id="paywall-balance" style="color: var(--accent-gold);">0</strong> tokens. Recharge to continue — pay via UPI, cards or netbanking.
             </p>
-            <!-- Contrast Effect: Astro Pro is visually dominant (larger,
-                 gold-bordered, "Best Value" chip) so Pocket/Kundli are read
-                 relative to it; per-credit cost (computed from `pricing`,
-                 never hardcoded) makes ₹199 read as cheap-per-unit instead
-                 of anchoring on it being the biggest number shown. -->
-            <div style="display: flex; gap: 8px; align-items: flex-end;">
-                <button class="lang-select-btn" onclick="paywallBuy(500)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Pocket<br>500<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span><br><span id="paywall-rate-500" style="font-size: 8px; color: var(--text-muted);"></span></button>
-                <button class="lang-select-btn" onclick="paywallBuy(1125)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Kundli<br>1,125<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span><br><span id="paywall-rate-1125" style="font-size: 8px; color: var(--text-muted);"></span></button>
-                <button class="lang-select-btn" onclick="paywallBuy(5000)" style="flex: 1.15; justify-content: center; padding: 16px 4px; font-size: 12px; border: 2px solid var(--accent-gold); background: rgba(245, 158, 11, 0.1); text-align: center; position: relative; font-weight: 700;">
-                    <span class="chip-price" style="position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 8px; padding: 2px 7px; white-space: nowrap;">⭐ <span id="lbl-best-value">Best Value</span></span>
-                    🪙 Astro Pro<br>5,000<br><span style="font-size: 10px; color: var(--text-secondary);">₹199</span><br><span id="paywall-rate-5000" style="font-size: 8px; color: var(--text-muted);"></span>
-                </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="lang-select-btn" onclick="paywallBuy(500)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Pocket<br>500<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span></button>
+                <button class="lang-select-btn" onclick="paywallBuy(1125)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Kundli<br>1,125<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span></button>
+                <button class="lang-select-btn" onclick="paywallBuy(5000)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Astro Pro<br>5,000<br><span style="font-size: 9px; color: var(--text-secondary);">₹199</span></button>
             </div>
             <div style="font-size: 9px; color: var(--text-secondary); text-align: center; opacity: 0.85; margin-top: 8px;">Incl. 18% GST · Secured by Razorpay</div>
             <button onclick="dismissPaywall()" style="width: 100%; background: transparent; border: none; color: var(--text-secondary); font-size: 11px; cursor: pointer; padding: 12px; margin-top: 4px;">Maybe later</button>
@@ -13743,7 +12443,7 @@
 
     <!-- User Dashboard / Profile Modal -->
     <div id="profile-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 480px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
+        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 480px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
             <button onclick="closeProfileModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
@@ -13766,18 +12466,18 @@
             <!-- TAB 1: Profile & Settings -->
             <div id="profile-pane-settings" class="profile-tab-pane">
                 <!-- Profile Details -->
-                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Full Name:</span>
-                        <span id="profile-full-name" style="font-size: 11px; font-weight: bold; color: var(--text-primary);">--</span>
+                        <span id="profile-full-name" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Email Address:</span>
-                        <span id="profile-email" style="font-size: 11px; font-weight: bold; color: var(--text-primary);">--</span>
+                        <span id="profile-email" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Phone Number:</span>
-                        <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: var(--text-primary);">--</span>
+                        <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Credit Balance:</span>
@@ -13798,14 +12498,14 @@
 
                 <!-- Account Preferences -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Account Preferences</h4>
-                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Phone Number</label>
-                        <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                        <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                     </div>
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Preferred OTP/Alerts Channel</label>
-                        <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
+                        <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
                             <option value="sms">SMS</option>
                         </select>
                     </div>
@@ -13822,39 +12522,39 @@
 
                 <!-- Astrology Personal Info Settings -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Personal Birth Info (For Auto-Chart Predictions)</h4>
-                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Full Name</label>
-                        <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px;">
+                        <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px;">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Birth Date</label>
-                            <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
+                            <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
                         </div>
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Birth Time</label>
-                            <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
+                            <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
                         </div>
                     </div>
                     <div class="input-group" style="position: relative;">
                         <label style="font-size: 10px; color: var(--text-secondary);">Place of Birth</label>
-                        <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
+                        <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
                         <div id="profile-pob-suggestions" class="suggestions-dropdown" style="display: none; top: 100%;"></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Longitude</label>
-                            <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
+                            <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
                         </div>
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Latitude</label>
-                            <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
+                            <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
                         </div>
                     </div>
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Gender</label>
-                        <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
+                        <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                         </select>
@@ -13906,7 +12606,7 @@
 
                 <!-- Gift a reading -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin: 22px 0 10px;">🎁 Gift a Reading</h4>
-                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
                     <div style="font-size: 10.5px; color: var(--text-secondary);">Buy a gift code for a friend — a token pack or a premium life-report voucher. They redeem it after signing in.</div>
                     <div style="display: flex; gap: 10px;">
                         <button class="lang-select-btn" onclick="buyGift('credit_pack', 1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
@@ -13919,7 +12619,7 @@
                     <div style="border-top: 1px dashed var(--border-glass); padding-top: 10px; margin-top: 4px;">
                         <label style="font-size: 10px; color: var(--text-secondary);">Have a gift code?</label>
                         <div style="display: flex; gap: 6px; margin-top: 5px;">
-                            <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; outline: none; text-transform: uppercase;">
+                            <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none; text-transform: uppercase;">
                             <button class="calculate-btn" onclick="redeemGiftFromInput()" style="padding: 8px 14px; font-size: 11px;">Redeem</button>
                         </div>
                     </div>
@@ -13927,16 +12627,18 @@
 
                 <!-- Usage Dashboard (populated from /api/billing/usage) -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Transaction &amp; Usage History</h4>
-                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px;">
                     <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">
                         <span>Tokens used this month</span>
-                        <span><strong id="usage-used-month" style="color: var(--text-primary);">0</strong></span>
+                        <span><strong id="usage-used-month" style="color: #fff;">0</strong></span>
                     </div>
                     <div id="usage-recent" style="display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: var(--text-secondary);">
                         <!-- Populated dynamically via JS with skeletons -->
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 
@@ -13947,7 +12649,7 @@
             <div style="font-size: 40px; margin-bottom: 6px;">🎁</div>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 18px; margin-bottom: 6px;">Your gift is ready!</h3>
             <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 14px;">Share this code (or the link) with the lucky recipient.</p>
-            <div id="gift-card-code" style="font-family: monospace; font-size: 20px; letter-spacing: 2px; color: var(--text-gold); background: var(--bg-darker); border: 1px dashed var(--accent-gold); border-radius: 10px; padding: 12px; margin-bottom: 12px;"></div>
+            <div id="gift-card-code" style="font-family: monospace; font-size: 20px; letter-spacing: 2px; color: #fff; background: rgba(0,0,0,0.35); border: 1px dashed var(--accent-gold); border-radius: 10px; padding: 12px; margin-bottom: 12px;"></div>
             <div style="display: flex; gap: 8px; justify-content: center;">
                 <button class="lang-select-btn" onclick="copyGiftLink()" style="padding: 8px 14px; font-size: 11px;"><i class="fa-solid fa-link"></i> Copy share link</button>
                 <button class="calculate-btn" onclick="closeGiftCard()" style="padding: 8px 16px; font-size: 11px;">Done</button>
@@ -13999,10 +12701,6 @@
         <button class="mobile-nav-item" id="mob-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
             <i class="fa-solid fa-dharmachakra"></i>
             <span id="lbl-mobile-nav-jyothisyam">Jyothisyam</span>
-        </button>
-        <button class="mobile-nav-item" id="mob-btn-horoscope" onclick="navigateToPage('horoscope')">
-            <i class="fa-solid fa-star"></i>
-            <span id="lbl-mobile-nav-horoscope">Horoscope</span>
         </button>
         <button class="mobile-nav-item" id="mob-btn-marriage" onclick="navigateToPage('marriage')">
             <i class="fa-solid fa-heart"></i>
