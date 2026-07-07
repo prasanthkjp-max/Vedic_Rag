@@ -3,6 +3,48 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.23.0]
+
+### Added
+- **Home conversion funnel & onboarding wizard.** New design tokens, utility
+  classes, and a toast notification system (replacing `alert()` for non-blocking
+  feedback); a guided onboarding checklist on the homepage; `GET /api/pricing`
+  exposes the credit-cost/package configuration so the frontend never hardcodes
+  prices that could drift from `config.py`.
+- **Readings Hub.** A dedicated page surfacing every paid reading type as a
+  priced card (sourced from `/api/pricing`), including a new Varshaphala
+  (annual return) streaming flow.
+- **Mobile navigation.** A sticky bottom nav bar and sticky calculate buttons
+  for small screens; drawer cleanup.
+- **Profile modal reorganized into sub-tabs** (Settings / Saved Profiles /
+  Billing & History) with skeleton-shimmer loading states and an account
+  deletion flow.
+
+### Fixed
+- The onboarding wizard's "Save your birth details" step opened a completely
+  blank profile modal (`switchProfileTab` didn't recognise the `birth-info`
+  tab id used by the wizard link) — aliased to the `settings` pane, which is
+  where the birth-info fields actually live.
+- The new Varshaphala streaming call omitted the backend's required
+  `client_name`/`place_name` fields, so every request was rejected with a 422
+  before any prediction ran — the Readings Hub's flagship feature never
+  worked. Added the missing fields (matching the sibling remedies call).
+- A stray extra closing `</div>` from the profile-modal reorg closed
+  `.app-container` early and left the document's div-nesting unbalanced,
+  reparenting every modal after the profile modal in the source. Removed.
+- Reopening the profile modal after a billing action (buy credits / subscribe
+  / cancel) always reset to the Settings tab, hiding the Billing tab update
+  the user just triggered. It now returns to whichever tab was last active.
+- Removed two hardcoded 600ms artificial delays inserted purely to showcase
+  the new skeleton-shimmer loaders after the real data had already arrived.
+- `GET /api/pricing` was awaited at the top of `window.onload`, blocking the
+  homepage's actual critical-path init (today's panchangam, calendar) on a
+  round-trip the Readings Hub doesn't need until visited. Now fetched
+  fire-and-forget against sensible hardcoded fallbacks.
+- The premium-PDF button/price label used a separate hardcoded 150-credit
+  constant instead of the same `pricing.pdf_premium` value driving the
+  Readings Hub cards, risking drift if the cost is ever repriced. Consolidated.
+
 ## [1.22.0]
 
 ### Added
