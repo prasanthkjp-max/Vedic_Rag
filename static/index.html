@@ -2422,10 +2422,174 @@
             color: var(--text-muted);
             text-transform: uppercase;
         }
+
+        /* ── Phase 0 Utility & Design Token overrides ── */
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 7px 13px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(217, 119, 6, 0.3);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all .2s ease;
+            font-family: var(--font-sans);
+            white-space: nowrap;
+        }
+        .btn-ghost:hover {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: rgba(217, 119, 6, 0.6);
+            color: #ea580c;
+        }
+        .btn-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 7px 13px;
+            background: rgba(229, 62, 98, 0.08);
+            border: 1px solid rgba(229, 62, 98, 0.3);
+            border-radius: 8px;
+            color: #e53e3e;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all .2s ease;
+            font-family: var(--font-sans);
+            white-space: nowrap;
+        }
+        .btn-danger:hover {
+            background: rgba(229, 62, 98, 0.18);
+            border-color: #e53e3e;
+            color: #c53030;
+        }
+        .card-soft {
+            background: var(--bg-card);
+            border: 1px solid var(--border-gold);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(180, 120, 40, 0.05);
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(217, 119, 6, 0.06);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .chip-price {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid var(--accent-gold);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-gold);
+        }
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-gold);
+            margin-bottom: 12px;
+        }
+        .muted-sm {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .p-1 { padding: 4px; }
+        .p-2 { padding: 8px; }
+        .p-3 { padding: 12px; }
+        .p-4 { padding: 16px; }
+        .p-5 { padding: 24px; }
+        .m-1 { margin: 4px; }
+        .m-2 { margin: 8px; }
+        .m-3 { margin: 12px; }
+        .m-4 { margin: 16px; }
+        .m-5 { margin: 24px; }
+        .gap-1 { gap: 4px; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-4 { gap: 16px; }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(217, 119, 6, 0.05) 25%, rgba(217, 119, 6, 0.12) 50%, rgba(217, 119, 6, 0.05) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.5s infinite;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            width: calc(100% - 40px);
+            pointer-events: none;
+        }
+        .toast-card {
+            pointer-events: auto;
+            background: #fffaf3;
+            border-left: 4px solid var(--accent-gold);
+            border: 1px solid rgba(180, 120, 40, 0.28);
+            border-left-width: 4px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast-card.success {
+            border-left-color: #10b981;
+        }
+        .toast-card.error {
+            border-left-color: #ef4444;
+        }
+        .toast-card.info {
+            border-left-color: var(--accent-gold);
+        }
+        .toast-title {
+            font-weight: bold;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        .toast-body {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
     <div class="app-container">
         
         <!-- Side Navigation Drawer for Mobile/Android -->
@@ -3570,6 +3734,60 @@
         // Drop-in replacement for fetch() that targets our own API. Adds the
         // key header and, on a 401, clears the stored key, prompts once and
         // retries so a wrong/rotated key is easy to recover from.
+        // Toast system function
+        function showToast(message, type = null) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            if (!type) {
+                const msgLower = String(message).toLowerCase();
+                if (msgLower.includes('success') || msgLower.includes('copied') || msgLower.includes('successful') || msgLower.includes('sent')) {
+                    type = 'success';
+                } else if (msgLower.includes('fail') || msgLower.includes('error') || msgLower.includes('invalid') || msgLower.includes('could not') || msgLower.includes('expired') || msgLower.includes('required') || msgLower.includes('please fill') || msgLower.includes('please type') || msgLower.includes('please calculate')) {
+                    type = 'error';
+                } else {
+                    type = 'info';
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = `toast-card ${type}`;
+            
+            // Check if there are multiple lines (e.g., alert with title and body)
+            const lines = String(message).split('\n');
+            if (lines.length > 1) {
+                const title = document.createElement('div');
+                title.className = 'toast-title';
+                title.innerText = lines[0];
+                card.appendChild(title);
+                
+                const body = document.createElement('div');
+                body.className = 'toast-body';
+                body.innerText = lines.slice(1).join('\n');
+                card.appendChild(body);
+            } else {
+                const body = document.createElement('div');
+                body.className = 'toast-body';
+                body.innerText = message;
+                card.appendChild(body);
+            }
+
+            container.appendChild(card);
+
+            // Trigger animation
+            setTimeout(() => {
+                card.classList.add('show');
+            }, 10);
+
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                card.classList.remove('show');
+                setTimeout(() => {
+                    card.remove();
+                }, 300);
+            }, 5000);
+        }
+
         let promptPromise = null;
         async function apiFetch(url, options = {}) {
             const opts = { ...options, headers: { ...(options.headers || {}) } };
@@ -3599,7 +3817,7 @@
             if (response.status === 402) {
                 showPaywall();
             } else if (response.status === 401 && !url.includes('/api/auth/')) {
-                alert("Session expired or authentication required. Please sign in.");
+                showToast("Session expired or authentication required. Please sign in.");
                 openLoginModal();
             }
             return response;
@@ -5361,6 +5579,26 @@
         });
 
         // ------------------ PANCHANGAM & GOCHARA CALENDAR LOGIC ------------------
+        let pricing = {
+            chart: 0,
+            ai_predict: 25,
+            query: 25,
+            marriage: 50,
+            pdf: 50,
+            pdf_premium: 150,
+            varshaphala: 25,
+            remedies: 25,
+            compatibility: 50,
+            prashna: 25,
+            signup_bonus: 25,
+            packages: {
+                "500": 2900,
+                "1125": 4900,
+                "5000": 19900
+            },
+            currency: "INR"
+        };
+
         let dailyPanchangamData = null;
         let selectedPanchangamDate = "";
         let calendarYear = 2026;
@@ -6760,7 +6998,7 @@
             const timing = document.getElementById('in-timing').value;
 
             if (!name || !dob || !tob || !pob) {
-                alert("Please fill all basic birth fields before drafting!");
+                showToast("Please fill all basic birth fields before drafting!");
                 return;
             }
 
@@ -6854,7 +7092,7 @@
 
             } catch (err) {
                 console.error("Calculation failed:", err);
-                alert("Failed to compute chart. Please ensure all coordinates and inputs are valid.");
+                showToast("Failed to compute chart. Please ensure all coordinates and inputs are valid.");
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -7497,7 +7735,7 @@
             const sections = Array.from(document.querySelectorAll('.pdf-sec-cb'))
                 .filter(cb => cb.checked && !cb.disabled)
                 .map(cb => cb.value);
-            if (sections.length === 0) { alert("Please select at least one section to include."); return; }
+            if (sections.length === 0) { showToast("Please select at least one section to include."); return; }
 
             const name = document.getElementById('in-name').value;
             const pob = document.getElementById('in-pob').value;
@@ -7536,11 +7774,11 @@
                     closePdfSectionModal();
                     showPaywall();
                 } else {
-                    alert("Failed to generate PDF download.");
+                    showToast("Failed to generate PDF download.");
                 }
             } catch (err) {
                 console.error("PDF generation failed:", err);
-                alert("PDF generation failed. Please try again.");
+                showToast("PDF generation failed. Please try again.");
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
             }
@@ -7571,7 +7809,7 @@
                     })
                 });
                 if (start.status === 402) { closePdfSectionModal(); showPaywall(); return; }
-                if (!start.ok) { alert("Could not start the premium report."); return; }
+                if (!start.ok) { showToast("Could not start the premium report."); return; }
                 const { report_id } = await start.json();
                 if (currentUser && !currentUser.subscription_active) {
                     currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - PREMIUM_PDF_CREDITS);
@@ -7582,7 +7820,7 @@
                 await pollPremiumReport(report_id, name);
             } catch (err) {
                 console.error("Premium report failed:", err);
-                alert("Premium report failed to start. Please try again.");
+                showToast("Premium report failed to start. Please try again.");
             } finally {
                 if (progress) progress.style.display = 'none';
                 if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
@@ -7616,7 +7854,7 @@
                         }
                     } catch (e) { /* fall through to the error notice */ }
                     if (!downloaded) {
-                        alert("Your report is ready but the download didn't start. Open your profile and try the link again shortly.");
+                        showToast("Your report is ready but the download didn't start. Open your profile and try the link again shortly.");
                     }
                     // Reconcile the header balance with the server's truth so the
                     // optimistic decrement can never drift.
@@ -7624,7 +7862,7 @@
                     return;
                 }
                 if (data.status === 'failed') {
-                    alert("The premium report could not be generated — your credits have been refunded. Please try again.");
+                    showToast("The premium report could not be generated — your credits have been refunded. Please try again.");
                     // Re-sync the true server balance (the refund landed server-side).
                     await initAuth();
                     return;
@@ -7633,7 +7871,7 @@
             // Timed out waiting: reconcile the balance in case the server has
             // since failed-and-refunded the job.
             await initAuth();
-            alert("The report is taking longer than expected. It will be delivered on WhatsApp if you've opted in; you can also check back shortly.");
+            showToast("The report is taking longer than expected. It will be delivered on WhatsApp if you've opted in; you can also check back shortly.");
         }
 
         // Debounced location lookup using Nominatim OpenStreetMap API
@@ -8486,7 +8724,7 @@
                 generateMarriageAICompatibility();
             } catch (err) {
                 const dict = localization[currentLang] || localization.en;
-                alert(`${dict.lbl_calculation_failed || "Calculation failed"}: ${err.message}`);
+                showToast(`${dict.lbl_calculation_failed || "Calculation failed"}: ${err.message}`);
                 btn.disabled = false;
                 btn.innerText = dict.lbl_btn_calculate || "Calculate Compatibility";
             }
@@ -8556,7 +8794,7 @@
 
         async function generateMarriageAICompatibility() {
             if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
-                alert("Please calculate the compatibility report first.");
+                showToast("Please calculate the compatibility report first.");
                 return;
             }
             // Guard against a double-click firing two paid (25-credit) streams.
@@ -8699,7 +8937,7 @@
         let isDeepCompatResponding = false; // double-submit guard (75-credit stream)
         async function generateDeepCompatibility() {
             if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
-                alert("Please calculate the compatibility report first.");
+                showToast("Please calculate the compatibility report first.");
                 return;
             }
             if (isDeepCompatResponding) return;
@@ -8726,7 +8964,7 @@
         let isRemediesResponding = false; // double-submit guard (25-credit stream)
         async function generateRemedies() {
             if (!calculatedChartData) {
-                alert("Please calculate a birth chart first.");
+                showToast("Please calculate a birth chart first.");
                 return;
             }
             if (isRemediesResponding) return;
@@ -8756,7 +8994,7 @@
             const input = document.getElementById('prashna-question');
             const question = (input.value || '').trim();
             if (question.length < 5) {
-                alert("Please type your question first (a full sentence works best).");
+                showToast("Please type your question first (a full sentence works best).");
                 return;
             }
             if (!currentUser) {
@@ -9118,6 +9356,17 @@
         }
         // --- Initialize Page details on startup ---
         window.onload = async function() {
+            // Fetch pricing config from backend
+            try {
+                const res = await apiFetch('/api/pricing');
+                if (res.ok) {
+                    const data = await res.json();
+                    pricing = { ...pricing, ...data };
+                }
+            } catch (e) {
+                console.error("Failed to load pricing config, using fallbacks:", e);
+            }
+
             if (typeof initNavagrahaCarousel === 'function') initNavagrahaCarousel();
 
             // Initialise current date BEFORE language restore so that any
@@ -9603,7 +9852,7 @@
                 });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    alert(err.detail || 'Could not update the digest preference.');
+                    showToast(err.detail || 'Could not update the digest preference.');
                     if (el) el.checked = !on;
                 }
             } catch (e) {
@@ -9618,23 +9867,23 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}'
                 });
-                if (!res.ok) { alert('Could not create the share link.'); return; }
+                if (!res.ok) { showToast('Could not create the share link.'); return; }
                 const d = await res.json();
                 const note = 'Public link copied:\n' + d.url + '\n\nAnyone with this link can view the chart (birth details included, no AI content). Deleting the chart revokes the link.';
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(d.url).then(() => alert(note)).catch(() => prompt('Copy the public link:', d.url));
+                    navigator.clipboard.writeText(d.url).then(() => showToast(note)).catch(() => prompt('Copy the public link:', d.url));
                 } else {
                     prompt('Copy the public link:', d.url);
                 }
             } catch (e) {
-                alert('Could not create the share link.');
+                showToast('Could not create the share link.');
             }
         }
 
         function copyReferralCode() {
             const code = currentUser && currentUser.referral_code;
             if (!code) return;
-            const done = () => alert("Referral code copied: " + code + "\nShare it — your friend gets bonus tokens, and so do you!");
+            const done = () => showToast("Referral code copied: " + code + "\nShare it — your friend gets bonus tokens, and so do you!");
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(code).then(done).catch(done);
             } else {
@@ -9685,7 +9934,7 @@
             const referral_code = referralEl ? referralEl.value.trim().toUpperCase() : "";
 
             if (!name || !email || !password) {
-                alert("Please fill all signup fields.");
+                showToast("Please fill all signup fields.");
                 return;
             }
 
@@ -9696,15 +9945,15 @@
                     body: JSON.stringify({ email, password, full_name: name, referral_code })
                 });
                 if (res.ok) {
-                    alert("Account created successfully! Please sign in.");
+                    showToast("Account created successfully! Please sign in.");
                     switchAuthTab('login');
                     document.getElementById('auth-login-email').value = email;
                 } else {
                     const data = await res.json();
-                    alert("Signup failed: " + (data.detail || "Unknown error"));
+                    showToast("Signup failed: " + (data.detail || "Unknown error"));
                 }
             } catch (e) {
-                alert("Error during signup: " + e);
+                showToast("Error during signup: " + e);
             }
         }
 
@@ -9713,7 +9962,7 @@
             const password = document.getElementById('auth-login-pass').value.trim();
             
             if (!email || !password) {
-                alert("Please enter email and password.");
+                showToast("Please enter email and password.");
                 return;
             }
             
@@ -9732,10 +9981,10 @@
                     maybeRedeemPendingGift();  // redeem a gift-link code, if any
                 } else {
                     const data = await res.json();
-                    alert("Login failed: " + (data.detail || "Invalid credentials"));
+                    showToast("Login failed: " + (data.detail || "Invalid credentials"));
                 }
             } catch (e) {
-                alert("Error during login: " + e);
+                showToast("Error during login: " + e);
             }
         }
 
@@ -9768,10 +10017,10 @@
                     maybeRedeemPendingGift();  // redeem a gift-link code, if any
                 } else {
                     const data = await res.json();
-                    alert("OAuth failed: " + data.detail);
+                    showToast("OAuth failed: " + data.detail);
                 }
             } catch (e) {
-                alert("Error during OAuth: " + e);
+                showToast("Error during OAuth: " + e);
             }
         }
 
@@ -9782,13 +10031,13 @@
         async function requestOTP() {
             const phoneVal = document.getElementById('auth-phone-number').value.trim();
             if (!phoneVal) {
-                alert("Please enter your 10-digit phone number.");
+                showToast("Please enter your 10-digit phone number.");
                 return;
             }
             
             const cleanNum = phoneVal.replace(/\D/g, '');
             if (cleanNum.length !== 10 && !phoneVal.startsWith('+')) {
-                alert("Please enter a valid 10-digit mobile number.");
+                showToast("Please enter a valid 10-digit mobile number.");
                 return;
             }
 
@@ -9806,7 +10055,7 @@
                 
                 if (res.ok) {
                     const data = await res.json();
-                    alert(`Verification code sent via ${selectedOtpChannel.toUpperCase()}!`);
+                    showToast(`Verification code sent via ${selectedOtpChannel.toUpperCase()}!`);
                     
                     if (data.debug_otp) {
                         console.log("DEV MODE OTP:", data.debug_otp);
@@ -9821,12 +10070,12 @@
                     startOtpTimer();
                 } else {
                     const data = await res.json();
-                    alert("Failed to send OTP: " + (data.detail || "Unknown error"));
+                    showToast("Failed to send OTP: " + (data.detail || "Unknown error"));
                     btnAction.disabled = false;
                     btnAction.innerText = "Send Verification OTP";
                 }
             } catch (e) {
-                alert("Error sending OTP: " + e);
+                showToast("Error sending OTP: " + e);
                 btnAction.disabled = false;
                 btnAction.innerText = "Send Verification OTP";
             }
@@ -9859,7 +10108,7 @@
             const otpVal = document.getElementById('auth-otp-code').value.trim();
             
             if (!otpVal || otpVal.length < 4) {
-                alert("Please enter a valid verification code.");
+                showToast("Please enter a valid verification code.");
                 return;
             }
             
@@ -9889,12 +10138,12 @@
                     resetPhoneForm();
                 } else {
                     const data = await res.json();
-                    alert("Verification failed: " + (data.detail || "Invalid code"));
+                    showToast("Verification failed: " + (data.detail || "Invalid code"));
                     btnAction.disabled = false;
                     btnAction.innerText = "Verify & Login";
                 }
             } catch (e) {
-                alert("Error during verification: " + e);
+                showToast("Error during verification: " + e);
                 btnAction.disabled = false;
                 btnAction.innerText = "Verify & Login";
             }
@@ -9942,17 +10191,17 @@
                     })
                 });
                 if (res.ok) {
-                    alert("Preferences saved successfully!");
+                    showToast("Preferences saved successfully!");
                     await initAuth();
                 } else {
                     // Surface the server's validation message (bad E.164 / opt-in
                     // without a number) instead of a generic failure.
                     let msg = "Failed to save preferences.";
                     try { const d = await res.json(); if (d.detail) msg = d.detail; } catch (e) {}
-                    alert(msg);
+                    showToast(msg);
                 }
             } catch (e) {
-                alert("Error saving preferences: " + e);
+                showToast("Error saving preferences: " + e);
             }
         }
 
@@ -9988,9 +10237,9 @@
 
         async function buyCreditPackage(amount) {
             const token = localStorage.getItem('session_token');
-            if (!token) { alert("Please log in to buy tokens."); return; }
+            if (!token) { showToast("Please log in to buy tokens."); return; }
             if (typeof Razorpay === 'undefined') {
-                alert("Payment library failed to load. Check your connection and retry.");
+                showToast("Payment library failed to load. Check your connection and retry.");
                 return;
             }
             try {
@@ -10002,7 +10251,7 @@
                 });
                 if (!res.ok) {
                     const data = await res.json();
-                    alert("Could not start checkout: " + data.detail);
+                    showToast("Could not start checkout: " + data.detail);
                     return;
                 }
                 const order = await res.json();
@@ -10033,26 +10282,26 @@
                                 })
                             });
                             if (vres.ok) {
-                                alert(`Payment successful! ${order.credits.toLocaleString()} tokens added.`);
+                                showToast(`Payment successful! ${order.credits.toLocaleString()} tokens added.`);
                                 await initAuth();
                                 closeProfileModal();
                                 openProfileModal();
                             } else {
                                 const vd = await vres.json();
-                                alert("Payment captured but verification is pending: " + vd.detail +
+                                showToast("Payment captured but verification is pending: " + vd.detail +
                                     "\nYour tokens will be credited automatically once confirmed.");
                             }
                         } catch (e) {
-                            alert("Verification error: " + e + "\nTokens will be credited automatically once confirmed.");
+                            showToast("Verification error: " + e + "\nTokens will be credited automatically once confirmed.");
                         }
                     }
                 });
                 rzp.on('payment.failed', function (resp) {
-                    alert("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                    showToast("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
                 });
                 rzp.open();
             } catch (e) {
-                alert("Error during purchase: " + e);
+                showToast("Error during purchase: " + e);
             }
         }
 
@@ -10061,7 +10310,7 @@
             const token = localStorage.getItem('session_token');
             if (!token) { openLoginModal(); return; }
             if (typeof Razorpay === 'undefined') {
-                alert("Payment library failed to load. Check your connection and retry.");
+                showToast("Payment library failed to load. Check your connection and retry.");
                 return;
             }
             try {
@@ -10072,7 +10321,7 @@
                 });
                 if (!res.ok) {
                     const data = await res.json().catch(() => ({}));
-                    alert("Could not start gift checkout: " + (data.detail || res.status));
+                    showToast("Could not start gift checkout: " + (data.detail || res.status));
                     return;
                 }
                 const order = await res.json();
@@ -10104,19 +10353,19 @@
                             if (vres.ok && vd.code) {
                                 showGiftCard(vd.code, vd.share_url);
                             } else {
-                                alert("Payment captured — your gift code will be available shortly once confirmed.");
+                                showToast("Payment captured — your gift code will be available shortly once confirmed.");
                             }
                         } catch (e) {
-                            alert("Verification error: " + e + "\nYour gift code will be confirmed automatically.");
+                            showToast("Verification error: " + e + "\nYour gift code will be confirmed automatically.");
                         }
                     }
                 });
                 rzp.on('payment.failed', function (resp) {
-                    alert("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                    showToast("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
                 });
                 rzp.open();
             } catch (e) {
-                alert("Error during gift purchase: " + e);
+                showToast("Error during gift purchase: " + e);
             }
         }
 
@@ -10134,15 +10383,15 @@
         function copyGiftLink() {
             const url = currentGiftShareUrl;
             navigator.clipboard.writeText(url).then(
-                () => alert("Share link copied!"),
-                () => alert("Copy failed — the link is: " + url)
+                () => showToast("Share link copied!"),
+                () => showToast("Copy failed — the link is: " + url)
             );
         }
 
         function redeemGiftFromInput() {
             const el = document.getElementById('gift-redeem-input');
             const code = (el && el.value || '').trim().toUpperCase();
-            if (!code) { alert("Enter a gift code."); return; }
+            if (!code) { showToast("Enter a gift code."); return; }
             redeemGiftCode(code);
         }
 
@@ -10162,13 +10411,13 @@
                 });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    alert(`🎁 Gift redeemed! ${(data.credits_added || 0).toLocaleString()} credits added to your account.`);
+                    showToast(`🎁 Gift redeemed! ${(data.credits_added || 0).toLocaleString()} credits added to your account.`);
                     await initAuth();
                 } else {
-                    alert(data.detail || "Could not redeem this gift code.");
+                    showToast(data.detail || "Could not redeem this gift code.");
                 }
             } catch (e) {
-                alert("Error redeeming gift: " + e);
+                showToast("Error redeeming gift: " + e);
             }
         }
 
@@ -10202,9 +10451,9 @@
 
         async function subscribeTier(tier) {
             const token = localStorage.getItem('session_token');
-            if (!token) { alert("Please log in to subscribe."); return; }
+            if (!token) { showToast("Please log in to subscribe."); return; }
             if (typeof Razorpay === 'undefined') {
-                alert("Payment library failed to load. Check your connection and retry.");
+                showToast("Payment library failed to load. Check your connection and retry.");
                 return;
             }
             try {
@@ -10215,7 +10464,7 @@
                 });
                 if (!res.ok) {
                     const data = await res.json();
-                    alert("Could not start subscription: " + data.detail);
+                    showToast("Could not start subscription: " + data.detail);
                     return;
                 }
                 const sub = await res.json();
@@ -10244,26 +10493,26 @@
                                 })
                             });
                             if (vres.ok) {
-                                alert("Astro Pass active — welcome aboard! 🌟");
+                                showToast("Astro Pass active — welcome aboard! 🌟");
                                 await initAuth();
                                 closeProfileModal();
                                 openProfileModal();
                             } else {
                                 const vd = await vres.json();
-                                alert("Payment authorised but activation is pending: " + vd.detail +
+                                showToast("Payment authorised but activation is pending: " + vd.detail +
                                     "\nYour pass will activate automatically once confirmed.");
                             }
                         } catch (e) {
-                            alert("Verification error: " + e + "\nYour pass will activate automatically once confirmed.");
+                            showToast("Verification error: " + e + "\nYour pass will activate automatically once confirmed.");
                         }
                     }
                 });
                 rzp.on('payment.failed', function (resp) {
-                    alert("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                    showToast("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
                 });
                 rzp.open();
             } catch (e) {
-                alert("Error during subscription: " + e);
+                showToast("Error during subscription: " + e);
             }
         }
 
@@ -10275,16 +10524,16 @@
                     headers: { 'x-session-token': token }
                 });
                 if (res.ok) {
-                    alert("Subscription cancelled successfully.");
+                    showToast("Subscription cancelled successfully.");
                     await initAuth();
                     closeProfileModal();
                     openProfileModal();
                 } else {
                     const data = await res.json();
-                    alert("Cancellation failed: " + data.detail);
+                    showToast("Cancellation failed: " + data.detail);
                 }
             } catch (e) {
-                alert("Error during cancellation: " + e);
+                showToast("Error during cancellation: " + e);
             }
         }
 
@@ -10298,7 +10547,7 @@
             const gender = document.getElementById('profile-in-gender').value;
 
             if (!name || !dob || !tob || !pob || isNaN(lon) || isNaN(lat)) {
-                alert("Please fill all birth info fields.");
+                showToast("Please fill all birth info fields.");
                 return;
             }
 
@@ -10321,14 +10570,14 @@
                     })
                 });
                 if (res.ok) {
-                    alert("Birth details saved successfully!");
+                    showToast("Birth details saved successfully!");
                     // Refresh session
                     await initAuth();
                 } else {
-                    alert("Failed to save birth details.");
+                    showToast("Failed to save birth details.");
                 }
             } catch (e) {
-                alert("Error saving details: " + e);
+                showToast("Error saving details: " + e);
             }
         }
 
@@ -10518,13 +10767,13 @@
                     headers: { 'x-session-token': token }
                 });
                 if (res.ok) {
-                    alert("Chart saved permanently!");
+                    showToast("Chart saved permanently!");
                     loadChartHistoryList();
                 } else {
-                    alert("Failed to save chart.");
+                    showToast("Failed to save chart.");
                 }
             } catch (e) {
-                alert("Error saving chart: " + e);
+                showToast("Error saving chart: " + e);
             }
         }
 
@@ -10537,17 +10786,17 @@
                     headers: { 'x-session-token': token }
                 });
                 if (res.ok) {
-                    alert("Record deleted successfully.");
+                    showToast("Record deleted successfully.");
                     if (type === 'saved') {
                         loadSavedChartsList();
                     } else {
                         loadChartHistoryList();
                     }
                 } else {
-                    alert("Failed to delete record.");
+                    showToast("Failed to delete record.");
                 }
             } catch (e) {
-                alert("Error deleting record: " + e);
+                showToast("Error deleting record: " + e);
             }
         }
 
@@ -11261,7 +11510,7 @@
                     })
                 });
                 if (res.ok) {
-                    alert("Chart saved successfully to your cloud profile!");
+                    showToast("Chart saved successfully to your cloud profile!");
                     refreshProfileChips();
                 } else {
                     let errMsg = "Failed to save chart to cloud.";
@@ -11269,10 +11518,10 @@
                         const errJson = await res.json();
                         if (errJson.detail) errMsg = errJson.detail;
                     } catch(e) {}
-                    alert(errMsg);
+                    showToast(errMsg);
                 }
             } catch (e) {
-                alert("Error saving chart: " + e);
+                showToast("Error saving chart: " + e);
             }
         }
 

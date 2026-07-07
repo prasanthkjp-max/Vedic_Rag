@@ -5609,6 +5609,26 @@ def get_version():
     return {"name": "Vedic Astrology AI RAG Portal", "version": VERSION}
 
 
+@app.get("/api/pricing")
+def get_pricing():
+    """Return the credit cost configuration and pricing packages."""
+    return {
+        "chart": CREDIT_COST_CHART,
+        "ai_predict": CREDIT_COST_AI_PREDICT,
+        "query": CREDIT_COST_QUERY,
+        "marriage": CREDIT_COST_MARRIAGE,
+        "pdf": CREDIT_COST_PDF,
+        "pdf_premium": CREDIT_COST_PDF_PREMIUM,
+        "varshaphala": CREDIT_COST_VARSHAPHALA,
+        "remedies": CREDIT_COST_REMEDIES,
+        "compatibility": CREDIT_COST_COMPATIBILITY,
+        "prashna": CREDIT_COST_PRASHNA,
+        "signup_bonus": SIGNUP_BONUS_CREDITS,
+        "packages": CREDIT_PACKAGES,
+        "currency": BILLING_CURRENCY
+    }
+
+
 # Cache the resolved source-archive path for the process lifetime so we don't
 # re-run `git archive` on every download.
 _SOURCE_ARCHIVE_CACHE = {"path": None}
