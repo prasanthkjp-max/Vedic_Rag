@@ -1,28 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style>
-
-    <!-- Pre-M devices cannot render dark status-bar icons, so the bar stays
-         deep gold there; values-v23 swaps it to the warm cream + dark icons. -->
+    <!-- API 23+: warm cream bars with dark icons, matching the web UI's
+         --bg-deep so the WebView reads as one continuous surface. -->
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
-        <item name="android:statusBarColor">@color/colorAccent</item>
+        <item name="android:statusBarColor">@color/brandBackground</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">@color/brandSurface</item>
     </style>
-
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
         <item name="android:statusBarColor">@color/brandBackground</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">@color/brandBackground</item>
     </style>
 </resources>
