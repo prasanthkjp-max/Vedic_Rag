@@ -4,9 +4,9 @@
   "private": true,
   "description": "Vedic Astro AI — cross-platform mobile wrapper via Capacitor",
   "scripts": {
-    "cap:sync": "cap sync",
+    "cap:sync": "cap sync && node tools/strip_flatdir.cjs",
     "cap:android": "cap open android",
-    "cap:build:android": "cap build android"
+    "cap:build:android": "cap build android && node tools/strip_flatdir.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",

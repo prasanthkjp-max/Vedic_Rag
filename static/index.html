@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#fdf6ea">
+    <meta name="format-detection" content="telephone=no">
     <title>Vedic Astro AI — Divine AI Vedic Astrology Portal</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
 
@@ -388,7 +390,8 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
-            height: 64px;
+            padding-top: env(safe-area-inset-top);
+            height: calc(64px + env(safe-area-inset-top));
             background: rgba(255, 252, 245, 0.96);
             border-bottom: 1px solid rgba(217, 119, 6, 0.30);
             backdrop-filter: blur(28px);
@@ -2104,6 +2107,7 @@
             left: -300px;
             width: 280px;
             height: 100%;
+            padding-top: env(safe-area-inset-top);
             background: var(--bg-card);
             border-right: 1px solid var(--border-gold);
             z-index: 1000;
@@ -2248,7 +2252,7 @@
         @media (max-width: 1024px) {
             .nav-top-bar, .header-controls .lang-selector { display: none; }
             .menu-toggle-btn { display: block; }
-            header { padding: 0 16px; height: 56px; }
+            header { padding: 0 16px; padding-top: env(safe-area-inset-top); height: calc(56px + env(safe-area-inset-top)); }
             .logo-section { gap: 8px; }
             .logo-section img { width: 34px; height: 34px; }
             #lbl-title { font-size: 16px; }
@@ -2596,7 +2600,7 @@
             left: 0;
             width: 100%;
             height: 60px;
-            background: rgba(4, 14, 44, 0.95);
+            background: rgba(255, 251, 238, 0.96);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid var(--border-gold);
@@ -2604,7 +2608,7 @@
             justify-content: space-around;
             align-items: center;
             padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -4px 20px rgba(67, 20, 7, 0.10);
         }
 
         .mobile-nav-item {
@@ -2639,6 +2643,17 @@
             transform: scale(0.95);
         }
 
+        /* Native-app touch feel: kill the grey Android tap flash, the 300ms
+           double-tap-zoom delay, iOS/WebView font inflation, and the rubber-band
+           overscroll that makes the WebView feel like a website. */
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        body { overscroll-behavior-y: none; }
+        button, a, .nav-tab, .mobile-nav-item, .side-nav-item,
+        .lang-select-btn, .calculate-btn, .sub-tab-btn, input, select, textarea {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
         @media (max-width: 768px) {
             .mobile-bottom-nav {
                 display: flex;
@@ -2657,7 +2672,7 @@
                 bottom: 60px; /* Right above the mobile bottom nav */
                 left: 0;
                 width: 100%;
-                background: rgba(4, 14, 44, 0.95);
+                background: rgba(255, 251, 238, 0.96);
                 backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
                 border-top: 1px solid var(--border-gold);
@@ -2839,7 +2854,7 @@
                             <i class="fa-solid fa-circle-user" style="color: var(--accent-gold);"></i>
                             <span id="user-display-name">User</span>
                         </button>
-                        <div style="background: rgba(4,14,44,0.6); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: bold; color: var(--accent-gold); display: flex; align-items: center; gap: 6px;">
+                        <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: bold; color: var(--accent-gold); display: flex; align-items: center; gap: 6px;">
                             <span style="font-size: 10px;">🪙</span> <span id="user-credits-count">0</span>
                         </div>
                         <button class="lang-select-btn" onclick="handleLogout()" style="padding: 6px 10px;" title="Logout">
@@ -3219,7 +3234,7 @@
         <!-- ------------------ PAGE 2: JYOTHISYAM (BIRTH DETAILS INPUTS) ------------------ -->
         <div class="single-page-content" id="page-jyothisyam">
             <!-- Guest Lock Screen Overlay -->
-            <div class="login-wall-overlay" id="lock-jyothisyam" style="display: none; text-align: center; padding: 60px 40px; background: rgba(4,14,44,0.92); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
+            <div class="login-wall-overlay" id="lock-jyothisyam" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
                 <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,175,55,0.3);"></i>
                 <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 20px; margin-bottom: 12px;">Discover Your Cosmic Blueprint</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; max-width: 450px; margin-left: auto; margin-right: auto;">
@@ -3232,7 +3247,7 @@
                         <span style="font-size: 10px; color: var(--text-muted);">OR</span>
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
                 </div>
             </div>
 
@@ -3638,7 +3653,7 @@
                                     
                                     <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
                                         <label id="lbl-varsha-year-label" style="font-size: 11px; font-weight: 600; color: var(--text-gold);">Select Return Year:</label>
-                                        <input type="number" id="in-varsha-year" min="1900" max="2100" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-gold); color: #fff; font-size: 13px;">
+                                        <input type="number" id="in-varsha-year" min="1900" max="2100" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); font-size: 13px;">
                                     </div>
                                 </div>
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; border-top: 1px solid var(--border-glass); padding-top: 12px;">
@@ -3667,7 +3682,7 @@
         <!-- ------------------ PAGE 4: MARRIAGE COMPATIBILITY ------------------ -->
         <div class="single-page-content" id="page-marriage" style="display:none;">
             <!-- Guest Lock Screen Overlay -->
-            <div class="login-wall-overlay" id="lock-marriage" style="display: none; text-align: center; padding: 60px 40px; background: rgba(4,14,44,0.92); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
+            <div class="login-wall-overlay" id="lock-marriage" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
                 <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,175,55,0.3);"></i>
                 <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 20px; margin-bottom: 12px;">Discover Your Cosmic Blueprint</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; max-width: 450px; margin-left: auto; margin-right: auto;">
@@ -3680,7 +3695,7 @@
                         <span style="font-size: 10px; color: var(--text-muted);">OR</span>
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
                 </div>
             </div>
 
@@ -3894,7 +3909,7 @@
 
         <div class="single-page-content" id="page-ai">
             <!-- Guest Lock Screen Overlay -->
-            <div class="login-wall-overlay" id="lock-ai" style="display: none; text-align: center; padding: 60px 40px; background: rgba(4,14,44,0.92); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
+            <div class="login-wall-overlay" id="lock-ai" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
                 <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,175,55,0.3);"></i>
                 <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 20px; margin-bottom: 12px;">Discover Your Cosmic Blueprint</h3>
                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; max-width: 450px; margin-left: auto; margin-right: auto;">
@@ -3907,7 +3922,7 @@
                         <span style="font-size: 10px; color: var(--text-muted);">OR</span>
                         <hr style="flex: 1; border: none; border-top: 1px solid var(--border-glass);">
                     </div>
-                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                    <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 10px; font-size: 12px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
                 </div>
             </div>
 
@@ -3937,7 +3952,7 @@
                         Vedic horary astrology answers from the sky of this very moment at your location — perfect if you don't know your birth time.
                     </p>
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" id="prashna-question" maxlength="2000" placeholder="e.g. Will I get the job I interviewed for?" style="flex: 1; padding: 10px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none;" onkeydown="if(event.key==='Enter')submitPrashna()">
+                        <input type="text" id="prashna-question" maxlength="2000" placeholder="e.g. Will I get the job I interviewed for?" style="flex: 1; padding: 10px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; outline: none;" onkeydown="if(event.key==='Enter')submitPrashna()">
                         <button class="calculate-btn" id="btn-prashna" onclick="submitPrashna()" style="padding: 10px 16px; font-size: 12px; justify-content: center;">
                             <i class="fa-solid fa-om"></i>&nbsp; <span id="lbl-prashna-btn">Ask</span>
                         </button>
@@ -10962,6 +10977,10 @@
                 if (!res.ok) { showToast('Could not create the share link.'); return; }
                 const d = await res.json();
                 const note = 'Public link copied:\n' + d.url + '\n\nAnyone with this link can view the chart (birth details included, no AI content). Deleting the chart revokes the link.';
+                if (navigator.share) {
+                    navigator.share({ title: 'Vedic birth chart', url: d.url }).catch(() => {});
+                    return;
+                }
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(d.url).then(() => showToast(note)).catch(() => prompt('Copy the public link:', d.url));
                 } else {
@@ -10976,6 +10995,10 @@
             const code = currentUser && currentUser.referral_code;
             if (!code) return;
             const done = () => showToast("Referral code copied: " + code + "\nShare it — your friend gets bonus tokens, and so do you!");
+            if (navigator.share) {
+                navigator.share({ title: 'Vedic Astro AI', text: 'Join me on Vedic Astro AI — sign up with my referral code ' + code + ' and we both get bonus tokens 🪔' }).catch(() => {});
+                return;
+            }
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(code).then(done).catch(done);
             } else {
@@ -11625,6 +11648,12 @@
         }
         function copyGiftLink() {
             const url = currentGiftShareUrl;
+            // Native share sheet on Android/mobile (WhatsApp, SMS, …);
+            // clipboard fallback everywhere else.
+            if (navigator.share) {
+                navigator.share({ title: 'Vedic Astro AI gift', text: 'A gift of Vedic Astro AI tokens for you 🪔', url: url }).catch(() => {});
+                return;
+            }
             navigator.clipboard.writeText(url).then(
                 () => showToast("Share link copied!"),
                 () => showToast("Copy failed — the link is: " + url)
@@ -12843,11 +12872,133 @@
             }
         }
 
+        // ══════════════════════════════════════════════════════════════
+        // ANDROID / MOBILE APP UX
+        // Installed last so every open/close function above is defined.
+        // ══════════════════════════════════════════════════════════════
+
+        // Hardware back-button support (also improves browser back).
+        // Opening an overlay pushes a history entry; the Android back key
+        // (a popstate in the Capacitor WebView) closes the topmost overlay
+        // instead of killing the app. Closing via ✕/backdrop consumes that
+        // same entry so history never drifts. Leaving the Home tab pushes a
+        // single '@page' entry, so back returns to Home first and only a
+        // second press at the root exits — the standard bottom-nav pattern.
+        (function () {
+            const stack = [];   // open overlay keys, topmost last
+            const closers = {}; // key -> original (unwrapped) close fn
+            let skipPop = 0;    // history.back() calls we triggered ourselves
+
+            const byId = (id) => document.getElementById(id);
+            const isShown = (id) => { const n = byId(id); return !!n && n.style.display !== 'none'; };
+            const drawerOpen = () => { const n = byId('side-nav'); return !!n && n.classList.contains('open'); };
+
+            function opened(key, visible) {
+                if (!visible || stack.indexOf(key) !== -1) return;
+                stack.push(key);
+                try { history.pushState({ vxOverlay: key }, ''); } catch (e) {}
+            }
+            function closed(key) {
+                const i = stack.lastIndexOf(key);
+                if (i === -1) return;
+                stack.splice(i, 1);
+                skipPop++;
+                try { history.back(); } catch (e) { skipPop--; }
+            }
+            window.addEventListener('popstate', function () {
+                if (skipPop > 0) { skipPop--; return; }
+                const key = stack.pop();
+                const close = key && closers[key];
+                if (close) close();
+            });
+
+            // Wrap an open/close pair. The close registered for popstate is
+            // the ORIGINAL, so back-key closes don't call history.back() again.
+            function hook(openNames, closeName, key, elId) {
+                const origClose = window[closeName];
+                if (typeof origClose !== 'function') return;
+                closers[key] = origClose;
+                openNames.forEach(function (name) {
+                    const orig = window[name];
+                    if (typeof orig !== 'function') return;
+                    window[name] = function () {
+                        const r = orig.apply(this, arguments);
+                        opened(key, isShown(elId));
+                        return r;
+                    };
+                });
+                window[closeName] = function () {
+                    const r = origClose.apply(this, arguments);
+                    closed(key);
+                    return r;
+                };
+            }
+
+            hook(['openLoginModal'], 'closeLoginModal', 'login', 'login-modal');
+            hook(['openProfileModal', 'openProfileModalToTab'], 'closeProfileModal', 'profile', 'profile-modal');
+            hook(['showPaywall'], 'dismissPaywall', 'paywall', 'paywall-sheet');
+            hook(['openServerSettings'], 'closeServerSettings', 'server', 'server-settings-modal');
+            hook(['downloadReportPDF'], 'closePdfSectionModal', 'pdf', 'pdf-section-modal');
+            hook(['showGiftCard'], 'closeGiftCard', 'gift', 'gift-card-modal');
+            hook(['showCitationCard'], 'closeCitationCard', 'citation', 'citation-card-modal');
+
+            // The drawer is a toggle, not an open/close pair.
+            const origToggle = window.toggleSideNav;
+            if (typeof origToggle === 'function') {
+                closers.sideNav = function () { if (drawerOpen()) origToggle(); };
+                window.toggleSideNav = function () {
+                    const r = origToggle.apply(this, arguments);
+                    if (drawerOpen()) opened('sideNav', true); else closed('sideNav');
+                    return r;
+                };
+            }
+
+            // Page-level back: Home is the root; any other tab is one entry
+            // deep. Re-tapping the tab you are already on scrolls to top —
+            // the native bottom-nav convention.
+            const origNavigate = window.navigateToPage;
+            if (typeof origNavigate === 'function') {
+                closers['@page'] = function () { origNavigate('home'); };
+                window.navigateToPage = function (pageId) {
+                    const prev = activeMainTab;
+                    const hadDrawer = drawerOpen();
+                    const r = origNavigate.apply(this, arguments);
+                    if (hadDrawer && !drawerOpen()) closed('sideNav'); // navigateToPage closes it directly
+                    if (pageId === prev) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else if (pageId === 'home') {
+                        closed('@page');
+                    } else if (prev === 'home') {
+                        opened('@page', true);
+                    }
+                    return r;
+                };
+            }
+        })();
+
+        // Light haptic tick on primary touch surfaces (Android WebView
+        // supports navigator.vibrate; a silent no-op everywhere else).
+        function hapticTap() {
+            try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {}
+        }
+        document.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('.mobile-nav-item, .menu-toggle-btn, .calculate-btn')) hapticTap();
+        }, { passive: true });
+
+        // Connectivity awareness: fetch failures alone read as bugs; name
+        // the actual condition the moment it starts and ends.
+        window.addEventListener('offline', function () {
+            showToast("You're offline. Panchangam, charts and AI need a connection.", 'error');
+        });
+        window.addEventListener('online', function () {
+            showToast("Back online.", 'success');
+        });
+
     </script>
 
     <!-- Server Settings Modal (Capacitor / self-host backend configuration) -->
     <div id="server-settings-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 400px; max-width: 92vw; position: relative;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 400px; max-width: 92vw; position: relative;">
             <button onclick="closeServerSettings()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); margin: 0 0 4px;">Backend Server</h3>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 18px;">Select the Vedic Astro AI server this app connects to.</p>
@@ -12885,7 +13036,7 @@
 
     <!-- PDF Section Selector Modal -->
     <div id="pdf-section-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: rgba(4,14,44,0.96); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 28px; width: 460px; max-width: 92vw; position: relative;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 28px; width: 460px; max-width: 92vw; position: relative;">
             <button onclick="closePdfSectionModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 17px; margin-bottom: 6px;">
                 <i class="fa-solid fa-file-pdf"></i> <span id="lbl-pdf-modal-title">Download Report</span>
@@ -12948,7 +13099,7 @@
 
     <!-- Sign In / Sign Up Modal -->
     <div id="login-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 380px; max-width: 90vw; position: relative;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 380px; max-width: 90vw; position: relative;">
             <button onclick="closeLoginModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
 
             <!-- IKEA / Endowment Effect: shown only when the guest already
@@ -12971,7 +13122,7 @@
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Phone Number</label>
                     <div style="display: flex; gap: 5px;">
                         <span style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: var(--text-secondary); padding: 8px 10px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; font-weight: bold;">+91</span>
-                        <input type="tel" id="auth-phone-number" placeholder="9876543210" style="flex: 1; background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; font-size: 13px;">
+                        <input type="tel" id="auth-phone-number" placeholder="9876543210" style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; outline: none; font-size: 13px;">
                     </div>
                 </div>
                 
@@ -12981,7 +13132,7 @@
                 <div id="otp-input-container" style="display: none; flex-direction: column; gap: 12px; margin-top: 5px; border-top: 1px dashed var(--border-glass); padding-top: 12px;">
                     <div class="input-group">
                         <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block; color: var(--accent-gold);">Enter 6-Digit OTP</label>
-                        <input type="text" id="auth-otp-code" placeholder="123456" maxlength="6" style="background: var(--bg-darker); border: 1px solid var(--border-gold); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; letter-spacing: 4px; text-align: center; font-size: 16px; font-weight: bold;">
+                        <input type="text" id="auth-otp-code" placeholder="123456" maxlength="6" style="background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; letter-spacing: 4px; text-align: center; font-size: 16px; font-weight: bold;">
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
                         <span id="otp-timer" style="color: var(--text-secondary);">Resend OTP in 59s</span>
@@ -12997,11 +13148,11 @@
             <div id="form-login-fields" style="display: none; flex-direction: column; gap: 12px;">
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Email Address</label>
-                    <input type="email" id="auth-login-email" placeholder="email@example.com" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="email" id="auth-login-email" placeholder="email@example.com" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Password</label>
-                    <input type="password" id="auth-login-pass" placeholder="••••••••" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="password" id="auth-login-pass" placeholder="••••••••" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <button class="calculate-btn" onclick="submitLogin()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Sign In</button>
             </div>
@@ -13023,19 +13174,19 @@
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Full Name</label>
-                    <input type="text" id="auth-signup-name" placeholder="e.g. Name" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="text" id="auth-signup-name" placeholder="e.g. Name" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Email Address</label>
-                    <input type="email" id="auth-signup-email" placeholder="email@example.com" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="email" id="auth-signup-email" placeholder="email@example.com" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Password</label>
-                    <input type="password" id="auth-signup-pass" placeholder="••••••••" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                    <input type="password" id="auth-signup-pass" placeholder="••••••••" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                 </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Referral Code (optional)</label>
-                    <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
+                    <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
                 </div>
                 <button class="calculate-btn" id="btn-submit-signup" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Create Account</button>
             </div>
@@ -13047,14 +13198,14 @@
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 8px; font-size: 11px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
+                <button class="lang-select-btn" onclick="handleSocialLogin('google')" style="width: 100%; justify-content: center; padding: 8px; font-size: 11px; background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-glass);"><i class="fa-brands fa-google" style="color: #ea4335; margin-right: 8px;"></i> Continue with Google</button>
             </div>
         </div>
     </div>
 
     <!-- Out-of-tokens paywall bottom sheet (shown on a 402 from any paid action) -->
     <div id="paywall-sheet" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); z-index: 1200;" onclick="if(event.target===this) dismissPaywall()">
-        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: rgba(4,14,44,0.98); border-top: 1px solid var(--border-gold); border-radius: 18px 18px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg-void); border-top: 1px solid var(--border-gold); border-radius: 18px 18px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;">
             <div style="width: 38px; height: 4px; background: var(--border-gold); border-radius: 2px; margin: 0 auto 16px; opacity: 0.6;"></div>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin: 0 0 4px;">You're out of tokens</h3>
             <!-- Loss Aversion: names the concrete next step recharging
@@ -13085,7 +13236,7 @@
 
     <!-- User Dashboard / Profile Modal -->
     <div id="profile-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 480px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 480px; max-width: 90vw; position: relative; max-height: 90vh; overflow-y: auto;">
             <button onclick="closeProfileModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
@@ -13108,18 +13259,18 @@
             <!-- TAB 1: Profile & Settings -->
             <div id="profile-pane-settings" class="profile-tab-pane">
                 <!-- Profile Details -->
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Full Name:</span>
-                        <span id="profile-full-name" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                        <span id="profile-full-name" style="font-size: 11px; font-weight: bold; color: var(--text-primary);">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Email Address:</span>
-                        <span id="profile-email" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                        <span id="profile-email" style="font-size: 11px; font-weight: bold; color: var(--text-primary);">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Phone Number:</span>
-                        <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: #fff;">--</span>
+                        <span id="profile-phone" style="font-size: 11px; font-weight: bold; color: var(--text-primary);">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: var(--text-secondary);">Credit Balance:</span>
@@ -13140,14 +13291,14 @@
 
                 <!-- Account Preferences -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Account Preferences</h4>
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Phone Number</label>
-                        <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
+                        <input type="text" id="profile-in-phone" placeholder="+91 98765 43210" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
                     </div>
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Preferred OTP/Alerts Channel</label>
-                        <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
+                        <select id="profile-in-channel" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%; outline: none; box-sizing: border-box;">
                             <option value="sms">SMS</option>
                         </select>
                     </div>
@@ -13164,39 +13315,39 @@
 
                 <!-- Astrology Personal Info Settings -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Personal Birth Info (For Auto-Chart Predictions)</h4>
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Full Name</label>
-                        <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px;">
+                        <input type="text" id="profile-in-name" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px;">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Birth Date</label>
-                            <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                            <input type="date" id="profile-in-dob" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
                         </div>
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Birth Time</label>
-                            <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                            <input type="time" id="profile-in-tob" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
                         </div>
                     </div>
                     <div class="input-group" style="position: relative;">
                         <label style="font-size: 10px; color: var(--text-secondary);">Place of Birth</label>
-                        <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        <input type="text" id="profile-in-pob" autocomplete="off" oninput="debounceLookupPlaceProfile()" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
                         <div id="profile-pob-suggestions" class="suggestions-dropdown" style="display: none; top: 100%;"></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Longitude</label>
-                            <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                            <input type="number" step="0.0001" id="profile-in-lon" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
                         </div>
                         <div class="input-group">
                             <label style="font-size: 10px; color: var(--text-secondary);">Latitude</label>
-                            <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                            <input type="number" step="0.0001" id="profile-in-lat" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
                         </div>
                     </div>
                     <div class="input-group">
                         <label style="font-size: 10px; color: var(--text-secondary);">Gender</label>
-                        <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; width: 100%;">
+                        <select id="profile-in-gender" style="padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; width: 100%;">
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                         </select>
@@ -13248,7 +13399,7 @@
 
                 <!-- Gift a reading -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin: 22px 0 10px;">🎁 Gift a Reading</h4>
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
                     <div style="font-size: 10.5px; color: var(--text-secondary);">Buy a gift code for a friend — a token pack or a premium life-report voucher. They redeem it after signing in.</div>
                     <div style="display: flex; gap: 10px;">
                         <button class="lang-select-btn" onclick="buyGift('credit_pack', 1125)" style="flex: 1; justify-content: center; padding: 12px 6px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">
@@ -13261,7 +13412,7 @@
                     <div style="border-top: 1px dashed var(--border-glass); padding-top: 10px; margin-top: 4px;">
                         <label style="font-size: 10px; color: var(--text-secondary);">Have a gift code?</label>
                         <div style="display: flex; gap: 6px; margin-top: 5px;">
-                            <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; outline: none; text-transform: uppercase;">
+                            <input type="text" id="gift-redeem-input" placeholder="GIFT-XXXX-XXXX" style="flex: 1; padding: 8px; font-size: 12px; background: var(--bg-input); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 6px; outline: none; text-transform: uppercase;">
                             <button class="calculate-btn" onclick="redeemGiftFromInput()" style="padding: 8px 14px; font-size: 11px;">Redeem</button>
                         </div>
                     </div>
@@ -13269,10 +13420,10 @@
 
                 <!-- Usage Dashboard (populated from /api/billing/usage) -->
                 <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 13px; margin-bottom: 10px;">Transaction &amp; Usage History</h4>
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px;">
+                <div style="background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 10px; padding: 15px;">
                     <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">
                         <span>Tokens used this month</span>
-                        <span><strong id="usage-used-month" style="color: #fff;">0</strong></span>
+                        <span><strong id="usage-used-month" style="color: var(--text-primary);">0</strong></span>
                     </div>
                     <div id="usage-recent" style="display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: var(--text-secondary);">
                         <!-- Populated dynamically via JS with skeletons -->
@@ -13289,7 +13440,7 @@
             <div style="font-size: 40px; margin-bottom: 6px;">🎁</div>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 18px; margin-bottom: 6px;">Your gift is ready!</h3>
             <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 14px;">Share this code (or the link) with the lucky recipient.</p>
-            <div id="gift-card-code" style="font-family: monospace; font-size: 20px; letter-spacing: 2px; color: #fff; background: rgba(0,0,0,0.35); border: 1px dashed var(--accent-gold); border-radius: 10px; padding: 12px; margin-bottom: 12px;"></div>
+            <div id="gift-card-code" style="font-family: monospace; font-size: 20px; letter-spacing: 2px; color: var(--text-gold); background: var(--bg-darker); border: 1px dashed var(--accent-gold); border-radius: 10px; padding: 12px; margin-bottom: 12px;"></div>
             <div style="display: flex; gap: 8px; justify-content: center;">
                 <button class="lang-select-btn" onclick="copyGiftLink()" style="padding: 8px 14px; font-size: 11px;"><i class="fa-solid fa-link"></i> Copy share link</button>
                 <button class="calculate-btn" onclick="closeGiftCard()" style="padding: 8px 16px; font-size: 11px;">Done</button>

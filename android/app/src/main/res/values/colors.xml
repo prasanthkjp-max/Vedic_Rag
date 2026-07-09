@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warm solar theme — must match static/index.html :root tokens
+         (bg-void #fffaf3 / bg-deep #fdf6ea / accent-cosmic #ea580c). -->
+    <color name="colorPrimary">#ea580c</color>
+    <color name="colorPrimaryDark">#fdf6ea</color>
+    <color name="colorAccent">#d97706</color>
+    <color name="brandBackground">#fdf6ea</color>
+    <color name="brandSurface">#fffaf3</color>
+</resources>

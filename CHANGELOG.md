@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.24.0]
+
+### Added
+- **Android hardware back-button support.** Overlays (login, profile, paywall
+  sheet, PDF sections, gift card, citation card, server settings, side drawer)
+  now push a history entry when opened, so the Android back key closes the
+  topmost overlay instead of exiting the app; leaving the Home tab adds one
+  page-level entry so back returns Home first (also improves browser back).
+- **Native mobile share.** Gift links, chart share links and referral codes use
+  the Android/`navigator.share` sheet (WhatsApp, SMS, …) when available, with
+  the existing clipboard copy as fallback.
+- **App-feel touches.** Light haptic tick on bottom-nav/CTA taps
+  (`navigator.vibrate`), re-tapping the active bottom-nav tab scrolls to top,
+  offline/online connectivity toasts, tap-highlight/double-tap-zoom/overscroll
+  suppression, and safe-area (`viewport-fit=cover`) support in the header and
+  drawer.
+- **Branded Android shell.** Launcher icons (legacy, round, adaptive) and
+  splash screens regenerated from the palm-leaf brand mark on the warm theme
+  background, replacing the stock Capacitor art; status/navigation bars match
+  the warm cream UI (dark icons on API 23+/27+); keyboard set to
+  `adjustResize`; `VIBRATE` permission added.
+
+### Fixed
+- **Dark-navy theme remnants.** The mobile bottom nav, sticky calculate bar,
+  header credits pill, sign-in prompts, login/profile/server-settings/PDF
+  modals, paywall sheet and gift-card modal still used the old dark cosmic
+  background, leaving warm-charcoal text and white inputs unreadable after the
+  warm-light redesign — all migrated to the current `--bg-card`/`--bg-input`
+  tokens.
+- Capacitor's bundled Android web assets were ~250 KB behind `static/`
+  (missing the entire Phase 0–4 redesign); synced and the splash background
+  color updated from `#040e2c` to the warm canvas.
+- Gradle's "Using flatDir should be avoided" build warning: the dead
+  `flatDir` repository (its target dirs don't exist and no Cordova plugins
+  are installed) is removed from `app/build.gradle`, and
+  `tools/strip_flatdir.cjs` (wired into the npm `cap:*` scripts) re-strips
+  the copy Capacitor's CLI template regenerates on every `cap sync`.
+
 ## [1.23.0]
 
 ### Added
