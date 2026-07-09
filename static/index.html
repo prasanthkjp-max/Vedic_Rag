@@ -8,6 +8,9 @@
     <title>Vedic Astro AI — Divine AI Vedic Astrology Portal</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
 
+    <!-- Capacitor native bridge script -->
+    <script src="capacitor.js"></script>
+
     <!-- API-key bootstrap. The backend only key-gates the corpus/admin endpoints
          (/api/search, /api/page-*, /api/status, /api/books); normal user actions
          are authenticated per-user by session tokens, and panchangam is public.
@@ -2268,9 +2271,50 @@
         @media (max-width: 768px) {
             .single-page-content { padding: 12px; }
             .card { padding: 16px 18px; }
-            .panch-grid { grid-template-columns: repeat(2, 1fr); }
+            .panchangam-grid { grid-template-columns: repeat(2, 1fr) !important; }
             .horas-grid { grid-template-columns: repeat(3, 1fr); }
             .form-grid { grid-template-columns: 1fr; }
+
+            /* Calendar responsiveness overrides */
+            .calendar-cell {
+                height: 75px !important;
+                padding: 4px 6px !important;
+            }
+            .calendar-day-header {
+                font-size: 11px !important;
+                padding: 4px 2px !important;
+            }
+            .cell-day-num {
+                font-size: 13px !important;
+            }
+            .cell-naks {
+                font-size: 8px !important;
+                margin-top: 2px !important;
+            }
+            .cell-regional-date {
+                font-size: 8px !important;
+                margin-top: 1px !important;
+            }
+            .cell-fest-img {
+                width: 24px !important;
+                height: 24px !important;
+            }
+            .cell-speciality {
+                font-size: 8px !important;
+                padding: 1px 3px !important;
+                margin-top: 2px !important;
+            }
+
+            /* Daily Panchangam subgrid column stack on mobile */
+            .panch-details-subgrid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Shadbala & Ashtakavarga side-by-side stack to single column on mobile */
+            .strengths-section {
+                grid-template-columns: 1fr !important;
+                gap: 15px !important;
+            }
         }
 
         .chart-output-container {
@@ -2687,6 +2731,51 @@
                 width: 100% !important;
                 margin: 0 !important;
             }
+        }
+
+        /* Extremely narrow viewport adjustments */
+        @media (max-width: 480px) {
+            /* Simplify calendar day cells to prevent wrapping overflow */
+            .cell-speciality {
+                font-size: 0 !important; /* Hide text label */
+                width: 6px !important;
+                height: 6px !important;
+                min-width: 6px !important;
+                border-radius: 50% !important;
+                background: #ea580c !important; /* Orange event indicator dot */
+                padding: 0 !important;
+                margin: 4px auto 0 !important;
+                border: none !important;
+                display: block !important;
+                text-overflow: clip !important;
+                overflow: hidden !important;
+                white-space: nowrap !important;
+            }
+            .cell-naks {
+                display: none !important; /* Hide nakshatra text to save space */
+            }
+            .cell-fest-img {
+                width: 18px !important;
+                height: 18px !important;
+            }
+            .calendar-cell {
+                height: 55px !important;
+                padding: 3px 4px !important;
+            }
+
+            /* Stack Astrology tab metadata to 1 column */
+            .panchangam-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Scroll container wrapper for planetary placements table to prevent clipping */
+        .astro-table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+            border-radius: 8px;
         }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -8245,6 +8334,8 @@
 
         function renderShadbalaTable(container) {
             container.style.display = 'block';
+            container.style.overflowX = 'auto';
+            container.style.webkitOverflowScrolling = 'touch';
             let rows = '';
             SHADBALA_PLANETS.forEach(p => {
                 const d = calculatedChartData.shadbala[p];
