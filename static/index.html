@@ -2918,6 +2918,15 @@
             <div id="onboarding-wizard-card" class="card-soft mb-4" style="background: rgba(254, 243, 199, 0.6); border: 1px dashed var(--accent-gold); padding: 16px; margin-bottom: 20px; display: none; position: relative;">
                 <button onclick="dismissOnboardingWizard()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted);">&times;</button>
                 <h3 id="lbl-wizard-title" style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--text-gold); margin-bottom: 12px;">Welcome! Complete these 3 simple steps to start your journey:</h3>
+                <!-- Goal Gradient: thin progress bar, account creation counted as
+                     step 0 so a fresh signup never sees a literal 0% start. Width
+                     and label are set in updateHeroAndOnboardingUI(). -->
+                <div style="margin-bottom: 12px;">
+                    <div style="height: 5px; background: rgba(180, 120, 40, 0.12); border-radius: 3px; overflow: hidden;">
+                        <div id="wizard-progress-bar" style="height: 100%; width: 25%; background: var(--accent-gold); border-radius: 3px; transition: width 0.4s ease;"></div>
+                    </div>
+                    <div id="lbl-wizard-progress" style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Account created ✓</div>
+                </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div id="wizard-step-1" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-primary);">
                         <input type="checkbox" id="chk-wizard-step-1" disabled style="cursor: default;">
@@ -4224,6 +4233,24 @@
                 lbl_wizard_step_1: "① Enter birth details",
                 lbl_wizard_step_2: "② Generate birth chart",
                 lbl_wizard_step_3: "③ Use your {bonus} free credits for an AI reading",
+                lbl_wizard_progress_start: "Account created ✓",
+                lbl_wizard_progress_done: "{n} of 3 steps complete",
+                lbl_wizard_title_reappear: "Your birth chart is waiting for you — {n} steps left.",
+                lbl_reading_preview_banner: "Here's a free preview of your reading — subscribe to Astro Pass to unlock the full breakdown.",
+                lbl_reading_preview_cta: "Unlock your full Jyothi reading — Astro Pass",
+                lbl_auth_invested_header: "Save {name}'s chart — create a free account to keep it.",
+                lbl_your_chart_fallback: "your",
+                lbl_btn_save_chart: "Save My Chart",
+                lbl_btn_create_account: "Create Account",
+                lbl_auth_goal_prompt: "What brings you here?",
+                lbl_goal_career: "Career",
+                lbl_goal_marriage: "Marriage",
+                lbl_goal_general: "General",
+                lbl_paywall_subcopy_default: "Balance: {bal} tokens. Recharge to continue — pay via UPI, cards or netbanking.",
+                lbl_paywall_subcopy_reading: "Your AI reading is one recharge away. Balance: {bal} tokens.",
+                lbl_best_value: "Best Value",
+                lbl_per_credit_rate: "≈₹{rate}/credit",
+                lbl_pdf_premium_anchor: "≈₹{amount} at Astro Pro rates — a manual Jyothish consultation typically costs ₹1,500+",
                 lbl_readings_hub_title: "Astrology & Insights Hub",
                 lbl_hub_chat_title: "Consult Astro AI",
                 lbl_hub_chat_desc: "Consult Ganesha Astro-AI on career, relationship harmony, and life path guidance based on your chart.",
@@ -4383,6 +4410,24 @@
                 lbl_wizard_step_1: "① பிறந்த விவரங்களை உள்ளிடவும்",
                 lbl_wizard_step_2: "② ஜாதகத்தைக் கணிக்கவும்",
                 lbl_wizard_step_3: "③ உங்களுக்கான இலவச கிரெடிட்களைப் பயன்படுத்தி AI ஜோதிடக் கலந்தாய்வு பெறவும்",
+                lbl_wizard_progress_start: "கணக்கு உருவாக்கப்பட்டது ✓",
+                lbl_wizard_progress_done: "3-இல் {n} படிகள் முடிந்தன",
+                lbl_wizard_title_reappear: "உங்கள் ஜாதகம் உங்களுக்காக காத்திருக்கிறது — {n} படிகள் மீதம்.",
+                lbl_reading_preview_banner: "இது உங்கள் பலனின் இலவச முன்னோட்டம் — முழு விரிவான பலனைப் பெற Astro Pass-க்கு குழுசேரவும்.",
+                lbl_reading_preview_cta: "முழு ஜோதிடப் பலனைப் பெறுங்கள் — Astro Pass",
+                lbl_auth_invested_header: "{name} அவர்களின் ஜாதகத்தைச் சேமிக்கவும் — இலவச கணக்கை உருவாக்கவும்.",
+                lbl_your_chart_fallback: "உங்கள்",
+                lbl_btn_save_chart: "என் ஜாதகத்தைச் சேமி",
+                lbl_btn_create_account: "கணக்கை உருவாக்கு",
+                lbl_auth_goal_prompt: "உங்களை இங்கு அழைத்து வந்தது என்ன?",
+                lbl_goal_career: "தொழில்",
+                lbl_goal_marriage: "திருமணம்",
+                lbl_goal_general: "பொது",
+                lbl_paywall_subcopy_default: "இருப்பு: {bal} டோக்கன்கள். தொடர மீண்டும் நிரப்பவும் — UPI, கார்டு அல்லது நெட்பேங்கிங் மூலம் செலுத்தலாம்.",
+                lbl_paywall_subcopy_reading: "உங்கள் AI பலன் ஒரு ரீசார்ஜ் தூரத்தில் உள்ளது. இருப்பு: {bal} டோக்கன்கள்.",
+                lbl_best_value: "சிறந்த மதிப்பு",
+                lbl_per_credit_rate: "≈₹{rate}/கிரெடிட்",
+                lbl_pdf_premium_anchor: "Astro Pro விகிதத்தில் ≈₹{amount} — நேரடி ஜோதிடர் ஆலோசனை பொதுவாக ₹1,500+ ஆகும்",
                 lbl_readings_hub_title: "ஜோதிடப் பலன்கள் & கலந்தாய்வு மையம்",
                 lbl_hub_chat_title: "ஆஸ்ட்ரோ AI ஆலோசனை",
                 lbl_hub_chat_desc: "உங்கள் ஜாதகத்தின் அடிப்படையில் தொழில், கல்வி, குடும்ப வாழ்க்கை குறித்த சந்தேகங்களை ஆஸ்ட்ரோ AI-யிடம் கேட்டுத் தெளிவுபெறலாம்.",
@@ -4541,6 +4586,24 @@
                 lbl_wizard_step_1: "① జన్మ వివరాలను నమోదు చేయండి",
                 lbl_wizard_step_2: "② జాతక చక్రాన్ని గణించండి",
                 lbl_wizard_step_3: "③ ఉచిత క్రెడిట్లతో మొదటి AI విశ్లేషణను పొందండి",
+                lbl_wizard_progress_start: "ఖాతా సృష్టించబడింది ✓",
+                lbl_wizard_progress_done: "3లో {n} దశలు పూర్తయ్యాయి",
+                lbl_wizard_title_reappear: "మీ జాతకం మీ కోసం వేచి ఉంది — {n} దశలు మిగిలి ఉన్నాయి.",
+                lbl_reading_preview_banner: "ఇది మీ పలన యొక్క ఉచిత మునుజూపు — పూర్తి విశ్లేషణ కోసం Astro Pass సభ్యత్వం తీసుకోండి.",
+                lbl_reading_preview_cta: "మీ పూర్తి జ్యోతిష్య పలన పొందండి — Astro Pass",
+                lbl_auth_invested_header: "{name} జాతకాన్ని సేవ్ చేయండి — ఉచిత ఖాతాను సృష్టించండి.",
+                lbl_your_chart_fallback: "మీ",
+                lbl_btn_save_chart: "నా జాతకాన్ని సేవ్ చేయి",
+                lbl_btn_create_account: "ఖాతా సృష్టించండి",
+                lbl_auth_goal_prompt: "మిమ్మల్ని ఇక్కడికి తీసుకువచ్చింది ఏమిటి?",
+                lbl_goal_career: "వృత్తి",
+                lbl_goal_marriage: "వివాహం",
+                lbl_goal_general: "సాధారణం",
+                lbl_paywall_subcopy_default: "నిల్వ: {bal} టోకెన్లు. కొనసాగించడానికి రీఛార్జ్ చేయండి — UPI, కార్డులు లేదా నెట్‌బ్యాంకింగ్ ద్వారా చెల్లించవచ్చు.",
+                lbl_paywall_subcopy_reading: "మీ AI పలన ఒక రీఛార్జ్ దూరంలో ఉంది. నిల్వ: {bal} టోకెన్లు.",
+                lbl_best_value: "ఉత్తమ విలువ",
+                lbl_per_credit_rate: "≈₹{rate}/క్రెడిట్",
+                lbl_pdf_premium_anchor: "Astro Pro రేటులో ≈₹{amount} — ప్రత్యక్ష జ్యోతిష్య సంప్రదింపు సాధారణంగా ₹1,500+ ఖర్చవుతుంది",
                 lbl_readings_hub_title: "జ్యోతిష్య విశ్లేషణల కేంద్రం",
                 lbl_hub_chat_title: "ఆస్ట్రో AI సంప్రదింపు",
                 lbl_hub_chat_desc: "మీ జాతకం ఆధారంగా కెరీర్, కుటుంబం మరియు వ్యక్తిగత సందేహాలను ఆస్ట్రో AI సహాయంతో నివృత్తి చేసుకోండి.",
@@ -4699,6 +4762,24 @@
                 lbl_wizard_step_1: "① ജനന വിവരങ്ങൾ നൽകുക",
                 lbl_wizard_step_2: "② ജാതകം ഗണിക്കുക",
                 lbl_wizard_step_3: "③ സൗജന്യ ക്രെഡിറ്റുകൾ ഉപയോഗിച്ച് ആദ്യത്തെ AI വിശകലനം നേടുക",
+                lbl_wizard_progress_start: "അക്കൗണ്ട് സൃഷ്ടിച്ചു ✓",
+                lbl_wizard_progress_done: "3-ൽ {n} ഘട്ടങ്ങൾ പൂർത്തിയായി",
+                lbl_wizard_title_reappear: "നിങ്ങളുടെ ജാതകം നിങ്ങൾക്കായി കാത്തിരിക്കുന്നു — {n} ഘട്ടങ്ങൾ ബാക്കി.",
+                lbl_reading_preview_banner: "ഇത് നിങ്ങളുടെ വായനയുടെ സൗജന്യ പ്രിവ്യൂ ആണ് — പൂർണ്ണ വിശകലനത്തിന് Astro Pass സബ്സ്ക്രൈബ് ചെയ്യുക.",
+                lbl_reading_preview_cta: "നിങ്ങളുടെ പൂർണ്ണ ജ്യോതിഷ വായന നേടുക — Astro Pass",
+                lbl_auth_invested_header: "{name}-ന്റെ ജാതകം സേവ് ചെയ്യുക — സൗജന്യ അക്കൗണ്ട് സൃഷ്ടിക്കുക.",
+                lbl_your_chart_fallback: "നിങ്ങളുടെ",
+                lbl_btn_save_chart: "എന്റെ ജാതകം സേവ് ചെയ്യുക",
+                lbl_btn_create_account: "അക്കൗണ്ട് സൃഷ്ടിക്കുക",
+                lbl_auth_goal_prompt: "എന്താണ് നിങ്ങളെ ഇവിടെ എത്തിച്ചത്?",
+                lbl_goal_career: "ജോലി",
+                lbl_goal_marriage: "വിവാഹം",
+                lbl_goal_general: "പൊതുവായത്",
+                lbl_paywall_subcopy_default: "ബാലൻസ്: {bal} ടോക്കണുകൾ. തുടരാൻ റീചാർജ് ചെയ്യുക — UPI, കാർഡുകൾ അല്ലെങ്കിൽ നെറ്റ്ബാങ്കിംഗ് വഴി അടയ്ക്കാം.",
+                lbl_paywall_subcopy_reading: "നിങ്ങളുടെ AI വായന ഒരു റീചാർജ് അകലെയാണ്. ബാലൻസ്: {bal} ടോക്കണുകൾ.",
+                lbl_best_value: "മികച്ച മൂല്യം",
+                lbl_per_credit_rate: "≈₹{rate}/ക്രെഡിറ്റ്",
+                lbl_pdf_premium_anchor: "Astro Pro നിരക്കിൽ ≈₹{amount} — നേരിട്ടുള്ള ജ്യോതിഷ കൺസൾട്ടേഷന് സാധാരണയായി ₹1,500+ ചെലവാകും",
                 lbl_readings_hub_title: "ജ്യോതിഷ പഠനവും വിശകലനങ്ങളും",
                 lbl_hub_chat_title: "ആസ്ട്രോ AI കൂടിയാലോചന",
                 lbl_hub_chat_desc: "നിങ്ങളുടെ ജാതകത്തിന്റെ അടിസ്ഥാനത്തിൽ ജോലി, കുടുംബം, വ്യക്തിഗത സംശയങ്ങൾ എന്നിവ ആസ്ട്രോ AI വഴി ചോദിച്ചറിയാം.",
@@ -4857,6 +4938,24 @@
                 lbl_wizard_step_1: "① ಜನ್ಮ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ",
                 lbl_wizard_step_2: "② ಜಾತಕ ಚಕ್ರವನ್ನು ಗಣಿಸಿ",
                 lbl_wizard_step_3: "③ ಉಚಿತ ಕ್ರೆಡಿಟ್‌ಗಳೊಂದಿಗೆ ಮೊದಲ AI ವಿಶ್ಲೇಷಣೆ ಪಡೆಯಿರಿ",
+                lbl_wizard_progress_start: "ಖಾತೆ ರಚಿಸಲಾಗಿದೆ ✓",
+                lbl_wizard_progress_done: "3ರಲ್ಲಿ {n} ಹಂತಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ",
+                lbl_wizard_title_reappear: "ನಿಮ್ಮ ಜಾತಕ ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿದೆ — {n} ಹಂತಗಳು ಬಾಕಿ ಉಳಿದಿವೆ.",
+                lbl_reading_preview_banner: "ಇದು ನಿಮ್ಮ ಓದಿನ ಉಚಿತ ಪೂರ್ವವೀಕ್ಷಣೆ — ಸಂಪೂರ್ಣ ವಿಶ್ಲೇಷಣೆಗಾಗಿ Astro Pass ಚಂದಾದಾರರಾಗಿ.",
+                lbl_reading_preview_cta: "ನಿಮ್ಮ ಸಂಪೂರ್ಣ ಜ್ಯೋತಿಷ್ಯ ಓದನ್ನು ಪಡೆಯಿರಿ — Astro Pass",
+                lbl_auth_invested_header: "{name} ಅವರ ಜಾತಕವನ್ನು ಉಳಿಸಿ — ಉಚಿತ ಖಾತೆಯನ್ನು ರಚಿಸಿ.",
+                lbl_your_chart_fallback: "ನಿಮ್ಮ",
+                lbl_btn_save_chart: "ನನ್ನ ಜಾತಕವನ್ನು ಉಳಿಸಿ",
+                lbl_btn_create_account: "ಖಾತೆ ರಚಿಸಿ",
+                lbl_auth_goal_prompt: "ನಿಮ್ಮನ್ನು ಇಲ್ಲಿಗೆ ಕರೆತಂದದ್ದು ಏನು?",
+                lbl_goal_career: "ವೃತ್ತಿ",
+                lbl_goal_marriage: "ವಿವಾಹ",
+                lbl_goal_general: "ಸಾಮಾನ್ಯ",
+                lbl_paywall_subcopy_default: "ಬಾಕಿ: {bal} ಟೋಕನ್‌ಗಳು. ಮುಂದುವರಿಸಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ — UPI, ಕಾರ್ಡ್‌ಗಳು ಅಥವಾ ನೆಟ್‌ಬ್ಯಾಂಕಿಂಗ್ ಮೂಲಕ ಪಾವತಿಸಬಹುದು.",
+                lbl_paywall_subcopy_reading: "ನಿಮ್ಮ AI ಓದು ಒಂದು ರೀಚಾರ್ಜ್ ದೂರದಲ್ಲಿದೆ. ಬಾಕಿ: {bal} ಟೋಕನ್‌ಗಳು.",
+                lbl_best_value: "ಅತ್ಯುತ್ತಮ ಮೌಲ್ಯ",
+                lbl_per_credit_rate: "≈₹{rate}/ಕ್ರೆಡಿಟ್",
+                lbl_pdf_premium_anchor: "Astro Pro ದರದಲ್ಲಿ ≈₹{amount} — ನೇರ ಜ್ಯೋತಿಷ್ಯ ಸಮಾಲೋಚನೆ ಸಾಮಾನ್ಯವಾಗಿ ₹1,500+ ವೆಚ್ಚವಾಗುತ್ತದೆ",
                 lbl_readings_hub_title: "ಜೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆಗಳ ಕೇಂದ್ರ",
                 lbl_hub_chat_title: "ಆಸ್ಟ್ರೋ AI ಸಮಾಲೋಚನೆ",
                 lbl_hub_chat_desc: "ನಿಮ್ಮ ಜಾತಕ ಆಧಾರದ ಮೇಲೆ ವೃತ್ತಿ, ಕೌಟುಂಬಿಕ ಮತ್ತು ವೈಯಕ್ತಿಕ ಸಂದೇಹಗಳನ್ನು ಆಸ್ಟ್ರೋ AI ಸಹಾಯದಿಂದ ನಿವಾರಿಸಿಕೊಳ್ಳಿ.",
@@ -5015,6 +5114,24 @@
                 lbl_wizard_step_1: "① जन्म विवरण दर्ज करें",
                 lbl_wizard_step_2: "② जन्म कुंडली तैयार करें",
                 lbl_wizard_step_3: "③ अपने {bonus} निःशुल्क क्रेडिट के साथ पहला AI परामर्श प्राप्त करें",
+                lbl_wizard_progress_start: "खाता बनाया गया ✓",
+                lbl_wizard_progress_done: "3 में से {n} चरण पूर्ण",
+                lbl_wizard_title_reappear: "आपकी कुंडली आपकी प्रतीक्षा कर रही है — {n} चरण शेष हैं।",
+                lbl_reading_preview_banner: "यह आपके पठन का निःशुल्क पूर्वावलोकन है — पूर्ण विश्लेषण के लिए Astro Pass सदस्यता लें।",
+                lbl_reading_preview_cta: "अपना पूर्ण ज्योतिष पठन प्राप्त करें — Astro Pass",
+                lbl_auth_invested_header: "{name} की कुंडली सहेजें — निःशुल्क खाता बनाएं।",
+                lbl_your_chart_fallback: "अपनी",
+                lbl_btn_save_chart: "मेरी कुंडली सहेजें",
+                lbl_btn_create_account: "खाता बनाएं",
+                lbl_auth_goal_prompt: "आपको यहाँ क्या लाया?",
+                lbl_goal_career: "करियर",
+                lbl_goal_marriage: "विवाह",
+                lbl_goal_general: "सामान्य",
+                lbl_paywall_subcopy_default: "शेष: {bal} टोकन। जारी रखने के लिए रीचार्ज करें — UPI, कार्ड या नेटबैंकिंग से भुगतान करें।",
+                lbl_paywall_subcopy_reading: "आपका AI पठन एक रीचार्ज दूर है। शेष: {bal} टोकन।",
+                lbl_best_value: "सर्वश्रेष्ठ मूल्य",
+                lbl_per_credit_rate: "≈₹{rate}/क्रेडिट",
+                lbl_pdf_premium_anchor: "Astro Pro दर पर ≈₹{amount} — प्रत्यक्ष ज्योतिष परामर्श की लागत आमतौर पर ₹1,500+ होती है",
                 lbl_readings_hub_title: "ज्योतिषीय फलादेश एवं परामर्श केंद्र",
                 lbl_hub_chat_title: "एस्ट्रो AI परामर्श",
                 lbl_hub_chat_desc: "अपनी कुंडली के आधार पर करियर, परिवार और व्यक्तिगत विषयों पर एस्ट्रो AI से परामर्श लें।",
@@ -5800,6 +5917,13 @@
             if (pricing && pricing.signup_bonus) {
                 setText('lbl-wizard-step-3', (dict.lbl_wizard_step_3 || "").replace("{bonus}", pricing.signup_bonus));
             }
+            // IKEA Effect: goal chips shown above the (empty) signup form.
+            setText('lbl-auth-goal-prompt', dict.lbl_auth_goal_prompt);
+            setText('lbl-goal-career', dict.lbl_goal_career);
+            setText('lbl-goal-marriage', dict.lbl_goal_marriage);
+            setText('lbl-goal-general', dict.lbl_goal_general);
+            // Contrast Effect: static "Best Value" chip on the paywall sheet.
+            setText('lbl-best-value', dict.lbl_best_value);
 
             // Readings Hub & Varshaphala Translations
             setText('lbl-readings-hub-title', dict.lbl_readings_hub_title);
@@ -6068,6 +6192,12 @@
             
             // Re-render Gochara description and layout in the new language
             setGocharaStyle(currentGocharaStyle);
+
+            // Refresh state-dependent wizard text (progress label, and the
+            // Loss Aversion "waiting for you" reappear title) that the
+            // static setText() calls above can't set — they depend on
+            // runtime progress, not just the selected language.
+            if (currentUser) updateHeroAndOnboardingUI();
         }
 
         // Switch config sub-tabs (Basic vs Advanced vs Saved vs History)
@@ -8213,6 +8343,9 @@
         // Toggle the modal between the two tiers' UIs.
         function selectPdfTier(tier) {
             selectedPdfTier = tier;
+            // Smart Default (Decision Fatigue): remember this pick for next time
+            // so the modal doesn't always reopen on 'basic'.
+            localStorage.setItem('vedic_pdf_tier_preferred', tier);
             const basicCard = document.getElementById('pdf-tier-basic-card');
             const premCard = document.getElementById('pdf-tier-premium-card');
             const isPrem = tier === 'premium';
@@ -8245,6 +8378,18 @@
             if (basicPrice) basicPrice.innerText = premium ? 'Astro Pass · all sections' : 'Free · chart section';
             if (premPrice) premPrice.innerText = `${pricing.pdf_premium} credits`;
 
+            // Contrast Effect: anchor the premium report's price (converted
+            // to ₹ using the best available per-credit rate — never a
+            // hardcoded credit cost) against a typical manual consultation.
+            const anchorEl = document.getElementById('pdf-premium-anchor');
+            if (anchorEl && pricing.pdf_premium && pricing.packages && pricing.packages[5000]) {
+                const bestRate = pricing.packages[5000] / 100 / 5000; // ₹ per credit, Astro Pro pack
+                const approxRupees = Math.round(pricing.pdf_premium * bestRate);
+                const dict = localization[currentLang] || localization.en;
+                const tmpl = dict.lbl_pdf_premium_anchor || "≈₹{amount} at Astro Pro rates — a manual Jyothish consultation typically costs ₹1,500+";
+                anchorEl.innerText = tmpl.replace('{amount}', approxRupees);
+            }
+
             PDF_SECTIONS.forEach(sec => {
                 const unlocked = sec.free || premium;
                 const available = unlocked && (!sec.needsPhala || hasPhala);
@@ -8267,7 +8412,10 @@
             const costNote = document.getElementById('pdf-section-cost');
             if (costNote) costNote.innerText = premium ? 'Astro Pass: full report (all selected sections).' : 'Free report: chart details & planet positions.';
 
-            selectPdfTier('basic');  // default to the instant tier
+            // Smart Default (Decision Fatigue): reopen on whichever tier the
+            // user picked last time instead of always resetting to 'basic'.
+            const preferredTier = localStorage.getItem('vedic_pdf_tier_preferred') === 'premium' ? 'premium' : 'basic';
+            selectPdfTier(preferredTier);
             document.getElementById('pdf-section-modal').style.display = 'flex';
         }
 
@@ -8459,10 +8607,18 @@
                 }
                 
                 suggestionsDiv.innerHTML = '';
-                results.forEach(item => {
+                results.forEach((item, idx) => {
                     const div = document.createElement('div');
                     div.className = 'suggestion-item';
                     div.innerText = item.display_name;
+                    // Smart Default: Nominatim already ranks by relevance, so the
+                    // top result is pre-applied to lat/lon below without waiting
+                    // for a click — highlight it so the default is visible and
+                    // still overridable by picking any other row.
+                    if (idx === 0) {
+                        div.style.background = 'rgba(245, 158, 11, 0.12)';
+                        div.style.borderLeft = '3px solid var(--accent-gold)';
+                    }
                     div.onclick = function() {
                         document.getElementById('in-pob').value = item.display_name;
                         document.getElementById('in-lat').value = parseFloat(item.lat).toFixed(4);
@@ -8471,7 +8627,14 @@
                     };
                     suggestionsDiv.appendChild(div);
                 });
-                
+
+                // Smart Default (Decision Fatigue): pre-fill lat/lon from the top
+                // match so a user who doesn't click a suggestion still has a
+                // usable value, instead of requiring an exact pick.
+                const top = results[0];
+                document.getElementById('in-lat').value = parseFloat(top.lat).toFixed(4);
+                document.getElementById('in-lon').value = parseFloat(top.lon).toFixed(4);
+
                 suggestionsDiv.style.display = 'block';
                 
             } catch (err) {
@@ -8756,7 +8919,7 @@
             }
         }
 
-        // Reflect premium/lock state on the "Astro-AI Reading" button.
+        // Reflect premium/lock/free-preview state on the "Astro-AI Reading" button.
         function updatePhalaButtonState() {
             const lbl = document.getElementById('lbl-btn-astro-ai');
             const btn = document.getElementById('btn-jyothi-ai-reading');
@@ -8765,10 +8928,15 @@
             if (isPremiumUser()) {
                 if (icon) icon.className = 'fa-solid fa-brain';
                 btn.title = '';
-            } else {
-                if (icon) icon.className = 'fa-solid fa-lock';
-                btn.title = 'Astro Pass (premium) feature';
+                return;
             }
+            // Reciprocity: distinguish "hasn't tried a reading yet" (a free
+            // preview is one click away) from "already tried" (now needs a
+            // subscription) instead of a flat lock for every non-premium user.
+            const userId = currentUser && currentUser.id;
+            const previewUsed = userId && localStorage.getItem(`reading_generated_${userId}`) === 'true';
+            if (icon) icon.className = previewUsed ? 'fa-solid fa-lock' : 'fa-solid fa-sparkles';
+            btn.title = previewUsed ? 'Astro Pass (premium) feature' : 'Free preview available';
         }
 
         // Jyothisyam tab: inline AI prediction session (premium preview phala).
@@ -8780,9 +8948,24 @@
             const section = document.getElementById('jyothi-ai-reading-section');
             const outputPane = document.getElementById('jyothi-ai-reading-output');
 
-            // Premium gate — the AI reading is an Astro Pass feature.
+            // Premium gate — the full AI reading is an Astro Pass feature.
             if (!isPremiumUser()) {
-                if (!auto) showPaywall();
+                if (auto) return;
+                // Reciprocity: a non-premium user who hasn't tasted an AI
+                // reading yet (on ANY reading surface — this flag is shared
+                // with Varshaphala/Remedies/Compatibility/Prashna) gets one
+                // real, clearly-labelled free preview via the credit-gated
+                // chat endpoint before ever seeing a paywall.
+                const userId = currentUser && currentUser.id;
+                const previewUsed = userId && localStorage.getItem(`reading_generated_${userId}`) === 'true';
+                if (!previewUsed) {
+                    return generateFreeReadingPreview(section, outputPane);
+                }
+                // Preview already used — only an Astro Pass subscription
+                // unlocks the full reading, so route to Billing rather than
+                // the generic credit paywall (buying credits alone wouldn't
+                // unlock this).
+                openProfileModalToTab('billing');
                 return;
             }
 
@@ -8856,6 +9039,97 @@
             } catch (err) {
                 if (auto) { section.style.display = 'none'; }
                 else { outputPane.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`; }
+            } finally {
+                isJyothiResponding = false;
+            }
+        }
+
+        // Reciprocity: one real, clearly-labelled free reading for a
+        // non-premium user who hasn't tasted an AI reading yet. Uses the
+        // credit-gated (not premium-gated) chat endpoint — the user's real
+        // signup-bonus credits are spent transparently, same as any other
+        // chat message, and the result is visually framed as a preview so
+        // it's never mistaken for the full paid reading.
+        async function generateFreeReadingPreview(section, outputPane) {
+            if (!currentUser) { openLoginModal(); return; }
+            if (isJyothiResponding) return;
+            isJyothiResponding = true;
+
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            const dict = localization[currentLang] || localization.en;
+            const bannerText = dict.lbl_reading_preview_banner
+                || "Here's a free preview of your reading — subscribe to Astro Pass to unlock the full breakdown.";
+            outputPane.innerHTML = `
+                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 11px; color: var(--text-gold);">
+                    <i class="fa-solid fa-sparkles"></i> ${escapeHtml(bannerText)}
+                </div>
+                <div id="jyothi-preview-stream-body"><span class="typing-cursor"></span></div>`;
+            const streamBody = () => document.getElementById('jyothi-preview-stream-body');
+
+            const name = document.getElementById('in-name').value;
+            const pob = document.getElementById('in-pob').value;
+            // A short, scoped question — the backend already forces the
+            // response language to `lang` regardless of the query's own
+            // language, so this canned English prompt is safe to send as-is.
+            const previewQuery = "In 3-4 sentences, give me a short preview of my core personality based on my Lagna, Moon sign, and Sun placement.";
+
+            try {
+                const response = await apiFetch('/api/ai-predict-chat', {
+                    method: 'POST',
+                    stream: true,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chart_data: calculatedChartData,
+                        client_name: name,
+                        place_name: pob,
+                        query: previewQuery,
+                        history: [],
+                        lang: currentLang
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 402) { showPaywall(); section.style.display = 'none'; return; }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let accumulatedText = '';
+                const manifestState = { manifest: null, prefixLength: 0 };
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulatedText += chunk;
+                    const processed = processStreamChunk(accumulatedText, manifestState);
+                    const body = streamBody();
+                    if (body) body.innerHTML = formatMarkdown(processed.cleanText) + '<span class="typing-cursor"></span>';
+                    outputPane.scrollTop = outputPane.scrollHeight;
+                }
+
+                const processed = processStreamChunk(accumulatedText, manifestState);
+                const finalText = processed.cleanText;
+                const body = streamBody();
+                if (body) body.innerHTML = formatMarkdown(finalText);
+
+                if (finalText.trim()) {
+                    markReadingGenerated();
+                    updatePhalaButtonState();
+                    const ctaText = dict.lbl_reading_preview_cta || "Unlock your full Jyothi reading — Astro Pass";
+                    const cta = document.createElement('div');
+                    cta.style.cssText = 'margin-top: 14px; text-align: center;';
+                    cta.innerHTML = `<button class="calculate-btn" onclick="openProfileModalToTab('billing')" style="padding: 10px 18px; font-size: 12px;">
+                        <i class="fa-solid fa-crown"></i> ${escapeHtml(ctaText)}
+                    </button>`;
+                    outputPane.appendChild(cta);
+                }
+            } catch (err) {
+                const body = streamBody();
+                if (body) body.innerHTML = `<p style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${err.message}</p>`;
             } finally {
                 isJyothiResponding = false;
             }
@@ -10013,8 +10287,19 @@
             // pick). Adaptive-by-region in detectLocation() may override it below
             // unless the user previously chose a language manually.
             const savedLang = localStorage.getItem('vedic_lang');
+            // Smart Default (Decision Fatigue): a brand-new visitor with no saved
+            // preference gets the browser's own language instead of always
+            // defaulting to English. Not marked explicit, so the GPS/IP-based
+            // regional adaptation below (applyLocation -> adaptiveLanguageFor)
+            // can still refine it moments later.
+            const browserLang = !savedLang && !localStorage.getItem('vedic_lang_explicit')
+                ? (navigator.language || navigator.userLanguage || '').slice(0, 2).toLowerCase()
+                : null;
+            const SUPPORTED_LANGS = ['en', 'ta', 'te', 'ml', 'kn', 'hi'];
             if (savedLang && savedLang !== 'en') {
                 await changeLanguage(savedLang, false);
+            } else if (browserLang && browserLang !== 'en' && SUPPORTED_LANGS.includes(browserLang)) {
+                await changeLanguage(browserLang, false);
             } else {
                 fetchDailyPanchangam(today);
                 renderMonthlyCalendar();
@@ -10315,18 +10600,41 @@
 
             // Onboarding Wizard progress check
             const userId = currentUser.id;
-            const wizardDismissed = localStorage.getItem(`onboarding_dismissed_${userId}`) === 'true';
+            // Stored as an ISO timestamp so we know HOW LONG it's been
+            // dismissed (legacy accounts may still hold the old literal
+            // 'true' with no timestamp — treat that as "dismissed just now"
+            // so it doesn't immediately reappear for existing users).
+            const dismissedRaw = localStorage.getItem(`onboarding_dismissed_${userId}`);
+            const dismissedAt = dismissedRaw === 'true' ? new Date()
+                : (dismissedRaw ? new Date(dismissedRaw) : null);
+            const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+            const dismissedRecently = !!dismissedAt && (Date.now() - dismissedAt.getTime()) < SEVEN_DAYS_MS;
 
             // Check step completions
             const dobSaved = !!(currentUser.dob && currentUser.tob && currentUser.latitude && currentUser.longitude);
             const chartCalculated = localStorage.getItem(`chart_calculated_${userId}`) === 'true';
             const readingGenerated = localStorage.getItem(`reading_generated_${userId}`) === 'true';
+            const completedSteps = [dobSaved, chartCalculated, readingGenerated].filter(Boolean).length;
+            const allStepsDone = completedSteps === 3;
 
-            if (wizardDismissed || (dobSaved && chartCalculated && readingGenerated)) {
+            if (allStepsDone || dismissedRecently) {
                 if (onboardingCard) onboardingCard.style.display = 'none';
             } else {
                 if (onboardingCard) onboardingCard.style.display = 'block';
-                
+
+                // Loss Aversion: a wizard dismissed with steps still left
+                // reappears after 7 days with "waiting for you" framing —
+                // never "expiring", since user_charts has no TTL/cleanup in
+                // the backend and that claim would be false.
+                const isReappear = !!dismissedAt && !dismissedRecently;
+                const dict = localization[currentLang] || localization.en;
+                const titleEl = document.getElementById('lbl-wizard-title');
+                if (titleEl) {
+                    titleEl.innerText = isReappear
+                        ? (dict.lbl_wizard_title_reappear || "Your birth chart is waiting for you — {n} steps left.").replace('{n}', 3 - completedSteps)
+                        : (dict.lbl_wizard_title || "Welcome! Complete these 3 simple steps to start your journey:");
+                }
+
                 // Update checkboxes
                 const chk1 = document.getElementById('chk-wizard-step-1');
                 const chk2 = document.getElementById('chk-wizard-step-2');
@@ -10347,6 +10655,18 @@
                     document.getElementById('lbl-wizard-step-3').style.textDecoration = readingGenerated ? 'line-through' : 'none';
                     document.getElementById('lbl-wizard-step-3').style.opacity = readingGenerated ? '0.6' : '1';
                 }
+
+                // Goal Gradient: account creation counts as step 0, so a fresh
+                // user's bar starts at 25% (not 0%) and climbs with each of the
+                // same three completion checks already computed above.
+                const progressBar = document.getElementById('wizard-progress-bar');
+                const progressLbl = document.getElementById('lbl-wizard-progress');
+                if (progressBar) progressBar.style.width = `${(completedSteps + 1) / 4 * 100}%`;
+                if (progressLbl) {
+                    progressLbl.innerText = completedSteps === 0
+                        ? (dict.lbl_wizard_progress_start || "Account created ✓")
+                        : (dict.lbl_wizard_progress_done || "{n} of 3 steps complete").replace("{n}", completedSteps);
+                }
             }
 
             // Welcome name & credits count
@@ -10362,7 +10682,10 @@
 
         function dismissOnboardingWizard() {
             if (currentUser) {
-                localStorage.setItem(`onboarding_dismissed_${currentUser.id}`, 'true');
+                // Loss Aversion: store WHEN it was dismissed (not just that it
+                // was) so updateHeroAndOnboardingUI() can bring it back after
+                // 7 days for a user who still has steps left.
+                localStorage.setItem(`onboarding_dismissed_${currentUser.id}`, new Date().toISOString());
                 updateHeroAndOnboardingUI();
             }
         }
@@ -10505,8 +10828,50 @@
 
         function openLoginModal() {
             document.getElementById('login-modal').style.display = 'flex';
-            switchAuthTab('phone');
+
+            // IKEA / Endowment Effect: a guest who already built a chart sees
+            // the modal reframed around saving what they made — defaults
+            // straight to Signup with the name pre-filled — instead of a
+            // blank "create account" form where they've invested nothing yet.
+            const investedHeader = document.getElementById('auth-modal-invested-header');
+            const goalChips = document.getElementById('auth-signup-goal-chips');
+            const submitBtn = document.getElementById('btn-submit-signup');
+            const dict = localization[currentLang] || localization.en;
+            if (calculatedChartData) {
+                const nameInput = document.getElementById('in-name');
+                const name = (nameInput && nameInput.value || '').trim();
+                if (investedHeader) {
+                    const tmpl = dict.lbl_auth_invested_header || "Save {name}'s chart — create a free account to keep it.";
+                    document.getElementById('lbl-auth-invested-header').innerText =
+                        tmpl.replace('{name}', name || (dict.lbl_your_chart_fallback || 'your'));
+                    investedHeader.style.display = 'block';
+                }
+                if (goalChips) goalChips.style.display = 'none';
+                if (submitBtn) submitBtn.innerText = dict.lbl_btn_save_chart || 'Save My Chart';
+                const signupName = document.getElementById('auth-signup-name');
+                if (signupName && !signupName.value) signupName.value = name;
+                switchAuthTab('signup');
+            } else {
+                if (investedHeader) investedHeader.style.display = 'none';
+                if (goalChips) goalChips.style.display = 'block';
+                if (submitBtn) submitBtn.innerText = dict.lbl_btn_create_account || 'Create Account';
+                switchAuthTab('phone');
+            }
         }
+
+        // IKEA Effect: an optional pre-commitment tap before the signup
+        // fields. Purely local — SignupRequest has no field for this, so it
+        // is not sent to the backend, only kept for potential frontend
+        // personalization (e.g. scrolling to a relevant reading after signup).
+        function selectAuthGoal(goal) {
+            localStorage.setItem('vedic_stated_goal', goal);
+            document.querySelectorAll('.goal-chip').forEach(btn => {
+                const active = btn.getAttribute('data-goal') === goal;
+                btn.style.borderColor = active ? 'var(--accent-gold)' : '';
+                btn.style.background = active ? 'rgba(245, 158, 11, 0.15)' : '';
+            });
+        }
+
         function closeLoginModal() {
             document.getElementById('login-modal').style.display = 'none';
         }
@@ -11069,8 +11434,38 @@
         // Out-of-tokens paywall bottom sheet (triggered by a 402 in apiFetch).
         function showPaywall() {
             if (!currentUser) { openLoginModal(); return; }
-            const bal = document.getElementById('paywall-balance');
-            if (bal) bal.innerText = (currentUser.credit_balance || 0).toLocaleString();
+            const dict = localization[currentLang] || localization.en;
+            const balValue = (currentUser.credit_balance || 0).toLocaleString();
+            const balHtml = `<strong id="paywall-balance" style="color: var(--accent-gold);">${balValue}</strong>`;
+
+            // Loss Aversion: name the concrete next step recharging unlocks
+            // when it's genuinely known (chart calculated but no reading
+            // yet — the same state already tracked for the onboarding
+            // wizard), instead of only a generic balance line.
+            const subEl = document.getElementById('paywall-subcopy');
+            if (subEl) {
+                const userId = currentUser.id;
+                const readingGenerated = localStorage.getItem(`reading_generated_${userId}`) === 'true';
+                const hasStalledReading = !!calculatedChartData && !readingGenerated;
+                const tmpl = hasStalledReading
+                    ? (dict.lbl_paywall_subcopy_reading || "Your AI reading is one recharge away. Balance: {bal} tokens.")
+                    : (dict.lbl_paywall_subcopy_default || "Balance: {bal} tokens. Recharge to continue — pay via UPI, cards or netbanking.");
+                subEl.innerHTML = tmpl.replace('{bal}', balHtml);
+            }
+
+            // Contrast Effect: per-credit cost for each pack, computed from
+            // the live `pricing.packages` (never hardcoded) so ₹199 for
+            // Astro Pro reads as cheap-per-unit next to ₹29 for Pocket.
+            const packages = (pricing && pricing.packages) || {};
+            const rateTmpl = dict.lbl_per_credit_rate || "≈₹{rate}/credit";
+            [500, 1125, 5000].forEach(credits => {
+                const el = document.getElementById(`paywall-rate-${credits}`);
+                const paise = packages[credits];
+                if (el && paise) {
+                    el.innerText = rateTmpl.replace('{rate}', (paise / 100 / credits).toFixed(3));
+                }
+            });
+
             const sheet = document.getElementById('paywall-sheet');
             if (sheet) sheet.style.display = 'block';
         }
@@ -12528,6 +12923,12 @@
                     </div>
                     <div style="margin-top:8px; color:var(--text-muted); font-size:10px;"><i class="fa-solid fa-hourglass-half"></i> Generation takes ~1–2 minutes; keep this tab open.</div>
                 </div>
+                <!-- Contrast Effect: anchor the premium price against what a
+                     manual astrologer consultation typically costs, so it
+                     doesn't sit priced in isolation. Rupee figure is computed
+                     from `pricing` (never hardcoded); populated by
+                     downloadReportPDF(). -->
+                <div id="pdf-premium-anchor" style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 8px;"></div>
             </div>
 
             <!-- Premium tier: async progress -->
@@ -12549,12 +12950,21 @@
     <div id="login-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: rgba(4,14,44,0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 380px; max-width: 90vw; position: relative;">
             <button onclick="closeLoginModal()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+
+            <!-- IKEA / Endowment Effect: shown only when the guest already
+                 built a chart (calculatedChartData truthy) — reframes the
+                 modal around saving what they made, instead of a blank
+                 "create account" ask. Populated by openLoginModal(). -->
+            <div id="auth-modal-invested-header" style="display:none; margin-bottom: 14px; padding: 10px 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid var(--accent-gold); border-radius: 8px; font-size: 12px; color: var(--text-gold);">
+                <i class="fa-solid fa-bookmark"></i> <span id="lbl-auth-invested-header"></span>
+            </div>
+
             <div style="display: flex; gap: 15px; border-bottom: 1px solid var(--border-glass); margin-bottom: 20px; padding-bottom: 5px;">
                 <h3 id="tab-phone" onclick="switchAuthTab('phone')" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 14px; cursor: pointer; border-bottom: 2px solid var(--accent-gold); padding-bottom: 5px;">Phone OTP</h3>
                 <h3 id="tab-login" onclick="switchAuthTab('login')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 14px; cursor: pointer; padding-bottom: 5px;">Email Sign In</h3>
                 <h3 id="tab-signup" onclick="switchAuthTab('signup')" style="font-family: var(--font-heading); color: var(--text-secondary); font-size: 14px; cursor: pointer; padding-bottom: 5px;">Email Sign Up</h3>
             </div>
-            
+
             <!-- Phone OTP Form -->
             <div id="form-phone-fields" style="display: flex; flex-direction: column; gap: 12px;">
                 <div class="input-group">
@@ -12598,6 +13008,19 @@
             
             <!-- Signup Form -->
             <div id="form-signup-fields" style="display: none; flex-direction: column; gap: 12px;">
+                <!-- IKEA Effect: shown only when there's no chart yet (the
+                     invested-header banner above covers the "already built
+                     something" case instead). A lightweight, OPTIONAL
+                     pre-commitment before the blank form — stored locally
+                     only, since the backend has no field for it. -->
+                <div id="auth-signup-goal-chips">
+                    <label id="lbl-auth-goal-prompt" style="font-size: 10px; text-transform: uppercase; margin-bottom: 6px; display: block; color: var(--text-secondary);">What brings you here?</label>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
+                        <button type="button" class="lang-select-btn goal-chip" data-goal="career" onclick="selectAuthGoal('career')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-career">Career</span></button>
+                        <button type="button" class="lang-select-btn goal-chip" data-goal="marriage" onclick="selectAuthGoal('marriage')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-marriage">Marriage</span></button>
+                        <button type="button" class="lang-select-btn goal-chip" data-goal="general" onclick="selectAuthGoal('general')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-general">General</span></button>
+                    </div>
+                </div>
                 <div class="input-group">
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Full Name</label>
                     <input type="text" id="auth-signup-name" placeholder="e.g. Name" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none;">
@@ -12614,7 +13037,7 @@
                     <label style="font-size: 10px; text-transform: uppercase; margin-bottom: 4px; display: block;">Referral Code (optional)</label>
                     <input type="text" id="auth-signup-referral" placeholder="e.g. A1B2C3D4" style="background: var(--bg-darker); border: 1px solid var(--border-glass); color: #fff; padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; text-transform: uppercase;">
                 </div>
-                <button class="calculate-btn" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Create Account</button>
+                <button class="calculate-btn" id="btn-submit-signup" onclick="submitSignup()" style="width: 100%; padding: 10px; font-size: 12px; margin-top: 5px; justify-content: center;">Create Account</button>
             </div>
             
             <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
@@ -12634,13 +13057,26 @@
         <div style="position: absolute; left: 0; right: 0; bottom: 0; background: rgba(4,14,44,0.98); border-top: 1px solid var(--border-gold); border-radius: 18px 18px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto;">
             <div style="width: 38px; height: 4px; background: var(--border-gold); border-radius: 2px; margin: 0 auto 16px; opacity: 0.6;"></div>
             <h3 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 16px; margin: 0 0 4px;">You're out of tokens</h3>
-            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 14px;">
+            <!-- Loss Aversion: names the concrete next step recharging
+                 unlocks when it's genuinely known (chart calculated but no
+                 reading yet — the same state already tracked for the
+                 onboarding wizard), instead of only a generic balance line.
+                 Populated by showPaywall(). -->
+            <p id="paywall-subcopy" style="font-size: 11px; color: var(--text-secondary); margin: 0 0 14px;">
                 Balance: <strong id="paywall-balance" style="color: var(--accent-gold);">0</strong> tokens. Recharge to continue — pay via UPI, cards or netbanking.
             </p>
-            <div style="display: flex; gap: 8px;">
-                <button class="lang-select-btn" onclick="paywallBuy(500)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Pocket<br>500<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span></button>
-                <button class="lang-select-btn" onclick="paywallBuy(1125)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Kundli<br>1,125<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span></button>
-                <button class="lang-select-btn" onclick="paywallBuy(5000)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Astro Pro<br>5,000<br><span style="font-size: 9px; color: var(--text-secondary);">₹199</span></button>
+            <!-- Contrast Effect: Astro Pro is visually dominant (larger,
+                 gold-bordered, "Best Value" chip) so Pocket/Kundli are read
+                 relative to it; per-credit cost (computed from `pricing`,
+                 never hardcoded) makes ₹199 read as cheap-per-unit instead
+                 of anchoring on it being the biggest number shown. -->
+            <div style="display: flex; gap: 8px; align-items: flex-end;">
+                <button class="lang-select-btn" onclick="paywallBuy(500)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Pocket<br>500<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span><br><span id="paywall-rate-500" style="font-size: 8px; color: var(--text-muted);"></span></button>
+                <button class="lang-select-btn" onclick="paywallBuy(1125)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Kundli<br>1,125<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span><br><span id="paywall-rate-1125" style="font-size: 8px; color: var(--text-muted);"></span></button>
+                <button class="lang-select-btn" onclick="paywallBuy(5000)" style="flex: 1.15; justify-content: center; padding: 16px 4px; font-size: 12px; border: 2px solid var(--accent-gold); background: rgba(245, 158, 11, 0.1); text-align: center; position: relative; font-weight: 700;">
+                    <span class="chip-price" style="position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 8px; padding: 2px 7px; white-space: nowrap;">⭐ <span id="lbl-best-value">Best Value</span></span>
+                    🪙 Astro Pro<br>5,000<br><span style="font-size: 10px; color: var(--text-secondary);">₹199</span><br><span id="paywall-rate-5000" style="font-size: 8px; color: var(--text-muted);"></span>
+                </button>
             </div>
             <div style="font-size: 9px; color: var(--text-secondary); text-align: center; opacity: 0.85; margin-top: 8px;">Incl. 18% GST · Secured by Razorpay</div>
             <button onclick="dismissPaywall()" style="width: 100%; background: transparent; border: none; color: var(--text-secondary); font-size: 11px; cursor: pointer; padding: 12px; margin-top: 4px;">Maybe later</button>
