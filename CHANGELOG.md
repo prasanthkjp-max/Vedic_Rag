@@ -35,6 +35,11 @@ All notable changes to this project are documented here. Versions follow
 - Capacitor's bundled Android web assets were ~250 KB behind `static/`
   (missing the entire Phase 0–4 redesign); synced and the splash background
   color updated from `#040e2c` to the warm canvas.
+- Gradle's "Using flatDir should be avoided" build warning: the dead
+  `flatDir` repository (its target dirs don't exist and no Cordova plugins
+  are installed) is removed from `app/build.gradle`, and
+  `tools/strip_flatdir.cjs` (wired into the npm `cap:*` scripts) re-strips
+  the copy Capacitor's CLI template regenerates on every `cap sync`.
 
 ## [1.23.0]
 
