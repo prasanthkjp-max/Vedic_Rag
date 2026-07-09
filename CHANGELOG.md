@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.24.1]
+
+### Fixed
+- Removed the `<script src="capacitor.js">` tag introduced in 79e62ed — the
+  file doesn't exist in `static/` (a 404 on every web page load), and
+  Capacitor 3+ injects its runtime into the served page automatically.
+- **Android "calendar fetch error" root-caused**: it is not a frontend bug.
+  The app's default backend `https://vedicastroai.net` is currently a parked
+  Squarespace "Coming Soon" page that answers HTTP 200 with HTML to every
+  `/api/*` URL, so JSON parsing fails on all API calls. Until the backend is
+  deployed there, point the app at a real server via the header server chip
+  (Server Settings): the **Dev** preset (`http://10.0.2.2:8008`) reaches
+  `python3 app.py` on the host from the Android emulator (cleartext already
+  whitelisted in `network_security_config.xml`). Also note `cap sync` must be
+  run after editing `static/index.html` — commit 79e62ed shipped without it,
+  so its changes never reached the emulator bundle.
+
 ## [1.24.0]
 
 ### Added
