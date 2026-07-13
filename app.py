@@ -90,6 +90,7 @@ from prediction_engine import (
     build_prashna_queries,
 )
 from muhurtham_engine import calculate_muhurtham
+import horoscope_engine
 from datetime import date
 from config import (
     VERSION,
@@ -593,6 +594,25 @@ def init_user_db():
         VALUES (?, ?, ?, ?, ?)
         """, plans)
 
+    # Universal sign-horoscope cache (Horoscopes tab): one row per
+    # (scope, period, sign, language). Generated ONCE by the AI on first
+    # request for a period and then served to every user — the UNIQUE key is
+    # what makes the "generate exactly one per period" guarantee enforceable.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS horoscopes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        scope TEXT NOT NULL,
+        period_key TEXT NOT NULL,
+        sign TEXT NOT NULL,
+        lang TEXT NOT NULL,
+        content TEXT NOT NULL,
+        period_label TEXT,
+        model TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(scope, period_key, sign, lang)
+    )
+    """)
+
     # Referral codes: a partial UNIQUE index (multiple NULLs allowed) and a
     # one-time backfill so every existing account has a shareable code.
     cursor.execute(
@@ -730,7 +750,7 @@ def debit_user_credits(user_id: int, amount: int, action_type: str, details: str
 LLM_ACTIONS = {
     "query", "ai_predict", "ai_predict_marriage", "ai_predict_chat",
     "ai_predict_varshaphala", "ai_remedies", "ai_predict_compatibility",
-    "ai_predict_prashna", "download_pdf_premium",
+    "ai_predict_prashna", "download_pdf_premium", "ai_varsha_phala",
 }
 
 # Per-user sliding-window request log for rate limiting. In-memory is sufficient
@@ -4801,6 +4821,352 @@ Structure: **The Question** (restated), **Chart Judgement**, **Verdict**, **Guid
 
     return StreamingResponse(
         llm_stream(prompt_builder, model_name, user, "ai_predict_prashna"),
+        media_type="text/event-stream",
+    )
+
+
+# =====================================================================
+# Horoscopes tab: universal daily/monthly/yearly sign horoscopes (rasi
+# phala) generated ONCE per period per language by the AI, grounded in the
+# real transit picture + RAG passages, cached in the `horoscopes` table and
+# served to every user for free; plus the personal dasa-bhukti + gochara
+# year reading (paid) built from the user's saved birth profile.
+# =====================================================================
+
+HoroscopeScope = Literal["daily", "monthly", "yearly"]
+HoroscopeCalendar = Literal["gregorian", "tamil", "malayalam", "telugu", "kannada", "hindi"]
+
+# Sentence-count guidance per scope: the daily capsule is short, the yearly
+# reading substantial. 12 signs are generated in ONE completion, so the sum
+# must stay comfortably inside the model's output budget.
+_HOROSCOPE_LENGTH = {
+    "daily": "3 to 5 sentences",
+    "monthly": "6 to 9 sentences",
+    "yearly": "10 to 14 sentences",
+}
+
+# One lock per (scope, period, lang) so a burst of first-of-the-day requests
+# triggers exactly one LLM generation; the rest block briefly and read cache.
+_HORO_LOCKS = {}
+_HORO_LOCKS_GUARD = threading.Lock()
+
+
+def _horoscope_lock(key):
+    with _HORO_LOCKS_GUARD:
+        return _HORO_LOCKS.setdefault(key, threading.Lock())
+
+
+def _fetch_horoscope_rows(scope, pkey, lang):
+    conn = connect_db(DB_PATH)
+    try:
+        rows = conn.execute(
+            "SELECT sign, content, period_label, created_at FROM horoscopes "
+            "WHERE scope = ? AND period_key = ? AND lang = ?",
+            (scope, pkey, lang),
+        ).fetchall()
+    finally:
+        conn.close()
+    return {r[0]: {"content": r[1], "period_label": r[2], "created_at": r[3]} for r in rows}
+
+
+def _generate_horoscopes(ctx, lang):
+    """One grounded LLM completion producing all 12 sign predictions for the
+    period, validated as strict JSON and cached. Raises on failure (the
+    endpoint maps that to a 503 so the next request can retry)."""
+    target_lang = _LANG_MAP.get(lang, "English")
+    scope = ctx["scope"]
+    context_text = horoscope_engine.format_context_text(ctx)
+    queries = horoscope_engine.build_horoscope_queries(ctx)
+    rag_context, _ = retrieve_rag_context(search_engine, queries)
+
+    scope_noun = {"daily": "daily (dina) rasi phala for this day",
+                  "monthly": "monthly (masa) rasi phala for this month",
+                  "yearly": "annual (varsha) rasi phala for this Hindu/civil year"}[scope]
+    timing_rule = ("Where the sign-change timeline above lists ingress dates, use them to time "
+                   "phases of the period. " if ctx["ingresses"] else "")
+
+    prompt = f"""You are a master Vedic astrologer (Jyotishi) writing the {scope_noun} for ALL 12 Moon signs (Chandra rasi), for a public panchangam portal.
+
+--- COMPUTED TRANSIT DATA (this is the ONLY astronomical truth available to you) ---
+{context_text}
+
+--- CLASSICAL TEXT REFERENCES ---
+{rag_context}
+---------------------------------------------
+
+{_VEDIC_GUARDRAILS}
+- Every statement must follow from the transit houses listed for THAT sign in the table above (gochara counted from the Moon sign) and the classical references. {timing_rule}Never assert a planetary position that is not in the data.
+- Cover practical life areas (work/career, finances, family/relationships, health, spiritual tone) with warm, concrete, non-fatalistic guidance. Mention Sade Sati / Ashtama Shani / Guru Bala only for the signs flagged with them.
+
+CRITICAL OUTPUT FORMAT:
+Return ONLY a valid JSON object — no markdown fences, no commentary before or after. Exactly these 12 keys, in this order:
+{json.dumps(horoscope_engine.SIGN_KEYS)}
+Each value must be a single plain-text prediction of {_HOROSCOPE_LENGTH[scope]}, written ENTIRELY in {target_lang}. Do not include the sign name inside the text.
+
+JSON:"""
+
+    last_err = None
+    for attempt in range(2):
+        raw = _llm_complete(prompt, DEFAULT_LLM_MODEL)
+        try:
+            predictions = horoscope_engine.parse_sign_json(raw)
+            break
+        except ValueError as e:
+            last_err = e
+            logger.warning("Horoscope JSON parse failed (%s %s %s, attempt %d): %s",
+                           scope, ctx["period_key"], lang, attempt + 1, e)
+    else:
+        raise RuntimeError(f"Horoscope generation failed after retries: {last_err}")
+
+    conn = connect_db(DB_PATH)
+    try:
+        conn.executemany(
+            "INSERT OR REPLACE INTO horoscopes (scope, period_key, sign, lang, content, period_label, model) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [(scope, ctx["period_key"], sign, lang, text, ctx["period_label"], DEFAULT_LLM_MODEL)
+             for sign, text in predictions.items()],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@app.get("/api/horoscope")
+def get_sign_horoscopes(scope: HoroscopeScope = "daily", lang: LangCode = "en",
+                        calendar: HoroscopeCalendar = "gregorian"):
+    """Universal sign horoscopes for the CURRENT period — daily/monthly/yearly
+    for all 12 Moon signs. Public and free (like the panchangam): the content
+    is generated once per (period, language) and shared by every visitor.
+    Only the current period can be requested, which bounds LLM spend. Yearly
+    horoscopes are anchored to the chosen calendar system; calendars sharing
+    the same astronomical new year share one generated set."""
+    if scope != "yearly":
+        calendar = "gregorian"
+    today = horoscope_engine.ist_today()
+    try:
+        ctx = horoscope_engine.compute_period_context(scope, today, calendar)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    pkey = ctx["period_key"]
+
+    rows = _fetch_horoscope_rows(scope, pkey, lang)
+    if len(rows) < len(horoscope_engine.SIGN_KEYS):
+        lock = _horoscope_lock((scope, pkey, lang))
+        with lock:
+            rows = _fetch_horoscope_rows(scope, pkey, lang)
+            if len(rows) < len(horoscope_engine.SIGN_KEYS):
+                try:
+                    _generate_horoscopes(ctx, lang)
+                except RuntimeError as e:
+                    raise HTTPException(status_code=503, detail=str(e))
+                except Exception as e:
+                    logger.error("Horoscope generation error (%s %s %s): %s", scope, pkey, lang, e)
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Horoscope generation is temporarily unavailable. Please try again.",
+                    )
+                rows = _fetch_horoscope_rows(scope, pkey, lang)
+
+    generated_at = min((r["created_at"] for r in rows.values()), default=None)
+    span_meta = {"start": ctx["start"], "end": ctx["end"], "label": ctx["period_label"]}
+    if scope == "yearly":
+        # Era labels are per requested calendar even when the span is shared.
+        span = horoscope_engine.year_span(calendar, today)
+        span_meta.update({
+            "year_name": span["year_name"], "era_name": span["era_name"],
+            "era_year": span["era_year"],
+        })
+    return {
+        "scope": scope,
+        "calendar": calendar if scope == "yearly" else None,
+        "period_key": pkey,
+        "period": span_meta,
+        "generated_at": generated_at,
+        "predictions": {sign: rows[sign]["content"] for sign in horoscope_engine.SIGN_KEYS
+                        if sign in rows},
+    }
+
+
+class PersonalVarshaRequest(BaseModel):
+    lang: LangCode = "en"
+    # Optional saved-chart id; default is the birth profile saved in account
+    # settings (users.dob/tob/location) — the "self" profile.
+    chart_id: Optional[int] = None
+
+
+def _load_varsha_profile(user_id, chart_id):
+    """Birth details for the personal year reading: a saved chart row if
+    chart_id is given (must belong to the user), else the self profile from
+    account settings. Raises 400 with a clear message when incomplete."""
+    conn = connect_db(DB_PATH)
+    try:
+        if chart_id is not None:
+            row = conn.execute(
+                "SELECT name, dob, tob, pob, latitude, longitude, gender FROM user_charts "
+                "WHERE id = ? AND user_id = ?", (chart_id, user_id),
+            ).fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Saved chart not found.")
+            name, dob, tob, place, lat, lon, gender = row
+        else:
+            row = conn.execute(
+                "SELECT full_name, dob, tob, location_name, latitude, longitude, gender "
+                "FROM users WHERE id = ?", (user_id,),
+            ).fetchone()
+            name, dob, tob, place, lat, lon, gender = row if row else (None,) * 7
+    finally:
+        conn.close()
+    if not dob or not tob or lat is None or lon is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No saved birth profile. Please save your birth details "
+                   "(date, time and place of birth) in Settings first.",
+        )
+    return {"name": name or "the native", "dob": dob, "tob": tob,
+            "place": place or "the birth place", "lat": float(lat), "lon": float(lon),
+            "gender": gender or "male"}
+
+
+def _parse_dob_tob(dob, tob):
+    d = None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            d = datetime.strptime(dob.strip(), fmt).date()
+            break
+        except ValueError:
+            continue
+    if d is None:
+        raise ValueError(f"Unrecognised date of birth: {dob!r}")
+    try:
+        parts = tob.strip().split(":")
+        hh, mm = int(parts[0]), int(parts[1])
+    except (ValueError, IndexError):
+        raise ValueError(f"Unrecognised time of birth: {tob!r}")
+    return d, hh, mm
+
+
+def _dasa_bhukti_timeline(dasa_table, start, end):
+    """The Vimshottari maha/antar (bhukti) periods overlapping [start, end],
+    clipped to the window — the personal year reading's timing backbone."""
+    def parse(s):
+        try:
+            return datetime.strptime(str(s).strip()[:10], "%Y-%m-%d").date()
+        except ValueError:
+            return None
+    lines = []
+    for dasa in dasa_table or []:
+        ds, de = parse(dasa.get("start_date")), parse(dasa.get("end_date"))
+        if not ds or not de or de <= start or ds > end:
+            continue
+        for b in dasa.get("bhuktis", []):
+            bs, be = parse(b.get("start_date")), parse(b.get("end_date"))
+            if not bs or not be or be <= start or bs > end:
+                continue
+            lines.append(
+                f"- {max(bs, start).isoformat()} to {min(be, end).isoformat()}: "
+                f"{dasa['dasa_lord']} mahadasa / {b['bhukti_lord']} bhukti"
+            )
+    return lines
+
+
+@app.post("/api/ai-varsha-phala")
+def ai_varsha_phala(req: PersonalVarshaRequest, raw_req: Request):
+    """Stream the personal year-ahead reading (varsha phala) for the user's
+    saved birth profile: the coming 365 days read through the running
+    Vimshottari dasa-bhukti schedule and the year's gochara (transit)
+    timeline, grounded in retrieved classical passages."""
+    token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    auth_user = get_user_by_session(token)
+    if not auth_user:
+        raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
+    profile = _load_varsha_profile(auth_user["id"], req.chart_id)  # 400 BEFORE charging
+    user = check_credits_or_raise(token, CREDIT_COST_VARSHAPHALA, "ai_varsha_phala")
+    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    target_lang = _LANG_MAP.get(req.lang, "English")
+
+    def prompt_builder():
+        try:
+            bdate, bh, bm = _parse_dob_tob(profile["dob"], profile["tob"])
+        except ValueError as e:
+            raise ValueError(f"Saved birth profile is invalid: {e}")
+        natal = get_astrological_chart(
+            bdate.year, bdate.month, bdate.day, bh, bm,
+            profile["lon"], profile["lat"], "Lahiri", gender=profile["gender"],
+        )
+        today = horoscope_engine.ist_today()
+        year_end = today + timedelta(days=365)
+
+        transit = get_astrological_chart(
+            today.year, today.month, today.day, 12, 0, profile["lon"], profile["lat"],
+        )
+        analysis = build_analysis(natal, transit_chart=transit, ref_date=today)
+
+        dasa_lines = _dasa_bhukti_timeline(natal.get("dasas", []), today, year_end)
+        current = get_current_dasa(natal.get("dasas", []), today)
+
+        # The year's gochara timeline relative to the natal Moon.
+        moon_idx = natal["placements"]["Moon"]["rasi_index"]
+        gochara_lines = []
+        for e in horoscope_engine.scan_slow_ingresses(today, year_end):
+            to_idx = horoscope_engine.SIGN_KEYS.index(e["to_sign"])
+            house = ((to_idx - moon_idx) % 12) + 1
+            note = ""
+            if e["planet"] == "Saturn":
+                if house in (12, 1, 2):
+                    note = " (Sade Sati window)"
+                elif house == 8:
+                    note = " (Ashtama Shani begins)"
+            elif e["planet"] == "Jupiter" and house in (2, 5, 7, 9, 11):
+                note = " (favourable Guru Bala)"
+            gochara_lines.append(
+                f"- {e['date']}: {e['planet']} enters {e['to_sign']} — "
+                f"the {house}th house from the natal Moon{note}"
+            )
+
+        queries = []
+        if current.get("mahadasa"):
+            queries.append(f"{current['mahadasa']} mahadasa results effects")
+            if current.get("antardasa"):
+                queries.append(f"{current['mahadasa']} dasa {current['antardasa']} bhukti results")
+        queries.extend(horoscope_engine.build_horoscope_queries(
+            horoscope_engine.compute_period_context("yearly", today, "gregorian"), max_queries=4))
+        queries.extend(build_rag_queries(natal, analysis, max_queries=3))
+        rag_context, _ = retrieve_rag_context(search_engine, queries)
+
+        return f"""You are a divine and highly wise Vedic astrologer (Jyotishi) writing the PERSONAL year-ahead reading (varsha phala) for {profile['name']} of {profile['place']}, covering {today.isoformat()} to {year_end.isoformat()}.
+
+This reading must be built on TWO pillars: (1) the native's running Vimshottari dasa-bhukti schedule for the year, and (2) the year's gochara (transits) relative to the natal chart. Both are computed exactly below.
+
+--- COMPUTED NATAL CHART ANALYSIS (with today's gochara) ---
+{analysis['analysis_text']}
+
+--- VIMSHOTTARI DASA-BHUKTI SCHEDULE FOR THIS YEAR (computed) ---
+{chr(10).join(dasa_lines) if dasa_lines else "- No bhukti change this year (single running period)."}
+
+--- GOCHARA TIMELINE FOR THIS YEAR (computed sign ingresses, houses from natal Moon) ---
+{chr(10).join(gochara_lines) if gochara_lines else "- No slow-planet sign changes during this year."}
+
+--- CLASSICAL TEXT REFERENCES ---
+{rag_context}
+---------------------------------------------
+
+CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}, professionally and grammatically.
+
+{_VEDIC_GUARDRAILS}
+
+Write an insightful, personal year reading in beautiful Markdown, structured as:
+1. **The Year at a Glance** (in {target_lang}) — the overall tone set by the running mahadasa/bhukti and the dominant transits.
+2. **Dasa-Bhukti Timeline** (in {target_lang}) — walk through EACH bhukti window listed above in order, with dates, describing its promise from the lords' natal condition.
+3. **Gochara Through the Year** (in {target_lang}) — the transit timeline above (Sade Sati / Ashtama Shani / Guru Bala windows and ingress dates) and how it colours each phase.
+4. **Career, Wealth & Home** (in {target_lang}).
+5. **Relationships & Health** (in {target_lang}).
+6. **Guidance & Remedies** (in {target_lang}) — practical, compassionate counsel grounded in the texts.
+
+Start directly with section 1 in {target_lang}:
+"""
+
+    return StreamingResponse(
+        llm_stream(prompt_builder, model_name, user, "ai_varsha_phala"),
         media_type="text/event-stream",
     )
 

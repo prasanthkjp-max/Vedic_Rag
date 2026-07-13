@@ -3,6 +3,39 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.25.0]
+
+### Added
+- **Horoscopes tab** (new top-level page on all three navs): universal
+  **daily / monthly / yearly rasi phala for all 12 Moon signs**, written by
+  the AI from the REAL sidereal transit picture (positions, ingress timeline,
+  per-sign gochara houses with Sade Sati / Ashtama Shani / Guru Bala flags,
+  day panchangam) computed by the new `horoscope_engine.py`, grounded in RAG
+  passages from the classical texts, and generated **exactly once per period
+  per language** into the new `horoscopes` cache table (per-key locks; only
+  the current period can be requested). Public and free via
+  `GET /api/horoscope?scope=&lang=&calendar=` — served identically to every
+  visitor, and rolls over automatically each day/month/year.
+- **Yearly horoscopes across five New Year traditions simultaneously**:
+  Gregorian (Jan 1), Tamil New Year & Kerala Vishu (Mesha Sankranti, found by
+  binary search on the sidereal Sun), and Telugu/Kannada Ugadi & Hindi Vikram
+  Samvat (Chaitra Shukla Pratipada, found from sunrise tithis with kshaya
+  handling). Calendars sharing an astronomical year-start share one generated
+  set; era labels (Samvatsara name, Shaka/Vikram/Kollam year) stay per
+  calendar.
+- **Personal varsha phala** (`POST /api/ai-varsha-phala`, streams, costs
+  `CREDIT_COST_VARSHAPHALA`, rate-limited LLM action): a year-ahead reading
+  built from the user's **saved birth profile** (Settings, or a saved chart
+  via `chart_id`) on two computed pillars — the **Vimshottari dasa-bhukti
+  schedule** for the coming 365 days and the year's **gochara ingress
+  timeline** relative to the natal Moon — grounded in retrieved classical
+  passages. Profile validity is checked *before* charging.
+- All Horoscopes-tab UI labels and the AI content itself are delivered in all
+  six portal languages (the generation prompt writes each language natively).
+- `test_horoscope_engine.py` (offline: calendar boundaries against known
+  festival dates, year spans/eras, period-key aliasing, gochara table sanity,
+  strict 12-sign JSON parsing) — added to CI.
+
 ## [1.24.1]
 
 ### Fixed

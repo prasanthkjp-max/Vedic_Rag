@@ -35,6 +35,9 @@ jobs:
       - name: Muhurtham engine rules
         run: python test_muhurtham_engine.py
 
+      - name: Horoscope engine (calendars, gochara tables, JSON guard)
+        run: python test_horoscope_engine.py
+
       - name: i18n single-source sync guard
         run: python test_i18n_sync.py
 
