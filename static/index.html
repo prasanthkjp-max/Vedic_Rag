@@ -2815,6 +2815,9 @@
                 <button class="side-nav-item" id="side-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
                     <i class="fa-solid fa-circle-user"></i> <span data-i18n-key="nav_btn_jyothisyam">Astrology</span>
                 </button>
+                <button class="side-nav-item" id="side-btn-horoscope" onclick="navigateToPage('horoscope')">
+                    <i class="fa-solid fa-star"></i> <span data-i18n-key="nav_btn_horoscope">Horoscopes</span>
+                </button>
                 <button class="side-nav-item" id="side-btn-marriage" onclick="navigateToPage('marriage')">
                     <i class="fa-solid fa-heart"></i> <span data-i18n-key="nav_btn_marriage">Marriage Matching</span>
                 </button>
@@ -2915,6 +2918,7 @@
             <nav class="nav-top-bar">
                 <button class="nav-tab active" id="nav-btn-home" onclick="navigateToPage('home')">Home (Panchangam)</button>
                 <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Astrology</button>
+                <button class="nav-tab" id="nav-btn-horoscope" onclick="navigateToPage('horoscope')">Horoscopes</button>
                 <button class="nav-tab" id="nav-btn-marriage" onclick="navigateToPage('marriage')">Marriage Matching</button>
                 <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Astro AI Chat</button>
             </nav>
@@ -3766,6 +3770,48 @@
 
         <!-- ------------------ PAGE 3: AI PREDICTIONS (RAG INTERACTIVE CHAT SCREEN) ------------------ -->
         <!-- ------------------ PAGE 4: MARRIAGE COMPATIBILITY ------------------ -->
+        <!-- ============ PAGE 2.5: HOROSCOPES (Rasi Phala) ============ -->
+        <div class="single-page-content" id="page-horoscope" style="display:none;">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fa-solid fa-star"></i> <span id="lbl-horoscope-title">Rasi Phala — Sign Horoscopes</span>
+                </div>
+                <p id="lbl-horoscope-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+                    Daily, monthly and yearly predictions for all 12 Moon signs — written by AI from the real planetary transits and grounded in the classical texts.
+                </p>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+                    <button class="sub-tab-btn active" id="horo-tab-daily" onclick="switchHoroScope('daily')"><span id="lbl-horo-tab-daily">Daily</span></button>
+                    <button class="sub-tab-btn" id="horo-tab-monthly" onclick="switchHoroScope('monthly')"><span id="lbl-horo-tab-monthly">Monthly</span></button>
+                    <button class="sub-tab-btn" id="horo-tab-yearly" onclick="switchHoroScope('yearly')"><span id="lbl-horo-tab-yearly">Yearly</span></button>
+                    <button class="sub-tab-btn" id="horo-tab-personal" onclick="switchHoroScope('personal')"><span id="lbl-horo-tab-personal">My Varsha Phala</span></button>
+                </div>
+
+                <!-- Universal (shared) horoscopes: daily / monthly / yearly -->
+                <div id="horo-universal-pane">
+                    <div id="horo-calendar-row" style="display: none; margin-bottom: 12px; max-width: 340px;">
+                        <label id="lbl-horo-calendar" style="font-size: 11px; font-weight: 600; color: var(--accent-gold); display: block; margin-bottom: 4px;">New Year Tradition</label>
+                        <select id="horo-calendar-select" onchange="onHoroCalendarChange()" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); font-size: 13px;"></select>
+                    </div>
+                    <div id="horo-period-label" style="font-size: 12px; font-weight: 600; color: var(--accent-gold); margin-bottom: 8px;"></div>
+                    <div id="horo-sign-chips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;"></div>
+                    <div id="horo-content" class="ai-predict-display" style="min-height: 120px;"></div>
+                </div>
+
+                <!-- Personal varsha phala: dasa-bhukti + gochara year reading -->
+                <div id="horo-personal-pane" style="display: none;">
+                    <p id="lbl-horo-personal-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+                        A personal year-ahead reading computed from YOUR saved birth profile: the running dasa-bhukti timeline and the year's transits (gochara), grounded in the classical texts. Save your birth details in Settings first.
+                    </p>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span class="chip-price">🪙 <span id="val-horo-personal-price">25</span></span>
+                        <button class="btn-primary" id="btn-horo-personal" onclick="generatePersonalVarshaPhala()" style="padding: 8px 16px; font-size: 12px;"><span id="lbl-horo-personal-btn">Generate My Year Reading</span></button>
+                    </div>
+                    <div id="horo-personal-output" class="ai-predict-display" style="min-height: 80px; margin-top: 16px; display: none;"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="single-page-content" id="page-marriage" style="display:none;">
             <!-- Guest Lock Screen Overlay -->
             <div class="login-wall-overlay" id="lock-marriage" style="display: none; text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 12px; max-width: 600px; margin: 40px auto; backdrop-filter: blur(10px); color: var(--text-primary);">
@@ -4362,7 +4408,26 @@
                 lbl_hub_varsha_title: "Varshaphala Annual Forecast",
                 lbl_hub_varsha_desc: "Preview your annual trends, challenges, and planetary influences for any selected year.",
                 lbl_varsha_year_label: "Select Forecast Year:",
-                lbl_varshaphala_title: "Annual Solar Return (Varshaphala) Analysis"
+                lbl_varshaphala_title: "Annual Solar Return (Varshaphala) Analysis",
+                nav_btn_horoscope: "Horoscopes",
+                lbl_horoscope_title: "Rasi Phala — Sign Horoscopes",
+                lbl_horoscope_desc: "Daily, monthly and yearly predictions for all 12 Moon signs — written by AI from the real planetary transits and grounded in the classical texts.",
+                lbl_horo_tab_daily: "Daily",
+                lbl_horo_tab_monthly: "Monthly",
+                lbl_horo_tab_yearly: "Yearly",
+                lbl_horo_tab_personal: "My Varsha Phala",
+                lbl_horo_calendar: "New Year Tradition",
+                horo_cal_gregorian: "Calendar Year (Jan 1)",
+                horo_cal_tamil: "Tamil New Year (Chithirai)",
+                horo_cal_telugu: "Ugadi (Telugu)",
+                horo_cal_kannada: "Ugadi (Kannada)",
+                horo_cal_malayalam: "Vishu (Kerala)",
+                horo_cal_hindi: "Vikram Samvat (Hindi)",
+                lbl_horo_loading: "Consulting the planetary transits… the first view of a new period is written by AI and can take up to a minute.",
+                lbl_horo_error: "Could not load the horoscope. Please try again.",
+                lbl_horo_personal_desc: "A personal year-ahead reading computed from YOUR saved birth profile: the running dasa-bhukti timeline and the year's transits (gochara), grounded in the classical texts. Save your birth details in Settings first.",
+                lbl_horo_personal_btn: "Generate My Year Reading",
+                lbl_horo_personal_loading: "Computing your dasa-bhukti timeline and the year's transits…"
             },
             ta: {
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
@@ -4539,7 +4604,26 @@
                 lbl_hub_varsha_title: "வர்ஷபலம் (வருடாந்திர ஜாதகம்)",
                 lbl_hub_varsha_desc: "குறிப்பிட்ட ஆண்டிற்கான உங்கள் வர்ஷபல ஜாதகம் மற்றும் பலன்களைக் கண்டறிக.",
                 lbl_varsha_year_label: "ஆண்டைத் தேர்ந்தெடுக்கவும்:",
-                lbl_varshaphala_title: "வருடாந்திர வர்ஷபல ஜோதிட ஆய்வு"
+                lbl_varshaphala_title: "வருடாந்திர வர்ஷபல ஜோதிட ஆய்வு",
+                nav_btn_horoscope: "ராசி பலன்",
+                lbl_horoscope_title: "ராசி பலன்கள்",
+                lbl_horoscope_desc: "12 ராசிகளுக்கான தினசரி, மாத மற்றும் வருட பலன்கள் — உண்மையான கோள் பெயர்ச்சிகளின் அடிப்படையில், சாஸ்திர நூல்களை ஆதாரமாகக் கொண்டு AI எழுதுகிறது.",
+                lbl_horo_tab_daily: "தினப் பலன்",
+                lbl_horo_tab_monthly: "மாதப் பலன்",
+                lbl_horo_tab_yearly: "வருடப் பலன்",
+                lbl_horo_tab_personal: "எனது வருட பலன்",
+                lbl_horo_calendar: "புத்தாண்டு முறை",
+                horo_cal_gregorian: "ஆங்கில ஆண்டு (ஜனவரி 1)",
+                horo_cal_tamil: "தமிழ் புத்தாண்டு (சித்திரை)",
+                horo_cal_telugu: "உகாதி (தெலுங்கு)",
+                horo_cal_kannada: "உகாதி (கன்னடம்)",
+                horo_cal_malayalam: "விஷு (கேரளா)",
+                horo_cal_hindi: "விக்ரம சம்வத் (இந்தி)",
+                lbl_horo_loading: "கோள் பெயர்ச்சிகள் கணிக்கப்படுகின்றன… புதிய காலத்தின் முதல் பார்வை AI மூலம் எழுதப்படுவதால் ஒரு நிமிடம் வரை ஆகலாம்.",
+                lbl_horo_error: "பலன்களை ஏற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+                lbl_horo_personal_desc: "உங்கள் சேமித்த ஜனன விவரங்களின் அடிப்படையில் தனிப்பட்ட வருட பலன்: நடப்பு தசா-புக்தி காலவரிசை மற்றும் ஆண்டின் கோச்சாரப் பெயர்ச்சிகள், சாஸ்திர நூல் ஆதாரத்துடன். முதலில் அமைப்புகளில் உங்கள் ஜனன விவரங்களைச் சேமிக்கவும்.",
+                lbl_horo_personal_btn: "எனது வருட பலனை உருவாக்கு",
+                lbl_horo_personal_loading: "உங்கள் தசா-புக்தி காலவரிசையும் ஆண்டின் கோள் பெயர்ச்சிகளும் கணக்கிடப்படுகின்றன…"
             },
             te: {
                 lbl_calculating_alignments: "పొంతన లెక్కించబడుతోంది...",
@@ -4715,7 +4799,26 @@
                 lbl_hub_varsha_title: "వర్షఫల (సంవత్సర జాతకం)",
                 lbl_hub_varsha_desc: "ఎంపిక చేసిన సంవత్సరంలో మీ వార్షిక జాతక ఫలితాలు మరియు గ్రహ ప్రభావాలను తెలుసుకోండి.",
                 lbl_varsha_year_label: "సంవత్సరాన్ని ఎంచుకోండి:",
-                lbl_varshaphala_title: "వార్షిక వర్షఫల జ్యోతిష్య విశ్లేషణ"
+                lbl_varshaphala_title: "వార్షిక వర్షఫల జ్యోతిష్య విశ్లేషణ",
+                nav_btn_horoscope: "రాశి ఫలాలు",
+                lbl_horoscope_title: "రాశి ఫలాలు",
+                lbl_horoscope_desc: "12 రాశులకు దిన, మాస మరియు వార్షిక ఫలాలు — నిజమైన గ్రహ సంచారాల ఆధారంగా, శాస్త్ర గ్రంథాల ప్రామాణికతతో AI రచిస్తుంది.",
+                lbl_horo_tab_daily: "దిన ఫలం",
+                lbl_horo_tab_monthly: "మాస ఫలం",
+                lbl_horo_tab_yearly: "వర్ష ఫలం",
+                lbl_horo_tab_personal: "నా వర్షఫలం",
+                lbl_horo_calendar: "నూతన సంవత్సర పద్ధతి",
+                horo_cal_gregorian: "ఆంగ్ల సంవత్సరం (జనవరి 1)",
+                horo_cal_tamil: "తమిళ నూతన సంవత్సరం (చిత్తిరై)",
+                horo_cal_telugu: "ఉగాది (తెలుగు)",
+                horo_cal_kannada: "ఉగాది (కన్నడ)",
+                horo_cal_malayalam: "విషు (కేరళ)",
+                horo_cal_hindi: "విక్రమ సంవత్ (హిందీ)",
+                lbl_horo_loading: "గ్రహ సంచారాలను పరిశీలిస్తున్నాం… కొత్త కాలానికి మొదటి వీక్షణ AI ద్వారా రచించబడుతుంది, ఒక నిమిషం వరకు పట్టవచ్చు.",
+                lbl_horo_error: "ఫలాలను లోడ్ చేయలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
+                lbl_horo_personal_desc: "మీ సేవ్ చేసిన జనన వివరాల ఆధారంగా వ్యక్తిగత వార్షిక ఫలం: నడుస్తున్న దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలు, శాస్త్ర గ్రంథాల ప్రామాణికతతో. ముందుగా సెట్టింగ్స్‌లో మీ జనన వివరాలను సేవ్ చేయండి.",
+                lbl_horo_personal_btn: "నా వార్షిక ఫలం రూపొందించండి",
+                lbl_horo_personal_loading: "మీ దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలను లెక్కిస్తున్నాం…"
             },
             ml: {
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
@@ -4891,7 +4994,26 @@
                 lbl_hub_varsha_title: "വർഷഫലം (വാർഷിക ജാതകം)",
                 lbl_hub_varsha_desc: "തിരഞ്ഞെടുത്ത വർഷത്തിലെ വാർഷിക ജാതക ഫലങ്ങളും ഗ്രഹസ്വാധീനങ്ങളും അറിയുക.",
                 lbl_varsha_year_label: "വർഷം തിരഞ്ഞെടുക്കുക:",
-                lbl_varshaphala_title: "വാർഷിക വർഷഫല ജ്യോതിഷ വിശകലനം"
+                lbl_varshaphala_title: "വാർഷിക വർഷഫല ജ്യോതിഷ വിശകലനം",
+                nav_btn_horoscope: "രാശിഫലം",
+                lbl_horoscope_title: "രാശിഫലങ്ങൾ",
+                lbl_horoscope_desc: "12 രാശികൾക്കുള്ള ദിവസ, മാസ, വാർഷിക ഫലങ്ങൾ — യഥാർത്ഥ ഗ്രഹസഞ്ചാരങ്ങളെ അടിസ്ഥാനമാക്കി, ശാസ്ത്രഗ്രന്ഥങ്ങളുടെ പിൻബലത്തോടെ AI എഴുതുന്നു.",
+                lbl_horo_tab_daily: "ദിവസഫലം",
+                lbl_horo_tab_monthly: "മാസഫലം",
+                lbl_horo_tab_yearly: "വർഷഫലം",
+                lbl_horo_tab_personal: "എന്റെ വർഷഫലം",
+                lbl_horo_calendar: "പുതുവർഷ രീതി",
+                horo_cal_gregorian: "ഇംഗ്ലീഷ് വർഷം (ജനുവരി 1)",
+                horo_cal_tamil: "തമിഴ് പുതുവർഷം (ചിത്തിരൈ)",
+                horo_cal_telugu: "ഉഗാദി (തെലുങ്ക്)",
+                horo_cal_kannada: "ഉഗാദി (കന്നഡ)",
+                horo_cal_malayalam: "വിഷു (കേരളം)",
+                horo_cal_hindi: "വിക്രം സംവത് (ഹിന്ദി)",
+                lbl_horo_loading: "ഗ്രഹസഞ്ചാരങ്ങൾ പരിശോധിക്കുന്നു… പുതിയ കാലയളവിന്റെ ആദ്യ കാഴ്ച AI എഴുതുന്നതിനാൽ ഒരു മിനിറ്റ് വരെ എടുത്തേക്കാം.",
+                lbl_horo_error: "ഫലങ്ങൾ ലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.",
+                lbl_horo_personal_desc: "നിങ്ങളുടെ സേവ് ചെയ്ത ജനന വിവരങ്ങളെ അടിസ്ഥാനമാക്കിയ വ്യക്തിഗത വാർഷിക ഫലം: നടപ്പു ദശാ-ഭുക്തി കാലക്രമവും വർഷത്തിലെ ഗോചരങ്ങളും, ശാസ്ത്രഗ്രന്ഥങ്ങളുടെ പിൻബലത്തോടെ. ആദ്യം സെറ്റിംഗ്സിൽ ജനന വിവരങ്ങൾ സേവ് ചെയ്യുക.",
+                lbl_horo_personal_btn: "എന്റെ വർഷഫലം സൃഷ്ടിക്കുക",
+                lbl_horo_personal_loading: "നിങ്ങളുടെ ദശാ-ഭുക്തി കാലക്രമവും വർഷ ഗോചരങ്ങളും കണക്കാക്കുന്നു…"
             },
             kn: {
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಿಸಲಾಗುತ್ತಿದೆ...",
@@ -5067,7 +5189,26 @@
                 lbl_hub_varsha_title: "ವರ್ಷಫಲ (ವಾರ್ಷಿಕ ಜಾತಕ)",
                 lbl_hub_varsha_desc: "ಆಯ್ಕೆ ಮಾಡಿದ ವರ್ಷದಲ್ಲಿ ನಿಮ್ಮ ವಾರ್ಷಿಕ ಜಾತಕ ಫಲಿತಾಂಶಗಳು ಮತ್ತು ಗ್ರಹ ಪ್ರಭಾವಗಳನ್ನು ತಿಳಿಯಿರಿ.",
                 lbl_varsha_year_label: "ವರ್ಷವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ:",
-                lbl_varshaphala_title: "ವಾರ್ಷಿಕ ವರ್ಷಫಲ ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆ"
+                lbl_varshaphala_title: "ವಾರ್ಷಿಕ ವರ್ಷಫಲ ಜ್ಯೋತಿಷ್ಯ ವಿಶ್ಲೇಷಣೆ",
+                nav_btn_horoscope: "ರಾಶಿ ಫಲ",
+                lbl_horoscope_title: "ರಾಶಿ ಫಲಗಳು",
+                lbl_horoscope_desc: "12 ರಾಶಿಗಳಿಗೆ ದಿನ, ಮಾಸ ಮತ್ತು ವಾರ್ಷಿಕ ಫಲಗಳು — ನೈಜ ಗ್ರಹ ಸಂಚಾರಗಳ ಆಧಾರದ ಮೇಲೆ, ಶಾಸ್ತ್ರ ಗ್ರಂಥಗಳ ಆಧಾರದೊಂದಿಗೆ AI ಬರೆಯುತ್ತದೆ.",
+                lbl_horo_tab_daily: "ದಿನ ಫಲ",
+                lbl_horo_tab_monthly: "ಮಾಸ ಫಲ",
+                lbl_horo_tab_yearly: "ವರ್ಷ ಫಲ",
+                lbl_horo_tab_personal: "ನನ್ನ ವರ್ಷಫಲ",
+                lbl_horo_calendar: "ಹೊಸ ವರ್ಷ ಪದ್ಧತಿ",
+                horo_cal_gregorian: "ಇಂಗ್ಲಿಷ್ ವರ್ಷ (ಜನವರಿ 1)",
+                horo_cal_tamil: "ತಮಿಳು ಹೊಸ ವರ್ಷ (ಚಿತ್ತಿರೈ)",
+                horo_cal_telugu: "ಯುಗಾದಿ (ತೆಲುಗು)",
+                horo_cal_kannada: "ಯುಗಾದಿ (ಕನ್ನಡ)",
+                horo_cal_malayalam: "ವಿಷು (ಕೇರಳ)",
+                horo_cal_hindi: "ವಿಕ್ರಮ ಸಂವತ್ (ಹಿಂದಿ)",
+                lbl_horo_loading: "ಗ್ರಹ ಸಂಚಾರಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ… ಹೊಸ ಅವಧಿಯ ಮೊದಲ ವೀಕ್ಷಣೆಯನ್ನು AI ಬರೆಯುವುದರಿಂದ ಒಂದು ನಿಮಿಷದವರೆಗೆ ತೆಗೆದುಕೊಳ್ಳಬಹುದು.",
+                lbl_horo_error: "ಫಲಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                lbl_horo_personal_desc: "ನಿಮ್ಮ ಉಳಿಸಿದ ಜನನ ವಿವರಗಳ ಆಧಾರದ ವೈಯಕ್ತಿಕ ವಾರ್ಷಿಕ ಫಲ: ನಡೆಯುತ್ತಿರುವ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷದ ಗೋಚಾರಗಳು, ಶಾಸ್ತ್ರ ಗ್ರಂಥಗಳ ಆಧಾರದೊಂದಿಗೆ. ಮೊದಲು ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಜನನ ವಿವರಗಳನ್ನು ಉಳಿಸಿ.",
+                lbl_horo_personal_btn: "ನನ್ನ ವರ್ಷಫಲ ರಚಿಸಿ",
+                lbl_horo_personal_loading: "ನಿಮ್ಮ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷ ಗೋಚಾರಗಳನ್ನು ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ…"
             },
             hi: {
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
@@ -5243,7 +5384,26 @@
                 lbl_hub_varsha_title: "वर्षफल (वार्षिक कुंडली)",
                 lbl_hub_varsha_desc: "चयनित वर्ष के लिए अपना वर्षफल और वार्षिक ग्रहों का प्रभाव जानें।",
                 lbl_varsha_year_label: "वर्ष का चयन करें:",
-                lbl_varshaphala_title: "वार्षिक वर्षफल ज्योतिष विश्लेषण"
+                lbl_varshaphala_title: "वार्षिक वर्षफल ज्योतिष विश्लेषण",
+                nav_btn_horoscope: "राशिफल",
+                lbl_horoscope_title: "राशिफल",
+                lbl_horoscope_desc: "सभी 12 राशियों के लिए दैनिक, मासिक और वार्षिक भविष्यफल — वास्तविक ग्रह गोचर पर आधारित, शास्त्रीय ग्रंथों के प्रमाण के साथ AI द्वारा लिखित।",
+                lbl_horo_tab_daily: "दैनिक",
+                lbl_horo_tab_monthly: "मासिक",
+                lbl_horo_tab_yearly: "वार्षिक",
+                lbl_horo_tab_personal: "मेरा वर्षफल",
+                lbl_horo_calendar: "नववर्ष पद्धति",
+                horo_cal_gregorian: "अंग्रेज़ी वर्ष (1 जनवरी)",
+                horo_cal_tamil: "तमिल नववर्ष (चित्तिरै)",
+                horo_cal_telugu: "उगादि (तेलुगु)",
+                horo_cal_kannada: "उगादि (कन्नड़)",
+                horo_cal_malayalam: "विषु (केरल)",
+                horo_cal_hindi: "विक्रम संवत (हिंदी)",
+                lbl_horo_loading: "ग्रह गोचर की गणना हो रही है… नई अवधि का पहला दृश्य AI द्वारा लिखा जाता है, इसमें एक मिनट तक लग सकता है।",
+                lbl_horo_error: "राशिफल लोड नहीं हो सका। कृपया पुनः प्रयास करें।",
+                lbl_horo_personal_desc: "आपकी सहेजी गई जन्म जानकारी पर आधारित व्यक्तिगत वार्षिक फल: चल रही दशा-भुक्ति समयरेखा और वर्ष के गोचर, शास्त्रीय ग्रंथों के प्रमाण सहित। पहले सेटिंग्स में अपनी जन्म जानकारी सहेजें।",
+                lbl_horo_personal_btn: "मेरा वर्षफल बनाएं",
+                lbl_horo_personal_loading: "आपकी दशा-भुक्ति समयरेखा और वर्ष के गोचर की गणना हो रही है…"
             }
         };
 
@@ -5886,17 +6046,18 @@
             // Toggle navigation button active states (desktop top bar)
             document.getElementById('nav-btn-home').className = pageId === 'home' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-jyothisyam').className = pageId === 'jyothisyam' ? 'nav-tab active' : 'nav-tab';
+            document.getElementById('nav-btn-horoscope').className = pageId === 'horoscope' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-marriage').className = pageId === 'marriage' ? 'nav-tab active' : 'nav-tab';
             document.getElementById('nav-btn-ai').className = pageId === 'ai' ? 'nav-tab active' : 'nav-tab';
 
             // Mirror active state onto the sidebar items (mobile drawer)
-            ['home', 'jyothisyam', 'marriage', 'ai'].forEach(p => {
+            ['home', 'jyothisyam', 'horoscope', 'marriage', 'ai'].forEach(p => {
                 const sideBtn = document.getElementById('side-btn-' + p);
                 if (sideBtn) sideBtn.className = pageId === p ? 'side-nav-item active' : 'side-nav-item';
             });
 
             // Mirror active state onto the mobile bottom nav items
-            ['home', 'jyothisyam', 'marriage', 'ai'].forEach(p => {
+            ['home', 'jyothisyam', 'horoscope', 'marriage', 'ai'].forEach(p => {
                 const mobBtn = document.getElementById('mob-btn-' + p);
                 if (mobBtn) mobBtn.className = pageId === p ? 'mobile-nav-item active' : 'mobile-nav-item';
             });
@@ -5904,11 +6065,17 @@
             // Toggle page content blocks visibility
             document.getElementById('page-home').style.display = pageId === 'home' ? 'block' : 'none';
             document.getElementById('page-jyothisyam').style.display = pageId === 'jyothisyam' ? 'block' : 'none';
+            document.getElementById('page-horoscope').style.display = pageId === 'horoscope' ? 'block' : 'none';
             document.getElementById('page-marriage').style.display = pageId === 'marriage' ? 'block' : 'none';
             document.getElementById('page-ai').style.display = pageId === 'ai' ? 'block' : 'none';
-            
+
             if (pageId === 'home') {
                 renderMonthlyCalendar();
+            }
+            if (pageId === 'horoscope') {
+                // Lazy-load the current scope's horoscopes on first open (and
+                // keep chips/labels in the active language on every open).
+                switchHoroScope(horoScopeTab);
             }
         }
 
@@ -6048,6 +6215,7 @@
             setText('lbl-ai-title', dict.lbl_ai_title);
             setText('nav-btn-home', dict.nav_btn_home || "Home (Panchangam)");
             setText('nav-btn-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
+            setText('nav-btn-horoscope', dict.nav_btn_horoscope || "Horoscopes");
             setText('nav-btn-ai', dict.nav_btn_ai || "Astro AI Chat");
             const marriageNavBtn = document.getElementById('nav-btn-marriage');
             if (marriageNavBtn) marriageNavBtn.innerText = dict.nav_btn_marriage || "Marriage Matching";
@@ -6055,8 +6223,30 @@
             // Mobile Nav
             setText('lbl-mobile-nav-home', dict.nav_btn_home || "Home (Panchangam)");
             setText('lbl-mobile-nav-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
+            setText('lbl-mobile-nav-horoscope', dict.nav_btn_horoscope || "Horoscopes");
             setText('lbl-mobile-nav-marriage', dict.nav_btn_marriage || "Marriage Matching");
             setText('lbl-mobile-nav-ai', dict.nav_btn_ai || "Astro AI Chat");
+
+            // Horoscopes tab labels + language-sensitive dynamic content
+            setText('lbl-horoscope-title', dict.lbl_horoscope_title);
+            setText('lbl-horoscope-desc', dict.lbl_horoscope_desc);
+            setText('lbl-horo-tab-daily', dict.lbl_horo_tab_daily);
+            setText('lbl-horo-tab-monthly', dict.lbl_horo_tab_monthly);
+            setText('lbl-horo-tab-yearly', dict.lbl_horo_tab_yearly);
+            setText('lbl-horo-tab-personal', dict.lbl_horo_tab_personal);
+            setText('lbl-horo-calendar', dict.lbl_horo_calendar);
+            setText('lbl-horo-personal-desc', dict.lbl_horo_personal_desc);
+            setText('lbl-horo-personal-btn', dict.lbl_horo_personal_btn);
+            if (typeof renderHoroCalendarOptions === 'function') {
+                renderHoroCalendarOptions();
+                renderHoroSignChips();
+                // The predictions themselves are per-language: refetch when the
+                // tab is currently visible so its content switches too.
+                const horoPage = document.getElementById('page-horoscope');
+                if (horoPage && horoPage.style.display !== 'none' && horoScopeTab !== 'personal') {
+                    loadHoroscope();
+                }
+            }
             const marriageIntro = document.getElementById('lbl-marriage-intro');
             if (marriageIntro) marriageIntro.innerText = dict.lbl_marriage_intro || "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.";
             const marriageTitle = document.getElementById('lbl-marriage-title');
@@ -9905,6 +10095,129 @@
             }
         }
 
+        // ===== Horoscopes tab (universal rasi phala + personal varsha phala) =====
+        const HORO_SIGNS = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanus", "Makara", "Kumbha", "Meena"];
+        const HORO_CALENDARS = ["gregorian", "tamil", "telugu", "kannada", "malayalam", "hindi"];
+        let horoScopeTab = 'daily';        // daily | monthly | yearly | personal
+        let horoCalendar = 'gregorian';    // yearly anchor calendar
+        let horoSign = 'Mesha';
+        const horoCache = {};              // "scope|calendar|lang" -> API payload
+
+        function horoDict() { return localization[currentLang] || localization.en; }
+        function horoCacheKey() { return `${horoScopeTab}|${horoScopeTab === 'yearly' ? horoCalendar : '-'}|${currentLang}`; }
+
+        function switchHoroScope(scope) {
+            horoScopeTab = scope;
+            ['daily', 'monthly', 'yearly', 'personal'].forEach(s => {
+                const b = document.getElementById('horo-tab-' + s);
+                if (b) b.className = s === scope ? 'sub-tab-btn active' : 'sub-tab-btn';
+            });
+            document.getElementById('horo-universal-pane').style.display = scope === 'personal' ? 'none' : 'block';
+            document.getElementById('horo-personal-pane').style.display = scope === 'personal' ? 'block' : 'none';
+            document.getElementById('horo-calendar-row').style.display = scope === 'yearly' ? 'block' : 'none';
+            if (scope !== 'personal') loadHoroscope();
+        }
+
+        function onHoroCalendarChange() {
+            const sel = document.getElementById('horo-calendar-select');
+            if (sel) horoCalendar = sel.value;
+            loadHoroscope();
+        }
+
+        function renderHoroCalendarOptions() {
+            const sel = document.getElementById('horo-calendar-select');
+            if (!sel) return;
+            const dict = horoDict();
+            sel.innerHTML = '';
+            HORO_CALENDARS.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.text = dict['horo_cal_' + c] || c;
+                sel.appendChild(opt);
+            });
+            sel.value = horoCalendar;
+        }
+
+        function renderHoroSignChips() {
+            const wrap = document.getElementById('horo-sign-chips');
+            if (!wrap) return;
+            const names = rasiTranslations[currentLang] || rasiTranslations.en;
+            wrap.innerHTML = '';
+            HORO_SIGNS.forEach((k, i) => {
+                const b = document.createElement('button');
+                b.className = 'sub-tab-btn' + (k === horoSign ? ' active' : '');
+                b.style.padding = '5px 10px';
+                b.style.fontSize = '12px';
+                b.innerText = names[i];
+                b.onclick = () => { horoSign = k; renderHoroSignChips(); renderHoroContent(); };
+                wrap.appendChild(b);
+            });
+        }
+
+        async function loadHoroscope(force = false) {
+            renderHoroSignChips();
+            renderHoroCalendarOptions();
+            const key = horoCacheKey();
+            const content = document.getElementById('horo-content');
+            if (!content) return;
+            if (!force && horoCache[key]) { renderHoroPeriod(); renderHoroContent(); return; }
+            const dict = horoDict();
+            setText('horo-period-label', '');
+            content.innerHTML = `<div class="ai-chat-bubble"><i class="fa-solid fa-yin-yang fa-spin" style="margin-right:8px;"></i> ${escapeHtml(dict.lbl_horo_loading || 'Consulting the planetary transits… the first view of a new period is written by AI and can take up to a minute.')}</div>`;
+            try {
+                const params = new URLSearchParams({ scope: horoScopeTab, lang: currentLang });
+                if (horoScopeTab === 'yearly') params.set('calendar', horoCalendar);
+                // Generation of a fresh period runs a full grounded LLM call
+                // server-side, so allow well beyond the default 30s abort.
+                const res = await apiFetch(`/api/horoscope?${params.toString()}`, { timeoutMs: 240000 });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                horoCache[key] = await res.json();
+                renderHoroPeriod();
+                renderHoroContent();
+            } catch (err) {
+                content.innerHTML = `<span style="color:#F56565;">${escapeHtml(dict.lbl_horo_error || 'Could not load the horoscope. Please try again.')}</span> <button class="btn-primary" style="padding:4px 12px; font-size:11px; margin-left:8px;" onclick="loadHoroscope(true)"><i class="fa-solid fa-rotate-right"></i></button>`;
+            }
+        }
+
+        function renderHoroPeriod() {
+            const data = horoCache[horoCacheKey()];
+            const el = document.getElementById('horo-period-label');
+            if (!el || !data || !data.period) return;
+            let txt = data.period.label || '';
+            if (data.scope === 'yearly' && data.period.year_name) {
+                txt = `${data.period.year_name} — ${data.period.era_name} ${data.period.era_year} (${data.period.start} → ${data.period.end})`;
+            }
+            el.innerText = txt;
+        }
+
+        function renderHoroContent() {
+            const data = horoCache[horoCacheKey()];
+            const content = document.getElementById('horo-content');
+            if (!content || !data || !data.predictions) return;
+            const text = data.predictions[horoSign];
+            if (!text) return;
+            const names = rasiTranslations[currentLang] || rasiTranslations.en;
+            const title = names[HORO_SIGNS.indexOf(horoSign)] || horoSign;
+            content.innerHTML = `<h3 style="color: var(--accent-gold); font-family: var(--font-heading); margin-bottom: 8px;">${escapeHtml(title)}</h3><div style="white-space: pre-wrap; line-height: 1.7; font-size: 13px;">${escapeHtml(text)}</div>`;
+        }
+
+        let isPersonalVarshaResponding = false; // double-submit guard (paid stream)
+        async function generatePersonalVarshaPhala() {
+            if (isPersonalVarshaResponding) return;
+            isPersonalVarshaResponding = true;
+            const btn = document.getElementById('btn-horo-personal');
+            if (btn) btn.disabled = true;
+            const out = document.getElementById('horo-personal-output');
+            try {
+                await streamDepthReading('/api/ai-varsha-phala', { lang: currentLang }, out, {
+                    loadingMsg: horoDict().lbl_horo_personal_loading || "Computing your dasa-bhukti timeline and the year's transits…"
+                });
+            } finally {
+                isPersonalVarshaResponding = false;
+                if (btn) btn.disabled = false;
+            }
+        }
+
         let isDeepCompatResponding = false; // double-submit guard (75-credit stream)
         async function generateDeepCompatibility() {
             if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
@@ -10347,6 +10660,10 @@
 
             const varshaPrice = document.getElementById('val-hub-varsha-price');
             if (varshaPrice) varshaPrice.innerText = pricing.varshaphala || 25;
+
+            // Horoscopes tab: the personal varsha phala shares the varshaphala price
+            const horoPersonalPrice = document.getElementById('val-horo-personal-price');
+            if (horoPersonalPrice) horoPersonalPrice.innerText = pricing.varshaphala || 25;
         }
 
         // --- Initialize Page details on startup ---
@@ -13580,6 +13897,10 @@
         <button class="mobile-nav-item" id="mob-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
             <i class="fa-solid fa-dharmachakra"></i>
             <span id="lbl-mobile-nav-jyothisyam">Jyothisyam</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-btn-horoscope" onclick="navigateToPage('horoscope')">
+            <i class="fa-solid fa-star"></i>
+            <span id="lbl-mobile-nav-horoscope">Horoscope</span>
         </button>
         <button class="mobile-nav-item" id="mob-btn-marriage" onclick="navigateToPage('marriage')">
             <i class="fa-solid fa-heart"></i>
