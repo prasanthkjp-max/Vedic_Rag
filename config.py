@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.25.0"
+VERSION = "1.26.0"
 
 # --- Paths (env-overridable) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -297,6 +297,23 @@ REFERRAL_BONUS_REFERRER = _env_int("VEDIC_REFERRAL_BONUS_REFERRER", 25)
 # prompt-token growth so a long thread can't triple the per-message cost.
 CHAT_HISTORY_TURNS = _env_int("VEDIC_CHAT_HISTORY_TURNS", 3)
 MAX_SAVED_CHARTS = _env_int("VEDIC_MAX_SAVED_CHARTS", 20)
+
+# --- Horoscopes tab ---
+# Pre-generate the universal daily/monthly/yearly sign horoscopes in the
+# background (at server startup and at every IST midnight) so users never
+# wait on a cold LLM call. Set VEDIC_HOROSCOPE_PREGEN=0 to fall back to
+# lazy on-request generation only (e.g. resource-constrained dev boxes).
+HOROSCOPE_PREGEN = os.environ.get("VEDIC_HOROSCOPE_PREGEN", "1") == "1"
+# Languages the pre-generator warms. On-request generation still covers any
+# language not in this list.
+HOROSCOPE_PREGEN_LANGS = [
+    l.strip() for l in os.environ.get(
+        "VEDIC_HOROSCOPE_PREGEN_LANGS", "en,ta,te,ml,kn,hi").split(",") if l.strip()
+]
+# A generated personal varsha phala is cached per (user, birth profile,
+# language) and served free for this many days before a fresh (paid)
+# generation is allowed — repeat views must not burn tokens.
+VARSHA_CACHE_DAYS = _env_int("VEDIC_VARSHA_CACHE_DAYS", 90)
 
 
 # --- Credit packs (INR) ---

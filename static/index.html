@@ -3017,6 +3017,17 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Personal daily rasi phala (logged-in users with a saved birth profile) -->
+                <div id="home-daily-phala" class="card-soft mb-4" style="display: none; background: rgba(255, 251, 235, 0.92); border: 1px solid var(--border-gold); padding: 14px 20px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+                        <div style="font-family: var(--font-heading); font-size: 13px; font-weight: 700; color: var(--accent-gold);">
+                            ✨ <span id="lbl-home-phala-title">Your Daily Rasi Phala</span> — <span id="home-phala-sign"></span>
+                        </div>
+                        <button class="btn-primary" id="lbl-home-phala-more" onclick="navigateToPage('horoscope')" style="font-size: 11px; padding: 4px 12px;">See all signs →</button>
+                    </div>
+                    <div id="home-phala-text" style="font-size: 12.5px; color: var(--text-primary); line-height: 1.65;"></div>
+                </div>
             </div>
 
             <!-- Onboarding Wizard Banner -->
@@ -4427,7 +4438,9 @@
                 lbl_horo_error: "Could not load the horoscope. Please try again.",
                 lbl_horo_personal_desc: "A personal year-ahead reading computed from YOUR saved birth profile: the running dasa-bhukti timeline and the year's transits (gochara), grounded in the classical texts. Save your birth details in Settings first.",
                 lbl_horo_personal_btn: "Generate My Year Reading",
-                lbl_horo_personal_loading: "Computing your dasa-bhukti timeline and the year's transits…"
+                lbl_horo_personal_loading: "Computing your dasa-bhukti timeline and the year's transits…",
+                lbl_home_phala_title: "Your Daily Rasi Phala",
+                lbl_home_phala_more: "See all signs →"
             },
             ta: {
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
@@ -4623,7 +4636,9 @@
                 lbl_horo_error: "பலன்களை ஏற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
                 lbl_horo_personal_desc: "உங்கள் சேமித்த ஜனன விவரங்களின் அடிப்படையில் தனிப்பட்ட வருட பலன்: நடப்பு தசா-புக்தி காலவரிசை மற்றும் ஆண்டின் கோச்சாரப் பெயர்ச்சிகள், சாஸ்திர நூல் ஆதாரத்துடன். முதலில் அமைப்புகளில் உங்கள் ஜனன விவரங்களைச் சேமிக்கவும்.",
                 lbl_horo_personal_btn: "எனது வருட பலனை உருவாக்கு",
-                lbl_horo_personal_loading: "உங்கள் தசா-புக்தி காலவரிசையும் ஆண்டின் கோள் பெயர்ச்சிகளும் கணக்கிடப்படுகின்றன…"
+                lbl_horo_personal_loading: "உங்கள் தசா-புக்தி காலவரிசையும் ஆண்டின் கோள் பெயர்ச்சிகளும் கணக்கிடப்படுகின்றன…",
+                lbl_home_phala_title: "உங்கள் இன்றைய ராசி பலன்",
+                lbl_home_phala_more: "அனைத்து ராசிகளும் →"
             },
             te: {
                 lbl_calculating_alignments: "పొంతన లెక్కించబడుతోంది...",
@@ -4818,7 +4833,9 @@
                 lbl_horo_error: "ఫలాలను లోడ్ చేయలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
                 lbl_horo_personal_desc: "మీ సేవ్ చేసిన జనన వివరాల ఆధారంగా వ్యక్తిగత వార్షిక ఫలం: నడుస్తున్న దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలు, శాస్త్ర గ్రంథాల ప్రామాణికతతో. ముందుగా సెట్టింగ్స్‌లో మీ జనన వివరాలను సేవ్ చేయండి.",
                 lbl_horo_personal_btn: "నా వార్షిక ఫలం రూపొందించండి",
-                lbl_horo_personal_loading: "మీ దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలను లెక్కిస్తున్నాం…"
+                lbl_horo_personal_loading: "మీ దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలను లెక్కిస్తున్నాం…",
+                lbl_home_phala_title: "మీ నేటి రాశి ఫలం",
+                lbl_home_phala_more: "అన్ని రాశులు →"
             },
             ml: {
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
@@ -5013,7 +5030,9 @@
                 lbl_horo_error: "ഫലങ്ങൾ ലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.",
                 lbl_horo_personal_desc: "നിങ്ങളുടെ സേവ് ചെയ്ത ജനന വിവരങ്ങളെ അടിസ്ഥാനമാക്കിയ വ്യക്തിഗത വാർഷിക ഫലം: നടപ്പു ദശാ-ഭുക്തി കാലക്രമവും വർഷത്തിലെ ഗോചരങ്ങളും, ശാസ്ത്രഗ്രന്ഥങ്ങളുടെ പിൻബലത്തോടെ. ആദ്യം സെറ്റിംഗ്സിൽ ജനന വിവരങ്ങൾ സേവ് ചെയ്യുക.",
                 lbl_horo_personal_btn: "എന്റെ വർഷഫലം സൃഷ്ടിക്കുക",
-                lbl_horo_personal_loading: "നിങ്ങളുടെ ദശാ-ഭുക്തി കാലക്രമവും വർഷ ഗോചരങ്ങളും കണക്കാക്കുന്നു…"
+                lbl_horo_personal_loading: "നിങ്ങളുടെ ദശാ-ഭുക്തി കാലക്രമവും വർഷ ഗോചരങ്ങളും കണക്കാക്കുന്നു…",
+                lbl_home_phala_title: "നിങ്ങളുടെ ഇന്നത്തെ രാശിഫലം",
+                lbl_home_phala_more: "എല്ലാ രാശികളും →"
             },
             kn: {
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಿಸಲಾಗುತ್ತಿದೆ...",
@@ -5208,7 +5227,9 @@
                 lbl_horo_error: "ಫಲಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
                 lbl_horo_personal_desc: "ನಿಮ್ಮ ಉಳಿಸಿದ ಜನನ ವಿವರಗಳ ಆಧಾರದ ವೈಯಕ್ತಿಕ ವಾರ್ಷಿಕ ಫಲ: ನಡೆಯುತ್ತಿರುವ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷದ ಗೋಚಾರಗಳು, ಶಾಸ್ತ್ರ ಗ್ರಂಥಗಳ ಆಧಾರದೊಂದಿಗೆ. ಮೊದಲು ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಜನನ ವಿವರಗಳನ್ನು ಉಳಿಸಿ.",
                 lbl_horo_personal_btn: "ನನ್ನ ವರ್ಷಫಲ ರಚಿಸಿ",
-                lbl_horo_personal_loading: "ನಿಮ್ಮ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷ ಗೋಚಾರಗಳನ್ನು ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ…"
+                lbl_horo_personal_loading: "ನಿಮ್ಮ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷ ಗೋಚಾರಗಳನ್ನು ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ…",
+                lbl_home_phala_title: "ನಿಮ್ಮ ಇಂದಿನ ರಾಶಿ ಫಲ",
+                lbl_home_phala_more: "ಎಲ್ಲಾ ರಾಶಿಗಳು →"
             },
             hi: {
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
@@ -5403,7 +5424,9 @@
                 lbl_horo_error: "राशिफल लोड नहीं हो सका। कृपया पुनः प्रयास करें।",
                 lbl_horo_personal_desc: "आपकी सहेजी गई जन्म जानकारी पर आधारित व्यक्तिगत वार्षिक फल: चल रही दशा-भुक्ति समयरेखा और वर्ष के गोचर, शास्त्रीय ग्रंथों के प्रमाण सहित। पहले सेटिंग्स में अपनी जन्म जानकारी सहेजें।",
                 lbl_horo_personal_btn: "मेरा वर्षफल बनाएं",
-                lbl_horo_personal_loading: "आपकी दशा-भुक्ति समयरेखा और वर्ष के गोचर की गणना हो रही है…"
+                lbl_horo_personal_loading: "आपकी दशा-भुक्ति समयरेखा और वर्ष के गोचर की गणना हो रही है…",
+                lbl_home_phala_title: "आपका आज का राशिफल",
+                lbl_home_phala_more: "सभी राशियाँ →"
             }
         };
 
@@ -6247,6 +6270,10 @@
                     loadHoroscope();
                 }
             }
+            // Home welcome window daily phala (per-language content)
+            setText('lbl-home-phala-title', dict.lbl_home_phala_title);
+            setText('lbl-home-phala-more', dict.lbl_home_phala_more);
+            if (typeof loadHomeDailyPhala === 'function') loadHomeDailyPhala();
             const marriageIntro = document.getElementById('lbl-marriage-intro');
             if (marriageIntro) marriageIntro.innerText = dict.lbl_marriage_intro || "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.";
             const marriageTitle = document.getElementById('lbl-marriage-title');
@@ -11012,6 +11039,9 @@
                 if (guestHero) guestHero.style.display = 'block';
                 if (userStrip) userStrip.style.display = 'none';
                 if (onboardingCard) onboardingCard.style.display = 'none';
+                const phalaBox = document.getElementById('home-daily-phala');
+                if (phalaBox) phalaBox.style.display = 'none';
+                homePhalaLoadedKey = null;
                 return;
             }
 
@@ -11097,6 +11127,35 @@
             const stripCredits = document.getElementById('strip-user-credits');
             if (stripCredits) {
                 stripCredits.innerText = currentUser.subscription_active ? 'UNLIMITED' : (currentUser.credit_balance || 0);
+            }
+
+            // Welcome window: the user's own daily rasi phala (fire-and-forget)
+            loadHomeDailyPhala();
+        }
+
+        // Loads today's daily prediction for the logged-in user's Moon sign
+        // (from the saved birth profile) into the home welcome window. The
+        // key guard makes repeat UI refreshes free: one fetch per
+        // user+language+day. Backend serves from the shared daily cache.
+        let homePhalaLoadedKey = null;
+        async function loadHomeDailyPhala() {
+            const box = document.getElementById('home-daily-phala');
+            if (!box) return;
+            if (!currentUser) { box.style.display = 'none'; homePhalaLoadedKey = null; return; }
+            const key = `${currentUser.id}|${currentLang}|${new Date().toDateString()}`;
+            if (homePhalaLoadedKey === key) return;
+            try {
+                const res = await apiFetch(`/api/horoscope/me?lang=${currentLang}`, { timeoutMs: 240000 });
+                if (!res.ok) { box.style.display = 'none'; return; }
+                const data = await res.json();
+                if (!data.available || !data.prediction) { box.style.display = 'none'; return; }
+                const names = rasiTranslations[currentLang] || rasiTranslations.en;
+                setText('home-phala-sign', names[data.sign_index] || data.sign);
+                setText('home-phala-text', data.prediction);
+                box.style.display = 'block';
+                homePhalaLoadedKey = key;
+            } catch (e) {
+                box.style.display = 'none';
             }
         }
 
