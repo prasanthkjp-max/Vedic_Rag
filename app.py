@@ -148,6 +148,9 @@ from config import (
     REFERRAL_BONUS_REFERRER,
     CHAT_HISTORY_TURNS,
     MAX_SAVED_CHARTS,
+    HOROSCOPE_PREGEN,
+    HOROSCOPE_PREGEN_LANGS,
+    VARSHA_CACHE_DAYS,
 
     BILLING_CURRENCY,
     CREDIT_PACKAGES,
@@ -613,6 +616,23 @@ def init_user_db():
     )
     """)
 
+    # Personal varsha phala cache: one completed reading per (user, birth
+    # profile, language), served free while fresh (VARSHA_CACHE_DAYS) so a
+    # repeat view never repeats the LLM spend. The profile hash covers the
+    # birth details, so editing the saved profile naturally invalidates it.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS varsha_phala_cache (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        profile_hash TEXT NOT NULL,
+        lang TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, profile_hash, lang),
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
     # Referral codes: a partial UNIQUE index (multiple NULLs allowed) and a
     # one-time backfill so every existing account has a shareable code.
     cursor.execute(
@@ -1015,7 +1035,8 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
 
 
 
-def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai"):
+def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai",
+               on_complete=None):
     """Shared streaming generator for all AI endpoints, backed by OpenRouter via
     the OpenAI SDK (chat completions, streamed).
 
@@ -1025,6 +1046,9 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
     - Yields an immediate newline to flush HTTP headers and prevent Cloudflare
       524 timeouts, then yields keepalive newlines while evaluating the prompt
       and establishing the stream in a background thread.
+    - `on_complete(full_text)` (optional) fires only when the stream finished
+      cleanly with real content — used to cache completed readings. It must
+      never break the response: its errors are logged and swallowed.
     """
     def _open_stream(evaluated_prompt):
         """Open the chat-completion stream, retrying once on a transient error
@@ -1046,6 +1070,7 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
 
     def generator():
         produced_content = False
+        content_parts = []  # real model output only (no keepalives/errors)
         # Yield a newline immediately to flush HTTP status/headers to the client
         # and prevent Cloudflare 524 timeouts.
         yield "\n"
@@ -1130,12 +1155,23 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                     text_chunk = getattr(delta, "content", None) or ""
                     if text_chunk:
                         produced_content = True
+                        content_parts.append(text_chunk)
                         yield text_chunk
         except Exception as e:
             logger.error("AI stream failed (%s): %s", action_type, e)
             if not produced_content and user:
                 refund_user_credits(user, action_type)
             yield f"\n\n*Error streaming from the AI backend: {e}*"
+            return
+        # Reached only when the stream ended without an exception or a
+        # mid-stream error payload (both paths return above).
+        if on_complete and produced_content:
+            full_text = "".join(content_parts).strip()
+            if full_text:
+                try:
+                    on_complete(full_text)
+                except Exception as e:
+                    logger.error("on_complete hook failed (%s): %s", action_type, e)
 
     return generator()
 
@@ -4931,41 +4967,50 @@ JSON:"""
         conn.close()
 
 
-@app.get("/api/horoscope")
-def get_sign_horoscopes(scope: HoroscopeScope = "daily", lang: LangCode = "en",
-                        calendar: HoroscopeCalendar = "gregorian"):
-    """Universal sign horoscopes for the CURRENT period — daily/monthly/yearly
-    for all 12 Moon signs. Public and free (like the panchangam): the content
-    is generated once per (period, language) and shared by every visitor.
-    Only the current period can be requested, which bounds LLM spend. Yearly
-    horoscopes are anchored to the chosen calendar system; calendars sharing
-    the same astronomical new year share one generated set."""
-    if scope != "yearly":
-        calendar = "gregorian"
+def _get_or_generate_horoscopes(scope, calendar, lang):
+    """Fetch the current period's 12 predictions from cache, generating them
+    under the per-key lock on a miss. Returns (ctx, rows). Shared by the
+    public endpoint, the personal /me endpoint, and the pre-generator."""
     today = horoscope_engine.ist_today()
-    try:
-        ctx = horoscope_engine.compute_period_context(scope, today, calendar)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    ctx = horoscope_engine.compute_period_context(scope, today, calendar)
     pkey = ctx["period_key"]
-
     rows = _fetch_horoscope_rows(scope, pkey, lang)
     if len(rows) < len(horoscope_engine.SIGN_KEYS):
         lock = _horoscope_lock((scope, pkey, lang))
         with lock:
             rows = _fetch_horoscope_rows(scope, pkey, lang)
             if len(rows) < len(horoscope_engine.SIGN_KEYS):
-                try:
-                    _generate_horoscopes(ctx, lang)
-                except RuntimeError as e:
-                    raise HTTPException(status_code=503, detail=str(e))
-                except Exception as e:
-                    logger.error("Horoscope generation error (%s %s %s): %s", scope, pkey, lang, e)
-                    raise HTTPException(
-                        status_code=503,
-                        detail="Horoscope generation is temporarily unavailable. Please try again.",
-                    )
+                _generate_horoscopes(ctx, lang)
                 rows = _fetch_horoscope_rows(scope, pkey, lang)
+    return ctx, rows
+
+
+@app.get("/api/horoscope")
+def get_sign_horoscopes(scope: HoroscopeScope = "daily", lang: LangCode = "en",
+                        calendar: HoroscopeCalendar = "gregorian"):
+    """Universal sign horoscopes for the CURRENT period — daily/monthly/yearly
+    for all 12 Moon signs. Public and free (like the panchangam): the content
+    is generated once per (period, language) and shared by every visitor
+    (normally pre-generated in the background; on-request generation is the
+    fallback). Only the current period can be requested, which bounds LLM
+    spend. Yearly horoscopes are anchored to the chosen calendar system;
+    calendars sharing the same astronomical new year share one generated set."""
+    if scope != "yearly":
+        calendar = "gregorian"
+    today = horoscope_engine.ist_today()
+    try:
+        ctx, rows = _get_or_generate_horoscopes(scope, calendar, lang)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.error("Horoscope generation error (%s %s %s): %s", scope, calendar, lang, e)
+        raise HTTPException(
+            status_code=503,
+            detail="Horoscope generation is temporarily unavailable. Please try again.",
+        )
+    pkey = ctx["period_key"]
 
     generated_at = min((r["created_at"] for r in rows.values()), default=None)
     span_meta = {"start": ctx["start"], "end": ctx["end"], "label": ctx["period_label"]}
@@ -4984,6 +5029,119 @@ def get_sign_horoscopes(scope: HoroscopeScope = "daily", lang: LangCode = "en",
         "generated_at": generated_at,
         "predictions": {sign: rows[sign]["content"] for sign in horoscope_engine.SIGN_KEYS
                         if sign in rows},
+    }
+
+
+# --- Background pre-generation -------------------------------------------
+# The universal horoscopes must appear "behind the user's eye": a daemon
+# thread fills every missing (scope, period, language) set at server startup
+# and again just after each IST midnight, so the first visitor of a new
+# day/month/year reads from cache instead of waiting on a cold LLM call.
+# Because it only fills MISSING sets, midnight runs regenerate exactly the
+# rolled-over periods (daily every day, monthly on the 1st, yearly on each
+# calendar's new-year day), and a restart mid-day is a cheap no-op.
+# On-request generation stays as the fallback for anything not warmed here.
+
+_YEARLY_PREGEN_CALENDARS = ("gregorian", "tamil", "telugu")  # one per alias
+
+
+def _pregenerate_missing_horoscopes():
+    generated = 0
+    for scope in ("daily", "monthly", "yearly"):
+        calendars = _YEARLY_PREGEN_CALENDARS if scope == "yearly" else ("gregorian",)
+        for calendar in calendars:
+            for lang in HOROSCOPE_PREGEN_LANGS:
+                try:
+                    pkey = horoscope_engine.period_key(
+                        scope, horoscope_engine.ist_today(), calendar)
+                    if len(_fetch_horoscope_rows(scope, pkey, lang)) >= len(horoscope_engine.SIGN_KEYS):
+                        continue
+                    _get_or_generate_horoscopes(scope, calendar, lang)
+                    generated += 1
+                    logger.info("Pre-generated %s horoscopes (%s, %s)", scope, calendar, lang)
+                except Exception as e:
+                    # One failed set must not block the rest; the on-request
+                    # path (and the next midnight run) retries it.
+                    logger.error("Horoscope pre-generation failed (%s %s %s): %s",
+                                 scope, calendar, lang, e)
+    if generated:
+        logger.info("Horoscope pre-generation pass complete: %d set(s) generated", generated)
+
+
+def _seconds_until_next_ist_midnight():
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    next_midnight = (now_ist + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return max((next_midnight - now_ist).total_seconds(), 60.0)
+
+
+def _horoscope_pregen_worker():
+    while True:
+        try:
+            _pregenerate_missing_horoscopes()
+        except Exception as e:
+            logger.error("Horoscope pre-generation pass crashed: %s", e)
+        # Wake a couple of minutes past IST midnight so the new period keys
+        # (which derive from the IST date) have definitely rolled over.
+        time.sleep(_seconds_until_next_ist_midnight() + 120)
+
+
+@app.on_event("startup")
+def _start_horoscope_pregen():
+    """Launched from the FastAPI startup hook (not at import time) so CI's
+    `import app` and offline tooling never spawn the thread or spend tokens."""
+    if not HOROSCOPE_PREGEN:
+        logger.info("Horoscope pre-generation disabled (VEDIC_HOROSCOPE_PREGEN=0)")
+        return
+    if not OPENROUTER_API_KEY:
+        logger.warning("Horoscope pre-generation skipped: OPENROUTER_API_KEY is not set")
+        return
+    threading.Thread(target=_horoscope_pregen_worker, daemon=True,
+                     name="horoscope-pregen").start()
+
+
+@app.get("/api/horoscope/me")
+def get_my_daily_horoscope(request: Request, lang: LangCode = "en"):
+    """Today's daily rasi phala for the LOGGED-IN user's own Moon sign,
+    resolved from the birth profile saved in Settings — powers the welcome
+    strip on the home page. Free (it reads the shared daily cache); returns
+    available=false when no birth profile is saved yet."""
+    user = _session_user_or_401(request)
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT dob, tob, latitude, longitude FROM users WHERE id = ?",
+            (user["id"],),
+        ).fetchone()
+    finally:
+        conn.close()
+    dob, tob, lat, lon = row if row else (None, None, None, None)
+    if not dob or not tob or lat is None or lon is None:
+        return {"available": False, "reason": "no_profile"}
+    try:
+        bdate, bh, bm = _parse_dob_tob(dob, tob)
+        natal = get_astrological_chart(
+            bdate.year, bdate.month, bdate.day, bh, bm,
+            float(lon), float(lat), "Lahiri", light=True,
+        )
+        moon_idx = natal["placements"]["Moon"]["rasi_index"]
+    except (ValueError, KeyError, TypeError) as e:
+        logger.warning("Moon-sign resolution failed for user %s: %s", user["id"], e)
+        return {"available": False, "reason": "bad_profile"}
+    sign = horoscope_engine.SIGN_KEYS[moon_idx]
+    try:
+        ctx, rows = _get_or_generate_horoscopes("daily", "gregorian", lang)
+    except Exception as e:
+        logger.error("Daily horoscope unavailable for /me: %s", e)
+        return {"available": False, "reason": "generation_unavailable"}
+    if sign not in rows:
+        return {"available": False, "reason": "generation_unavailable"}
+    return {
+        "available": True,
+        "sign": sign,
+        "sign_index": moon_idx,
+        "date": ctx["start"],
+        "period_label": ctx["period_label"],
+        "prediction": rows[sign]["content"],
     }
 
 
@@ -5069,17 +5227,72 @@ def _dasa_bhukti_timeline(dasa_table, start, end):
     return lines
 
 
+def _varsha_profile_hash(profile):
+    """Cache identity of a birth profile: same birth data => same reading.
+    Editing the saved profile changes the hash, which naturally invalidates
+    the cached reading."""
+    key = f"{profile['dob']}|{profile['tob']}|{profile['lat']:.4f}|{profile['lon']:.4f}|{profile['gender']}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
+
+
+def _cached_varsha_phala(user_id, profile_hash, lang, max_age_days=None):
+    """The user's cached reading for this profile+language if still fresh
+    (within VARSHA_CACHE_DAYS), else None. Freshness is evaluated at read
+    time, so stale rows simply stop matching — no sweeper needed."""
+    max_age_days = VARSHA_CACHE_DAYS if max_age_days is None else max_age_days
+    conn = connect_db(DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT content, created_at FROM varsha_phala_cache "
+            "WHERE user_id = ? AND profile_hash = ? AND lang = ? "
+            "AND created_at >= datetime('now', ?)",
+            (user_id, profile_hash, lang, f"-{int(max_age_days)} days"),
+        ).fetchone()
+    finally:
+        conn.close()
+    return {"content": row[0], "created_at": row[1]} if row else None
+
+
+def _store_varsha_phala(user_id, profile_hash, lang, content):
+    conn = connect_db(DB_PATH)
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO varsha_phala_cache (user_id, profile_hash, lang, content) "
+            "VALUES (?, ?, ?, ?)",
+            (user_id, profile_hash, lang, content),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 @app.post("/api/ai-varsha-phala")
 def ai_varsha_phala(req: PersonalVarshaRequest, raw_req: Request):
     """Stream the personal year-ahead reading (varsha phala) for the user's
     saved birth profile: the coming 365 days read through the running
     Vimshottari dasa-bhukti schedule and the year's gochara (transit)
-    timeline, grounded in retrieved classical passages."""
+    timeline, grounded in retrieved classical passages.
+
+    Generated on request and then CACHED for VARSHA_CACHE_DAYS (default 90):
+    a repeat request within that window streams the stored reading back for
+    free — no LLM call, no credit debit. A new generation (and charge) only
+    happens after the cache expires or the birth profile changes."""
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
     auth_user = get_user_by_session(token)
     if not auth_user:
         raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
     profile = _load_varsha_profile(auth_user["id"], req.chart_id)  # 400 BEFORE charging
+
+    # Fresh cached reading -> serve free, before any metering.
+    profile_hash = _varsha_profile_hash(profile)
+    cached = _cached_varsha_phala(auth_user["id"], profile_hash, req.lang)
+    if cached:
+        return StreamingResponse(
+            iter([cached["content"]]),
+            media_type="text/event-stream",
+            headers={"X-Varsha-Cache": "hit", "X-Varsha-Generated-At": cached["created_at"]},
+        )
+
     user = check_credits_or_raise(token, CREDIT_COST_VARSHAPHALA, "ai_varsha_phala")
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     target_lang = _LANG_MAP.get(req.lang, "English")
@@ -5165,9 +5378,14 @@ Write an insightful, personal year reading in beautiful Markdown, structured as:
 Start directly with section 1 in {target_lang}:
 """
 
+    def cache_completed_reading(full_text):
+        _store_varsha_phala(auth_user["id"], profile_hash, req.lang, full_text)
+
     return StreamingResponse(
-        llm_stream(prompt_builder, model_name, user, "ai_varsha_phala"),
+        llm_stream(prompt_builder, model_name, user, "ai_varsha_phala",
+                   on_complete=cache_completed_reading),
         media_type="text/event-stream",
+        headers={"X-Varsha-Cache": "miss"},
     )
 
 

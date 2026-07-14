@@ -3,6 +3,34 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.26.0]
+
+### Added
+- **Background pre-generation of the universal horoscopes.** A daemon thread
+  (started from the FastAPI startup hook, so `import app` in CI never spawns
+  it) fills every missing (scope, period, language) horoscope set at server
+  startup and again just after each **IST midnight** — so the daily set
+  regenerates every day, the monthly on the 1st, and the yearly on each
+  calendar's new-year day, all behind the user's eye; the first visitor of a
+  new period reads from cache instead of waiting on a cold LLM call.
+  On-request generation remains the fallback. Config:
+  `VEDIC_HOROSCOPE_PREGEN` (default on), `VEDIC_HOROSCOPE_PREGEN_LANGS`.
+- **Personal varsha phala is cached for 3 months.** A completed reading is
+  stored per (user, birth-profile hash, language) in the new
+  `varsha_phala_cache` table via a new `llm_stream(on_complete=…)` hook that
+  only fires on a cleanly finished stream. A repeat request within
+  `VEDIC_VARSHA_CACHE_DAYS` (default 90) streams the stored reading back
+  instantly and **free** — no LLM call, no credit debit (response carries
+  `X-Varsha-Cache: hit|miss`). Editing the saved birth profile changes the
+  hash and naturally invalidates the cache.
+- **Home welcome window shows the logged-in user's own daily rasi phala.**
+  New session-gated `GET /api/horoscope/me` resolves the natal Moon sign
+  from the birth profile saved in Settings and returns today's prediction
+  for it from the shared daily cache; the home page renders it under the
+  welcome strip (localized, refreshed on login/language change, one fetch
+  per user+language+day) with a "See all signs" shortcut to the Horoscopes
+  tab. Hidden gracefully when no birth profile is saved.
+
 ## [1.25.0]
 
 ### Added
