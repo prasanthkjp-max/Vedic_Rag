@@ -217,6 +217,35 @@ def _is_key_protected(path: str) -> bool:
 
 
 @app.middleware("http")
+async def cache_control_headers(request: Request, call_next):
+    """Set Cache-Control headers on all responses so browsers and CDN edges
+    always revalidate HTML and don't serve stale versions after a deploy.
+
+    - HTML pages (/, *.html): no-cache, must-revalidate — always fetch latest
+    - Static assets (/assets/*, images, favicon): public, max-age=3600 — 1h edge cache
+    - API responses (/api/*): no-store — never cached
+    - Everything else: no-cache — safe default
+    """
+    response = await call_next(request)
+    path = request.url.path
+
+    # Don't override if already set (e.g. FileResponse with explicit headers)
+    if "cache-control" in {k.lower() for k in response.headers.keys()}:
+        return response
+
+    if path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    elif path.endswith(".html") or path == "/":
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    elif path.startswith("/assets/") or path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".css", ".js")):
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    else:
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+
+    return response
+
+
+@app.middleware("http")
 async def api_key_guard(request: Request, call_next):
     """Gate only the corpus/admin endpoints (_KEY_PROTECTED_PREFIXES) behind the
     shared operator API_KEY; everything else under /api/ passes through.
@@ -6362,18 +6391,14 @@ def health_check():
 # Serve Frontend static files
 os.makedirs(STATIC_DIR, exist_ok=True)
 
-@app.get("/")
-def read_root():
-    return FileResponse(
-        os.path.join(STATIC_DIR, "index.html"),
-        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
-    )
-
 # Recover any premium reports left 'pending' by a previous process (their
 # worker threads died on shutdown): fail-and-refund them so no credits are lost.
 _reap_stranded_reports()
 
-# Mount static files folder
+# Mount static files folder.  The cache-control middleware above handles
+# cache headers for all responses, so we no longer need a separate @app.get("/")
+# route — StaticFiles(html=True) serves index.html for "/" and the middleware
+# attaches the correct no-cache header.
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 if __name__ == "__main__":
