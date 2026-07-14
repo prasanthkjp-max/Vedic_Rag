@@ -2802,6 +2802,14 @@ def get_varshaphala_chart(natal_chart, year):
         timezone_offset=tz_offset, gender=meta.get("gender", "male"),
     )
 
+    # Vimshottari dasa is ALWAYS seeded from the natal Moon. The chart cast
+    # above carries a dasa tree seeded from the solar-return Moon, which is
+    # astrologically meaningless — and downstream analysis (build_analysis)
+    # would present its fabricated "running mahadasa" as the native's, so the
+    # AI reading wove periods that don't correspond to the native at all.
+    # Carry the native's real dasa table instead.
+    chart["dasas"] = natal_chart.get("dasas", [])
+
     age = year - birth_year  # completed years at this solar return
     muntha_idx = (natal_lagna_idx + age) % 12
     varsha_lagna_idx = chart["placements"]["Lagna"]["rasi_index"]

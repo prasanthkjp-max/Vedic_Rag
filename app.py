@@ -362,6 +362,23 @@ def init_user_db():
     add_col("referral_code", "TEXT")
     add_col("referred_by", "INTEGER")
     add_col("preferred_channel", "TEXT DEFAULT 'whatsapp'")
+    # Dedicated BIRTH place columns. users.latitude/longitude/location_name
+    # are the user's CURRENT location (panchangam/location detection updates
+    # them), so storing the birth place there meant a location change silently
+    # moved the birth place — natal charts, dasa-bhukti timings and the
+    # personal varsha phala all shifted with it. Birth data now has its own
+    # columns; the legacy ones remain the current-location fields.
+    add_col("birth_latitude", "REAL")
+    add_col("birth_longitude", "REAL")
+    add_col("birth_place", "TEXT")
+    # One-time backfill: users who saved birth details before the split have
+    # their (possibly still correct) coordinates copied over, so existing
+    # profiles keep working; re-saving birth details fixes any drifted ones.
+    cursor.execute("""
+        UPDATE users SET birth_latitude = latitude, birth_longitude = longitude,
+                         birth_place = location_name
+        WHERE dob IS NOT NULL AND tob IS NOT NULL AND birth_latitude IS NULL
+    """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS otp_verifications (
@@ -680,7 +697,7 @@ def get_user_by_session(token: str):
         SELECT u.id, u.email, u.full_name, u.credit_balance, s.expires_at,
                u.latitude, u.longitude, u.timezone, u.language, u.wants_newsletter, u.location_name,
                u.dob, u.tob, u.gender, u.referral_code, u.phone_number, u.preferred_channel,
-               u.whatsapp_opt_in
+               u.whatsapp_opt_in, u.birth_latitude, u.birth_longitude, u.birth_place
         FROM sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.session_token = ?
@@ -690,7 +707,7 @@ def get_user_by_session(token: str):
     if row:
         (user_id, email, full_name, credit_balance, expires_str, lat, lon, tz, lang,
          wants_news, loc_name, dob, tob, gender, referral_code, phone_number,
-         preferred_channel, whatsapp_opt_in) = row
+         preferred_channel, whatsapp_opt_in, birth_lat, birth_lon, birth_place) = row
         try:
             expires_at = datetime.fromisoformat(expires_str)
         except (ValueError, TypeError):
@@ -730,6 +747,9 @@ def get_user_by_session(token: str):
                 "phone_number": phone_number,
                 "preferred_channel": preferred_channel,
                 "whatsapp_opt_in": bool(whatsapp_opt_in),
+                "birth_latitude": birth_lat,
+                "birth_longitude": birth_lon,
+                "birth_place": birth_place,
             }
         else:
             # Session has expired — drop the row so stale tokens don't accumulate.
@@ -4374,9 +4394,13 @@ def update_profile_birth_info(req: BirthProfileUpdate, request: Request):
     
     conn = connect_db(DB_PATH)
     try:
+        # Birth details live in their own birth_* columns. Deliberately does
+        # NOT touch latitude/longitude/location_name — those are the CURRENT
+        # location (panchangam), and writing both from either form was what
+        # let a location change silently move the saved birth place.
         conn.execute("""
             UPDATE users
-            SET full_name = ?, dob = ?, tob = ?, location_name = ?, latitude = ?, longitude = ?, gender = ?, updated_at = CURRENT_TIMESTAMP
+            SET full_name = ?, dob = ?, tob = ?, birth_place = ?, birth_latitude = ?, birth_longitude = ?, gender = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         """, (req.full_name, req.dob, req.tob, req.location_name, req.latitude, req.longitude, req.gender, user["id"]))
         conn.commit()
@@ -5108,8 +5132,11 @@ def get_my_daily_horoscope(request: Request, lang: LangCode = "en"):
     user = _session_user_or_401(request)
     conn = connect_db(DB_PATH)
     try:
+        # Birth coordinates (not the volatile current-location columns);
+        # COALESCE covers profiles saved before the birth_* split.
         row = conn.execute(
-            "SELECT dob, tob, latitude, longitude FROM users WHERE id = ?",
+            "SELECT dob, tob, COALESCE(birth_latitude, latitude), "
+            "COALESCE(birth_longitude, longitude) FROM users WHERE id = ?",
             (user["id"],),
         ).fetchone()
     finally:
@@ -5167,8 +5194,11 @@ def _load_varsha_profile(user_id, chart_id):
                 raise HTTPException(status_code=404, detail="Saved chart not found.")
             name, dob, tob, place, lat, lon, gender = row
         else:
+            # birth_* are authoritative; COALESCE covers pre-split profiles
+            # whose birth place still lives in the legacy location columns.
             row = conn.execute(
-                "SELECT full_name, dob, tob, location_name, latitude, longitude, gender "
+                "SELECT full_name, dob, tob, COALESCE(birth_place, location_name), "
+                "COALESCE(birth_latitude, latitude), COALESCE(birth_longitude, longitude), gender "
                 "FROM users WHERE id = ?", (user_id,),
             ).fetchone()
             name, dob, tob, place, lat, lon, gender = row if row else (None,) * 7

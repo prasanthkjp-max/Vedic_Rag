@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
 
+## [1.26.1]
+
+### Fixed
+- **Birth place was silently overwritten by location changes**, shifting
+  natal charts and dasa-bhukti timings. `users.latitude/longitude/
+  location_name` were dual-purposed: the Settings birth-info form AND the
+  current-location updates (location detection, panchangam) wrote the same
+  columns, so travelling (or a location refresh) moved the saved birth place
+  — the personal varsha phala then computed a different natal chart with
+  different dasa periods. Birth data now lives in dedicated
+  `birth_latitude`/`birth_longitude`/`birth_place` columns (one-time
+  backfill for existing profiles): the birth-info endpoint writes only
+  those; the personal varsha phala, `/api/horoscope/me`, the daily digest,
+  and the frontend prefill/self-profile all read them (legacy fallback via
+  COALESCE). Changing your current location can no longer alter any natal
+  computation.
+- **Hub Varshaphala read a fabricated dasa.** The Tajika solar-return chart
+  carried a Vimshottari table seeded from the *solar-return* Moon, so the
+  computed analysis presented a fake "running mahadasa" (e.g. a Mars
+  mahadasa starting on the return day) that the AI wove into the forecast —
+  the hallucination users saw. Vimshottari is always natal-seeded:
+  `get_varshaphala_chart` now carries the native's real dasa table, so the
+  annual reading's timing matches the native.
+- **Hub "Remedies & Strengths" button did nothing.** It scrolled to a button
+  that is `display:none` until a chart is calculated — a silent no-op. It
+  now scrolls to the Shadbala strengths section when a chart exists, and
+  otherwise shows a localized "calculate a birth chart first" toast and
+  takes the user to the birth-details form (the Varshaphala card's toast is
+  localized the same way).
+
 ## [1.26.0]
 
 ### Added

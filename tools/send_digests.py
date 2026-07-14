@@ -57,7 +57,11 @@ def _fetch_recipients(conn, only_email=None):
     skipped (the subscribe endpoint requires them, but profiles can be
     edited afterwards)."""
     sql = (
-        "SELECT u.id, u.email, u.full_name, u.dob, u.tob, u.latitude, u.longitude, "
+        # Natal charts need the BIRTH coordinates (birth_*); the legacy
+        # latitude/longitude are the user's current location and only serve
+        # as a fallback for profiles saved before the birth_* split.
+        "SELECT u.id, u.email, u.full_name, u.dob, u.tob, "
+        "       COALESCE(u.birth_latitude, u.latitude), COALESCE(u.birth_longitude, u.longitude), "
         "       d.language, d.unsubscribe_token, d.last_sent_date, "
         "       EXISTS(SELECT 1 FROM subscriptions s WHERE s.user_id = u.id "
         "              AND s.status = 'active' AND s.current_period_end > ?) AS is_subscriber "
