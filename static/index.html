@@ -3722,7 +3722,7 @@
                                 </div>
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; border-top: 1px solid var(--border-glass); padding-top: 12px;">
                                     <span class="chip-price">🪙 <span id="val-hub-remedies-price">25</span></span>
-                                    <button class="btn-primary" id="btn-hub-remedies-nav" onclick="document.getElementById('lbl-remedies-btn').scrollIntoView({behavior: 'smooth'})" style="padding: 6px 12px; font-size: 11px;">View Remedies</button>
+                                    <button class="btn-primary" id="btn-hub-remedies-nav" onclick="hubOpenRemedies()" style="padding: 6px 12px; font-size: 11px;">View Remedies</button>
                                 </div>
                             </div>
 
@@ -4440,7 +4440,8 @@
                 lbl_horo_personal_btn: "Generate My Year Reading",
                 lbl_horo_personal_loading: "Computing your dasa-bhukti timeline and the year's transits…",
                 lbl_home_phala_title: "Your Daily Rasi Phala",
-                lbl_home_phala_more: "See all signs →"
+                lbl_home_phala_more: "See all signs →",
+                lbl_horo_need_chart: "Please calculate a birth chart first."
             },
             ta: {
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
@@ -4638,7 +4639,8 @@
                 lbl_horo_personal_btn: "எனது வருட பலனை உருவாக்கு",
                 lbl_horo_personal_loading: "உங்கள் தசா-புக்தி காலவரிசையும் ஆண்டின் கோள் பெயர்ச்சிகளும் கணக்கிடப்படுகின்றன…",
                 lbl_home_phala_title: "உங்கள் இன்றைய ராசி பலன்",
-                lbl_home_phala_more: "அனைத்து ராசிகளும் →"
+                lbl_home_phala_more: "அனைத்து ராசிகளும் →",
+                lbl_horo_need_chart: "முதலில் ஜாதகத்தைக் கணிக்கவும்."
             },
             te: {
                 lbl_calculating_alignments: "పొంతన లెక్కించబడుతోంది...",
@@ -4835,7 +4837,8 @@
                 lbl_horo_personal_btn: "నా వార్షిక ఫలం రూపొందించండి",
                 lbl_horo_personal_loading: "మీ దశా-భుక్తి కాలక్రమం మరియు సంవత్సర గోచారాలను లెక్కిస్తున్నాం…",
                 lbl_home_phala_title: "మీ నేటి రాశి ఫలం",
-                lbl_home_phala_more: "అన్ని రాశులు →"
+                lbl_home_phala_more: "అన్ని రాశులు →",
+                lbl_horo_need_chart: "దయచేసి ముందుగా జాతకాన్ని లెక్కించండి."
             },
             ml: {
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
@@ -5032,7 +5035,8 @@
                 lbl_horo_personal_btn: "എന്റെ വർഷഫലം സൃഷ്ടിക്കുക",
                 lbl_horo_personal_loading: "നിങ്ങളുടെ ദശാ-ഭുക്തി കാലക്രമവും വർഷ ഗോചരങ്ങളും കണക്കാക്കുന്നു…",
                 lbl_home_phala_title: "നിങ്ങളുടെ ഇന്നത്തെ രാശിഫലം",
-                lbl_home_phala_more: "എല്ലാ രാശികളും →"
+                lbl_home_phala_more: "എല്ലാ രാശികളും →",
+                lbl_horo_need_chart: "ദയവായി ആദ്യം ജാതകം കണക്കാക്കുക."
             },
             kn: {
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಿಸಲಾಗುತ್ತಿದೆ...",
@@ -5229,7 +5233,8 @@
                 lbl_horo_personal_btn: "ನನ್ನ ವರ್ಷಫಲ ರಚಿಸಿ",
                 lbl_horo_personal_loading: "ನಿಮ್ಮ ದಶಾ-ಭುಕ್ತಿ ಕಾಲಾನುಕ್ರಮ ಮತ್ತು ವರ್ಷ ಗೋಚಾರಗಳನ್ನು ಲೆಕ್ಕಹಾಕಲಾಗುತ್ತಿದೆ…",
                 lbl_home_phala_title: "ನಿಮ್ಮ ಇಂದಿನ ರಾಶಿ ಫಲ",
-                lbl_home_phala_more: "ಎಲ್ಲಾ ರಾಶಿಗಳು →"
+                lbl_home_phala_more: "ಎಲ್ಲಾ ರಾಶಿಗಳು →",
+                lbl_horo_need_chart: "ದಯವಿಟ್ಟು ಮೊದಲು ಜಾತಕವನ್ನು ಲೆಕ್ಕಹಾಕಿ."
             },
             hi: {
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
@@ -5426,7 +5431,8 @@
                 lbl_horo_personal_btn: "मेरा वर्षफल बनाएं",
                 lbl_horo_personal_loading: "आपकी दशा-भुक्ति समयरेखा और वर्ष के गोचर की गणना हो रही है…",
                 lbl_home_phala_title: "आपका आज का राशिफल",
-                lbl_home_phala_more: "सभी राशियाँ →"
+                lbl_home_phala_more: "सभी राशियाँ →",
+                lbl_horo_need_chart: "कृपया पहले जन्म कुंडली की गणना करें।"
             }
         };
 
@@ -8109,7 +8115,17 @@
         // Renders placements table and graphics with regional language translations!
         function renderBirthReportOutputs() {
             if (!calculatedChartData) return;
-            
+
+            // Reveal the report container + the chart-specific remedies button
+            // here (the shared render path) rather than only in
+            // generateBirthChart(): charts loaded via the marriage page's
+            // "load individual chart" arrived with both still hidden, which
+            // left the hub's strengths/remedies actions dead.
+            const reportOut = document.getElementById('birth-report-output');
+            if (reportOut) reportOut.style.display = 'flex';
+            const btnRem = document.getElementById('btn-remedies');
+            if (btnRem) btnRem.style.display = 'flex';
+
             // Render Birth Metadata Grid dynamically
             const metaGrid = document.getElementById('birth-metadata-grid-rendered');
             if (metaGrid) {
@@ -10033,7 +10049,8 @@
         let isVarshaphalaResponding = false;
         async function generateVarshaphala() {
             if (!calculatedChartData) {
-                showToast("Please calculate a birth chart first.");
+                showToast((localization[currentLang] || localization.en).lbl_horo_need_chart
+                    || "Please calculate a birth chart first.");
                 return;
             }
             const yearInput = document.getElementById('in-varsha-year');
@@ -11186,6 +11203,27 @@
             }
         }
 
+        // Hub "Remedies & Strengths" card. The old inline handler scrolled to
+        // a button that is display:none until a chart is calculated — a
+        // silent no-op that made the card look broken. Now: with a chart,
+        // scroll to the Shadbala strengths section (the remedies button sits
+        // right below it); without one, explain and take the user to the
+        // birth-details form instead.
+        function hubOpenRemedies() {
+            if (!calculatedChartData) {
+                showToast((localization[currentLang] || localization.en).lbl_horo_need_chart
+                    || "Please calculate a birth chart first.");
+                const form = document.getElementById('in-name');
+                if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            const strengths = document.getElementById('shadbala-bars-container');
+            const remBtn = document.getElementById('btn-remedies');
+            const target = (strengths && strengths.offsetParent) ? strengths
+                : (remBtn && remBtn.offsetParent) ? remBtn : null;
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         function scrollToReadingsHub() {
             const el = document.getElementById('astrology-readings-hub');
             if (el) {
@@ -11389,9 +11427,11 @@
             document.getElementById('profile-in-name').value = currentUser.full_name || "";
             document.getElementById('profile-in-dob').value = currentUser.dob || "";
             document.getElementById('profile-in-tob').value = currentUser.tob || "";
-            document.getElementById('profile-in-pob').value = currentUser.location_name || "";
-            document.getElementById('profile-in-lon').value = currentUser.longitude || "";
-            document.getElementById('profile-in-lat').value = currentUser.latitude || "";
+            // Prefill from the dedicated birth_* fields (legacy fallback for
+            // profiles saved before birth place was split from location).
+            document.getElementById('profile-in-pob').value = currentUser.birth_place || currentUser.location_name || "";
+            document.getElementById('profile-in-lon').value = (currentUser.birth_longitude ?? currentUser.longitude) || "";
+            document.getElementById('profile-in-lat').value = (currentUser.birth_latitude ?? currentUser.latitude) || "";
             document.getElementById('profile-in-gender').value = currentUser.gender || "male";
 
             const refEl = document.getElementById('profile-referral-code');
@@ -13213,9 +13253,12 @@
                     document.getElementById('in-name').value = currentUser.full_name || "Self";
                     document.getElementById('in-dob').value = currentUser.dob || "";
                     document.getElementById('in-tob').value = currentUser.tob || "";
-                    document.getElementById('in-pob').value = currentUser.location_name || "";
-                    document.getElementById('in-lat').value = currentUser.latitude || "";
-                    document.getElementById('in-lon').value = currentUser.longitude || "";
+                    // Birth place (birth_*), NOT the volatile current-location
+                    // fields — those change with location detection and were
+                    // silently shifting the natal chart & dasa timings.
+                    document.getElementById('in-pob').value = currentUser.birth_place || currentUser.location_name || "";
+                    document.getElementById('in-lat').value = (currentUser.birth_latitude ?? currentUser.latitude) || "";
+                    document.getElementById('in-lon').value = (currentUser.birth_longitude ?? currentUser.longitude) || "";
                     document.getElementById('in-gender').value = currentUser.gender || "male";
                     document.getElementById('in-relationship').value = "self";
                     document.getElementById('in-profile-name').value = "Self";
