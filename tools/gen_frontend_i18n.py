@@ -20,7 +20,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-import translations  # noqa: E402
+from src.core import translations  # noqa: E402
 
 INDEX = os.path.join(ROOT, "static", "index.html")
 BEGIN = "/* @generated-i18n"
