@@ -7,14 +7,14 @@ birth-chart + Panchangam engine, multilingual reports (Tamil/Telugu/Kannada/
 Malayalam/Hindi/English), and an AI prediction layer grounded in a RAG database
 of classical texts via [OpenRouter](https://openrouter.ai) (OpenAI-compatible API).
 
-- **Backend:** `app.py` (FastAPI, port **8008**)
-- **Search:** `search_engine.py` — hybrid dense (embeddings) + sparse (SQLite
+- **Backend:** `app.py` entrypoint + `src/app.py`/`src/api/*` routers (FastAPI, port **8008**)
+- **Search:** `src/engines/search_engine.py` — hybrid dense (embeddings) + sparse (SQLite
   **FTS5 / BM25**) retrieval with Reciprocal Rank Fusion over
   `vedic_astrology_rag.db`
-- **Astrology:** `astro_engine.py`, `prediction_engine.py` (pure Python)
-- **Reports:** `pdf_generator.py` (ReportLab + HarfBuzz Indic shaping)
-- **Ingest:** `ingest.py` (OCR → embeddings)
-- **Config:** `config.py` (all paths/models/timeouts, env-overridable)
+- **Astrology:** `src/engines/astro_engine.py`, `src/engines/prediction_engine.py` (pure Python)
+- **Reports:** `src/engines/pdf_generator.py` (ReportLab + HarfBuzz Indic shaping)
+- **Ingest:** `scripts/ingest.py` (OCR → embeddings)
+- **Config:** `src/core/config.py` (all paths/models/timeouts, env-overridable)
 
 ## Running
 
@@ -31,7 +31,7 @@ configurable (`MODEL_FAST`/`MODEL_BALANCED`/`MODEL_PREMIUM`, `MODEL_EMBEDDING`).
 There are **two layers**:
 
 **1. Shared API key (client gate).** Every `/api/*` request is gated by a shared
-key, enforced by the `api_key_guard` HTTP middleware in `app.py`. The key is sent
+key, enforced by the `api_key_guard` HTTP middleware in `src/app.py`. The key is sent
 as the `X-API-Key` header **or** an `api_key` query parameter. Open exceptions
 (no key needed) are the bootstrap/probe paths and the auth/billing endpoints —
 see `_OPEN_API_PATHS`: `/api/version`, `/api/health`, `/api/local-key`,
@@ -113,7 +113,7 @@ See **`.env.example`** for a documented template of every supported variable
 (`cp .env.example .env` and load it before launch — the app reads the process
 environment, it doesn't auto-load `.env`).
 
-All env-overridable (see `config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
+All env-overridable (see `src/core/config.py`): `VEDIC_DB_PATH`, `VEDIC_BOOKS_DIR`,
 `OPENROUTER_API_KEY`, `MODEL_FAST`/`MODEL_BALANCED`/`MODEL_PREMIUM`,
 `MODEL_EMBEDDING`, `VEDIC_LLM_MODEL`, `VEDIC_EMBED_DIM`, `VEDIC_EMBED_TIMEOUT`,
 `VEDIC_LLM_TIMEOUT`.

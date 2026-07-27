@@ -27,7 +27,7 @@ from datetime import date, datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import (  # noqa: E402
+from src.core.config import (  # noqa: E402
     DB_PATH,
     connect_db,
     SMTP_HOST,
@@ -42,7 +42,7 @@ from config import (  # noqa: E402
     get_llm_client,
     PORTAL_BASE_URL,
 )
-from digest_engine import build_digest, LABELS  # noqa: E402
+from src.engines.digest_engine import build_digest, LABELS  # noqa: E402
 
 logger = logging.getLogger("vedic.send_digests")
 

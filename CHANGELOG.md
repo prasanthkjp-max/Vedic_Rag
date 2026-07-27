@@ -1,7 +1,31 @@
 # Changelog
 
 All notable changes to this project are documented here. Versions follow
-[Semantic Versioning](https://semver.org/) and match `config.py:VERSION`.
+[Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
+
+## [1.27.0]
+
+### Changed
+- **Repository reorganized into `src/`.** The single 6,400-line `app.py` and
+  the flat set of root-level modules are split into a conventional layout:
+  `src/core/` (config, cities, translations), `src/engines/` (astro,
+  prediction, muhurtham, horoscope, digest, search, PDF generation),
+  `src/services/` (WhatsApp), and `src/api/` — one FastAPI router per domain
+  (auth, billing, chart, ai, horoscope, panchangam, corpus, user, digest,
+  public) plus a `deps.py` shared kernel for the session/credit/rate-limit
+  primitives and the RAG search-engine singleton used across routers.
+  `src/app.py` assembles the FastAPI app (middleware, routers, static mount);
+  root `app.py` is now a thin entrypoint (`python3 app.py` still works
+  unchanged) that also re-exports the internals the test suite reaches into
+  directly. One-off/maintenance scripts moved to `scripts/`, all `test_*.py`
+  moved to `tests/`. No route, request/response shape, or behavior changed —
+  verified by diffing the full registered-route table before/after and
+  re-running the entire test suite plus a live-server smoke test across every
+  route group. Incidentally fixed two pre-existing bugs surfaced by the move:
+  `FACEBOOK_APP_ID`/`FACEBOOK_APP_SECRET` were referenced in the Facebook
+  OAuth verifier but never defined in `config.py` (Facebook login would have
+  raised `NameError` if ever invoked), and `_generate_premium_chapters`
+  (premium PDF report) was missing an import for `get_regional_panchangam`.
 
 ## [1.26.1]
 

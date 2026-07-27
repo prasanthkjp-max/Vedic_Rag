@@ -30,25 +30,25 @@ jobs:
         run: python -c "import app; print('import OK')"
 
       - name: Deterministic unit tests
-        run: python test_unit.py
+        run: python tests/test_unit.py
 
       - name: Muhurtham engine rules
-        run: python test_muhurtham_engine.py
+        run: python tests/test_muhurtham_engine.py
 
       - name: Horoscope engine (calendars, gochara tables, JSON guard)
-        run: python test_horoscope_engine.py
+        run: python tests/test_horoscope_engine.py
 
       - name: i18n single-source sync guard
-        run: python test_i18n_sync.py
+        run: python tests/test_i18n_sync.py
 
       - name: Growth features (digest engine, kalam windows, SEO cities)
-        run: python test_growth_features.py
+        run: python tests/test_growth_features.py
 
       - name: Depth features (muhurtham profiles, varshaphala, remedies, compatibility, prashna)
-        run: python test_depth_features.py
+        run: python tests/test_depth_features.py
 
       - name: Razorpay payment layer (GST + signatures)
-        run: python test_razorpay.py
+        run: python tests/test_razorpay.py
 
       - name: Frontend JS syntax check
         run: python tools/check_js.py
