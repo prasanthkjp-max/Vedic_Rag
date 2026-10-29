@@ -1,8 +1,13 @@
 import logging
-import httpx
+import json
 import os
 import hmac
 import hashlib
+import urllib.request
+try:
+    import httpx
+except ImportError:
+    httpx = None
 from src.core.config import (
     WHATSAPP_TOKEN,
     WHATSAPP_PHONE_ID,
@@ -69,14 +74,22 @@ def send_whatsapp_template(to_phone: str, template_name: str, language_code: str
     }
 
     try:
-        # Respect outbound proxy (httpx handles environment variables HTTP_PROXY/HTTPS_PROXY/NO_PROXY by default)
-        with httpx.Client(trust_env=True) as client:
-            response = client.post(url, headers=headers, json=payload, timeout=10.0)
-            if response.status_code in (200, 201):
-                logger.info("WhatsApp template message sent successfully to %s", clean_phone)
-                return True
-            else:
-                logger.error("WhatsApp API returned error %d: %s", response.status_code, response.text)
+        if httpx is not None:
+            # Respect outbound proxy (httpx handles environment variables HTTP_PROXY/HTTPS_PROXY/NO_PROXY by default)
+            with httpx.Client(trust_env=True) as client:
+                response = client.post(url, headers=headers, json=payload, timeout=10.0)
+                if response.status_code in (200, 201):
+                    logger.info("WhatsApp template message sent successfully to %s", clean_phone)
+                    return True
+                else:
+                    logger.error("WhatsApp API returned error %d: %s", response.status_code, response.text)
+                    return False
+        else:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
+                if resp.status in (200, 201):
+                    logger.info("WhatsApp template message sent successfully to %s", clean_phone)
+                    return True
                 return False
     except Exception as e:
         logger.error("Failed to send WhatsApp message: %s", e)

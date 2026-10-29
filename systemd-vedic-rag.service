@@ -1,0 +1,15 @@
+[Unit]
+Description=Vedic RAG Portal
+After=network.target
+
+[Service]
+User=prasanth
+WorkingDirectory=/home/prasanth/vedic_rag_new
+ExecStart=/home/prasanth/vedic_rag_new/venv/bin/python /home/prasanth/vedic_rag_new/app.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/prasanth/vedic_rag_new/server.log
+StandardError=append:/home/prasanth/vedic_rag_new/server.log
+
+[Install]
+WantedBy=multi-user.target

@@ -88,10 +88,12 @@ class BirthChartRequest(BaseModel):
     # it overrides the engine's DST-unaware bounding-box estimate, which is
     # essential for correct charts at births outside India / during DST.
     timezone_offset: Optional[float] = Field(default=None, ge=-14.0, le=14.0)
-    # system/timing are accepted for forward-compat but unused by the backend
-    # (the chart is always Parashara/Vimshottari); cap length, don't constrain.
-    system: str = Field(default="Parashara", max_length=40)
+    # system/calc_type and timing/dasa_system control the calculation paradigm
+    # (Thirukanitha, Vakya, KP, Jaimini, Nadi) and Dasa system (Vimshottari, Ashtottari, Chara).
+    system: str = Field(default="Thirukanitha", max_length=40)
     timing: str = Field(default="Vimshottari", max_length=40)
+    calc_type: Optional[str] = Field(default=None, max_length=40)
+    dasa_system: Optional[str] = Field(default=None, max_length=40)
     visual_style: VisualStyle = "south"
 
 
@@ -171,10 +173,13 @@ def calculate_chart(req: BirthChartRequest, raw_req: Request):
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
     user = check_credits_or_raise(token, CREDIT_COST_CHART, "calculate_chart")
     try:
+        resolved_calc = req.calc_type or req.system or "Thirukanitha"
+        resolved_dasa = req.dasa_system or req.timing or "Vimshottari"
         chart = get_astrological_chart(
             req.year, req.month, req.day, req.hour, req.minute,
             req.longitude, req.latitude, req.ayanamsa,
-            timezone_offset=req.timezone_offset, gender=req.gender
+            timezone_offset=req.timezone_offset, gender=req.gender,
+            calc_type=resolved_calc, dasa_system=resolved_dasa,
         )
 
         # Save to user history if logged in
@@ -235,15 +240,21 @@ def calculate_marriage(req: MarriageChartRequest, raw_req: Request):
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
     user = check_credits_or_raise(token, CREDIT_COST_MARRIAGE, "calculate_marriage")
     try:
+        m_calc = req.male.calc_type or req.male.system or "Thirukanitha"
+        m_dasa = req.male.dasa_system or req.male.timing or "Vimshottari"
+        f_calc = req.female.calc_type or req.female.system or "Thirukanitha"
+        f_dasa = req.female.dasa_system or req.female.timing or "Vimshottari"
         male_chart = get_astrological_chart(
             req.male.year, req.male.month, req.male.day, req.male.hour, req.male.minute,
             req.male.longitude, req.male.latitude, req.male.ayanamsa,
-            timezone_offset=req.male.timezone_offset, gender=req.male.gender
+            timezone_offset=req.male.timezone_offset, gender=req.male.gender,
+            calc_type=m_calc, dasa_system=m_dasa,
         )
         female_chart = get_astrological_chart(
             req.female.year, req.female.month, req.female.day, req.female.hour, req.female.minute,
             req.female.longitude, req.female.latitude, req.female.ayanamsa,
-            timezone_offset=req.female.timezone_offset, gender=req.female.gender
+            timezone_offset=req.female.timezone_offset, gender=req.female.gender,
+            calc_type=f_calc, dasa_system=f_dasa,
         )
         compatibility = calculate_marriage_compatibility(male_chart, female_chart)
         

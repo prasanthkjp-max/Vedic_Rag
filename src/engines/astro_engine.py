@@ -5,6 +5,20 @@ import logging
 import swisseph as swe
 
 from src.core.config import EPHE_PATH
+from src.engines.advanced_systems import (
+    resolve_timezone_offset,
+    get_local_sunrise_hm as _get_local_sunrise_hm,
+    calculate_extra_vargas_and_vimsopaka,
+    calculate_avasthas,
+    calculate_arudha_padas,
+    calculate_22nd_drekkana,
+    calculate_ashtottari_dasa,
+    calculate_jaimini_system,
+    calculate_kp_system,
+    calculate_nadi_system,
+    apply_vakya_correction,
+    calculate_daily_timings,
+)
 
 logger = logging.getLogger("vedic.astro")
 
@@ -116,6 +130,10 @@ def get_ayanamsa(T, ayanamsa_name="Lahiri", JD=None):
                 swe.set_sid_mode(swe.SIDM_RAMAN)
             elif ayanamsa_name == "KP":
                 swe.set_sid_mode(swe.SIDM_KP)
+            elif ayanamsa_name == "Yukteshwar":
+                swe.set_sid_mode(swe.SIDM_YUKTESHWAR)
+            elif ayanamsa_name == "Fagan-Bradley":
+                swe.set_sid_mode(swe.SIDM_FAGAN_BRADLEY)
             else:
                 swe.set_sid_mode(swe.SIDM_LAHIRI)
             val = swe.get_ayanamsa(JD)
@@ -133,6 +151,10 @@ def get_ayanamsa(T, ayanamsa_name="Lahiri", JD=None):
         return lahiri - 0.10  # KP offset
     elif ayanamsa_name == "DP":
         return lahiri + 0.20  # DP offset
+    elif ayanamsa_name == "Yukteshwar":
+        return lahiri - 1.37  # Sri Yukteshwar offset
+    elif ayanamsa_name == "Fagan-Bradley":
+        return lahiri + 0.88  # Fagan-Bradley offset
     return lahiri # Default Lahiri
 
 def get_planet_longitudes(T, JD):
@@ -861,37 +883,20 @@ def format_deg_to_dms(deg):
         m = 0
     return f"{d}°{m:02d}'"
 
-def get_timezone_offset(longitude, latitude):
+def get_timezone_offset(longitude, latitude, year=None, month=None, day=None, hour=12, minute=0):
     """
-    Estimate standard timezone offset (in hours) based on longitude and latitude.
-    If no precise lookup is found, defaults to standard timezone rounding (nearest 30-minute interval).
+    Resolve timezone offset (in hours) based on longitude, latitude, and optional date/time
+    using IANA `zoneinfo` (with historical DST awareness) or `timezonefinder` when available.
     """
-    # 1. India standard timezone (IST) is UTC+5.5
-    if 68.0 <= longitude <= 98.0 and 6.0 <= latitude <= 37.0:
-        return 5.5
-    
-    # 2. USA Timezones (Approximate boundaries)
-    # Eastern: UTC-5 (Longitude -85 to -67)
-    if -85.0 <= longitude <= -67.0 and 24.0 <= latitude <= 50.0:
-        return -5.0
-    # Central: UTC-6 (Longitude -105 to -85)
-    if -105.0 <= longitude <= -85.0 and 24.0 <= latitude <= 50.0:
-        return -6.0
-    # Mountain: UTC-7 (Longitude -120 to -105)
-    if -120.0 <= longitude <= -105.0 and 30.0 <= latitude <= 50.0:
-        return -7.0
-    # Pacific: UTC-8 (Longitude -125 to -114)
-    if -125.0 <= longitude <= -114.0 and 30.0 <= latitude <= 50.0:
-        return -8.0
-        
-    # 3. Western Europe: GMT / GMT+1
-    if -10.0 <= longitude <= 2.0 and 35.0 <= latitude <= 60.0:
-        return 0.0
-    if 2.0 <= longitude <= 20.0 and 35.0 <= latitude <= 60.0:
-        return 1.0
-        
-    # Fallback to standard timezone rounding (nearest 30-minute interval) based on longitude
-    return round(longitude / 15.0 * 2) / 2
+    return resolve_timezone_offset(longitude, latitude, year=year, month=month, day=day, hour=hour, minute=minute)
+
+
+def get_local_sunrise_hm(year, month, day, longitude, latitude, timezone_offset=None):
+    """Return true local (hour, minute) of sunrise for Udaya Panchangam casting."""
+    return _get_local_sunrise_hm(
+        year, month, day, longitude, latitude,
+        timezone_offset=timezone_offset, get_julian_date_fn=get_julian_date,
+    )
         
 ASHTAKAVARGA_RULES = {
     "Sun": {
@@ -1717,10 +1722,10 @@ def calculate_precise_rise_set(jd_sunrise, longitude, latitude, timezone_offset=
         
     return sr, ss, mr, ms
 
-def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male", light=False):
+def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, ayanamsa_name="Lahiri", timezone_offset=None, gender="male", light=False, calc_type="Thirukanitha", dasa_system="Vimshottari"):
     """
     Master function to calculate the complete Sidereal astrological chart
-    with Thirukanitha panchangam planet coordinates and 120-year Dasas.
+    with Thirukanitha/Vakya/KP/Jaimini/Nadi planet coordinates and Vimshottari/Ashtottari/Chara Dasas.
 
     light=True skips the Vimshottari dasa tree, panchangam transitions (end
     times), ashtakavarga and shadbala. These are the heaviest computations and
@@ -1744,9 +1749,9 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     if not (-180.0 <= longitude <= 180.0):
         raise ValueError(f"longitude must be -180..180, got {longitude}")
 
-    # 1. Convert local birth time to UT (Universal Time) using standard timezone offset
+    # 1. Convert local birth time to UT (Universal Time) using historical IANA timezone offset
     if timezone_offset is None:
-        timezone_offset = get_timezone_offset(longitude, latitude)
+        timezone_offset = get_timezone_offset(longitude, latitude, year=year, month=month, day=day, hour=hour, minute=minute)
     local_decimal_hour = hour + (minute / 60.0)
     # Do NOT wrap with % 24: when the local->UT conversion crosses midnight the
     # calendar day must shift too. get_julian_date handles negative/overflowing
@@ -1772,6 +1777,10 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         sidereal_positions[planet] = (long_val - ayanamsa) % 360.0
         
     sidereal_lagna = (tropical_lagna - ayanamsa) % 360.0
+
+    # Apply traditional South Indian Surya Siddhanta / Vakya Beeja correction if requested
+    if calc_type == "Vakya":
+        sidereal_positions, sidereal_lagna = apply_vakya_correction(sidereal_positions, sidereal_lagna, T)
     
     # Calculate planet positions at JD + 0.01 to check for retrograde motion (difference over ~14.4 mins)
     T_next = (JD + 0.01 - 2451545.0) / 36525.0
@@ -2121,16 +2130,76 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     ayana = calculate_ayana(sidereal_positions["Sun"])
     ritu = calculate_ritu(sidereal_positions["Sun"])
 
+    # Populate D2 (Hora), D4 (Chaturthamsa), D7 (Saptamsa) on placements & compute Vimsopaka Bala
+    vimsopaka_bala = calculate_extra_vargas_and_vimsopaka(sidereal_positions, sidereal_lagna, rasi_placements)
+
+    # Calculate daily Kaalams, Muhurthams, 24 Horas, Netram & Jeevan in true local time
+    daily_timings = calculate_daily_timings(sunrise_hours, sunset_hours, day_idx, tithi, birth_naks_idx)
+
     # Calculate Ashtakavarga (skipped in light mode)
     ashtakavarga = {} if light else calculate_ashtakavarga(sidereal_positions, sidereal_lagna)
 
-    # Calculate Shadbala (Shatbalam) points (skipped in light mode)
+    # Calculate Shadbala (Shatbalam) points & advanced systems (skipped in light mode)
     if light:
         shadbala = {}
+        avasthas = {}
+        arudha_padas = {}
+        khara_drekkana = {}
+        ashtottari_data = {"cycle_years": 108, "is_bphs_applicable": False, "applicability_note": "", "dasas": []}
+        jaimini_data = {}
+        kp_data = {}
+        nadi_data = {}
+        active_dasas = []
     else:
         local_decimal_hour = hour + (minute / 60.0)
         is_daytime = sunrise_hours <= local_decimal_hour <= sunset_hours
         shadbala = calculate_shadbala(sidereal_positions, sidereal_lagna, is_daytime, rasi_placements, JD, local_decimal_hour, sunrise_hours, sunset_hours, timezone_offset=timezone_offset)
+        avasthas = calculate_avasthas(sidereal_positions, rasi_placements)
+        arudha_padas = calculate_arudha_padas(sidereal_positions, sidereal_lagna)
+        khara_drekkana = calculate_22nd_drekkana(sidereal_lagna, rasi_placements)
+        ashtottari_data = calculate_ashtottari_dasa(JD, sidereal_positions["Moon"], sidereal_positions, sidereal_lagna, jd_to_date_string)
+        jaimini_data = calculate_jaimini_system(JD, sidereal_positions, sidereal_lagna, rasi_placements, jd_to_date_string)
+        kp_data = calculate_kp_system(JD, longitude, latitude, ayanamsa, sidereal_positions, rasi_placements)
+        nadi_data = calculate_nadi_system(sidereal_positions, rasi_placements, kp_data)
+
+        dasa_norm = (dasa_system or "Vimshottari").strip()
+        if dasa_norm in ("Ashtottari", "Astottari"):
+            active_dasas = ashtottari_data["dasas"]
+        elif dasa_norm in ("Chara", "Chara Dasa", "Jaimini"):
+            active_dasas = jaimini_data.get("chara_dasas", [])
+        else:
+            active_dasas = dasa_table
+
+    panchangam_out = {
+        "tamil_year": tamil_year,
+        "tamil_month": tamil_month,
+        "tamil_day": tamil_day,
+        "tamil_date": tamil_date,
+        "tithi": tithi,
+        "nakshatra": nakshatra,
+        "yogam": yogam,
+        "karanam": karanam,
+        "sunrise": sunrise_str,
+        "sunset": sunset_str,
+        "moonrise": moonrise_str,
+        "moonset": moonset_str,
+        "tithi_end_time": transitions["tithi_end_time"],
+        "tithi_next_idx": transitions["tithi_next_idx"],
+        "nakshatra_end_time": transitions["nakshatra_end_time"],
+        "nakshatra_next_idx": transitions["nakshatra_next_idx"],
+        "yogam_end_time": transitions["yogam_end_time"],
+        "yogam_next_idx": transitions["yogam_next_idx"],
+        "karanam_end_time": transitions["karanam_end_time"],
+        "karanam_next_idx": transitions["karanam_next_idx"],
+        "ahas": ahas_str,
+        "udayadhi_nazhikai": udayadhi_nazhikai_str,
+        "lmt": lmt_str,
+        "kali_yuga_year": kali_yuga_year,
+        "day_of_week": day_of_week_en,
+        "ayana": ayana,
+        "ritu": ritu,
+        **daily_timings,
+    }
 
     return {
         "metadata": {
@@ -2142,41 +2211,25 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "ayanamsa_degrees": round(ayanamsa, 4),
             "ayanamsa_dms": ayanamsa_dms,
             "julian_date": round(JD, 4),
-            "timezone": f"+{timezone_offset}" if timezone_offset >= 0 else str(timezone_offset)
+            "timezone": f"+{timezone_offset}" if timezone_offset >= 0 else str(timezone_offset),
+            "calc_type": calc_type or "Thirukanitha",
+            "dasa_system": dasa_system or "Vimshottari",
         },
-        "panchangam": {
-            "tamil_year": tamil_year,
-            "tamil_month": tamil_month,
-            "tamil_day": tamil_day,
-            "tamil_date": tamil_date,
-            "tithi": tithi,
-            "nakshatra": nakshatra,
-            "yogam": yogam,
-            "karanam": karanam,
-            "sunrise": sunrise_str,
-            "sunset": sunset_str,
-            "moonrise": moonrise_str,
-            "moonset": moonset_str,
-            "tithi_end_time": transitions["tithi_end_time"],
-            "tithi_next_idx": transitions["tithi_next_idx"],
-            "nakshatra_end_time": transitions["nakshatra_end_time"],
-            "nakshatra_next_idx": transitions["nakshatra_next_idx"],
-            "yogam_end_time": transitions["yogam_end_time"],
-            "yogam_next_idx": transitions["yogam_next_idx"],
-            "karanam_end_time": transitions["karanam_end_time"],
-            "karanam_next_idx": transitions["karanam_next_idx"],
-            "ahas": ahas_str,
-            "udayadhi_nazhikai": udayadhi_nazhikai_str,
-            "lmt": lmt_str,
-            "kali_yuga_year": kali_yuga_year,
-            "day_of_week": day_of_week_en,
-            "ayana": ayana,
-            "ritu": ritu
-        },
+        "panchangam": panchangam_out,
         "placements": rasi_placements,
-        "dasas": dasa_table,
+        "dasas": active_dasas,
+        "vimshottari_dasas": dasa_table,
+        "ashtottari_dasas": ashtottari_data,
+        "chara_dasas": jaimini_data.get("chara_dasas", []) if jaimini_data else [],
         "ashtakavarga": ashtakavarga,
-        "shadbala": shadbala
+        "shadbala": shadbala,
+        "vimsopaka_bala": vimsopaka_bala,
+        "avasthas": avasthas,
+        "arudha_padas": arudha_padas,
+        "khara_drekkana": khara_drekkana,
+        "jaimini": jaimini_data,
+        "kp": kp_data,
+        "nadi": nadi_data,
     }
 def calculate_marriage_compatibility(male_chart, female_chart):
     """

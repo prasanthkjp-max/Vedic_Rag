@@ -542,13 +542,20 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
 
     # ---- Render human-readable analysis text ----
     lines = []
-    gender = chart.get("metadata", {}).get("gender", "male")
-    lines.append(f"GENDER: {gender.capitalize()}")
+    meta = chart.get("metadata", {})
+    gender = meta.get("gender", "male")
+    calc_type = meta.get("calc_type", "Thirukanitha")
+    dasa_system = meta.get("dasa_system", "Vimshottari")
+    lines.append(f"GENDER: {gender.capitalize()} | CALCULATION SYSTEM: {calc_type} | PRIMARY DASA SYSTEM: {dasa_system}")
     lagna_p = placements["Lagna"]
     d_charts_lag = []
-    for k, label in [("drekkana_rasi_name", "D3"), ("navamsha_rasi_name", "D9"), 
-                     ("dashamsha_rasi_name", "D10"), ("dwadashamsha_rasi_name", "D12"), 
-                     ("trishamsha_rasi_name", "D30"), ("shastiamsha_rasi_name", "D60")]:
+    for k, label in [
+        ("hora_rasi_name", "D2"), ("drekkana_rasi_name", "D3"),
+        ("chaturthamsha_rasi_name", "D4"), ("saptamsha_rasi_name", "D7"),
+        ("navamsha_rasi_name", "D9"), ("dashamsha_rasi_name", "D10"),
+        ("dwadashamsha_rasi_name", "D12"), ("trishamsha_rasi_name", "D30"),
+        ("shastiamsha_rasi_name", "D60"),
+    ]:
         if k in lagna_p:
             d_charts_lag.append(f"{label}: {lagna_p[k]}")
     d_charts_lag_str = f" ({', '.join(d_charts_lag)})" if d_charts_lag else ""
@@ -566,9 +573,13 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
             flags.append("Combust")
         flag_str = f" [{', '.join(flags)}]" if flags else ""
         d_charts_pl = []
-        for k, label in [("drekkana_rasi_name", "D3"), ("navamsha_rasi_name", "D9"), 
-                         ("dashamsha_rasi_name", "D10"), ("dwadashamsha_rasi_name", "D12"), 
-                         ("trishamsha_rasi_name", "D30"), ("shastiamsha_rasi_name", "D60")]:
+        for k, label in [
+            ("hora_rasi_name", "D2"), ("drekkana_rasi_name", "D3"),
+            ("chaturthamsha_rasi_name", "D4"), ("saptamsha_rasi_name", "D7"),
+            ("navamsha_rasi_name", "D9"), ("dashamsha_rasi_name", "D10"),
+            ("dwadashamsha_rasi_name", "D12"), ("trishamsha_rasi_name", "D30"),
+            ("shastiamsha_rasi_name", "D60"),
+        ]:
             if k in p:
                 d_charts_pl.append(f"{label}: {p[k]}")
         d_charts_pl_str = f" [Divisions - {', '.join(d_charts_pl)}]" if d_charts_pl else ""
@@ -660,6 +671,115 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
                 f"=> Total {score['total_points']:.2f} points "
                 f"({score['percentage_strength']:.1f}% of required {score['required_points']} - {status})")
 
+    # Expose Vimsopaka Bala (Divisional Strength out of 20)
+    vimsopaka = chart.get("vimsopaka_bala", {})
+    if vimsopaka:
+        lines.append("\nVIMSOPAKA BALA (Divisional Strength out of 20 across D1, D2, D3, D4, D7, D9, D10, D12, D30, D60):")
+        for p, vb in vimsopaka.items():
+            lines.append(f"  - {p}: {vb['score']:.2f}/20.0 ({vb['percentage']:.1f}% - {vb['status']})")
+
+    # Expose Classical Planetary Avasthas (BPHS Ch. 45)
+    avasthas = chart.get("avasthas", {})
+    if avasthas:
+        lines.append("\nPLANETARY AVASTHAS (BPHS Ch. 45 — Baladi, Jagradadi, Deeptadi, Sayanadi):")
+        for p, av in avasthas.items():
+            lines.append(
+                f"  - {p}: Baladi={av['baladi']} ({av['baladi_result_pct']}% fruit), "
+                f"Jagradadi={av['jagradadi']}, Deeptadi={av['deeptadi']}, Sayanadi={av['sayanadi']}"
+            )
+
+    # Expose Arudha Padas (BPHS Ch. 29)
+    arudha = chart.get("arudha_padas", {})
+    if arudha and arudha.get("padas"):
+        al = arudha["arudha_lagna"]
+        ul = arudha["upapada_lagna"]
+        lines.append("\nARUDHA PADAS (BPHS Ch. 29 — Tangible Manifestation & Upapada):")
+        lines.append(
+            f"  - Arudha Lagna (AL / A1): {al['pada_rasi_name']} (Lord: {al['pada_lord']}, "
+            f"{_ord(al['house_from_lagna'])} from Lagna)"
+        )
+        lines.append(
+            f"  - Upapada Lagna (UL / A12 — Marriage & Spouse): {ul['pada_rasi_name']} (Lord: {ul['pada_lord']}, "
+            f"{_ord(ul['house_from_lagna'])} from Lagna)"
+        )
+        other_padas = [f"A{h}={arudha['padas'][f'A{h}']['pada_rasi_short']}" for h in range(2, 12) if f"A{h}" in arudha["padas"]]
+        if other_padas:
+            lines.append("  - Other Bhava Padas: " + ", ".join(other_padas))
+
+    # Expose 22nd Drekkana (Khara Drekkana)
+    khara = chart.get("khara_drekkana", {})
+    if khara and khara.get("rasi_name"):
+        lines.append(
+            f"\n22ND DREKKANA (KHARA DREKKANA — Longevity & Vulnerability): "
+            f"{khara['rasi_name']} ({khara['decanate_label']}), Lord: {khara['lord']}, Nature: {khara['nature']}"
+        )
+
+    # Expose Jaimini System (Karakas, Karakamsa, Argala, Rasi Drishti, Chara Dasa)
+    jaimini = chart.get("jaimini", {})
+    if jaimini and jaimini.get("karakas"):
+        lines.append("\nJAIMINI SUTRAS & CHARA KARAKA ANALYSIS (BPHS Ch. 32 / 48):")
+        k_items = [f"{k['code']} ({k['role'].split(' (')[0]})={k['planet']} ({k['degree']:.2f}° {k['rasi_name']}, D9: {k['navamsha_rasi_name']})" for k in jaimini["karakas"]]
+        lines.append("  - Chara Karakas: " + "; ".join(k_items))
+        lines.append(
+            f"  - Karakamsa Lagna (Atmakaraka {jaimini['atmakaraka']['planet']} in D9): "
+            f"{jaimini['karakamsa_rasi_name']} (Lord: {jaimini['karakamsa_lord']}, "
+            f"{_ord(jaimini['swamsa_house_from_d9_lagna'])} from D9 Lagna)"
+        )
+        if jaimini.get("argala_on_lagna"):
+            arg_str = "; ".join(
+                f"{a['type']}: {a['argala_planets'] or 'none'} vs Virodha {a['virodha_planets'] or 'none'} ({a['status']})"
+                for a in jaimini["argala_on_lagna"]
+            )
+            lines.append(f"  - Argala on Lagna: {arg_str}")
+        if jaimini.get("chara_dasas"):
+            cd_chara = get_current_dasa(jaimini["chara_dasas"], ref_date)
+            if cd_chara.get("mahadasa"):
+                mw = cd_chara["maha_window"]
+                aw = cd_chara.get("antar_window") or ("", "")
+                lines.append(
+                    f"  - Current Jaimini Chara Dasa: {cd_chara['mahadasa']} ({mw[0]} to {mw[1]}), "
+                    f"Antardasa: {cd_chara.get('antardasa') or '—'} ({aw[0]} to {aw[1]})"
+                )
+
+    # Expose Ashtottari Dasa (108-year cycle)
+    ashtottari = chart.get("ashtottari_dasas", {})
+    if ashtottari and ashtottari.get("dasas"):
+        cd_asht = get_current_dasa(ashtottari["dasas"], ref_date)
+        if cd_asht.get("mahadasa"):
+            mw = cd_asht["maha_window"]
+            aw = cd_asht.get("antar_window") or ("", "")
+            lines.append(
+                f"\nASHTOTTARI DASA (108-Year Cycle — {ashtottari.get('applicability_note', '')}):\n"
+                f"  - Current Ashtottari Mahadasa: {cd_asht['mahadasa']} ({mw[0]} to {mw[1]}), "
+                f"Antardasa: {cd_asht.get('antardasa') or '—'} ({aw[0]} to {aw[1]})"
+            )
+
+    # Expose KP System (Krishnamurti Paddhati — Cuspal Sub-Lords & 4-Level Significators)
+    kp = chart.get("kp", {})
+    if kp and kp.get("cusps"):
+        lines.append("\nKRISHNAMURTI PADDHATI (KP SYSTEM — Placidus Cusps, Sub-Lords & Significators):")
+        cusp_summary = []
+        for c in kp["cusps"]:
+            cusp_summary.append(
+                f"H{c['house']} ({c['rasi_name'].split(' ')[0]} {c['dms']}): "
+                f"Sign={c['sign_lord']}, Star={c['star_lord']}, Sub={c['sub_lord']}, SubSub={c['sub_sub_lord']}"
+            )
+        lines.append("  - Cuspal Sub-Lords: " + " | ".join(cusp_summary))
+        for p_name, pk in kp.get("planets", {}).items():
+            sig = pk.get("signified_houses", {})
+            lines.append(
+                f"  - {p_name} (KP Bhava {pk['bhava']}, Star={pk['star_lord']}, Sub={pk['sub_lord']}): "
+                f"Signifies houses via Star={sig.get('via_star_lord')}, Self={sig.get('via_self')}, Sub={sig.get('via_sub_lord')}"
+            )
+
+    # Expose Nadi System (Nakshatra Nadi & Bhrigu Elemental Trines)
+    nadi = chart.get("nadi", {})
+    if nadi and nadi.get("elemental_trines"):
+        lines.append("\nNADI ASTROLOGY (Bhrigu Elemental Trines & Nakshatra Pada Purusharthas):")
+        for tr in nadi["elemental_trines"]:
+            if tr["planets"]:
+                lines.append(f"  - {tr['tattva']}: {', '.join(tr['planets'])}")
+
     if gochara:
         lines.append("\nGOCHARA (current transits as of {}):".format(ref_date.isoformat()))
         for body in GRAHAS:
@@ -687,29 +807,76 @@ def build_analysis(chart, transit_chart=None, ref_date=None):
     }
 
 
-def build_rag_queries(chart, analysis, max_queries=8):
+def build_rag_queries(chart, analysis, max_queries=10):
     """
     Build a focused list of classical-technique search queries from the most
-    salient chart features, so RAG retrieval surfaces the rules that actually
-    apply to this native.
+    salient chart features AND the selected calculation/dasa system, so RAG
+    retrieval surfaces the exact classical rules in `vedic_astrology_rag.db`
+    (BPHS, Jataka Parijata, Saravali, Phaladeepika) that apply to this native.
     """
     placements = chart["placements"]
     houses = analysis["houses"]
+    meta = chart.get("metadata", {})
+    calc_type = (meta.get("calc_type") or "drik").strip().lower()
+    dasa_system = (meta.get("dasa_system") or "vimshottari").strip().lower()
     queries = []
 
-    lagna_idx = analysis["lagna_idx"]
-    queries.append(f"{RASI_SHORT[lagna_idx]} lagna ascendant native characteristics personality")
+    # 1. System-specific RAG queries tuned to the exact vocabulary of our 3,710-page corpus
+    jaimini = chart.get("jaimini") or {}
+    arudha = chart.get("arudha_padas") or {}
+    kp = chart.get("kp") or {}
+    khara = chart.get("khara_drekkana") or {}
 
-    # Current dasa / bhukti effects
+    if calc_type == "jaimini" or dasa_system in ("chara", "chara dasa", "jaimini"):
+        ak = jaimini.get("atmakaraka") or {}
+        amk = jaimini.get("amatyakaraka") or {}
+        karakamsa_rasi = (jaimini.get("karakamsa_rasi_name") or "").split(" ")[0]
+        if ak.get("planet"):
+            queries.append(f"Atmakaraka Karakamsa {ak['planet']} {karakamsa_rasi}")
+        queries.append("Chara Dasa Jaimini rasi")
+        if arudha.get("arudha_lagna"):
+            al_rasi = arudha["arudha_lagna"].get("pada_rasi_short", "")
+            ul_rasi = arudha["upapada_lagna"].get("pada_rasi_short", "")
+            queries.append(f"Arudha Pada Upapada {al_rasi} {ul_rasi}")
+        if amk.get("planet"):
+            queries.append(f"Amatyakaraka Argala Jaimini {amk['planet']}")
+
+    if dasa_system in ("ashtottari", "astottari"):
+        # Note: BPHS Girish translation in our corpus spells it 'Astottari' (one 'h')
+        asht = chart.get("ashtottari_dasas") or {}
+        cd_asht = get_current_dasa(asht.get("dasas", []))
+        m_lord = cd_asht.get("mahadasa") or ""
+        a_lord = cd_asht.get("antardasa") or ""
+        queries.append(f"Astottari dasa {m_lord} {a_lord}")
+
+    if calc_type == "kp" and kp.get("cusps"):
+        # Classical texts index Nakshatra lordship & Bhava lordship rather than 'sub-lord'
+        c1 = kp["cusps"][0]
+        c10 = kp["cusps"][9]
+        c7 = kp["cusps"][6]
+        queries.append(f"{c1['star_lord']} nakshatra {c1['sub_lord']} ascendant lagna")
+        queries.append(f"{c10['sub_lord']} tenth house karma bhava career profession")
+        queries.append(f"{c7['sub_lord']} seventh house kalatra bhava marriage spouse")
+
+    if calc_type == "nadi":
+        moon_naks = placements.get("Moon", {}).get("nakshatra", "")
+        queries.append(f"nakshatra {moon_naks} pada trine")
+
+    lagna_idx = analysis["lagna_idx"]
+    queries.append(f"{RASI_SHORT[lagna_idx]} lagna ascendant personality")
+
+    # 2. Current dasa / bhukti effects
     cd = analysis["current_dasa"]
     if cd["mahadasa"]:
-        queries.append(f"{cd['mahadasa']} mahadasa effects results predictions")
+        maha_planet = cd["mahadasa"].split(" (")[0]
+        queries.append(f"{maha_planet} mahadasa effects results predictions")
         if cd["antardasa"]:
-            queries.append(f"{cd['mahadasa']} dasa {cd['antardasa']} bhukti antardasa results")
+            antar_planet = cd["antardasa"].split(" (")[0]
+            queries.append(f"{maha_planet} dasa {antar_planet} bhukti antardasa results")
             if cd.get("pratyantardasa"):
-                queries.append(f"{cd['mahadasa']} mahadasa {cd['antardasa']} bhukti {cd['pratyantardasa']} pratyantardasa antaram results")
+                queries.append(f"{maha_planet} mahadasa {antar_planet} bhukti {cd['pratyantardasa']} pratyantardasa antaram results")
 
-    # Strongest / most notable placements first: exalted, debilitated, own, or in kendra/trikona
+    # 3. Strongest / most notable placements first: exalted, debilitated, own, or in kendra/trikona
     def salience(body):
         if body not in placements or body not in houses:
             return -999
@@ -723,21 +890,27 @@ def build_rag_queries(chart, analysis, max_queries=8):
         if p.get("is_retrograde"): score += 1
         return score
 
-    for body in sorted(GRAHAS, key=salience, reverse=True)[:4]:
+    for body in sorted(GRAHAS, key=salience, reverse=True)[:3]:
         if body not in placements or body not in houses:
             continue
         queries.append(f"{body} in {_ord(houses[body])} house results effects")
 
-    # Conjunctions
+    # 4. Classical techniques: Avasthas, Arudha Pada, 22nd Drekkana
+    queries.append("planetary avastha Sayanadi Deepta Kumara Yuva")
+    if arudha.get("arudha_lagna") and calc_type != "jaimini":
+        queries.append("Arudha Pada Upapada lagna")
+    if khara.get("rasi_short"):
+        queries.append("22nd Drekkana Khara Sarpa Pakshi")
+
+    # 5. Conjunctions & Yogas
     for c in analysis["conjunctions"][:2]:
         queries.append(f"{' '.join(c['planets'])} conjunction in {c['rasi']} effects")
 
-    # Yogas
     for y in analysis["yogas"][:2]:
         base = y["name"].split(" (")[0]
         queries.append(f"{base} effects results")
 
-    # Sade Sati / gochara
+    # 6. Sade Sati / gochara
     if analysis["gochara"]:
         for note in analysis["gochara"]["notes"]:
             if "Sade Sati" in note:
@@ -777,7 +950,7 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
         query_vectors = [None] * len(queries)
 
     scored = {}  # (book_id, page_num) -> {res, score}
-    for q, vec in zip(queries, query_vectors):
+    for q_idx, (q, vec) in enumerate(zip(queries, query_vectors)):
         dense_results, sparse_results = [], []
         try:
             if vec:
@@ -796,8 +969,9 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
                 key = (res["book_id"], res["page_num"])
                 if key not in best_rank or rank < best_rank[key][0]:
                     best_rank[key] = (rank, res)
+        query_weight = 1.0 + 0.35 * max(0, 4 - q_idx)
         for key, (rank, res) in best_rank.items():
-            contribution = 1.0 / (1 + rank)
+            contribution = query_weight / (1 + rank)
             if key in scored:
                 scored[key]["score"] += contribution
             else:

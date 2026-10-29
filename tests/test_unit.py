@@ -446,6 +446,38 @@ except HTTPException as e:
     _e164_bad = (e.status_code == 400)
 check("e164: invalid number rejected (400)", _e164_bad)
 
+# ── Bug Fixes & Advanced Systems (KP, Jaimini, Nadi, Vakya, Ashtottari, Avasthas, Arudha, 22nd Drekkana) ──
+from src.engines.pdf_generator import translate_tithi
+from src.engines.astro_engine import get_astrological_chart
+from src.engines.prediction_engine import build_analysis, build_rag_queries
+
+for _lang in ("en", "ta", "te", "hi", "ml", "kn"):
+    _pournami_str = translate_tithi("Pournami", _lang)
+    check(f"pournami translation ({_lang}) is a string", isinstance(_pournami_str, str) and len(_pournami_str) < 30)
+
+_kp_chart = get_astrological_chart(1990, 5, 15, 10, 30, 80.2707, 13.0827, "Yukteshwar", timezone_offset=5.5, calc_type="kp", dasa_system="ashtottari")
+check("ayanamsa: Yukteshwar supported", _kp_chart["metadata"]["ayanamsa_name"] == "Yukteshwar")
+check("kp: 12 Placidus cusps computed", len(_kp_chart.get("kp", {}).get("cusps", [])) == 12)
+check("kp: 4-level significators computed", len(_kp_chart.get("kp", {}).get("house_significators", {})) == 12)
+check("ashtottari: 108-year dasas computed", len(_kp_chart.get("ashtottari_dasas", {}).get("dasas", [])) >= 8)
+check("jaimini: 7 chara karakas computed", len(_kp_chart.get("jaimini", {}).get("karakas", {})) == 7)
+check("jaimini: chara dasa 12 rasis computed", len(_kp_chart.get("jaimini", {}).get("chara_dasas", [])) == 12)
+check("arudha: 12 arudha padas computed", len(_kp_chart.get("arudha_padas", {}).get("padas", {})) == 12)
+check("avasthas: 9 grahas computed", len(_kp_chart.get("avasthas", {})) == 9)
+check("vargas: D2/D4/D7 & vimsopaka_bala computed",
+      all(k in _kp_chart["placements"]["Sun"] for k in ("hora_rasi_index", "chaturthamsha_rasi_index", "saptamsha_rasi_index"))
+      and "Sun" in _kp_chart.get("vimsopaka_bala", {}))
+check("khara: 22nd drekkana computed", "nature" in _kp_chart.get("khara_drekkana", {}))
+
+_jaimini_chart = get_astrological_chart(1990, 5, 15, 10, 30, 80.2707, 13.0827, "Fagan-Bradley", timezone_offset=5.5, calc_type="jaimini", dasa_system="chara")
+_j_analysis = build_analysis(_jaimini_chart)
+_j_queries = build_rag_queries(_jaimini_chart, _j_analysis)
+check("rag queries: Jaimini queries include Atmakaraka/Karakamsa & Chara Dasa",
+      any("Atmakaraka" in q for q in _j_queries) and any("Chara Dasa" in q for q in _j_queries))
+_kp_queries = build_rag_queries(_kp_chart, build_analysis(_kp_chart))
+check("rag queries: Ashtottari query uses corpus spelling 'Astottari'",
+      any("Astottari" in q for q in _kp_queries))
+
 
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

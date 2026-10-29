@@ -15,6 +15,7 @@ from src.engines.astro_engine import (
     get_astrological_chart,
     get_regional_panchangam,
     calculate_luni_solar_month_index,
+    get_local_sunrise_hm,
 )
 from src.engines.muhurtham_engine import calculate_muhurtham
 from src.engines.pdf_generator import (
@@ -46,7 +47,8 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
         from datetime import date
         dt = datetime.combine(date.today(), datetime.min.time())
     try:
-        chart = get_astrological_chart(dt.year, dt.month, dt.day, 5, 30, lon, lat, "Lahiri")
+        sr_h, sr_m = get_local_sunrise_hm(dt.year, dt.month, dt.day, lon, lat)
+        chart = get_astrological_chart(dt.year, dt.month, dt.day, sr_h, sr_m, lon, lat, "Lahiri")
         
         # Localize Panchangam names based on lang preference
         localized_panch = get_regional_panchangam(chart, lang)
@@ -279,7 +281,8 @@ def _tithi_num(tithi_str: str) -> int:
 
 # Cleaned up day panchangam and festival computer
 def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float, lat: float, lang: str, added_festivals_prev: set = None):
-    chart_sunrise = get_astrological_chart(year, month, day, 5, 30, lon, lat, "Lahiri", light=True)
+    sr_h, sr_m = get_local_sunrise_hm(year, month, day, lon, lat)
+    chart_sunrise = get_astrological_chart(year, month, day, sr_h, sr_m, lon, lat, "Lahiri", light=True)
     localized_panch = get_regional_panchangam(chart_sunrise, lang)
     tithi_sunrise = chart_sunrise["panchangam"]["tithi"]
     

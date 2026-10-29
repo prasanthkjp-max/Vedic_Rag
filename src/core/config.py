@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.27.0"
+VERSION = "1.28.0"
 
 # --- Paths (env-overridable) ---
 # config.py lives at <repo_root>/src/core/config.py, but BASE_DIR must stay the
@@ -65,7 +65,25 @@ DB_USER_PATH = (
     or os.environ.get("VEDIC_DB_PATH")
     or os.path.join(BASE_DIR, "vedic_user.db")
 )
-DB_RAG_PATH = os.environ.get("VEDIC_RAG_DB_PATH", os.path.join(BASE_DIR, "vedic_rag.db"))
+def _resolve_default_rag_db(base_dir: str) -> str:
+    """Resolve the default RAG SQLite database path when VEDIC_RAG_DB_PATH is unset.
+
+    Prefers a populated `vedic_astrology_rag.db` (in base_dir or base_dir/data) over
+    an empty 4KB `vedic_rag.db` placeholder so local/systemd runs load all 3,710
+    classical pages out of the box.
+    """
+    candidates = [
+        os.path.join(base_dir, "vedic_astrology_rag.db"),
+        os.path.join(base_dir, "data", "vedic_astrology_rag.db"),
+        os.path.join(base_dir, "vedic_rag.db"),
+    ]
+    for path in candidates:
+        if os.path.isfile(path) and os.path.getsize(path) > 16384:
+            return path
+    return os.path.join(base_dir, "vedic_rag.db")
+
+
+DB_RAG_PATH = os.environ.get("VEDIC_RAG_DB_PATH") or _resolve_default_rag_db(BASE_DIR)
 
 # Backwards compatibility alias pointing to user database
 DB_PATH = DB_USER_PATH
