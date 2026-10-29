@@ -308,7 +308,15 @@ class VedicSearchEngine:
         words = re.findall(r"\w{3,}", query_text.lower())
         if not words:
             return []
-        match_expr = " OR ".join(f'"{w}"' for w in dict.fromkeys(words))
+        stopwords = {
+            "the", "and", "for", "with", "from", "that", "this", "are", "was", "were",
+            "will", "have", "has", "had", "into", "onto", "upon", "about", "between",
+            "what", "when", "where", "which", "who", "how", "why", "effects", "results",
+            "predictions", "native", "characteristics", "rules", "general", "chapter",
+        }
+        filtered = [w for w in dict.fromkeys(words) if w not in stopwords]
+        terms = filtered if filtered else list(dict.fromkeys(words))
+        match_expr = " OR ".join(f'"{w}"' for w in terms)
 
         conn = None
         try:

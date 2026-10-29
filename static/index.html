@@ -2775,6 +2775,7 @@
             border-radius: 8px;
         }
     </style>
+    <link rel="stylesheet" href="/static/react-bundle.css">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
@@ -3381,6 +3382,9 @@
                         </div>
                     </div>
 
+                    <!-- React System Selector Bar (Parashara / KP / Jaimini / Nadi / Vakya & Dasas) -->
+                    <div id="react-system-selector-root"></div>
+
                     <!-- Birth details Form -->
                     <div class="form-grid">
                         <div class="input-group">
@@ -3450,6 +3454,8 @@
                                 <option value="Raman">Raman (Dr. B.V. Raman offset)</option>
                                 <option value="KP">KP (Krishnamurti Paddhati)</option>
                                 <option value="DP">DP (Dasa Paddhati)</option>
+                                <option value="Yukteshwar">Sri Yukteshwar</option>
+                                <option value="Fagan-Bradley">Fagan-Bradley</option>
                                 <option value="Tropical">Tropical (Western Coordinates)</option>
                             </select>
                         </div>
@@ -3460,12 +3466,14 @@
                                 <option value="KP">KP System (Stellar Sub-lords)</option>
                                 <option value="Nadi">Nadi Astrology (Placements)</option>
                                 <option value="Jaimini">Jaimini Astrology (Karaka/Sutras)</option>
+                                <option value="Vakya">Vakya Siddhanta (Traditional South Indian)</option>
                             </select>
                         </div>
                         <div class="input-group advanced-only" style="display: none;">
                             <label id="lbl-timing-system">Timing Period System (Dasa)</label>
                             <select id="in-timing">
                                 <option value="Vimshottari">Vimshottari Dasa (120 Year Cycle) - Default</option>
+                                <option value="Ashtottari">Ashtottari Dasa (108 Year Cycle)</option>
                                 <option value="Chara">Chara Dasa (Sign-based planetary periods)</option>
                             </select>
                         </div>
@@ -3587,6 +3595,9 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- React Advanced Astrology Workspace (KP Cusps, Jaimini Karakas/Chara Dasa, Avasthas, Arudha Padas, 22nd Drekkana, Ashtottari Dasa, RAG Grounding) -->
+                    <div id="react-advanced-astrology-root"></div>
 
                     <!-- Shatbalam (Shadbala) & Ashtakavarga Strength Section -->
                     <div class="strengths-section" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -7706,19 +7717,21 @@
             const rasiIdx = Math.floor(longVal / 30.0) % 12;
             const degInSign = longVal % 30.0;
             
-            // Vargas the Python engine already computes are read straight from
-            // the chart data (single source of truth). D2/D4/D7 are not returned
-            // by the engine, so they are derived here.
+            // Vargas the Python engine computes are read straight from
+            // the chart data (single source of truth).
             switch (dType) {
                 case 'd1': return rasiIdx;
                 case 'd2':
+                    if (info.hora_rasi_index !== undefined) return info.hora_rasi_index;
                     const isOddSign = (rasiIdx % 2) === 0;
                     if (isOddSign) return (degInSign < 15.0) ? 4 : 3;
                     else return (degInSign < 15.0) ? 3 : 4;
                 case 'd3': return info.drekkana_rasi_index;
                 case 'd4':
+                    if (info.chaturthamsha_rasi_index !== undefined) return info.chaturthamsha_rasi_index;
                     return (rasiIdx + (Math.floor(degInSign / 7.5) * 3)) % 12;
                 case 'd7':
+                    if (info.saptamsha_rasi_index !== undefined) return info.saptamsha_rasi_index;
                     const saptPart = Math.floor(degInSign / (30.0 / 7.0));
                     return ((rasiIdx % 2) === 0) ? (rasiIdx + saptPart) % 12 : (rasiIdx + 6 + saptPart) % 12;
                 case 'd9':
@@ -8007,9 +8020,9 @@
                 latitude: lat,
                 place_name: pob,
                 gender: gender,
-                ayanamsa: activeSubTab === 'advanced' ? ayanamsa : 'Lahiri',
-                system: activeSubTab === 'advanced' ? system : 'Parashara',
-                timing: activeSubTab === 'advanced' ? timing : 'Vimshottari',
+                ayanamsa: ayanamsa || 'Lahiri',
+                system: system || 'Parashara',
+                timing: timing || 'Vimshottari',
                 visual_style: style
             };
 
@@ -8430,6 +8443,9 @@
             // Populate Shatbalam and Ashtakavarga grids!
             renderShadbala();
             renderAshtakavargaGrid();
+            if (typeof window.__notifyReactChartUpdated === 'function') {
+                window.__notifyReactChartUpdated(calculatedChartData, currentLang);
+            }
         }
 
         // Planet colours used across the strength + dasa UI
@@ -13970,5 +13986,6 @@
             <span id="lbl-mobile-nav-ai">AI Chat</span>
         </button>
     </nav>
+    <script src="/static/react-bundle.js"></script>
 </body>
 </html>

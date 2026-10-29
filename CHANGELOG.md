@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.28.0]
+
+### Added
+- **Complete Astrological & Dasa Calculation Engines (`src/engines/advanced_systems.py`)**:
+  - **KP (Krishnamurti Padhati)**: 12 Placidus House Cusps, Sign/Star/Sub/Sub-Sub Lords, and 4-Level KP House Significators (Levels I–IV).
+  - **Jaimini Maharshi System**: 7 Chara Karakas (`AK` Atmakaraka through `DK` Darakaraka), `Karakamsa Lagna`, `Swamsa`, `Jaimini Rasi Drishti`, `Argala` / `Virodhargala`, and 12-Rasi `Chara Dasa` + Antardasa periods.
+  - **108-Year Ashtottari (Astottari) Dasa**: Conditional applicability check (BPHS Ch. 46) and full Mahadasa/Bhukti timeline.
+  - **Bhrigu / Nakshatra Nadi**: Elemental Trines (`Agni`, `Prithvi`, `Vayu`, `Jala`) and Nakshatra Nadi Star-Lord linkages.
+  - **Vakya Siddhanta**: Traditional South Indian Surya Siddhanta / Vakya Beeja planetary longitudes.
+  - **Classical Depth Calculations**: Planetary `Avasthas` (`Baladi`, `Jagradadi`, `Deeptadi`, `Sayanadi` per BPHS Ch. 45), `Arudha Padas` (`A1/AL` Arudha Lagna through `A12/UL` Upapada Lagna with BPHS Ch. 29 Svastha-Daridra exceptions), `22nd Drekkana` (`Khara Drekkana` with Saravali Ch. 10 classification), `D2` (Hora), `D4` (Chaturthamsa), `D7` (Saptamsa) divisional charts, and 20-point `Vimsopaka Bala`.
+  - **Additional Ayanamsas**: Added `Yukteshwar` (`swe.SIDM_YUKTESHWAR`) and `Fagan-Bradley` (`swe.SIDM_FAGAN_BRADLEY`).
+- **System-Aware Classical RAG Query Pipeline (`src/engines/prediction_engine.py`, `src/engines/search_engine.py`)**:
+  - Tuned `build_rag_queries()` and `retrieve_rag_context()` to match the exact terminology and spellings of our 3,710-page classical corpus (`vedic_astrology_rag.db` across BPHS Vol 1–2, Jataka Parijata Vol 1–3, Saravali Vol 1–2, Phaladeepika), including `Astottari` (BPHS Girish spelling), `Atmakaraka` / `Karakamsa`, `Chara Dasa`, `Arudha Pada` / `Upapada`, `Sayanadi` / `Deepta` Avasthas, `22nd Drekkana` / `Khara`, and translating KP Cuspal Sub-Lords into classical Nakshatra & Bhava lordship queries.
+- **React + TypeScript + Vite Frontend (`frontend/` -> `static/react-bundle.js`)**:
+  - Added modular React 19 + TypeScript components (`SystemSelectorBar`, `AdvancedAstrologyWorkspace`, `KPSystemPanel`, `JaiminiSystemPanel`, `ClassicalDepthPanel`, `AshtottariDasaPanel`, `RagCorpusInspector`) with reactive state store (`astroStore.ts`) mounted into `static/index.html`.
+
+### Fixed
+- **Pournami PDF Translation Bug (`src/engines/pdf_generator.py`)**: Fixed `translate_tithi()` returning the 27-element Nakshatras list instead of the localized `"Pournami"` string in Tamil, Telugu, Hindi, Malayalam, and Kannada.
+- **Default RAG DB Path Resolution (`src/core/config.py`)**: Added `_resolve_default_rag_db()` so `DB_RAG_PATH` automatically resolves to the populated 40MB `vedic_astrology_rag.db` (3,710 pages, 8 books) instead of the empty 4KB `vedic_rag.db` placeholder.
+- **Historical IANA Timezone & True Local Sunrise Panchangam (`src/engines/astro_engine.py`, `src/api/panchangam.py`)**: Replaced hardcoded/formula timezone fallbacks with `zoneinfo.ZoneInfo` historical DST offsets and replaced hardcoded `05:30` Panchangam casting with true local astronomical sunrise (`get_local_sunrise_hm`).
+- **AI Prompt Contradictions (`src/api/ai.py`)**: Fixed `ai_predict_marriage` 36-point Ashta Koota vs. 6-point prompt contradiction and removed the self-contradictory prohibition on `Arudha Pada`, `22nd Drekkana`, `Avasthas`, `Vimsopaka Bala`, and `D2/D4/D7` in `ai_predict_chat`.
+
 ## [1.27.0]
 
 ### Changed

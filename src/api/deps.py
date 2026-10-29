@@ -45,7 +45,7 @@ logger = logging.getLogger("vedic.app")
 
 # --- app.py:34-45 ---
 LangCode = Literal["en", "ta", "te", "ml", "kn", "hi"]
-AyanamsaName = Literal["Lahiri", "Raman", "KP", "DP", "Tropical"]
+AyanamsaName = Literal["Lahiri", "Raman", "KP", "DP", "Yukteshwar", "Fagan-Bradley", "Tropical"]
 VisualStyle = Literal["south", "north"]
 Gender = Literal["male", "female"]
 RegionalParadigm = Literal[
@@ -797,7 +797,8 @@ def build_prediction_context(chart, extra_queries=None):
         meta = chart.get("metadata", {})
         lon = float(meta.get("longitude"))
         lat = float(meta.get("latitude"))
-        transit_chart = get_astrological_chart(today.year, today.month, today.day, 12, 0, lon, lat)
+        ayan_name = meta.get("ayanamsa_name", "Lahiri")
+        transit_chart = get_astrological_chart(today.year, today.month, today.day, 12, 0, lon, lat, ayan_name, light=True)
     except Exception as e:
         logger.warning("Gochara computation skipped: %s", e)
 

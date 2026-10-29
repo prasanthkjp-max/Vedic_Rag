@@ -122,11 +122,24 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
         target_lang = lang_map.get(lang_code, "English")
 
         analysis_text, rag_context, raw_passages = build_prediction_context(chart)
+        calc_type = chart.get('metadata', {}).get('calc_type', 'drik')
+        dasa_system = chart.get('metadata', {}).get('dasa_system', 'vimshottari')
+        system_guidance = ""
+        if calc_type == "kp":
+            system_guidance = "\n- ACTIVE SYSTEM: KRISHNAMURTI PADHATI (KP). Foreground the 12 Placidus House Cusps, Cuspal Sub-Lords, and 4-Level KP House Significators given in the computed analysis, synthesized with the classical Nakshatra and Bhava lordship rules from the retrieved texts."
+        elif calc_type == "jaimini" or dasa_system == "chara":
+            system_guidance = "\n- ACTIVE SYSTEM: JAIMINI SUTRAS & CHARA DASA. Foreground the 7 Chara Karakas (especially Atmakaraka, Amatyakaraka, Darakaraka), Karakamsa Lagna, Swamsa, Arudha Padas (AL & UL), Argala, Rasi Drishti, and Jaimini Chara Dasa periods given in the computed analysis."
+        elif calc_type == "nadi":
+            system_guidance = "\n- ACTIVE SYSTEM: BHRIGU / NAKSHATRA NADI. Foreground the Bhrigu Nadi Elemental Trines (1-5-9 sign linkages of Agni, Prithvi, Vayu, Jala) and Nakshatra Nadi Star-Lord chains given in the computed analysis."
+        elif calc_type == "vakya":
+            system_guidance = "\n- ACTIVE SYSTEM: VAKYA SIDDHANTA. Note that planetary longitudes use traditional South Indian Surya Siddhanta / Vakya Ganitha positions."
+        if dasa_system == "ashtottari":
+            system_guidance += "\n- ACTIVE DASA SYSTEM: ASHTOTTARI DASA (108-Year System). Interpret the active Ashtottari Mahadasa and Antardasa alongside Vimshottari."
 
         prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and master scholar.
-You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {birth_dt} in {place} (Coordinates: {coords}), using high-precision Thirukanitha sidereal coordinates with {ayanamsa_name} Ayanamsa.
+You provide deep, accurate, and authoritative Jyotishyam predictions for {client}, born at {birth_dt} in {place} (Coordinates: {coords}), using high-precision sidereal coordinates ({calc_type.upper()} system, {dasa_system.upper()} Dasa) with {ayanamsa_name} Ayanamsa.
 
-A precise computational analysis of the chart is given below. You MUST reason from it as a real astrologer does — never from planet signs alone. Specifically: read each planet by its BHAVA (house) and house-lordship, its DIGNITY/strength (exalted, debilitated, own, combust, retrograde), its CONJUNCTIONS (combined effects of planets together), the ASPECTS (graha drishti) it gives and receives, the YOGAS formed, the CURRENT running Mahadasa & Antardasa, and the GOCHARA (current transits incl. Sade Sati). Synthesise these factors together; a result is the NET effect of all of them, not any single placement.
+A precise computational analysis of the chart is given below. You MUST reason from it as a real astrologer does — never from planet signs alone. Specifically: read each planet by its BHAVA (house) and house-lordship, its DIGNITY/strength (exalted, debilitated, own, combust, retrograde), its AVASTHAS (Baladi, Jagradadi, Deeptadi, Sayanadi), its VIMSOPAKA BALA & SHADBALA, its ARUDHA PADAS (AL, UL), its CONJUNCTIONS, the ASPECTS (graha drishti) it gives and receives, the YOGAS formed, the CURRENT running Mahadasa & Antardasa, and the GOCHARA (current transits incl. Sade Sati). Synthesise these factors together; a result is the NET effect of all of them, not any single placement.{system_guidance}
 
 --- COMPUTED VEDIC CHART ANALYSIS ---
 {analysis_text}
@@ -237,10 +250,10 @@ Lagna: {f_lagna['rasi_name']} ({f_lagna['degree']:.2f}°)
 Moon Sign: {f_moon['rasi_name']} ({f_moon['degree']:.2f}°)
 Moon Nakshatra: {female_chart['panchangam']['nakshatra']}
 
---- VEDIC KOOTA AGREEMENT DETAILS (Score: {comp['score']}/{comp['max_score']} - {comp['percentage']}%) ---
+--- VEDIC KOOTA AGREEMENT DETAILS (North Indian Ashta Koota: {comp['score']}/{comp['max_score']} [{comp['percentage']}%] | South Indian Poruthams: {comp.get('south_indian', {}).get('score', 0)}/{comp.get('south_indian', {}).get('max_score', 11)} [{comp.get('south_indian', {}).get('percentage', 0)}%]) ---
 """
         for key, detail in comp["details"].items():
-            analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']})\n"
+            analysis_text += f"- {detail['label']}: {'MATCH' if detail['match'] else 'MISMATCH'} (Points: {detail['score']}/{detail.get('max', '')})\n"
 
         prompt = f"""You are a divine and highly wise Vedic Astrologer (Jyotishi) and relationship matchmaker.
 You provide deep, accurate, and authoritative marriage compatibility (Vivaha Melapaka/Porutham) predictions for {male_name} and {female_name}, utilizing high-precision Thirukanitha sidereal coordinates and classical Vedic scriptures from our Vedic astrology RAG database.
@@ -266,8 +279,8 @@ Using the classical rules from the retrieved texts, write an exceptionally insig
 1. **Individual Character & Personality Analysis**: Analyze both {male_name}'s and {female_name}'s characteristics based on their respective Ascendants (Lagnas), Moon Signs (Rasis), and Nakshatras. Explain how their individual temperaments will interact.
 2. **Co-habitation & Domestic Life (Living under the same shelter)**: Provide a clear picture of their day-to-day compatibility when living under the same roof. Discuss how their planetary alignments influence household harmony, shared domestic space, and resolution of conflicts.
 3. **Dasa Compatibility & Timing of Marriage**: Analyze the running Vimshottari Dasas and Bhuktis for both natives. Determine if their active planetary periods align harmoniously for marital union, and predict *when* they are astrologically primed to marry or experience relationship stability/milestones.
-4. **Detailed Koota Calculation Analysis**: Go through the matching calculation points (Dina, Gana, Rajju, Vedha, Rasi, Rasiyadhipathi) and explain the astrological reasoning behind each match or mismatch according to classical books.
-5. **Astro-Compatibility Score & Minimum Threshold Instructions**: Provide a final compatibility rating/score based on your holistic analysis (representing it both out of 6 points and as a percentage). State clearly the minimum threshold score required (typically 50% or 3 out of 6 points) for a decent, sustainable, and smooth life run together, and where this couple stands in relation to it.
+4. **Detailed Koota Calculation Analysis**: Go through the matching calculation points (Ashta Koota: Varna, Vashya, Tara/Dina, Yoni, Graha Maitri/Rasiyadhipathi, Gana, Bhakoot/Rasi, Nadi; and South Indian Poruthams: Rajju, Vedha, Mahendra) and explain the astrological reasoning behind each match or mismatch according to classical books.
+5. **Astro-Compatibility Score & Minimum Threshold Instructions**: Provide the exact computed compatibility scores (North Indian Ashta Koota out of {comp['max_score']} points and South Indian Porutham out of {comp.get('south_indian', {}).get('max_score', 11)} points, plus percentage). State clearly the minimum threshold score required (typically 18 out of 36 points / 50% in Ashta Koota, and 6+ out of 11 Poruthams with Rajju and Vedha clean) for a decent, sustainable, and smooth life run together, and where this couple stands in relation to it.
 
 Structure your analysis as follows:
 1. **Divine Invocation** (in {target_lang}) — a short Sanskrit invocation and blessing for relationship harmony.
@@ -364,14 +377,16 @@ You are in a live chat session with {client}, born at {birth_dt} in {place}.
 CARDINAL RULE — GROUND EVERYTHING IN THE COMPUTED DATA BELOW:
 The COMPUTED VEDIC CHART ANALYSIS below already contains the exact, precisely-calculated data for this native. It provides, and you must read verbatim from it:
 - The Rasi (D1) chart: Lagna and every Graha's bhava (house), rasi (sign), degree, dignity, retrograde/combust state.
-- Divisional charts actually computed for each body: D3 (Drekkana), D9 (Navamsha), D10 (Dashamsha), D12 (Dwadashamsha), D30 (Trishamsha), D60 (Shastiamsha).
+- Divisional charts actually computed for each body: D2 (Hora), D3 (Drekkana), D4 (Chaturthamsa), D7 (Saptamsa), D9 (Navamsha), D10 (Dashamsha), D12 (Dwadashamsha), D30 (Trishamsha), D60 (Shastiamsha), plus Vimsopaka Bala (/20).
+- Planetary Avasthas (Baladi, Jagradadi, Deeptadi, Sayanadi), Arudha Padas (A1/AL through A12/UL), and the 22nd Drekkana (Khara Drekkana) with its Saravali classification.
+- Jaimini System (7 Chara Karakas AK..DK, Karakamsa Lagna, Swamsa, Rasi Drishti, Argala, and Chara Dasa), KP System (12 Placidus Cusps, Sub-Lords, 4-Level Significators), and Bhrigu/Nakshatra Nadi Elemental Trines.
 - House lords, conjunctions, and the full Graha Drishti (aspects cast/received).
 - Shadbala for each planet with its components — Sthana Bala (positional / Sthana Phala), Dig Bala, Kala Bala, Cheshta Bala, Naisargika Bala, and Drik Bala (aspectual / Drik Phala) — plus totals and % of required strength.
 - Ashtakavarga (Sarvashtakavarga SAV points per sign, and Shodhya Pinda).
-- The currently running Vimshottari Mahadasa, Antardasa (Bhukti) and Pratyantar Dasa (Antaram), with dates.
+- The currently running Vimshottari Mahadasa, Antardasa (Bhukti) and Pratyantar Dasa (Antaram), plus Ashtottari Dasa and Jaimini Chara Dasa, with dates.
 - Gochara (current transits, incl. Sade Sati) when available.
 
-You MUST NOT invent, alter, shift, or guess any planet's house, sign, degree, aspect, conjunction, dignity, or strength. Use ONLY what is given. If a technique needs data that is NOT present in the computed analysis (e.g. Vimsopaka Bala, Arudha Pada, Kalachakra Dasa, the 22nd Drekkana, Avasthas, or divisional charts other than those listed above), DO NOT fabricate values — either omit that technique or state plainly that the datum is not available, rather than inventing a placement. Never ask the user to supply chart data; it is all below.
+You MUST NOT invent, alter, shift, or guess any planet's house, sign, degree, aspect, conjunction, dignity, or strength. Use ONLY what is given in the computed analysis below. Never ask the user to supply chart data; it is all below.
 
 The calculated astrological data for {client} and retrieved classical scriptural excerpts are provided below.
 
@@ -390,14 +405,14 @@ ANALYTICAL FRAMEWORK & STEP-BY-STEP INSTRUCTIONS:
 When analyzing a nativity, strictly follow this chronological framework, drawing rules from your retrieved classical knowledge base:
 
 Step 1: Foundational Planetary Strength & State (Avastha) Analysis
-- Dignity & Strength: Evaluate each planet's Sthaana (positional), Dig (directional), Kala (temporal), Cheshta (motional), Naisargika (natural), and Drik (aspectual) strengths.
+- Dignity & Strength: Evaluate each planet's Sthaana (positional), Dig (directional), Kala (temporal), Cheshta (motional), Naisargika (natural), and Drik (aspectual) strengths, as well as Vimsopaka Bala (/20).
 - Combustion & Retrogression: Identify planets that are Astangata (combust/eclipsed by the Sun) noting that they lose their power and yield malefic results, with the exception of Venus and Saturn who do not lose their rays. Note retrograde planets, as they provide effects equal to exaltation.
-- Avasthas: Evaluate the planet's state. Is it in Deeptavastha (exaltation), Svastha (own sign), or Vikalavastha (combust)? Assess its Jagradadi (Awakening/Dreaming/Sleeping) and Sayanadi states to determine the exact proportion of its results.
+- Avasthas: Read the exact computed Avasthas (Baladi, Jagradadi, Deeptadi, Sayanadi) from the PLANETARY AVASTHAS section to determine the exact proportion of its results.
 
-Step 2: Bhava (House) & Karaka (Significator) Evaluation
+Step 2: Bhava (House), Karaka (Significator), Jaimini & KP Evaluation
 - Bhava Prosperity vs. Annihilation: A Bhava prospers if aspected or occupied by its lord or benefics. It decays if occupied by malefics, or if its lord is in the 6th, 8th, or 12th house (Dusthanas).
-- Karakas: Combine the Bhava analysis with its natural significator. Evaluate the Sun for Father (9th), Moon for Mother (4th), Mars for Courage/Siblings (3rd), Mercury for Intellect/Profession (10th), Jupiter for Wealth/Progeny (2nd, 5th), Venus for Spouse (7th), and Saturn for Longevity (8th).
-- Pada / Arudha: Evaluate the Arudha Pada of the Lagna and other houses to determine the tangible, materialistic manifestations of the native's life.
+- Karakas: Combine the Bhava analysis with its natural significator AND the computed Jaimini Chara Karakas (Atmakaraka AK, Amatyakaraka AmK, Darakaraka DK, etc.) and Karakamsa Lagna.
+- Pada / Arudha: Read the computed Arudha Padas (A1/AL Arudha Lagna, A12/UL Upapada Lagna, and A2..A11) verbatim from the ARUDHA PADAS section to determine the tangible, materialistic manifestations of the native's life.
 
 Step 3: Comprehensive Yoga Deciphering
 - Pancha Mahapurusha Yogas: Check if Mars, Mercury, Jupiter, Venus, or Saturn are in their own or exaltation signs in a Kendra (angle). If so, delineate Ruchaka, Bhadra, Hamsa, Malavya, or Sasa Yoga respectively.
@@ -405,15 +420,15 @@ Step 3: Comprehensive Yoga Deciphering
 - Raja Yogas: Identify connections (conjunction, mutual aspect, or exchange) between Kendra (1, 4, 7, 10) and Trikona (1, 5, 9) lords.
 - Yoga Bhangas (Cancellations): Before confirming any great fortune, explicitly check for Daridra, Reka, Preshya, or Kemadruma yogas that mar the horoscope. Check if exalted planets are obstructed by the Moon's combustion or debilitated planets.
 
-Step 4: Divisional Chart Validation (only the vargas provided in the computed data)
-- Do not rely on the Rasi chart alone. Cross-reference each planet's divisional signs AS GIVEN in the computed analysis: Drekkana (D3) for siblings/courage, Navamsa (D9) for spouse/inner strength & dharma, Dasamsa (D10) for power/profession, Dwadashamsa (D12) for parents, Trimsamsa (D30) for misfortunes, and Shastiamsha (D60) for overall karmic fruit.
-- Do NOT introduce vargas that are absent from the data (e.g. Hora, Saptamsa, Chaturthamsa) and do NOT compute a Vimsopaka Bala — use the Shadbala components actually provided (Sthana Phala, Drik Phala, etc.) to judge planetary strength.
+Step 4: Divisional Chart Validation (using all 9 computed vargas)
+- Do not rely on the Rasi chart alone. Cross-reference each planet's divisional signs AS GIVEN in the computed analysis: Hora (D2) for wealth, Drekkana (D3) for siblings/courage, Chaturthamsa (D4) for property/fortune, Saptamsa (D7) for progeny, Navamsa (D9) for spouse/inner strength & dharma, Dasamsa (D10) for power/profession, Dwadashamsa (D12) for parents, Trimsamsa (D30) for misfortunes, and Shastiamsha (D60) for overall karmic fruit.
+- Use both the computed Vimsopaka Bala (/20) and Shadbala components (Sthana Phala, Drik Phala, etc.) to judge planetary strength.
 
 Step 5: Ayurdaya (Longevity) & Maraka (Death-Inflicting) Analysis
 - Warning: Treat longevity with caution. First, check for Balarishta (infant mortality) yogas (e.g., Moon afflicted in Dusthanas without Jupiter's aspect).
 - Determine the longevity category (Alpa, Madhya, Deergha).
 - Identify the Maraka (killer) planets: Lords of the 2nd and 7th houses, or malefics in the 3rd and 8th. The Dasa/Bhukti of a Maraka planet will cause severe health crises or demise.
-- Use the 22nd Drekkana (Khara Drekkana) to determine the nature and cause of demise.
+- Read the exact computed 22nd Drekkana (Khara Drekkana) sign, lord, and Saravali nature (Sarpa, Pakshi, Ayudha, etc.) from the 22ND DREKKANA section.
 
 Step 6: Ashtakavarga (The 8-Fold Strength) Application
 - Evaluate the Sarvashtakavarga. Bhavas with more than 30 Bindus (dots) will yield highly auspicious results during planetary transits. Bhavas with less than 25 Bindus will cause misery and decay.
