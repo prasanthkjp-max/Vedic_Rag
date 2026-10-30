@@ -118,39 +118,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Latin display/body/serif faces load eagerly; the heavy Noto Indic faces
          load on demand for the SELECTED language only (see ensureLangFont). -->
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&family=Inter:wght@300..600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500..800&family=Cormorant+Garamond:ital,wght@0,500..700;1,400..600&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&family=Inter:wght@300..600&display=swap" rel="stylesheet">
     
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         /* ================================================================
-           VEDIC ASTROLOGY PORTAL — COSMIC DIVINE SUN-ORANGE THEME
-           Light Sun Orange · Divine Gold · Saffron & Rust Highlights
-           Moving planets · OM watermark · High Contrast Readable data
+           VEDIC ASTROLOGY PORTAL — "OOLAICHUVADI & TEMPLE SANCTUM"
+           Dual Sacred Themes: Surya (Day) & Chandra (Night Cosmic Sanctum)
         ================================================================ */
 
-        :root {
-            /* ── Solar Light Cosmic Backgrounds ── */
-            --bg-void:   #fffaf3; /* Soft cream canvas */
+        :root, [data-theme="surya"] {
+            /* ── Surya Day Theme (Default): Warm Palm-Leaf Parchment ── */
+            --bg-void:   #fbf5e8; /* Warm palm-leaf parchment */
             --bg-deep:   #fdf6ea; /* Quiet warm deep canvas */
             --bg-glass:  rgba(255, 251, 238, 0.88); /* Light warm glass */
-            --bg-card:   rgba(255, 255, 255, 0.95); /* Clean white card */
+            --bg-card:   rgba(255, 253, 247, 0.96); /* Sacred parchment card */
             --bg-darker: rgba(254, 243, 199, 0.35); /* Warm golden tint card */
             --bg-input:  #ffffff; /* Solid white input */
 
-            /* ── Golden & Saffron Accents ── */
-            --accent-cosmic:  #ea580c; /* Rich solar orange */
+            /* ── Temple Kumkum Crimson, Antique Brass/Gold & Deep Saffron ── */
+            --accent-kumkum:  #9f1239; /* Temple kumkum crimson */
+            --accent-cosmic:  #ea580c; /* Deep saffron */
             --accent-azure:   #d97706; /* Golden amber */
             --accent-sky:     #f97316; /* Sunburst orange */
-            --accent-gold:    #b45309; /* Deep gold */
+            --accent-gold:    #b45309; /* Antique brass/gold */
             --accent-bright:  #eab308; /* Bright gold */
-            --accent-saffron: #f97316; /* Saffron */
-            --accent-violet:  #7c3aed; /* Keep violet for transits/dasas but warm it */
+            --accent-saffron: #ea580c; /* Saffron */
+            --accent-violet:  #7c3aed; /* Keep violet for transits/dasas */
             --accent-purple:  #8b5cf6;
             --accent-indigo:  #6366f1; /* referenced by tips/FAQ markup */
             --accent-teal:    #0f766e;
-            --accent-ruby:    #be123c;
+            --accent-ruby:    #9f1239;
             --bg-glass-hover: rgba(254, 243, 199, 0.55); /* referenced by FAQ accordion */
 
             /* ── Glow layers ── */
@@ -158,15 +158,14 @@
             --glow-gold:   rgba(217, 119, 6, 0.35);
             --glow-violet: rgba(139, 92, 246, 0.15);
 
-            /* ── Text hierarchy — warm charcoal ink so body copy reads calm and
-               neutral; saffron/gold are reserved for things that mean something. ── */
+            /* ── Text hierarchy ── */
             --text-primary:   #2b2018; /* Warm charcoal — primary body text */
             --text-secondary: #5a4636; /* Warm taupe-brown — secondary text */
             --text-muted:     #8a6d52; /* Warm grey-brown — muted labels/captions */
             --text-gold:      #b45309; /* Deep gold — titles & meaningful highlights */
             --text-label:     #8a6d52; /* Muted warm grey-brown labels */
 
-            /* ── Borders — softened so cards read quiet, not gilded ── */
+            /* ── Borders — Warm sandalwood/brass double rules ── */
             --border-blue:   rgba(234, 88, 12, 0.20);
             --border-gold:   rgba(180, 120, 40, 0.28);
             --border-glass:  rgba(160, 120, 60, 0.16);
@@ -176,10 +175,44 @@
             --font-sans:    'Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil',
                              'Noto Sans Telugu', 'Noto Sans Kannada',
                              'Noto Sans Malayalam', system-ui, sans-serif;
-            --font-heading: 'Space Grotesk', 'Noto Sans Devanagari', 'Noto Sans Tamil',
+            --font-heading: 'Cinzel', 'Cormorant Garamond', 'Space Grotesk', 'Noto Sans Devanagari', 'Noto Sans Tamil',
                              'Noto Sans Telugu', 'Noto Sans Kannada',
-                             'Noto Sans Malayalam', sans-serif;
-            --font-serif:   'Lora', Georgia, serif;
+                             'Noto Sans Malayalam', serif;
+            --font-serif:   'Cormorant Garamond', 'Lora', Georgia, serif;
+        }
+
+        /* ── Chandra Night Theme (Cosmic Sanctum) ── */
+        [data-theme="chandra"] {
+            --bg-void:   #0c0a1d; /* Midnight cosmic indigo */
+            --bg-deep:   #130f2c; /* Deep cosmic sanctum */
+            --bg-glass:  rgba(19, 15, 44, 0.90);
+            --bg-card:   rgba(19, 15, 44, 0.95);
+            --bg-darker: rgba(30, 24, 68, 0.65);
+            --bg-input:  #171236;
+
+            --accent-kumkum:  #fb7185;
+            --accent-cosmic:  #f59e0b;
+            --accent-azure:   #fbbf24;
+            --accent-sky:     #f97316;
+            --accent-gold:    #f59e0b; /* Glowing golden yantra linework */
+            --accent-bright:  #fde047;
+            --accent-saffron: #fb923c;
+            --bg-glass-hover: rgba(245, 158, 11, 0.14);
+
+            --glow-blue:   rgba(245, 158, 11, 0.30);
+            --glow-gold:   rgba(245, 158, 11, 0.45);
+            --glow-violet: rgba(167, 139, 250, 0.28);
+
+            --text-primary:   #f8fafc; /* High-contrast ivory text */
+            --text-secondary: #cbd5e1;
+            --text-muted:     #94a3b8;
+            --text-gold:      #fbbf24;
+            --text-label:     #cbd5e1;
+
+            --border-blue:   rgba(245, 158, 11, 0.28);
+            --border-gold:   rgba(245, 158, 11, 0.36);
+            --border-glass:  rgba(245, 158, 11, 0.20);
+            --border-violet: rgba(167, 139, 250, 0.30);
         }
 
         /* ── Language font overrides ── */
@@ -2774,8 +2807,675 @@
             margin-top: 10px;
             border-radius: 8px;
         }
+
+        /* ================================================================
+           DIVINE ELEVATION BLUEPRINT STYLES (v1.29)
+           1. Surya / Chandra Dual Theme & Sacred Yantra Lotus Framing
+           2. Live Cosmic Sky Header & Sliding Brass-Gold Tab Indicator
+           3. Dynamic Calendar Quick-Filters & 24h Sacred Time Wheel
+           4. Interactive SVG Graha Drishti, Dignity Badges & Dasa Explorer
+           5. Classical Scripture Side-Drawer
+        ================================================================ */
+
+        /* 1A. Chandra Night Theme (Cosmic Sanctum) Global Overrides */
+        html[data-theme="chandra"] body,
+        body[data-theme="chandra"] {
+            background-color: #0c0a1d;
+            background-image:
+                radial-gradient(ellipse 1100px 650px at 94% 3%, rgba(245, 158, 11, 0.10) 0%, transparent 65%),
+                radial-gradient(ellipse 900px 520px at 3% 97%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 1600px 900px at 50% 0%, rgba(30, 27, 75, 0.55) 0%, transparent 80%),
+                linear-gradient(192deg, #0c0a1d 0%, #130f2c 55%, #090716 100%);
+            color: var(--text-primary);
+        }
+
+        [data-theme="chandra"] header {
+            background: rgba(12, 10, 29, 0.92);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.32);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+        }
+
+        [data-theme="chandra"] .mantra-banner {
+            background: linear-gradient(90deg, rgba(19, 15, 44, 0.9), rgba(35, 25, 76, 0.92), rgba(19, 15, 44, 0.9));
+            border-bottom: 1px solid rgba(245, 158, 11, 0.28);
+        }
+
+        [data-theme="chandra"] .mantra-sanskrit {
+            color: #fbbf24;
+            text-shadow: 0 0 18px rgba(245, 158, 11, 0.45);
+        }
+
+        [data-theme="chandra"] .card,
+        [data-theme="chandra"] .card-soft {
+            background: rgba(19, 15, 44, 0.92) !important;
+            border-color: rgba(245, 158, 11, 0.35) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+            color: #f8fafc;
+        }
+
+        [data-theme="chandra"] .calendar-cell {
+            background: rgba(24, 19, 54, 0.88);
+            border-color: rgba(245, 158, 11, 0.2);
+            color: #f8fafc;
+        }
+
+        [data-theme="chandra"] .calendar-cell.empty {
+            background: rgba(12, 10, 29, 0.45);
+        }
+
+        [data-theme="chandra"] .calendar-cell:hover,
+        [data-theme="chandra"] .calendar-cell.active {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: #f59e0b;
+        }
+
+        [data-theme="chandra"] .astro-table th {
+            background: rgba(30, 24, 68, 0.95);
+            color: #fbbf24;
+        }
+
+        [data-theme="chandra"] .astro-table td {
+            background: rgba(17, 13, 40, 0.9);
+            color: #f1f5f9;
+            border-bottom-color: rgba(245, 158, 11, 0.14);
+        }
+
+        [data-theme="chandra"] .panch-compact-item,
+        [data-theme="chandra"] .panch-item,
+        [data-theme="chandra"] .dz-card,
+        [data-theme="chandra"] .side-nav,
+        [data-theme="chandra"] .lang-dropdown,
+        [data-theme="chandra"] .suggestions-dropdown {
+            background: #151030 !important;
+            border-color: rgba(245, 158, 11, 0.28) !important;
+            color: #f8fafc !important;
+        }
+
+        [data-theme="chandra"] input,
+        [data-theme="chandra"] select,
+        [data-theme="chandra"] textarea {
+            background: #171236 !important;
+            color: #f8fafc !important;
+            border-color: rgba(245, 158, 11, 0.35) !important;
+        }
+
+        /* 1B. Sacred Geometry & Yantra Lotus-Corner Framing + Tabular Alignment */
+        .card {
+            outline: 1px solid rgba(180, 120, 40, 0.16);
+            outline-offset: -5px;
+            background-image:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M1 13V4a3 3 0 0 1 3-3h9M4 7a3 3 0 0 1 3-3' fill='none' stroke='%23d97706' stroke-width='1.2' stroke-opacity='0.45'/%3E%3Ccircle cx='4' cy='4' r='1.3' fill='%23ea580c' fill-opacity='0.5'/%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M17 13V4a3 3 0 0 0-3-3H5M14 7a3 3 0 0 0-3-3' fill='none' stroke='%23d97706' stroke-width='1.2' stroke-opacity='0.45'/%3E%3Ccircle cx='14' cy='4' r='1.3' fill='%23ea580c' fill-opacity='0.5'/%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M1 5v9a3 3 0 0 0 3 3h9M4 11a3 3 0 0 0 3 3' fill='none' stroke='%23d97706' stroke-width='1.2' stroke-opacity='0.45'/%3E%3Ccircle cx='4' cy='14' r='1.3' fill='%23ea580c' fill-opacity='0.5'/%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M17 5v9a3 3 0 0 1-3 3H5M14 11a3 3 0 0 1-3 3' fill='none' stroke='%23d97706' stroke-width='1.2' stroke-opacity='0.45'/%3E%3Ccircle cx='14' cy='14' r='1.3' fill='%23ea580c' fill-opacity='0.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: top 7px left 7px, top 7px right 7px, bottom 7px left 7px, bottom 7px right 7px;
+        }
+
+        .mantra-sanskrit {
+            letter-spacing: 0.6px;
+            font-variant-caps: small-caps;
+        }
+
+        .astro-table td,
+        .timing-time,
+        .dz-dates,
+        .dz-b-date,
+        .dz-dur,
+        .panch-value,
+        .detail-val,
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 2A. Live Cosmic Sky Ticker Bar (Gochara & Real-Time Hora Dial) */
+        .live-cosmic-sky-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 6px 20px;
+            background: linear-gradient(90deg, rgba(254, 243, 199, 0.85), rgba(255, 247, 237, 0.95), rgba(254, 243, 199, 0.85));
+            border-bottom: 1px solid var(--border-gold);
+            font-size: 11.5px;
+            position: relative;
+            z-index: 90;
+        }
+
+        [data-theme="chandra"] .live-cosmic-sky-bar {
+            background: linear-gradient(90deg, rgba(16, 12, 38, 0.96), rgba(28, 21, 62, 0.96), rgba(16, 12, 38, 0.96));
+            border-bottom-color: rgba(245, 158, 11, 0.32);
+        }
+
+        .sky-ticker-items {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .sky-ticker-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(180, 120, 40, 0.26);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        [data-theme="chandra"] .sky-ticker-pill {
+            background: rgba(30, 24, 68, 0.85);
+            border-color: rgba(245, 158, 11, 0.32);
+            color: #f8fafc;
+        }
+
+        .hora-ring-svg {
+            width: 20px;
+            height: 20px;
+            transform: rotate(-90deg);
+            flex-shrink: 0;
+        }
+
+        .hora-status-tag {
+            font-size: 9.5px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .hora-status-tag.auspicious {
+            background: rgba(22, 163, 74, 0.15);
+            color: #15803d;
+        }
+
+        .hora-status-tag.caution {
+            background: rgba(217, 119, 6, 0.16);
+            color: #b45309;
+        }
+
+        [data-theme="chandra"] .hora-status-tag.auspicious {
+            background: rgba(34, 197, 94, 0.22);
+            color: #4ade80;
+        }
+
+        [data-theme="chandra"] .hora-status-tag.caution {
+            background: rgba(245, 158, 11, 0.22);
+            color: #fbbf24;
+        }
+
+        .sky-ticker-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sacred-chant-btn,
+        .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            border-radius: 18px;
+            border: 1px solid rgba(180, 120, 40, 0.35);
+            background: rgba(255, 251, 235, 0.9);
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        [data-theme="chandra"] .sacred-chant-btn,
+        [data-theme="chandra"] .theme-toggle-btn {
+            background: rgba(30, 24, 68, 0.9);
+            border-color: rgba(245, 158, 11, 0.45);
+            color: #fbbf24;
+        }
+
+        .sacred-chant-btn.playing {
+            background: linear-gradient(135deg, #ea580c, #b45309);
+            color: #ffffff;
+            border-color: #9a3412;
+            box-shadow: 0 0 12px rgba(234, 88, 12, 0.4);
+        }
+
+        /* 2B. Sliding Brass-Gold Tab Indicator & High-Speed Transitions */
+        .nav-top-bar {
+            position: relative;
+        }
+
+        .nav-sliding-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2.5px;
+            background: linear-gradient(90deg, #b45309, #ea580c, #f59e0b);
+            border-radius: 3px;
+            transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), width 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .nav-kbd-hint {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 0 4px;
+            margin-left: 4px;
+            border-radius: 4px;
+            background: rgba(180, 120, 40, 0.14);
+            color: var(--text-muted);
+            vertical-align: middle;
+        }
+
+        .single-page-content {
+            will-change: transform, opacity;
+            animation: pageFadeSlide 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes pageFadeSlide {
+            from { opacity: 0.72; transform: translate3d(0, 4px, 0); }
+            to   { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+
+        /* 3A. Calendar Quick-Filter Buttons & Sacred Cell Badges */
+        .calendar-quick-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .cal-filter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            border-radius: 18px;
+            border: 1px solid rgba(180, 120, 40, 0.32);
+            background: rgba(255, 251, 235, 0.85);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        [data-theme="chandra"] .cal-filter-btn {
+            background: rgba(24, 19, 54, 0.9);
+            border-color: rgba(245, 158, 11, 0.32);
+            color: #e2e8f0;
+        }
+
+        .cal-filter-btn:hover {
+            border-color: #ea580c;
+            color: #ea580c;
+        }
+
+        .cal-filter-btn.active {
+            background: linear-gradient(135deg, #ea580c, #b45309);
+            color: #ffffff;
+            border-color: #9a3412;
+            box-shadow: 0 2px 10px rgba(234, 88, 12, 0.3);
+        }
+
+        .calendar-cell.filter-dimmed {
+            opacity: 0.25;
+            filter: grayscale(0.6);
+            transition: opacity 0.18s ease;
+        }
+
+        .calendar-cell.filter-matched {
+            border: 2px solid #ea580c !important;
+            box-shadow: 0 0 14px rgba(234, 88, 12, 0.32);
+            transform: scale(1.01);
+        }
+
+        .cell-sacred-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-top: 3px;
+        }
+
+        .cell-sacred-badge {
+            font-size: 8.5px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 5px;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .cell-sacred-badge.muhurtham {
+            background: rgba(22, 163, 74, 0.15);
+            color: #15803d;
+            border: 1px solid rgba(22, 163, 74, 0.35);
+        }
+
+        .cell-sacred-badge.karinaal {
+            background: rgba(220, 38, 38, 0.14);
+            color: #b91c1c;
+            border: 1px solid rgba(220, 38, 38, 0.32);
+        }
+
+        .cell-sacred-badge.vrata {
+            background: rgba(217, 119, 6, 0.16);
+            color: #b45309;
+            border: 1px solid rgba(217, 119, 6, 0.35);
+        }
+
+        [data-theme="chandra"] .cell-sacred-badge.muhurtham { color: #4ade80; }
+        [data-theme="chandra"] .cell-sacred-badge.karinaal { color: #f87171; }
+        [data-theme="chandra"] .cell-sacred-badge.vrata { color: #fbbf24; }
+
+        /* 3B. Visual 24-Hour Kaalam & Hora Timeline Bar */
+        .sacred-24h-timeline-box {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(255, 251, 235, 0.75);
+            border: 1px solid rgba(180, 120, 40, 0.28);
+        }
+
+        [data-theme="chandra"] .sacred-24h-timeline-box {
+            background: rgba(19, 15, 44, 0.85);
+            border-color: rgba(245, 158, 11, 0.32);
+        }
+
+        .sacred-24h-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .sacred-24h-legend {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .sacred-24h-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sacred-24h-track {
+            position: relative;
+            height: 28px;
+            border-radius: 7px;
+            background: linear-gradient(90deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.65) 50%, rgba(30, 41, 59, 0.25) 50%, rgba(15, 23, 42, 0.35) 100%);
+            border: 1px solid rgba(180, 120, 40, 0.35);
+            overflow: visible;
+        }
+
+        .sacred-omen-band {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+
+        .sacred-omen-band:hover {
+            transform: scaleY(1.1);
+            filter: brightness(1.1);
+            z-index: 4;
+        }
+
+        .sacred-omen-band.good {
+            background: rgba(22, 163, 74, 0.68);
+            border: 1px solid #15803d;
+        }
+
+        .sacred-omen-band.bad {
+            background: rgba(220, 38, 38, 0.68);
+            border: 1px solid #b91c1c;
+        }
+
+        .sacred-omen-band.amber {
+            background: rgba(245, 158, 11, 0.72);
+            border: 1px solid #b45309;
+        }
+
+        .sacred-now-needle {
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            width: 2.5px;
+            background: #9f1239;
+            box-shadow: 0 0 8px rgba(159, 18, 57, 0.8);
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        [data-theme="chandra"] .sacred-now-needle {
+            background: #fde047;
+            box-shadow: 0 0 10px #fde047;
+        }
+
+        .sacred-now-label {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #9f1239;
+            color: #fff;
+            font-size: 8.5px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .sacred-24h-hora-strip {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            gap: 1px;
+            margin-top: 4px;
+            height: 14px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .sacred-hora-cell {
+            font-size: 7.5px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .sacred-24h-ticks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 4A. Interactive SVG Graha Drishti & Planetary Dignity Badges */
+        .drishti-ray {
+            stroke-dasharray: 4 2;
+            animation: drishtiPulse 1.4s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes drishtiPulse {
+            from { stroke-dashoffset: 12; }
+            to   { stroke-dashoffset: 0; }
+        }
+
+        .drishti-inspector-bar {
+            margin-top: 10px;
+            margin-bottom: 12px;
+            padding: 9px 14px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, rgba(254, 243, 199, 0.8), rgba(255, 251, 235, 0.95));
+            border: 1px solid rgba(180, 120, 40, 0.38);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 11.5px;
+        }
+
+        [data-theme="chandra"] .drishti-inspector-bar {
+            background: linear-gradient(90deg, rgba(26, 20, 58, 0.95), rgba(38, 28, 78, 0.95));
+            border-color: rgba(245, 158, 11, 0.42);
+        }
+
+        #planet-placement-table tr.drishti-row-active td {
+            background: rgba(245, 158, 11, 0.22) !important;
+            border-top: 1px solid #ea580c;
+            border-bottom: 1px solid #ea580c;
+        }
+
+        .shadbala-row-active {
+            outline: 2px solid #ea580c;
+            border-radius: 6px;
+            background: rgba(245, 158, 11, 0.14);
+            padding: 2px 4px;
+        }
+
+        .dignity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 1.5px 6px;
+            border-radius: 8px;
+            margin-left: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .dignity-badge.uccha {
+            background: rgba(22, 163, 74, 0.16);
+            color: #15803d;
+            border: 1px solid rgba(22, 163, 74, 0.38);
+        }
+
+        .dignity-badge.swakshetra {
+            background: rgba(15, 118, 110, 0.15);
+            color: #0f766e;
+            border: 1px solid rgba(15, 118, 110, 0.35);
+        }
+
+        .dignity-badge.neecha {
+            background: rgba(159, 18, 57, 0.15);
+            color: #9f1239;
+            border: 1px solid rgba(159, 18, 57, 0.38);
+        }
+
+        .dignity-badge.vakra {
+            background: rgba(124, 58, 237, 0.15);
+            color: #6d28d9;
+            border: 1px solid rgba(124, 58, 237, 0.35);
+        }
+
+        .dignity-badge.astangata {
+            background: rgba(217, 119, 6, 0.18);
+            color: #b45309;
+            border: 1px solid rgba(217, 119, 6, 0.38);
+        }
+
+        /* 4B. Dasa-Bhukti-Antaram Explorer Toolbar & Life Age Ribbon */
+        .dasa-explorer-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0 12px 0;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-gold);
+        }
+
+        /* 5. Classical Scripture Side-Drawer */
+        .scripture-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 10, 29, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 9500;
+            display: none;
+        }
+
+        .scripture-drawer-overlay.open {
+            display: block;
+        }
+
+        .classical-scripture-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 480px;
+            max-width: 94vw;
+            background: var(--bg-card);
+            border-left: 2px solid var(--accent-gold);
+            box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+            z-index: 9501;
+            transform: translateX(102%);
+            transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .classical-scripture-drawer.open {
+            transform: translateX(0);
+        }
+
+        .scripture-passage-card {
+            background: var(--bg-darker);
+            border: 1px solid var(--border-gold);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+
+        .scripture-shloka-box {
+            background: rgba(254, 243, 199, 0.55);
+            border-left: 3px solid #9f1239;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-family: 'Noto Sans Devanagari', var(--font-serif);
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #7c2d12;
+            margin: 8px 0;
+            white-space: pre-line;
+        }
+
+        [data-theme="chandra"] .scripture-shloka-box {
+            background: rgba(245, 158, 11, 0.12);
+            border-left-color: #f59e0b;
+            color: #fde68a;
+        }
     </style>
-    <link rel="stylesheet" href="/static/react-bundle.css">
+    <link rel="stylesheet" href="/react-bundle.css">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
@@ -2916,15 +3616,22 @@
             </div>
 
             <!-- Top bar subpage tabs left of translation tab -->
-            <nav class="nav-top-bar">
-                <button class="nav-tab active" id="nav-btn-home" onclick="navigateToPage('home')">Home (Panchangam)</button>
-                <button class="nav-tab" id="nav-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">Astrology</button>
-                <button class="nav-tab" id="nav-btn-horoscope" onclick="navigateToPage('horoscope')">Horoscopes</button>
-                <button class="nav-tab" id="nav-btn-marriage" onclick="navigateToPage('marriage')">Marriage Matching</button>
-                <button class="nav-tab" id="nav-btn-ai" onclick="navigateToPage('ai')">Astro AI Chat</button>
+            <nav class="nav-top-bar" id="nav-top-bar">
+                <button class="nav-tab active" id="nav-btn-home" title="Shortcut: Press 1" onclick="navigateToPage('home')">Home (Panchangam)</button>
+                <button class="nav-tab" id="nav-btn-jyothisyam" title="Shortcut: Press 2" onclick="navigateToPage('jyothisyam')">Astrology</button>
+                <button class="nav-tab" id="nav-btn-horoscope" title="Shortcut: Press 3" onclick="navigateToPage('horoscope')">Horoscopes</button>
+                <button class="nav-tab" id="nav-btn-marriage" title="Shortcut: Press 4" onclick="navigateToPage('marriage')">Marriage Matching</button>
+                <button class="nav-tab" id="nav-btn-ai" title="Shortcut: Press 5" onclick="navigateToPage('ai')">Astro AI Chat</button>
+                <span class="nav-sliding-indicator" id="nav-sliding-indicator"></span>
             </nav>
 
             <div class="header-controls">
+                <!-- Dual Sacred Theme Toggle: Surya (Day) & Chandra (Night Cosmic Sanctum) -->
+                <button class="theme-toggle-btn" id="btn-theme-toggle" onclick="toggleSacredTheme()" title="Switch between Surya (Day) and Chandra (Night Cosmic Sanctum) Theme">
+                    <i class="fa-solid fa-sun" id="theme-toggle-icon" style="color: #ea580c;"></i>
+                    <span id="theme-toggle-label">Surya</span>
+                </button>
+
                 <!-- Location chip: detects the user's place (GPS / IP) for accurate Panchangam -->
                 <button class="lang-select-btn" id="btn-header-location" onclick="detectLocation()" title="Set your location for accurate Panchangam" style="margin-right: 8px;">
                     <i class="fa-solid fa-location-dot" style="color: var(--accent-gold);"></i> <span id="header-location-name">Chennai</span>
@@ -2970,6 +3677,42 @@
                 </div>
             </div>
         </header>
+
+        <!-- Live Cosmic Sky Ticker Bar (Gochara & Real-Time Hora Dial) -->
+        <div class="live-cosmic-sky-bar" id="live-cosmic-sky-bar">
+            <div class="sky-ticker-items">
+                <!-- Active Planetary Hora with Circular Progress Ring -->
+                <div class="sky-ticker-pill" id="sky-ticker-hora" title="Real-Time Planetary Hora calculated from local sunrise">
+                    <svg class="hora-ring-svg" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(180,120,40,0.2)" stroke-width="2.5"></circle>
+                        <circle id="sky-hora-ring-fg" cx="12" cy="12" r="9" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-dasharray="56.5" stroke-dashoffset="18" stroke-linecap="round"></circle>
+                    </svg>
+                    <span id="sky-hora-planet">🪐 Jupiter Hora</span>
+                    <span class="hora-status-tag auspicious" id="sky-hora-badge">Auspicious</span>
+                    <span style="color: var(--text-muted);" id="sky-hora-remaining">· 24m remaining</span>
+                </div>
+
+                <!-- Current Nakshatra & Transition -->
+                <div class="sky-ticker-pill" id="sky-ticker-naks">
+                    <i class="fa-solid fa-star" style="color: var(--accent-gold); font-size: 10px;"></i>
+                    <span id="sky-naks-text">Nakshatra: Loading…</span>
+                </div>
+
+                <!-- Current Tithi & Transition -->
+                <div class="sky-ticker-pill" id="sky-ticker-tithi">
+                    <i class="fa-solid fa-moon" style="color: var(--accent-gold); font-size: 10px;"></i>
+                    <span id="sky-tithi-text">Tithi: Loading…</span>
+                </div>
+            </div>
+
+            <div class="sky-ticker-actions">
+                <!-- Sacred Chant / Meditative Soundscape Audio Toggle -->
+                <button type="button" class="sacred-chant-btn" id="btn-sacred-chant-toggle" onclick="toggleSacredChantAudio()" title="Toggle Sacred Tanpura & Om Meditative Soundscape">
+                    <i class="fa-solid fa-om" id="sacred-chant-icon"></i>
+                    <span id="sacred-chant-label">Sacred Nada: Off</span>
+                </button>
+            </div>
+        </div>
 
         <!-- Divine Mantra Banner -->
         <div class="mantra-banner">
@@ -3130,6 +3873,22 @@
                             </div>
                         </div>
                         
+                        <!-- Calendar Quick-Filter Bar (UI/UX Divine Elevation 3A) -->
+                        <div class="calendar-quick-filters" id="calendar-quick-filters">
+                            <button type="button" class="cal-filter-btn" data-filter="muhurtham" onclick="toggleCalendarFilter('muhurtham')">
+                                <span>✨ Subha Muhurtham</span>
+                            </button>
+                            <button type="button" class="cal-filter-btn" data-filter="moon" onclick="toggleCalendarFilter('moon')">
+                                <span>🌕 Pournami / Amavasya</span>
+                            </button>
+                            <button type="button" class="cal-filter-btn" data-filter="vrata" onclick="toggleCalendarFilter('vrata')">
+                                <span>🕉️ Ekadashi / Pradosham</span>
+                            </button>
+                            <button type="button" class="cal-filter-btn" data-filter="karinaal" onclick="toggleCalendarFilter('karinaal')">
+                                <span>⚠️ Kari Naal</span>
+                            </button>
+                        </div>
+
                         <div class="calendar-grid" id="calendar-grid-container">
                             <!-- Populated dynamically via JS -->
                         </div>
@@ -3280,6 +4039,34 @@
                     <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
                         <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                             <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title">Daily Kaalams & Auspicious Timings</span>
+                        </div>
+                        <!-- Visual 24-Hour Kaalam & Hora Timeline Bar (UI/UX Divine Elevation 3B) -->
+                        <div class="sacred-24h-timeline-box" id="sacred-24h-timeline-container">
+                            <div class="sacred-24h-header">
+                                <span class="sacred-24h-title"><i class="fa-solid fa-compass-drafting"></i> 24-Hour Sacred Time Wheel (Sunrise → Next Sunrise)</span>
+                                <div class="sacred-24h-legend">
+                                    <span><i class="leg-dot good"></i> Auspicious (Abhijit / Brahma / Vijaya)</span>
+                                    <span><i class="leg-dot neutral"></i> Gulika / Neutral</span>
+                                    <span><i class="leg-dot bad"></i> Rahu / Yama / Dur</span>
+                                </div>
+                            </div>
+                            <div class="sacred-24h-track" id="sacred-24h-track">
+                                <div class="sacred-now-needle" id="sacred-timeline-now-needle" style="left: 25%;">
+                                    <span class="sacred-now-tag" id="sacred-timeline-now-label">NOW</span>
+                                </div>
+                            </div>
+                            <div class="sacred-24h-hora-strip" id="sacred-24h-hora-strip"></div>
+                            <div class="sacred-24h-ticks" id="sacred-24h-ticks">
+                                <span>06:00 (Sunrise)</span>
+                                <span>09:00</span>
+                                <span>12:00 (Noon)</span>
+                                <span>15:00</span>
+                                <span>18:00 (Sunset)</span>
+                                <span>21:00</span>
+                                <span>00:00 (Midnight)</span>
+                                <span>03:00</span>
+                                <span>06:00</span>
+                            </div>
                         </div>
                         <div class="timings-list">
                             <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-rahu-kalam-label">Rahu Kalam (Inauspicious):</span><span class="timing-time" id="panch-rahu-kalam">--</span></div>
@@ -3573,6 +4360,22 @@
                                 <div class="svg-chart-card" id="svg-navamsha-rendered"></div>
                             </div>
                         </div>
+
+                        <!-- Interactive Graha Drishti (Aspect) Inspector Bar (UI/UX Divine Elevation 4A) -->
+                        <div class="drishti-inspector-bar" id="drishti-inspector-bar">
+                            <div class="drishti-inspector-left">
+                                <i class="fa-solid fa-eye" style="color: var(--accent-gold);"></i>
+                                <span id="drishti-inspector-text">Click or hover any Graha in the chart or table to illuminate Parashari Graha Drishti (Aspect Rays) &amp; planetary strength.</span>
+                            </div>
+                            <div class="drishti-inspector-actions">
+                                <button type="button" class="drishti-action-btn" id="btn-drishti-scripture" style="display: none;" onclick="openSelectedGrahaScripture()">
+                                    <i class="fa-solid fa-scroll"></i> <span>Inspect Classical Shloka</span>
+                                </button>
+                                <button type="button" class="drishti-clear-btn" id="btn-drishti-clear" style="display: none;" onclick="clearGrahaDrishti()">
+                                    <i class="fa-solid fa-xmark"></i> Clear
+                                </button>
+                            </div>
+                        </div>
                         
                         <!-- Planetary coordinates table -->
                         <div class="astro-table-container">
@@ -3666,6 +4469,18 @@
                                 <div id="dasa-timeline-svg-container" style="min-height: 120px; width: 100%;"></div>
                             </div>
                         </div>
+
+                        <!-- Dasa-Bhukti-Antaram Explorer Toolbar & Visual Life Age Ribbon (UI/UX Divine Elevation 4B) -->
+                        <div class="dasa-explorer-toolbar" id="dasa-explorer-toolbar">
+                            <div class="dasa-search-box">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="dasa-search-filter-input" placeholder="Filter by planet or year (e.g. Jupiter, Saturn, 2026)..." oninput="filterVimshottariDasa(this.value)">
+                            </div>
+                            <button type="button" class="dasa-jump-today-btn" id="btn-dasa-jump-today" onclick="jumpToRunningVimshottariDasa()">
+                                <i class="fa-solid fa-location-crosshairs"></i> Jump to Today's Running Period
+                            </button>
+                        </div>
+                        <div class="vimshottari-life-ribbon-wrap" id="vimshottari-life-age-ribbon"></div>
 
                         <div class="dasa-columns" id="dasa-grid-list">
                             <!-- Populated dynamically -->
@@ -6111,6 +6926,9 @@
                 // keep chips/labels in the active language on every open).
                 switchHoroScope(horoScopeTab);
             }
+            if (typeof updateSlidingNavIndicator === 'function') {
+                updateSlidingNavIndicator();
+            }
         }
 
         // Language Dropdown toggles
@@ -7367,6 +8185,24 @@
                 festHtml += `<div style="margin-bottom: 6px; display: flex; align-items: start; gap: 6px;"><span style="color: ${bulletColor}; font-weight: bold;">•</span><span>${f}</span></div>`;
             });
             document.getElementById('panch-festivals-list').innerHTML = festHtml;
+
+            // Update Live Cosmic Sky Header Ticker & 24-Hour Sacred Time Wheel (UI/UX Divine Elevation 2A & 3B)
+            if (typeof updateLiveCosmicSkyTicker === 'function') {
+                updateLiveCosmicSkyTicker(sunriseDec, startLordIdx);
+            }
+            if (typeof renderSacred24hTimeline === 'function') {
+                renderSacred24hTimeline(sunriseDec, sunsetDec, {
+                    rahuStart, rahuEnd,
+                    yamaStart, yamaEnd,
+                    gulikaStart, gulikaEnd,
+                    abhijitStart, abhijitEnd,
+                    wrappedBrahmaStart, wrappedBrahmaEnd,
+                    wrappedGodhuliStart, wrappedGodhuliEnd,
+                    wrappedVijayaStart, wrappedVijayaEnd,
+                    durRanges,
+                    startLordIdx
+                });
+            }
         }
 
         function changePanchangamDate() {
@@ -7438,25 +8274,72 @@
                 cell.className = classes;
                 cell.setAttribute('data-date', cellDateStr);
 
-                let moonIconHtml = '', festivalImgHtml = '', specialityHtml = '', regionalDateHtml = '', naksHtml = '';
+                let moonIconHtml = '', festivalImgHtml = '', specialityHtml = '', regionalDateHtml = '', naksHtml = '', sacredBadgesHtml = '';
                 if (dayInfo) {
+                    const specs = dayInfo.specialities || [];
+                    const tithiLower = (dayInfo.tithi || '').toLowerCase();
                     if (dayInfo.is_pournami) {
-                        moonIconHtml = '<span class="cell-moon" style="color: #d97706; text-shadow: 0 0 8px rgba(217,119,6,0.6)">🌕</span>';
+                        moonIconHtml = '<span class="cell-moon moon-pournami" title="Pournami (Full Moon)">🌕</span>';
                     } else if (dayInfo.is_amavasya) {
-                        moonIconHtml = '<span class="cell-moon" style="color: #64748b;">🌑</span>';
-                    }
-                    if (dayInfo.specialities && dayInfo.specialities.length > 0) {
-                        const imgPath = getFestivalImage(dayInfo.specialities[0], currentLang);
-                        if (imgPath) {
-                            festivalImgHtml = `<img src="${imgPath}?v=3" alt="${dayInfo.specialities[0]}" class="cell-fest-img" loading="lazy" decoding="async" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                        moonIconHtml = '<span class="cell-moon moon-amavasya" title="Amavasya (New Moon)">🌑</span>';
+                    } else if (tithiLower) {
+                        const isWaxing = tithiLower.includes('sukla') || tithiLower.includes('shukla');
+                        const tMatch = tithiLower.match(/tithi\s*(\d+)/) || tithiLower.match(/(\d+)/);
+                        const tNum = tMatch ? parseInt(tMatch[1], 10) : 7;
+                        if (isWaxing) {
+                            moonIconHtml = `<span class="cell-moon moon-crescent" title="${dayInfo.tithi}">${tNum <= 5 ? '🌒' : (tNum <= 10 ? '🌓' : '🌔')}</span>`;
+                        } else if (tithiLower.includes('krishna')) {
+                            moonIconHtml = `<span class="cell-moon moon-crescent" title="${dayInfo.tithi}">${tNum <= 5 ? '🌖' : (tNum <= 10 ? '🌗' : '🌘')}</span>`;
                         }
-                        specialityHtml = `<div class="cell-speciality">${translateSpeciality(dayInfo.specialities[0])}</div>`;
+                    }
+
+                    // Check sacred filter categories (Muhurtham, Moon, Ekadashi/Pradosham Vrata, Kari Naal)
+                    const hasMuhurtham = !!(dayInfo.is_subha_muhurtham || specs.includes("Marriage Muhurtham"));
+                    const hasMoon = !!(dayInfo.is_pournami || dayInfo.is_amavasya);
+                    const hasVrata = specs.some(s => s === "Ekadashi" || s === "Pradosham" || s === "Shivaratri") || tithiLower.includes("ekadashi") || tithiLower.includes("trayodashi");
+                    const hasKariNaal = !!(dayInfo.is_kari_naal || (typeof isTamilDateKariNaal === 'function' && isTamilDateKariNaal(dayInfo.tamil_date)));
+
+                    if (hasMuhurtham) cell.setAttribute('data-has-muhurtham', '1');
+                    if (hasMoon) cell.setAttribute('data-has-moon', '1');
+                    if (hasVrata) cell.setAttribute('data-has-vrata', '1');
+                    if (hasKariNaal) cell.setAttribute('data-has-karinaal', '1');
+
+                    const badgePills = [];
+                    if (hasMuhurtham) {
+                        badgePills.push(`<span class="cell-sacred-badge muhurtham" title="Subha Muhurtham (Auspicious)">✨ சுப</span>`);
+                    }
+                    if (hasVrata) {
+                        const vLabel = specs.includes("Pradosham") ? "🕉️ பிரதோஷம்" : "🕉️ ஏகாதசி";
+                        badgePills.push(`<span class="cell-sacred-badge vrata" title="Sacred Vrata">${currentLang === 'ta' ? vLabel : (specs.includes("Pradosham") ? "🕉️ Pradosham" : "🕉️ Ekadashi")}</span>`);
+                    }
+                    if (hasKariNaal) {
+                        badgePills.push(`<span class="cell-sacred-badge karinaal" title="Kari Naal (Avoid Auspicious Ceremonies)">${currentLang === 'ta' ? '⚠️ கரிநாள்' : '⚠️ Kari Naal'}</span>`);
+                    }
+                    if (badgePills.length > 0) {
+                        sacredBadgesHtml = `<div class="cell-sacred-badges">${badgePills.join('')}</div>`;
+                    }
+
+                    if (specs.length > 0) {
+                        const imgPath = getFestivalImage(specs[0], currentLang);
+                        if (imgPath) {
+                            festivalImgHtml = `<img src="${imgPath}?v=3" alt="${specs[0]}" class="cell-fest-img" loading="lazy" decoding="async" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                        }
+                        specialityHtml = `<div class="cell-speciality">${translateSpeciality(specs[0])}</div>`;
                     }
                     const translatedNak = translateNakshatra(dayInfo.nakshatra);
                     const abbreviatedNak = translatedNak.slice(0, 5) + (translatedNak.length > 5 ? '.' : '');
                     naksHtml = `<div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>`;
                     if (dayInfo.tamil_date) {
                         regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translateTamilMonth(dayInfo.tamil_date)}</div>`;
+                    }
+
+                    if (typeof activeCalendarFilter !== 'undefined' && activeCalendarFilter) {
+                        const matchMap = { muhurtham: hasMuhurtham, moon: hasMoon, vrata: hasVrata, karinaal: hasKariNaal };
+                        if (matchMap[activeCalendarFilter]) {
+                            cell.classList.add('filter-matched');
+                        } else {
+                            cell.classList.add('filter-dimmed');
+                        }
                     }
                 }
 
@@ -7469,6 +8352,7 @@
                         <div class="cell-mid" style="margin-top: 4px;">
                             ${regionalDateHtml}
                             ${naksHtml}
+                            ${sacredBadgesHtml}
                         </div>
                         <div class="cell-bottom" style="margin-top: auto;">
                             ${specialityHtml}
@@ -7830,9 +8714,11 @@
             const combustSym = combustSyms[currentLang] || "(C)";
             
             cellCoordinates.forEach(cell => {
+                // Interactive cell highlight rect for Graha Drishti (UI/UX Divine Elevation 4A)
+                svgContent += `<rect x="${cell.x}" y="${cell.y}" width="60" height="60" fill="transparent" class="chart-rasi-cell" data-rasi-idx="${cell.idx}" data-cx="${cell.x + 30}" data-cy="${cell.y + 30}" onclick="highlightRasiDrishti(${cell.idx})" style="cursor: pointer;"/>`;
                 // Rasi label translated
                 const rasiLabel = rasiAbbr[currentLang][cell.idx];
-                svgContent += `<text x="${cell.x + 4}" y="${cell.y + 11}" font-family="sans-serif" font-size="7" fill="var(--text-muted)">${rasiLabel}</text>`;
+                svgContent += `<text x="${cell.x + 4}" y="${cell.y + 11}" font-family="sans-serif" font-size="7" fill="var(--text-muted)" pointer-events="none">${rasiLabel}</text>`;
                 
                 // Fetch planets in this Rasi
                 let planetsInCell = [];
@@ -7868,7 +8754,7 @@
                         fill = "var(--accent-gold)";
                     }
                     
-                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="${fill}" class="graha-glyph" data-graha="${item.name}" data-chart="${chartType}" style="cursor: pointer; pointer-events: all;">${item.text}</text>`;
+                    svgContent += `<text x="${px}" y="${py}" font-family="sans-serif" font-weight="bold" font-size="${fSize}" fill="${fill}" class="graha-glyph" data-graha="${item.name}" data-rasi-idx="${cell.idx}" data-chart="${chartType}" onmouseenter="previewGrahaDrishti('${item.name}')" style="cursor: pointer; pointer-events: all;">${item.text}</text>`;
                     col++;
                     if (col >= 2) {
                         col = 0;
@@ -7877,7 +8763,7 @@
                 });
             });
             
-            svgContent += `</svg>`;
+            svgContent += `<g class="drishti-overlay-layer" pointer-events="none"></g></svg>`;
             container.innerHTML = svgContent;
         }
 
@@ -7937,8 +8823,10 @@
                 const signNum = signIndex + 1; // 1-indexed for display
                 const center = houseCenters[house];
                 
+                // Interactive house center marker for North Indian Drishti rays
+                svgContent += `<circle cx="${center.x}" cy="${center.y}" r="22" fill="transparent" class="chart-rasi-cell" data-rasi-idx="${signIndex}" data-cx="${center.x}" data-cy="${center.y}" onclick="highlightRasiDrishti(${signIndex})" style="cursor: pointer;"/>`;
                 // Draw sign number in cell corner
-                svgContent += `<text x="${center.x - 12}" y="${center.y - 12}" font-family="sans-serif" font-size="6" fill="var(--text-muted)" text-anchor="middle">${signNum}</text>`;
+                svgContent += `<text x="${center.x - 12}" y="${center.y - 12}" font-family="sans-serif" font-size="6" fill="var(--text-muted)" text-anchor="middle" pointer-events="none">${signNum}</text>`;
                 
                 // Retrieve planets in this sign
                 let planetsInHouse = [];
@@ -7969,7 +8857,7 @@
                         } else if (pName === "Lagna") {
                             fill = "var(--accent-gold)";
                         }
-                        return `<tspan fill="${fill}" class="graha-glyph" data-graha="${item.name}" data-chart="${chartType}" style="cursor: pointer; pointer-events: all;">${item.text}</tspan>`;
+                        return `<tspan fill="${fill}" class="graha-glyph" data-graha="${item.name}" data-rasi-idx="${signIndex}" data-chart="${chartType}" onmouseenter="previewGrahaDrishti('${item.name}')" style="cursor: pointer; pointer-events: all;">${item.text}</tspan>`;
                     };
                     
                     const row1 = planetsInHouse.slice(0, 2).map(getTspan).join(' ');
@@ -7982,7 +8870,7 @@
                 }
             }
             
-            svgContent += `</svg>`;
+            svgContent += `<g class="drishti-overlay-layer" pointer-events="none"></g></svg>`;
             container.innerHTML = svgContent;
         }
 
@@ -8420,16 +9308,37 @@
                 // Pada
                 const padaVal = plac.pada !== undefined ? plac.pada : "";
 
+                // Sacred Planetary Dignity Badges (UI/UX Divine Elevation 4A)
+                const dignityPills = [];
+                if (planet !== "Lagna") {
+                    if (rawDignity.includes("Exalted")) {
+                        dignityPills.push('<span class="dignity-badge exalted" title="Exalted (Uccha)">▲ Uccha</span>');
+                    } else if (rawDignity.includes("Moolatrikona")) {
+                        dignityPills.push('<span class="dignity-badge moola" title="Moolatrikona">◈ Moola</span>');
+                    } else if (rawDignity.includes("Own")) {
+                        dignityPills.push('<span class="dignity-badge own" title="Own Sign (Swakshetra)">● Swa</span>');
+                    } else if (rawDignity.includes("Debilitated")) {
+                        dignityPills.push('<span class="dignity-badge debilitated" title="Debilitated (Neecha)">▼ Neecha</span>');
+                    }
+                    if (plac.is_retrograde) {
+                        dignityPills.push('<span class="dignity-badge retro" title="Retrograde (Vakra)">↺ Vakra</span>');
+                    }
+                    if (plac.is_combust) {
+                        dignityPills.push('<span class="dignity-badge combust" title="Combust (Astangata)">☀ Astangata</span>');
+                    }
+                }
+                const dignityBadgesHtml = dignityPills.length ? `<div class="dignity-badges-wrap">${dignityPills.join('')}</div>` : '';
+
                 const rowHtml = `
-                    <tr>
+                    <tr class="planet-table-row" data-planet="${planet}" onclick="highlightGrahaDrishti('${planet}')" style="cursor: pointer;">
                         <td style="font-weight: 600; color: var(--accent-gold);">${translatedPlanetName}</td>
                         <td style="font-family: var(--font-serif);">${translatedRasiName}</td>
                         <td>${translatedRasiLord}</td>
-                        <td>${plac.longitude}°</td>
-                        <td>${plac.degree.toFixed(2)}°</td>
+                        <td style="font-variant-numeric: tabular-nums;">${plac.longitude}°</td>
+                        <td style="font-variant-numeric: tabular-nums;">${plac.degree.toFixed(2)}°</td>
                         <td>${translatedNakshatra}</td>
-                        <td>${padaVal}</td>
-                        <td style="${dignityStyle}">${finalDignityDisplay}</td>
+                        <td style="font-variant-numeric: tabular-nums;">${padaVal}</td>
+                        <td style="${dignityStyle}"><div>${finalDignityDisplay}</div>${dignityBadgesHtml}</td>
                     </tr>
                 `;
                 tableBody.innerHTML += rowHtml;
@@ -8498,15 +9407,18 @@
                 });
 
                 dasaGrid.innerHTML += `
-                    <div class="dz-card ${mActive ? 'active' : ''}">
+                    <div class="dz-card ${mActive ? 'active' : ''}" data-dasa-lord="${dasa.dasa_lord}" data-start="${dasa.start_date}" data-end="${dasa.end_date}">
                         <div class="dz-head" style="background:linear-gradient(135deg, ${pColor}, ${pColor}dd);">
                             <span class="dz-pl">${dasa.dasa_lord}${mActive ? ' <span class="dz-now">NOW</span>' : ''}</span>
                             <span class="dz-dur">${dasa.duration_years} Y</span>
                         </div>
-                        <div class="dz-dates">${dasa.start_date} &nbsp;→&nbsp; ${dasa.end_date}</div>
+                        <div class="dz-dates" style="font-variant-numeric: tabular-nums;">${dasa.start_date} &nbsp;→&nbsp; ${dasa.end_date}</div>
                         <div class="dz-bhuktis">${bhuktisHtml}</div>
                     </div>`;
             });
+            if (typeof renderVimshottariLifeRibbon === 'function') {
+                renderVimshottariLifeRibbon();
+            }
         }
 
         function toggleDz(id) {
@@ -8550,7 +9462,7 @@
                 const tip = `${p} — Sthana ${data.sthana_bala}, Dig ${data.dig_bala}, Kala ${data.kala_bala}, `
                           + `Cheshta ${data.cheshta_bala}, Naisargika ${data.naisargika_bala}, Drik ${data.drik_bala} pt`;
                 container.innerHTML += `
-                    <div class="sb-row" title="${tip}">
+                    <div class="sb-row" data-planet="${p}" onclick="highlightGrahaDrishti('${p}')" style="cursor: pointer;" title="${tip}">
                         <div class="sb-head">
                             <span class="sb-name"><span class="sb-dot" style="background:${planetColor(p)};"></span>${p}</span>
                             <span class="sb-val">${data.total_points}/${data.required_points} <span class="sb-chip ${tier}">${data.percentage_strength}%</span></span>
@@ -13474,6 +14386,622 @@
             showToast("Back online.", 'success');
         });
 
+        // ══════════════════════════════════════════════════════════════════════
+        // UI/UX DIVINE ELEVATION MODULE (Sections 1 to 5)
+        // 1. Dual Sacred Theme (Surya Palm-Leaf Day & Chandra Night Sanctum)
+        // 2. Live Cosmic Sky Header Ticker, Hora Dial & Meditative Soundscape
+        // 3. Calendar Quick-Filters & 24-Hour Sacred Time Wheel
+        // 4. Interactive SVG Graha Drishti Rays & Dasa Life Age Ribbon
+        // 5. Classical Scripture Grounding Side-Drawer
+        // ══════════════════════════════════════════════════════════════════════
+
+        let currentSacredTheme = localStorage.getItem('vedic_theme') || 'surya';
+        let activeCalendarFilter = null;
+        let selectedDrishtiPlanet = null;
+        let sacredAudioCtx = null;
+        let sacredAudioNodes = [];
+        let isSacredChantPlaying = false;
+
+        function applySacredTheme(theme) {
+            currentSacredTheme = theme === 'chandra' ? 'chandra' : 'surya';
+            document.documentElement.setAttribute('data-theme', currentSacredTheme);
+            if (document.body) {
+                document.body.setAttribute('data-theme', currentSacredTheme);
+            }
+            localStorage.setItem('vedic_theme', currentSacredTheme);
+
+            const iconEl = document.getElementById('theme-toggle-icon');
+            const labelEl = document.getElementById('theme-toggle-label');
+            if (iconEl) {
+                iconEl.className = currentSacredTheme === 'chandra' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            }
+            if (labelEl) {
+                labelEl.innerText = currentSacredTheme === 'chandra' ? 'Chandra' : 'Surya';
+            }
+        }
+
+        function toggleSacredTheme() {
+            const nextTheme = currentSacredTheme === 'chandra' ? 'surya' : 'chandra';
+            applySacredTheme(nextTheme);
+        }
+
+        // Sliding Brass-Gold Tab Indicator & Keyboard Navigation (1-5)
+        function updateSlidingNavIndicator() {
+            const indicator = document.getElementById('nav-sliding-indicator');
+            const container = document.getElementById('main-nav-tabs');
+            if (!indicator || !container) return;
+            const activeBtn = container.querySelector('.nav-tab.active');
+            if (!activeBtn) {
+                indicator.style.opacity = '0';
+                return;
+            }
+            const cRect = container.getBoundingClientRect();
+            const bRect = activeBtn.getBoundingClientRect();
+            if (bRect.width === 0) return;
+            const offsetLeft = bRect.left - cRect.left;
+            indicator.style.opacity = '1';
+            indicator.style.width = `${Math.max(24, bRect.width - 16)}px`;
+            indicator.style.transform = `translate3d(${offsetLeft + 8}px, 0, 0)`;
+        }
+
+        window.addEventListener('resize', () => {
+            requestAnimationFrame(updateSlidingNavIndicator);
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) {
+                return;
+            }
+            if (e.key === 'Escape') {
+                closeScriptureDrawer();
+                return;
+            }
+            const tabMap = { '1': 'home', '2': 'jyothisyam', '3': 'horoscope', '4': 'marriage', '5': 'ai' };
+            if (tabMap[e.key]) {
+                navigateToPage(tabMap[e.key]);
+            }
+        });
+
+        // Client-side Kari Naal lookup fallback (mirrors KARI_NAAL in muhurtham_engine.py)
+        const KARI_NAAL_CLIENT_MAP = {
+            chithirai: [6, 15], vaikasi: [7, 16, 17], aani: [1, 6], aadi: [2, 10, 20],
+            aavani: [2, 9, 28], purattasi: [16, 29], aippasi: [6, 20], karthigai: [1, 10, 17],
+            margazhi: [6, 9, 11], thai: [1, 2, 3, 11, 17], maasi: [15, 16, 17], panguni: [6, 15, 19]
+        };
+
+        function isTamilDateKariNaal(tamilDateStr) {
+            if (!tamilDateStr) return false;
+            const lower = String(tamilDateStr).toLowerCase().trim();
+            const parts = lower.split(/\s+/);
+            if (parts.length < 2) return false;
+            const mName = parts[0];
+            const dMatch = parts[1].match(/\d+/);
+            if (!dMatch || !KARI_NAAL_CLIENT_MAP[mName]) return false;
+            return KARI_NAAL_CLIENT_MAP[mName].includes(parseInt(dMatch[0], 10));
+        }
+
+        function toggleCalendarFilter(filterType) {
+            if (activeCalendarFilter === filterType) {
+                activeCalendarFilter = null;
+            } else {
+                activeCalendarFilter = filterType;
+            }
+            document.querySelectorAll('#calendar-quick-filters .cal-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-filter') === activeCalendarFilter);
+            });
+            applyCalendarFilterToDOM();
+        }
+
+        function applyCalendarFilterToDOM() {
+            const cells = document.querySelectorAll('#calendar-grid-container .calendar-cell:not(.empty)');
+            cells.forEach(cell => {
+                cell.classList.remove('filter-matched', 'filter-dimmed');
+                if (!activeCalendarFilter) return;
+                const attrName = `data-has-${activeCalendarFilter}`;
+                if (cell.getAttribute(attrName) === '1') {
+                    cell.classList.add('filter-matched');
+                } else {
+                    cell.classList.add('filter-dimmed');
+                }
+            });
+        }
+
+        // Live Cosmic Sky Header Ticker & Active Planetary Hora Dial (Section 2A)
+        let lastKnownSunriseDec = 6.0;
+        let lastKnownStartLordIdx = 0;
+
+        function updateLiveCosmicSkyTicker(sunriseDec, startLordIdx) {
+            if (typeof sunriseDec === 'number' && !isNaN(sunriseDec) && sunriseDec > 0) {
+                lastKnownSunriseDec = sunriseDec;
+            }
+            if (typeof startLordIdx === 'number' && !isNaN(startLordIdx) && startLordIdx >= 0) {
+                lastKnownStartLordIdx = startLordIdx;
+            }
+
+            const HORA_PLANETS = ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"];
+            const now = new Date();
+            const currentDec = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+            const elapsedSinceSunrise = (currentDec - lastKnownSunriseDec + 24) % 24;
+            const currentHourIdx = Math.floor(elapsedSinceSunrise);
+            const fractionIntoHour = elapsedSinceSunrise - currentHourIdx;
+            const remainingMins = Math.max(1, Math.ceil((1 - fractionIntoHour) * 60));
+
+            const lord = HORA_PLANETS[(lastKnownStartLordIdx + currentHourIdx) % 7];
+            const isAuspicious = ["Jupiter", "Venus", "Mercury", "Moon"].includes(lord);
+            const lordTranslated = (planetTranslations[currentLang] && planetTranslations[currentLang][lord]) || lord;
+
+            const planetEl = document.getElementById('sky-hora-planet');
+            const badgeEl = document.getElementById('sky-hora-badge');
+            const remEl = document.getElementById('sky-hora-remaining');
+            const ringFg = document.getElementById('sky-hora-ring-fg');
+
+            if (planetEl) planetEl.innerText = `${lordTranslated} Hora`;
+            if (badgeEl) {
+                badgeEl.innerText = isAuspicious ? 'Subha' : 'Kala';
+                badgeEl.className = `sky-hora-badge ${isAuspicious ? 'good' : 'neutral'}`;
+            }
+            if (remEl) remEl.innerText = `${remainingMins}m left`;
+            if (ringFg) {
+                const circumference = 81.68;
+                const offset = circumference * fractionIntoHour;
+                ringFg.style.strokeDashoffset = `${offset.toFixed(2)}`;
+            }
+
+            if (dailyPanchangamData && dailyPanchangamData.panchangam) {
+                const naksEl = document.getElementById('sky-naks-text');
+                const tithiEl = document.getElementById('sky-tithi-text');
+                const naksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra);
+                const tithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi);
+                const naksEnd = dailyPanchangamData.panchangam.nakshatra_end_time || '';
+                const tithiEnd = dailyPanchangamData.panchangam.tithi_end_time || '';
+                if (naksEl) {
+                    naksEl.innerText = naksEnd && !naksEnd.toLowerCase().includes('full')
+                        ? `${naksTrans} (→ ${naksEnd})`
+                        : naksTrans;
+                }
+                if (tithiEl) {
+                    tithiEl.innerText = tithiEnd && !tithiEnd.toLowerCase().includes('full')
+                        ? `${tithiTrans} (→ ${tithiEnd})`
+                        : tithiTrans;
+                }
+            }
+        }
+
+        // Web Audio API Meditative Temple Tanpura / Om Soundscape (Section 2A)
+        function toggleSacredChantAudio() {
+            const btn = document.getElementById('btn-sacred-chant-toggle');
+            if (isSacredChantPlaying) {
+                stopSacredChantAudio();
+                if (btn) btn.classList.remove('playing');
+                return;
+            }
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!sacredAudioCtx) sacredAudioCtx = new AudioCtx();
+                if (sacredAudioCtx.state === 'suspended') sacredAudioCtx.resume();
+
+                const masterGain = sacredAudioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.001, sacredAudioCtx.currentTime);
+                masterGain.gain.exponentialRampToValueAtTime(0.06, sacredAudioCtx.currentTime + 1.5);
+                masterGain.connect(sacredAudioCtx.destination);
+
+                // Warm low-pass filter for temple sanctum resonance
+                const filter = sacredAudioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(420, sacredAudioCtx.currentTime);
+                filter.connect(masterGain);
+
+                // Cosmic Om / Sadja (136.1 Hz C#), Panchama (204.15 Hz), and Mandra Sa (68.05 Hz)
+                const freqs = [68.05, 136.1, 204.15, 272.2];
+                sacredAudioNodes = freqs.map((f, i) => {
+                    const osc = sacredAudioCtx.createOscillator();
+                    const g = sacredAudioCtx.createGain();
+                    osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(f, sacredAudioCtx.currentTime);
+                    g.gain.setValueAtTime(i === 1 ? 0.45 : 0.2, sacredAudioCtx.currentTime);
+                    osc.connect(g);
+                    g.connect(filter);
+                    osc.start();
+                    return osc;
+                });
+
+                isSacredChantPlaying = true;
+                if (btn) btn.classList.add('playing');
+            } catch (e) {
+                console.warn('Sacred audio initialization skipped:', e);
+            }
+        }
+
+        function stopSacredChantAudio() {
+            sacredAudioNodes.forEach(osc => {
+                try { osc.stop(); osc.disconnect(); } catch (e) {}
+            });
+            sacredAudioNodes = [];
+            isSacredChantPlaying = false;
+        }
+
+        // Visual 24-Hour Kaalam & Hora Timeline Bar (Section 3B)
+        function renderSacred24hTimeline(sunriseDec, sunsetDec, kaalams) {
+            const track = document.getElementById('sacred-24h-track');
+            const horaStrip = document.getElementById('sacred-24h-hora-strip');
+            const ticksEl = document.getElementById('sacred-24h-ticks');
+            if (!track || !kaalams) return;
+
+            const sr = (typeof sunriseDec === 'number' && sunriseDec > 0) ? sunriseDec : 6.0;
+            const toPct = (decHour) => {
+                const rel = (decHour - sr + 24) % 24;
+                return Math.max(0, Math.min(100, (rel / 24) * 100));
+            };
+            const fmtHm = (dec) => {
+                const norm = (dec + 24) % 24;
+                const h = Math.floor(norm);
+                const m = Math.round((norm % 1) * 60) % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            };
+
+            const segments = [];
+            const addBand = (startDec, endDec, type, label) => {
+                if (typeof startDec !== 'number' || typeof endDec !== 'number') return;
+                const left = toPct(startDec);
+                let width = ((endDec - startDec + 24) % 24) / 24 * 100;
+                if (width <= 0 || width > 50) width = 4.0;
+                segments.push(`
+                    <div class="sacred-24h-band ${type}" style="left:${left.toFixed(2)}%; width:${Math.min(100 - left, width).toFixed(2)}%;" title="${label}: ${fmtHm(startDec)} – ${fmtHm(endDec)}">
+                        <span>${label}</span>
+                    </div>
+                `);
+            };
+
+            addBand(kaalams.rahuStart, kaalams.rahuEnd, 'bad', 'Rahu');
+            addBand(kaalams.yamaStart, kaalams.yamaEnd, 'bad', 'Yama');
+            addBand(kaalams.gulikaStart, kaalams.gulikaEnd, 'neutral', 'Gulika');
+            addBand(kaalams.abhijitStart, kaalams.abhijitEnd, 'good', 'Abhijit');
+            addBand(kaalams.wrappedBrahmaStart, kaalams.wrappedBrahmaEnd, 'good', 'Brahma');
+            addBand(kaalams.wrappedVijayaStart, kaalams.wrappedVijayaEnd, 'good', 'Vijaya');
+            addBand(kaalams.wrappedGodhuliStart, kaalams.wrappedGodhuliEnd, 'good', 'Godhuli');
+            (kaalams.durRanges || []).forEach(r => addBand(r[0], r[1], 'bad', 'Dur'));
+
+            const now = new Date();
+            const nowDec = now.getHours() + now.getMinutes() / 60;
+            const nowPct = toPct(nowDec);
+            const nowLabel = fmtHm(nowDec);
+
+            track.innerHTML = `
+                ${segments.join('')}
+                <div class="sacred-now-needle" id="sacred-timeline-now-needle" style="left: ${nowPct.toFixed(2)}%;">
+                    <span class="sacred-now-tag" id="sacred-timeline-now-label">NOW ${nowLabel}</span>
+                </div>
+            `;
+
+            if (horaStrip) {
+                const HORA_PLANETS = ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"];
+                const HORA_SHORT = { Sun: 'Su', Venus: 'Ve', Mercury: 'Me', Moon: 'Mo', Saturn: 'Sa', Jupiter: 'Ju', Mars: 'Ma' };
+                const currentHourIdx = Math.floor((nowDec - sr + 24) % 24);
+                let horaCells = '';
+                for (let h = 0; h < 24; h++) {
+                    const lord = HORA_PLANETS[(kaalams.startLordIdx + h) % 7];
+                    const isGood = ["Jupiter", "Venus", "Mercury", "Moon"].includes(lord);
+                    const isCurrent = h === currentHourIdx;
+                    const hStart = (sr + h) % 24;
+                    const hEnd = (hStart + 1) % 24;
+                    horaCells += `<div class="sacred-hora-cell ${isGood ? 'good' : 'bad'} ${isCurrent ? 'active' : ''}" title="Hora ${h + 1}: ${lord} (${fmtHm(hStart)}–${fmtHm(hEnd)})">${HORA_SHORT[lord]}</div>`;
+                }
+                horaStrip.innerHTML = horaCells;
+            }
+
+            if (ticksEl) {
+                const tickLabels = [];
+                for (let i = 0; i <= 8; i++) {
+                    const tDec = (sr + i * 3) % 24;
+                    const suffix = i === 0 ? ' (Sunrise)' : (i === 4 ? ' (Sunset)' : '');
+                    tickLabels.push(`<span>${fmtHm(tDec)}${suffix}</span>`);
+                }
+                ticksEl.innerHTML = tickLabels.join('');
+            }
+        }
+
+        // Interactive SVG Graha Drishti (Aspect Highlighting) & Table Sync (Section 4A)
+        const PARASHARI_SPECIAL_ASPECTS = {
+            Sun: [7], Moon: [7], Mercury: [7], Venus: [7],
+            Mars: [4, 7, 8],
+            Jupiter: [5, 7, 9],
+            Saturn: [3, 7, 10],
+            Rahu: [5, 7, 9],
+            Ketu: [5, 7, 9],
+            Lagna: [7]
+        };
+
+        window.highlightGrahaDrishti = function (planet, fromReact = false) {
+            if (!calculatedChartData || !calculatedChartData.placements) return;
+            if (!planet || !calculatedChartData.placements[planet]) {
+                clearGrahaDrishti(fromReact);
+                return;
+            }
+            selectedDrishtiPlanet = planet;
+            const plac = calculatedChartData.placements[planet];
+            const sourceRasi = plac.rasi_index;
+            const aspectOffsets = PARASHARI_SPECIAL_ASPECTS[planet] || [7];
+            const aspectedRasis = aspectOffsets.map(h => ({
+                houseOffset: h,
+                rasiIdx: (sourceRasi + h - 1) % 12
+            }));
+
+            // Draw SVG rays on both Rasi and Divisional chart SVGs
+            ['svg-chart-rendered', 'svg-navamsha-rendered'].forEach((cid, idx) => {
+                const wrap = document.getElementById(cid);
+                if (!wrap) return;
+                const svg = wrap.querySelector('svg');
+                const overlay = svg ? svg.querySelector('.drishti-overlay-layer') : null;
+                if (!svg || !overlay) return;
+
+                const dType = idx === 0 ? 'd1' : ((document.getElementById('d-chart-select') || {}).value || 'd9');
+                const pRasi = getDChartRasiIndex(planet, plac, dType);
+                const targets = aspectOffsets.map(h => ({
+                    houseOffset: h,
+                    rasiIdx: (pRasi + h - 1) % 12
+                }));
+
+                svg.querySelectorAll('.chart-rasi-cell').forEach(c => {
+                    c.classList.remove('drishti-source-cell', 'drishti-target-cell');
+                    const rIdx = parseInt(c.getAttribute('data-rasi-idx'), 10);
+                    if (rIdx === pRasi) c.classList.add('drishti-source-cell');
+                    else if (targets.some(t => t.rasiIdx === rIdx)) c.classList.add('drishti-target-cell');
+                });
+
+                const srcCell = svg.querySelector(`.chart-rasi-cell[data-rasi-idx="${pRasi}"]`);
+                if (!srcCell) return;
+                const sx = parseFloat(srcCell.getAttribute('data-cx'));
+                const sy = parseFloat(srcCell.getAttribute('data-cy'));
+
+                let raysSvg = `<circle cx="${sx}" cy="${sy}" r="18" class="drishti-origin-halo"/>`;
+                targets.forEach(t => {
+                    const tCell = svg.querySelector(`.chart-rasi-cell[data-rasi-idx="${t.rasiIdx}"]`);
+                    if (!tCell) return;
+                    const tx = parseFloat(tCell.getAttribute('data-cx'));
+                    const ty = parseFloat(tCell.getAttribute('data-cy'));
+                    const isSpecial = t.houseOffset !== 7;
+                    raysSvg += `
+                        <line x1="${sx}" y1="${sy}" x2="${tx}" y2="${ty}" class="drishti-ray-line ${isSpecial ? 'special' : 'seventh'}"/>
+                        <circle cx="${tx}" cy="${ty}" r="12" class="drishti-target-node"/>
+                        <text x="${tx}" y="${ty - 14}" class="drishti-ray-label" text-anchor="middle">${t.houseOffset}th</text>
+                    `;
+                });
+                overlay.innerHTML = raysSvg;
+            });
+
+            // Highlight matching row in Planetary Placements table & Shadbala bars
+            document.querySelectorAll('#planet-table-body .planet-table-row').forEach(row => {
+                row.classList.toggle('drishti-row-active', row.getAttribute('data-planet') === planet);
+            });
+            document.querySelectorAll('#shadbala-bars-container .sb-row').forEach(row => {
+                row.classList.toggle('drishti-row-active', row.getAttribute('data-planet') === planet);
+            });
+
+            // Update Drishti Inspector Bar
+            const inspectorText = document.getElementById('drishti-inspector-text');
+            const scriptureBtn = document.getElementById('btn-drishti-scripture');
+            const clearBtn = document.getElementById('btn-drishti-clear');
+            const signNames = rasiTranslations[currentLang] || rasiTranslations.en;
+            const aspectSummary = aspectedRasis.map(t => {
+                const occupants = Object.entries(calculatedChartData.placements)
+                    .filter(([pName, pInfo]) => pName !== planet && pInfo.rasi_index === t.rasiIdx)
+                    .map(([pName]) => (planetTranslations[currentLang] && planetTranslations[currentLang][pName]) || pName);
+                const occStr = occupants.length ? ` (${occupants.join(', ')})` : '';
+                return `<span class="drishti-chip">${t.houseOffset}th → ${signNames[t.rasiIdx]}${occStr}</span>`;
+            }).join(' ');
+
+            const pTrans = (planetTranslations[currentLang] && planetTranslations[currentLang][planet]) || planet;
+            if (inspectorText) {
+                inspectorText.innerHTML = `<strong>${pTrans}</strong> in <strong>${signNames[sourceRasi]}</strong> (${plac.degree.toFixed(2)}°) casts Parashari Drishti on: ${aspectSummary}`;
+            }
+            if (scriptureBtn) scriptureBtn.style.display = 'inline-flex';
+            if (clearBtn) clearBtn.style.display = 'inline-flex';
+
+            if (!fromReact && typeof window.__notifyReactPlanetSelected === 'function') {
+                window.__notifyReactPlanetSelected(planet);
+            }
+        };
+
+        window.previewGrahaDrishti = function (planet) {
+            if (!selectedDrishtiPlanet) {
+                window.highlightGrahaDrishti(planet, false);
+            }
+        };
+
+        window.highlightRasiDrishti = function (rasiIdx) {
+            if (!calculatedChartData || !calculatedChartData.placements) return;
+            const found = Object.entries(calculatedChartData.placements).find(([, info]) => info.rasi_index === rasiIdx);
+            if (found) {
+                window.highlightGrahaDrishti(found[0], false);
+            }
+        };
+
+        window.clearGrahaDrishti = function (fromReact = false) {
+            selectedDrishtiPlanet = null;
+            ['svg-chart-rendered', 'svg-navamsha-rendered'].forEach(cid => {
+                const wrap = document.getElementById(cid);
+                if (!wrap) return;
+                wrap.querySelectorAll('.chart-rasi-cell').forEach(c => c.classList.remove('drishti-source-cell', 'drishti-target-cell'));
+                const overlay = wrap.querySelector('.drishti-overlay-layer');
+                if (overlay) overlay.innerHTML = '';
+            });
+            document.querySelectorAll('#planet-table-body .planet-table-row, #shadbala-bars-container .sb-row').forEach(r => {
+                r.classList.remove('drishti-row-active');
+            });
+            const inspectorText = document.getElementById('drishti-inspector-text');
+            if (inspectorText) {
+                inspectorText.innerText = 'Click or hover any Graha in the chart or table to illuminate Parashari Graha Drishti (Aspect Rays) & planetary strength.';
+            }
+            const scriptureBtn = document.getElementById('btn-drishti-scripture');
+            const clearBtn = document.getElementById('btn-drishti-clear');
+            if (scriptureBtn) scriptureBtn.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (!fromReact && typeof window.__notifyReactPlanetSelected === 'function') {
+                window.__notifyReactPlanetSelected(null);
+            }
+        };
+
+        function openSelectedGrahaScripture() {
+            const p = selectedDrishtiPlanet || 'Jupiter';
+            const plac = (calculatedChartData && calculatedChartData.placements && calculatedChartData.placements[p]) || {};
+            const query = `${p} ${plac.rasi_name || ''} ${plac.dignity || ''} drishti bhava phala`;
+            window.openScriptureDrawer(query, `${p} in ${plac.rasi_name || 'Rasi'} — Classical Shloka Grounding`);
+        }
+
+        // Vimshottari Dasa Explorer & Life Age Timeline Ribbon (Section 4B)
+        function renderVimshottariLifeRibbon() {
+            const ribbon = document.getElementById('vimshottari-life-age-ribbon');
+            if (!ribbon || !calculatedChartData || !calculatedChartData.dasas) return;
+            const dasas = calculatedChartData.dasas;
+            const totalYears = dasas.reduce((acc, d) => acc + (d.duration_years || 0), 0) || 120;
+            let cumAge = 0;
+
+            const segs = dasas.map((d, idx) => {
+                const dur = d.duration_years || 0;
+                const startAge = Math.max(0, Math.round(cumAge));
+                cumAge += dur;
+                const endAge = Math.round(cumAge);
+                const widthPct = ((dur / totalYears) * 100).toFixed(2);
+                const active = isActivePeriod(d.start_date, d.end_date);
+                const pColor = planetColor(d.dasa_lord);
+                return `
+                    <div class="life-ribbon-seg ${active ? 'active' : ''}" style="width:${widthPct}%; background:${pColor};" onclick="scrollToVimshottariDasaCard(${idx})" title="${d.dasa_lord} Mahadasa (${d.start_date} → ${d.end_date}) · Age ~${startAge}–${endAge} yrs">
+                        <span class="life-ribbon-pl">${d.dasa_lord.slice(0, 2)}</span>
+                        <span class="life-ribbon-age">${endAge}y</span>
+                    </div>
+                `;
+            }).join('');
+
+            ribbon.innerHTML = `
+                <div class="life-ribbon-header">
+                    <span><i class="fa-solid fa-hourglass-start"></i> Life Age Timeline Ribbon (0 → 120 Years)</span>
+                    <span>Click any Mahadasa block to inspect Bhuktis</span>
+                </div>
+                <div class="life-ribbon-track">${segs}</div>
+            `;
+        }
+
+        function scrollToVimshottariDasaCard(idx) {
+            const cards = document.querySelectorAll('#dasa-grid-list .dz-card');
+            if (cards[idx]) {
+                cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                cards[idx].classList.add('dz-pulse-highlight');
+                setTimeout(() => cards[idx].classList.remove('dz-pulse-highlight'), 1600);
+            }
+        }
+
+        function filterVimshottariDasa(query) {
+            const q = (query || '').trim().toLowerCase();
+            const cards = document.querySelectorAll('#dasa-grid-list .dz-card');
+            cards.forEach(card => {
+                if (!q) {
+                    card.style.display = '';
+                    return;
+                }
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(q) ? '' : 'none';
+            });
+        }
+
+        function jumpToRunningVimshottariDasa() {
+            const searchInput = document.getElementById('dasa-search-filter-input');
+            if (searchInput) searchInput.value = '';
+            filterVimshottariDasa('');
+            const activeCard = document.querySelector('#dasa-grid-list .dz-card.active');
+            if (activeCard) {
+                activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                activeCard.classList.add('dz-pulse-highlight');
+                setTimeout(() => activeCard.classList.remove('dz-pulse-highlight'), 1800);
+            }
+        }
+
+        // Classical Scripture Grounding Side-Drawer (Section 5)
+        window.openScriptureDrawer = async function (query, customTitle) {
+            const drawer = document.getElementById('classical-scripture-drawer');
+            const overlay = document.getElementById('scripture-drawer-overlay');
+            const titleEl = document.getElementById('scripture-drawer-title');
+            const inputEl = document.getElementById('scripture-drawer-search-input');
+            if (!drawer || !overlay) return;
+
+            drawer.classList.add('open');
+            overlay.classList.add('show');
+            if (titleEl && customTitle) {
+                titleEl.innerHTML = `<i class="fa-solid fa-scroll"></i> ${customTitle}`;
+            }
+            const cleanQuery = (query || 'Brihat Parashara Hora Shastra Yoga Raja').trim();
+            if (inputEl) inputEl.value = cleanQuery;
+            await searchScriptureDrawer(cleanQuery);
+        };
+
+        window.closeScriptureDrawer = function () {
+            const drawer = document.getElementById('classical-scripture-drawer');
+            const overlay = document.getElementById('scripture-drawer-overlay');
+            if (drawer) drawer.classList.remove('open');
+            if (overlay) overlay.classList.remove('show');
+        };
+
+        async function searchScriptureDrawer(query) {
+            const bodyEl = document.getElementById('scripture-drawer-body');
+            const inputEl = document.getElementById('scripture-drawer-search-input');
+            if (!bodyEl) return;
+            const q = (query || 'Gaja Kesari Yoga Jupiter Moon').trim();
+            if (inputEl && inputEl.value !== q) inputEl.value = q;
+
+            bodyEl.innerHTML = `
+                <div class="scripture-loading-state">
+                    <i class="fa-solid fa-dharmachakra fa-spin"></i>
+                    <span>Retrieving classical Sanskrit shlokas &amp; translations from the 8-text Jyotisha archive…</span>
+                </div>
+            `;
+
+            try {
+                const res = await apiFetch(`/api/scripture-passages?query=${encodeURIComponent(q)}&limit=4`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const passages = data.passages || [];
+                if (passages.length === 0) {
+                    bodyEl.innerHTML = `<div class="scripture-empty-state">No direct passages matched "${q}". Try another planet, yoga, or bhava term.</div>`;
+                    return;
+                }
+
+                bodyEl.innerHTML = passages.map((p, idx) => {
+                    const shlokaBlock = p.sanskrit_shloka
+                        ? `<blockquote class="scripture-sanskrit-verse">${p.sanskrit_shloka}</blockquote>`
+                        : '';
+                    const safeAsk = escapeJsString(`Explain the classical rule from ${p.book_title} (${p.citation_label}) regarding: ${q}`);
+                    return `
+                        <article class="scripture-passage-card">
+                            <div class="scripture-passage-meta">
+                                <span class="scripture-book-badge"><i class="fa-solid fa-book-journal-whills"></i> ${p.book_title}</span>
+                                <span class="scripture-page-pill">${p.citation_label}</span>
+                            </div>
+                            <div class="scripture-author-line">${p.author || 'Classical Jyotisha Siddhanta'}</div>
+                            ${shlokaBlock}
+                            <div class="scripture-translation-text">${p.translation_excerpt}</div>
+                            <div class="scripture-card-footer">
+                                <button type="button" class="scripture-ask-ai-btn" onclick="closeScriptureDrawer(); askAiAboutThis('${safeAsk}')">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Ask Divine AI Guru on This Verse
+                                </button>
+                            </div>
+                        </article>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Scripture drawer search failed:', err);
+                bodyEl.innerHTML = `<div class="scripture-empty-state">Unable to load classical passages right now. Please try again.</div>`;
+            }
+        }
+
+        // Initialize theme, sliding tab indicator, and 30-second live Hora dial refresh
+        applySacredTheme(currentSacredTheme);
+        setTimeout(updateSlidingNavIndicator, 120);
+        setInterval(() => {
+            if (dailyPanchangamData) updateLiveCosmicSkyTicker();
+        }, 30000);
+
     </script>
 
     <!-- Server Settings Modal (Capacitor / self-host backend configuration) -->
@@ -13986,6 +15514,38 @@
             <span id="lbl-mobile-nav-ai">AI Chat</span>
         </button>
     </nav>
-    <script src="/static/react-bundle.js"></script>
+    <!-- Classical Scripture Grounding Side-Drawer (UI/UX Divine Elevation Section 5) -->
+    <div id="scripture-drawer-overlay" class="scripture-drawer-overlay" onclick="closeScriptureDrawer()"></div>
+    <aside id="classical-scripture-drawer" class="classical-scripture-drawer" aria-label="Classical Scripture Grounding">
+        <div class="scripture-drawer-header">
+            <div>
+                <div class="scripture-drawer-kicker">CLASSICAL GRANTHA ARCHIVE · 8 TEXTS</div>
+                <h3 class="scripture-drawer-title" id="scripture-drawer-title">
+                    <i class="fa-solid fa-scroll"></i> Brihat Parashara Hora Shastra &amp; Classical Texts
+                </h3>
+            </div>
+            <button type="button" class="scripture-drawer-close" onclick="closeScriptureDrawer()" aria-label="Close Scripture Drawer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="scripture-drawer-search-bar">
+            <input type="text" id="scripture-drawer-search-input" placeholder="Search Sanskrit shlokas, yogas, bhavas, dasas..." onkeydown="if(event.key==='Enter') searchScriptureDrawer(this.value)">
+            <button type="button" onclick="searchScriptureDrawer(document.getElementById('scripture-drawer-search-input').value)">
+                <i class="fa-solid fa-magnifying-glass"></i> Cite
+            </button>
+        </div>
+        <div class="scripture-drawer-quick-chips">
+            <button type="button" onclick="searchScriptureDrawer('Gaja Kesari Yoga Jupiter Moon')">Gaja Kesari Yoga</button>
+            <button type="button" onclick="searchScriptureDrawer('Raja Yoga Kendra Trikona lords')">Raja Yoga</button>
+            <button type="button" onclick="searchScriptureDrawer('Shadbala planetary strength')">Shadbala</button>
+            <button type="button" onclick="searchScriptureDrawer('Navamsha Varga Kalatra')">Navamsha (D9)</button>
+            <button type="button" onclick="searchScriptureDrawer('Vimshottari Dasa Phala')">Dasa Phala</button>
+        </div>
+        <div class="scripture-drawer-body" id="scripture-drawer-body">
+            <!-- Populated dynamically via /api/scripture-passages -->
+        </div>
+    </aside>
+
+    <script src="/react-bundle.js"></script>
 </body>
 </html>

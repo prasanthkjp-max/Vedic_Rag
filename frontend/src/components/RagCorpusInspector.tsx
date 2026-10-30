@@ -79,6 +79,18 @@ export const RagCorpusInspector: React.FC<Props> = ({ chart }) => {
             className="btn-primary"
             style={{ fontSize: '11px', padding: '7px 14px' }}
             onClick={() => {
+              if (typeof window.openScriptureDrawer === 'function' && queries.length > 0) {
+                window.openScriptureDrawer(queries[0], `${calcType} Classical Scripture Grounding`);
+              }
+            }}
+          >
+            <i className="fa-solid fa-scroll" /> Open Classical Scripture Drawer
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ fontSize: '11px', padding: '7px 14px' }}
+            onClick={() => {
               if (typeof window.generateJyothiAIReading === 'function') {
                 window.generateJyothiAIReading();
               }
@@ -103,9 +115,19 @@ export const RagCorpusInspector: React.FC<Props> = ({ chart }) => {
 
       <div className="vx-rag-query-list">
         {queries.map((q, idx) => (
-          <div key={idx} className="vx-rag-query-chip">
+          <div
+            key={idx}
+            className="vx-rag-query-chip interactive"
+            onClick={() => {
+              if (typeof window.openScriptureDrawer === 'function') {
+                window.openScriptureDrawer(q, `Scripture Passage Q${idx + 1}`);
+              }
+            }}
+            title="Click to preview original Sanskrit Shlokas & English translation from the 8 classical texts"
+          >
             <span className="vx-rag-q-num">Q{idx + 1}</span>
-            <span>{q}</span>
+            <span style={{ flex: 1 }}>{q}</span>
+            <i className="fa-solid fa-book-open" style={{ color: 'var(--accent-gold, #b45309)', fontSize: '10px' }} />
           </div>
         ))}
       </div>

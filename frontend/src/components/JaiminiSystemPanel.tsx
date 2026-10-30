@@ -16,10 +16,50 @@ function isCurrentPeriod(start?: string, end?: string): boolean {
 export const JaiminiSystemPanel: React.FC<Props> = ({ chart }) => {
   const jaimini = chart.jaimini;
   const [openMahaIdx, setOpenMahaIdx] = useState<number | null>(null);
+  const [charaFilter, setCharaFilter] = useState('');
 
   if (!jaimini) {
     return <div className="vx-empty-state">Jaimini Sutra data is not available for this chart.</div>;
   }
+
+  const charaDasas = jaimini.chara_dasas || [];
+  const totalCharaYears = charaDasas.reduce((acc, c) => acc + (c.duration_years || 0), 0) || 90;
+  const birthYear = parseInt((chart.metadata?.datetime || '1995').slice(0, 4), 10) || 1995;
+  const currentYear = new Date().getFullYear();
+  const currentAge = Math.max(0, currentYear - birthYear);
+
+  const qLower = charaFilter.trim().toLowerCase();
+  const filteredChara = charaDasas
+    .map((cd, idx) => ({ cd, idx }))
+    .filter(({ cd }) => {
+      if (!qLower) return true;
+      if (
+        cd.rasi_short.toLowerCase().includes(qLower) ||
+        cd.rasi_name.toLowerCase().includes(qLower) ||
+        cd.lord.toLowerCase().includes(qLower) ||
+        cd.start_date.includes(qLower) ||
+        cd.end_date.includes(qLower)
+      ) {
+        return true;
+      }
+      const qYear = parseInt(qLower, 10);
+      const sYear = parseInt(cd.start_date.slice(0, 4), 10);
+      const eYear = parseInt(cd.end_date.slice(0, 4), 10);
+      if (!isNaN(qYear) && qYear >= 1900 && qYear <= 2200 && sYear <= qYear && qYear <= eYear) {
+        return true;
+      }
+      return false;
+    });
+
+  const jumpToRunningChara = () => {
+    setCharaFilter('');
+    const activeIdx = charaDasas.findIndex((cd) => isCurrentPeriod(cd.start_date, cd.end_date));
+    if (activeIdx >= 0) {
+      setOpenMahaIdx(activeIdx);
+      const el = document.getElementById(`chara-card-${activeIdx}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
 
   return (
     <div className="vx-panel-section" id="react-jaimini-panel">
@@ -91,15 +131,63 @@ export const JaiminiSystemPanel: React.FC<Props> = ({ chart }) => {
 
       {/* 12-Rasi Jaimini Chara Dasa */}
       <div style={{ marginTop: '18px' }}>
-        <h5 className="vx-sub-heading">
-          <i className="fa-solid fa-timeline" /> Jaimini Chara Dasa (Sign-Based Mahadasa & Antardasa)
-        </h5>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+          <h5 className="vx-sub-heading" style={{ margin: 0 }}>
+            <i className="fa-solid fa-timeline" /> Jaimini Chara Dasa (Sign-Based Mahadasa & Antardasa)
+          </h5>
+          <div className="vx-dasa-explorer-controls">
+            <input
+              type="text"
+              className="vx-dasa-search-input"
+              placeholder="Filter sign, lord, or year (e.g. Mesha, Mars, 2026)..."
+              value={charaFilter}
+              onChange={(e) => setCharaFilter(e.target.value)}
+            />
+            <button type="button" className="vx-jump-today-btn" onClick={jumpToRunningChara}>
+              <i className="fa-solid fa-crosshairs" /> Jump to Today
+            </button>
+          </div>
+        </div>
+
+        {/* Life Age Ribbon for Jaimini Chara Dasa */}
+        <div className="vx-life-ribbon-box" style={{ marginBottom: '10px' }}>
+          <div className="vx-life-ribbon-track">
+            {charaDasas.map((cd, idx) => {
+              const widthPct = Math.max(4, ((cd.duration_years || 1) / totalCharaYears) * 100);
+              const active = isCurrentPeriod(cd.start_date, cd.end_date);
+              return (
+                <div
+                  key={`${cd.rasi_short}-seg-${idx}`}
+                  className={`vx-life-ribbon-seg ${active ? 'active' : ''}`}
+                  style={{
+                    width: `${widthPct}%`,
+                    background: idx % 2 === 0 ? '#d97706' : '#ea580c',
+                  }}
+                  title={`${cd.rasi_short} (${cd.duration_years}Y): ${cd.start_date} → ${cd.end_date}`}
+                  onClick={() => setOpenMahaIdx(idx)}
+                >
+                  <span>{cd.rasi_short.slice(0, 3)}</span>
+                </div>
+              );
+            })}
+            <div
+              className="vx-life-ribbon-now"
+              style={{ left: `${Math.min(98, Math.max(2, (currentAge / totalCharaYears) * 100))}%` }}
+              title={`Today (~Age ${currentAge})`}
+            />
+          </div>
+        </div>
+
         <div className="vx-chara-dasa-grid" id="jaimini-chara-dasa-grid">
-          {(jaimini.chara_dasas || []).map((cd, idx) => {
+          {filteredChara.map(({ cd, idx }) => {
             const active = isCurrentPeriod(cd.start_date, cd.end_date);
-            const isOpen = openMahaIdx === idx || (openMahaIdx === null && active);
+            const isOpen = openMahaIdx === idx || (openMahaIdx === null && active) || !!qLower;
             return (
-              <div key={`${cd.rasi_short}-${idx}`} className={`vx-dasa-card ${active ? 'active' : ''}`}>
+              <div
+                key={`${cd.rasi_short}-${idx}`}
+                id={`chara-card-${idx}`}
+                className={`vx-dasa-card ${active ? 'active' : ''}`}
+              >
                 <div
                   className="vx-dasa-card-head"
                   onClick={() => setOpenMahaIdx(isOpen ? -1 : idx)}
@@ -109,9 +197,9 @@ export const JaiminiSystemPanel: React.FC<Props> = ({ chart }) => {
                     <span className="vx-subtext">({cd.lord})</span>
                     {active && <span className="vx-now-badge">ACTIVE NOW</span>}
                   </div>
-                  <span className="vx-dur-pill">{cd.duration_years}Y</span>
+                  <span className="vx-dur-pill vx-tabular">{cd.duration_years}Y</span>
                 </div>
-                <div className="vx-dasa-card-dates">
+                <div className="vx-dasa-card-dates vx-tabular">
                   {cd.start_date} → {cd.end_date}
                 </div>
                 {isOpen && (
@@ -123,7 +211,7 @@ export const JaiminiSystemPanel: React.FC<Props> = ({ chart }) => {
                           <span>
                             {b.rasi_short} {bActive && <strong>• NOW</strong>}
                           </span>
-                          <span>{b.start_date}</span>
+                          <span className="vx-tabular">{b.start_date}</span>
                         </div>
                       );
                     })}

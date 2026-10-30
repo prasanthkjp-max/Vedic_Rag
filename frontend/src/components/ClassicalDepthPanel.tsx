@@ -1,4 +1,5 @@
 import React from 'react';
+import { astroStore, useAstroStore } from '../store/astroStore';
 import { ChartResponse } from '../types/astrology';
 
 interface Props {
@@ -8,11 +9,18 @@ interface Props {
 const GRAHAS = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
 
 export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
+  const { selectedPlanet } = useAstroStore();
   const arudha = chart.arudha_padas;
   const avasthas = chart.avasthas || {};
   const vimsopaka = chart.vimsopaka_bala || {};
   const khara = chart.khara_drekkana;
   const nadi = chart.nadi;
+
+  const openShloka = (query: string, title: string) => {
+    if (typeof window.openScriptureDrawer === 'function') {
+      window.openScriptureDrawer(query, title);
+    }
+  };
 
   return (
     <div className="vx-panel-section" id="react-classical-depth-panel">
@@ -20,9 +28,23 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
       <div className="vx-two-col">
         {arudha && (
           <div className="vx-mini-box" id="arudha-padas-box">
-            <h5>
-              <i className="fa-solid fa-landmark-dome" /> Arudha Padas (BPHS Ch. 29 — Maya & Manifestation)
-            </h5>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h5 style={{ margin: 0 }}>
+                <i className="fa-solid fa-landmark-dome" /> Arudha Padas (BPHS Ch. 29 — Maya & Manifestation)
+              </h5>
+              <button
+                type="button"
+                className="vx-shloka-link-btn"
+                onClick={() =>
+                  openShloka(
+                    `Arudha Pada ${arudha.arudha_lagna?.pada_rasi_short || ''} Upapada ${arudha.upapada_lagna?.pada_rasi_short || ''} (BPHS Ch. 29)`,
+                    'Arudha Padas & Upapada (BPHS Ch. 29)'
+                  )
+                }
+              >
+                <i className="fa-solid fa-scroll" /> Shloka
+              </button>
+            </div>
             <div className="vx-highlight-strip">
               <span>
                 <strong>AL (Arudha Lagna):</strong> {arudha.arudha_lagna?.pada_rasi_short} (H
@@ -39,6 +61,8 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
                   key={p.code}
                   className={`vx-pada-chip ${p.house === 1 || p.house === 12 ? 'key' : ''}`}
                   title={`House ${p.house} (${p.bhava_rasi_name}, Lord ${p.bhava_lord})`}
+                  onClick={() => astroStore.setSelectedPlanet(p.bhava_lord, true)}
+                  style={{ cursor: 'pointer' }}
                 >
                   <strong>{p.code}:</strong> {p.pada_rasi_short} (H{p.house_from_lagna})
                 </div>
@@ -49,9 +73,23 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
 
         {khara && (
           <div className="vx-mini-box" id="khara-drekkana-box">
-            <h5>
-              <i className="fa-solid fa-triangle-exclamation" /> 22nd Drekkana (Khara Drekkana — Saravali Ch. 10)
-            </h5>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h5 style={{ margin: 0 }}>
+                <i className="fa-solid fa-triangle-exclamation" /> 22nd Drekkana (Khara Drekkana — Saravali Ch. 10)
+              </h5>
+              <button
+                type="button"
+                className="vx-shloka-link-btn"
+                onClick={() =>
+                  openShloka(
+                    `22nd Drekkana Khara ${khara.nature.split(' ')[0]} (Saravali Ch. 10 & Jataka Parijata)`,
+                    '22nd Drekkana (Saravali Ch. 10)'
+                  )
+                }
+              >
+                <i className="fa-solid fa-scroll" /> Shloka
+              </button>
+            </div>
             <div className="vx-khara-details">
               <div>
                 <strong>22nd Drekkana Sign:</strong> {khara.rasi_name} (Decanate {khara.decanate}:{' '}
@@ -59,7 +97,13 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
               </div>
               <div>
                 <strong>Khara Lord (8th of D3):</strong>{' '}
-                <span className="vx-lord-chip sub">{khara.lord}</span>
+                <span
+                  className="vx-lord-chip sub"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => astroStore.setSelectedPlanet(khara.lord, true)}
+                >
+                  {khara.lord}
+                </span>
               </div>
               <div>
                 <strong>Classical Classification:</strong>{' '}
@@ -88,9 +132,23 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
 
       {/* 2. Planetary Avasthas + Vimsopaka Bala + D2/D4/D7 Vargas */}
       <div style={{ marginTop: '16px' }}>
-        <h5 className="vx-sub-heading">
-          <i className="fa-solid fa-scale-balanced" /> Planetary Avasthas (BPHS Ch. 45), Vimsopaka Bala (/20) & Extra Vargas (D2, D4, D7)
-        </h5>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+          <h5 className="vx-sub-heading" style={{ margin: 0 }}>
+            <i className="fa-solid fa-scale-balanced" /> Planetary Avasthas (BPHS Ch. 45), Vimsopaka Bala (/20) & Extra Vargas (D2, D4, D7)
+          </h5>
+          <button
+            type="button"
+            className="vx-shloka-link-btn"
+            onClick={() =>
+              openShloka(
+                'planetary avastha Sayanadi Deepta Kumara Yuva (BPHS Ch. 45)',
+                'Planetary Avasthas (BPHS Ch. 45)'
+              )
+            }
+          >
+            <i className="fa-solid fa-book-open" /> Inspect BPHS Ch. 45 Shlokas
+          </button>
+        </div>
         <div className="vx-table-scroll">
           <table className="vx-data-table" id="avasthas-vimsopaka-table">
             <thead>
@@ -112,10 +170,19 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
                 const vb = vimsopaka[g];
                 const pl = chart.placements?.[g];
                 if (!av && !pl) return null;
+                const isSelected = selectedPlanet === g;
                 return (
-                  <tr key={g}>
+                  <tr
+                    key={g}
+                    data-planet={g}
+                    className={isSelected ? 'vx-planet-row-highlighted' : ''}
+                    onClick={() => astroStore.setSelectedPlanet(isSelected ? null : g, true)}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to highlight Graha Drishti (aspects) on the Kundali chart"
+                  >
                     <td>
                       <strong>{g}</strong>
+                      {isSelected && <span className="vx-drishti-dot" title="Active Drishti Highlight" />}
                     </td>
                     <td>
                       {av ? (
@@ -140,7 +207,7 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
                         '—'
                       )}
                     </td>
-                    <td>
+                    <td className="vx-tabular">
                       {vb ? (
                         <span className="vx-vb-score">
                           <strong>{vb.score}</strong>/20 <small>({vb.percentage}%)</small>
