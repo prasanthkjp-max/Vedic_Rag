@@ -523,3 +523,271 @@
   background: rgba(234, 88, 12, 0.15);
   color: #c2410c;
 }
+
+.vx-rag-query-chip.interactive {
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.vx-rag-query-chip.interactive:hover {
+  border-color: #ea580c;
+  background: #fffbeb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(217, 119, 6, 0.16);
+}
+
+.vx-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.vx-shloka-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 14px;
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  background: rgba(254, 243, 199, 0.7);
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.vx-shloka-link-btn:hover {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #c2410c;
+}
+
+.vx-data-table tr.vx-planet-row-highlighted td {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border-top: 1px solid rgba(234, 88, 12, 0.45);
+  border-bottom: 1px solid rgba(234, 88, 12, 0.45);
+}
+
+.vx-drishti-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ea580c;
+  margin-left: 6px;
+  box-shadow: 0 0 6px #ea580c;
+}
+
+.vx-dasa-explorer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.vx-dasa-search-input {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(217, 119, 6, 0.38);
+  background: #ffffff;
+  color: var(--text-primary, #431407);
+  font-size: 11px;
+  min-width: 210px;
+  outline: none;
+}
+
+.vx-dasa-search-input:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.15);
+}
+
+.vx-jump-today-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.vx-jump-today-btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.vx-life-ribbon-box {
+  background: rgba(254, 243, 199, 0.45);
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.vx-life-ribbon-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #9a3412;
+  margin-bottom: 6px;
+}
+
+.vx-life-ribbon-track {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(180, 83, 9, 0.3);
+}
+
+.vx-life-ribbon-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  color: #ffffff;
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.vx-life-ribbon-seg:hover,
+.vx-life-ribbon-seg.active {
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.vx-life-ribbon-now {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 3px;
+  background: #ffffff;
+  box-shadow: 0 0 6px #000000, 0 0 4px #7c3aed;
+  pointer-events: none;
+}
+
+.vx-life-ribbon-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: #78350f;
+  margin-top: 4px;
+}
+
+/* ── Chandra Night Theme (Cosmic Sanctum) Overrides for React Workspace ── */
+[data-theme="chandra"] .vx-react-selector-bar {
+  background: linear-gradient(135deg, rgba(19, 15, 44, 0.92), rgba(30, 24, 66, 0.92));
+  border-color: rgba(245, 158, 11, 0.38);
+}
+
+[data-theme="chandra"] .vx-react-pill {
+  background: rgba(15, 12, 36, 0.88);
+  color: #f3e8d2;
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+[data-theme="chandra"] .vx-react-pill:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: #f59e0b;
+}
+
+[data-theme="chandra"] .vx-react-select,
+[data-theme="chandra"] .vx-dasa-search-input {
+  background: #130f2c;
+  color: #f3e8d2;
+  border-color: rgba(245, 158, 11, 0.42);
+}
+
+[data-theme="chandra"] .vx-react-workspace {
+  background: rgba(15, 12, 36, 0.95);
+  border-color: rgba(245, 158, 11, 0.38);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="chandra"] .vx-workspace-tabbar {
+  background: linear-gradient(90deg, rgba(25, 20, 56, 0.95), rgba(38, 28, 78, 0.9));
+  border-bottom-color: rgba(245, 158, 11, 0.28);
+}
+
+[data-theme="chandra"] .vx-workspace-tab {
+  color: #cbd5e1;
+}
+
+[data-theme="chandra"] .vx-workspace-tab:hover {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+[data-theme="chandra"] .vx-workspace-tab.active {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+[data-theme="chandra"] .vx-data-table {
+  background: #110d28;
+}
+
+[data-theme="chandra"] .vx-data-table th {
+  background: rgba(30, 24, 64, 0.95);
+  color: #fbbf24;
+  border-bottom-color: rgba(245, 158, 11, 0.32);
+}
+
+[data-theme="chandra"] .vx-data-table td {
+  color: #f1f5f9;
+  border-bottom-color: rgba(245, 158, 11, 0.14);
+}
+
+[data-theme="chandra"] .vx-data-table tr:hover td {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+[data-theme="chandra"] .vx-mini-box,
+[data-theme="chandra"] .vx-karaka-card,
+[data-theme="chandra"] .vx-dasa-card,
+[data-theme="chandra"] .vx-rag-query-chip {
+  background: #161133;
+  border-color: rgba(245, 158, 11, 0.28);
+  color: #f3e8d2;
+}
+
+[data-theme="chandra"] .vx-karaka-card.highlight {
+  background: linear-gradient(135deg, #23194d, #161133);
+  border-color: #f59e0b;
+}
+
+[data-theme="chandra"] .vx-karaka-planet {
+  color: #fbbf24;
+}
+
+[data-theme="chandra"] .vx-karaka-name,
+[data-theme="chandra"] .vx-karaka-meaning,
+[data-theme="chandra"] .vx-karaka-meta,
+[data-theme="chandra"] .vx-dasa-card-dates,
+[data-theme="chandra"] .vx-life-ribbon-head,
+[data-theme="chandra"] .vx-life-ribbon-ticks {
+  color: #cbd5e1;
+}
+
+[data-theme="chandra"] .vx-dasa-card-head,
+[data-theme="chandra"] .vx-highlight-strip,
+[data-theme="chandra"] .vx-life-ribbon-box {
+  background: rgba(30, 24, 66, 0.85);
+}
+
+[data-theme="chandra"] .vx-shloka-link-btn {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}

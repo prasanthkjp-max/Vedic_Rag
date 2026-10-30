@@ -14,6 +14,7 @@ export interface AstroStoreState {
   timing: DasaSystem;
   ayanamsa: AyanamsaName;
   activePanelTab: 'kp' | 'jaimini' | 'classical' | 'dasa' | 'rag';
+  selectedPlanet: string | null;
 }
 
 declare global {
@@ -24,6 +25,9 @@ declare global {
     generateJyothiAIReading?: () => Promise<void>;
     navigateToPage?: (page: string) => void;
     __notifyReactChartUpdated?: (chart?: ChartResponse | null, lang?: LangCode) => void;
+    __notifyReactPlanetSelected?: (planet: string | null) => void;
+    highlightGrahaDrishti?: (planet: string | null, fromReact?: boolean) => void;
+    openScriptureDrawer?: (query: string, title?: string) => void;
   }
 }
 
@@ -34,6 +38,7 @@ let state: AstroStoreState = {
   timing: 'Vimshottari',
   ayanamsa: 'Lahiri',
   activePanelTab: 'classical',
+  selectedPlanet: null,
 };
 
 const listeners = new Set<() => void>();
@@ -101,6 +106,15 @@ export const astroStore = {
   setActivePanelTab(tab: AstroStoreState['activePanelTab']) {
     state = { ...state, activePanelTab: tab };
     emitChange();
+  },
+
+  setSelectedPlanet(planet: string | null, notifyChart = false) {
+    if (state.selectedPlanet === planet) return;
+    state = { ...state, selectedPlanet: planet };
+    emitChange();
+    if (notifyChart && typeof window.highlightGrahaDrishti === 'function') {
+      window.highlightGrahaDrishti(planet, true);
+    }
   },
 };
 

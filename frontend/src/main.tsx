@@ -55,6 +55,10 @@ window.__notifyReactChartUpdated = (chart?: ChartResponse | null, lang?: LangCod
   }
 };
 
+window.__notifyReactPlanetSelected = (planet: string | null) => {
+  astroStore.setSelectedPlanet(planet, false);
+};
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', mountReactRoots);
 } else {

@@ -17,7 +17,7 @@ from src.engines.astro_engine import (
     calculate_luni_solar_month_index,
     get_local_sunrise_hm,
 )
-from src.engines.muhurtham_engine import calculate_muhurtham
+from src.engines.muhurtham_engine import calculate_muhurtham, KARI_NAAL
 from src.engines.pdf_generator import (
     translate_tithi,
     translate_nakshatra,
@@ -29,6 +29,20 @@ from src.engines.digest_engine import kalam_windows, LABELS as DIGEST_LABELS
 from src.api.deps import logger, LangCode, RegionalParadigm, TargetActivity
 
 router = APIRouter()
+
+
+def _is_kari_naal_from_tamil_date(tamil_date_str: str) -> bool:
+    if not tamil_date_str:
+        return False
+    parts = str(tamil_date_str).strip().split()
+    if len(parts) >= 2:
+        t_month = parts[0]
+        try:
+            t_day = int(parts[1])
+            return t_month in KARI_NAAL and t_day in KARI_NAAL[t_month]
+        except ValueError:
+            return False
+    return False
 
 
 # --- app.py:1640-1689 ---
@@ -62,20 +76,26 @@ def get_daily_panchangam(date_str: str = None, lang: str = "en", lat: float = 13
             logger.warning("Failed to calculate festivals for %s: %s", dt.strftime('%Y-%m-%d'), e)
 
         paradigm = get_paradigm_from_lang(lang)
+        is_subha_muhurtham = False
         try:
             muh_res = calculate_muhurtham(
                 f"{dt.year}-{dt.month:02d}-{dt.day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
             )
             if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+                is_subha_muhurtham = True
                 day_specialities.insert(0, "Marriage Muhurtham")
         except Exception as e:
             logger.warning("Failed to calculate marriage muhurtham for %d-%02d-%02d: %s", dt.year, dt.month, dt.day, e)
+
+        is_kari_naal = _is_kari_naal_from_tamil_date(chart.get("panchangam", {}).get("tamil_date", ""))
 
         return {
             "date": dt.strftime("%Y-%m-%d"),
             "panchangam": localized_panch,
             "placements": chart["placements"],
-            "specialities": day_specialities
+            "specialities": day_specialities,
+            "is_kari_naal": is_kari_naal,
+            "is_subha_muhurtham": is_subha_muhurtham,
         }
     except HTTPException:
         raise
@@ -488,21 +508,28 @@ def _compute_month_panchangam(year, month, lang, lat, lon):
         added_festivals_prev = set(res["specialities_all"])
 
         day_specialities = list(res["specialities"])
+        is_subha_muhurtham = False
         # Compute Marriage Muhurtham for this day at 06:00 AM local time
         try:
             muh_res = calculate_muhurtham(
                 f"{year}-{month:02d}-{day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
             )
             if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+                is_subha_muhurtham = True
                 day_specialities.insert(0, "Marriage Muhurtham")
         except Exception as e:
             logger.warning("Failed to calculate marriage muhurtham for %d-%02d-%02d: %s", year, month, day, e)
+
+        raw_tamil_date = res.get("chart_sunrise", {}).get("panchangam", {}).get("tamil_date", "") or res["panchangam"].get("tamil_date", "")
+        is_kari_naal = _is_kari_naal_from_tamil_date(raw_tamil_date)
 
         days_data.append({
             "day": day,
             "tithi": res["tithi_sunrise"],
             "is_pournami": res["is_pournami"],
             "is_amavasya": res["is_amavasya"],
+            "is_kari_naal": is_kari_naal,
+            "is_subha_muhurtham": is_subha_muhurtham,
             "nakshatra": res["panchangam"]["nakshatra"],
             "yogam": res["panchangam"]["yogam"],
             "karanam": res["panchangam"]["karanam"],

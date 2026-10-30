@@ -138,4 +138,5 @@ chart._reap_stranded_reports()
 # cache headers for all responses, so we no longer need a separate @app.get("/")
 # route — StaticFiles(html=True) serves index.html for "/" and the middleware
 # attaches the correct no-cache header.
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static_prefix")
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")

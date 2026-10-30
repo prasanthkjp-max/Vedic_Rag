@@ -478,6 +478,36 @@ _kp_queries = build_rag_queries(_kp_chart, build_analysis(_kp_chart))
 check("rag queries: Ashtottari query uses corpus spelling 'Astottari'",
       any("Astottari" in q for q in _kp_queries))
 
+# ── UI/UX Divine Elevation Plan (Sections 1-5) Verification ─────────────────
+from src.api.panchangam import _is_kari_naal_from_tamil_date
+from src.api.corpus import get_scripture_passages
+
+check("kari_naal: Chithirai 6 is Kari Naal", _is_kari_naal_from_tamil_date("Chithirai 6") is True)
+check("kari_naal: Chithirai 7 is not Kari Naal", _is_kari_naal_from_tamil_date("Chithirai 7") is False)
+check("kari_naal: Thai 2 is Kari Naal", _is_kari_naal_from_tamil_date("Thai 2") is True)
+
+_scripture_res = get_scripture_passages(query="Jupiter Gaja Kesari Yoga", limit=3)
+check("scripture_passages: returns passages list",
+      isinstance(_scripture_res.get("passages"), list) and len(_scripture_res["passages"]) >= 1)
+check("scripture_passages: passage has book_title and citation_label",
+      all("book_title" in p and "citation_label" in p and "translation_excerpt" in p for p in _scripture_res["passages"]))
+
+with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "index.html"), "r", encoding="utf-8") as _f:
+    _index_html = _f.read()
+
+check("ui_divine: Dual Sacred Themes (Surya & Chandra) present",
+      '[data-theme="chandra"]' in _index_html and 'toggleSacredTheme' in _index_html)
+check("ui_divine: Live Cosmic Sky Ticker & Hora Dial present",
+      'id="live-cosmic-sky-bar"' in _index_html and 'updateLiveCosmicSkyTicker' in _index_html)
+check("ui_divine: Calendar Quick-Filters & 24h Sacred Timeline present",
+      'id="calendar-quick-filters"' in _index_html and 'id="sacred-24h-timeline-container"' in _index_html)
+check("ui_divine: Interactive SVG Graha Drishti & Dignity Badges present",
+      'id="drishti-inspector-bar"' in _index_html and 'highlightGrahaDrishti' in _index_html)
+check("ui_divine: Dasa Explorer Toolbar & Life Age Ribbon present",
+      'id="dasa-explorer-toolbar"' in _index_html and 'id="vimshottari-life-age-ribbon"' in _index_html)
+check("ui_divine: Classical Scripture Side-Drawer present",
+      'id="classical-scripture-drawer"' in _index_html and 'openScriptureDrawer' in _index_html)
+
 
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)
