@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.0]
+
+### Added
+- **Saved AI chats:** signed-in users' chats are now saved. A new History button lists them, and opening one continues it with the same chart, even if another chart has since been calculated. Each chat can be deleted, and "Clear all" removes them all. Each user keeps up to 100 chats (`VEDIC_CHAT_MAX_CONVERSATIONS`); the oldest are removed after that.
+
+### Changed
+- AI chat no longer ends the conversation after 20 idle minutes or 100k tokens. Each turn still sends only the last 3 question-and-answer pairs to the model (`VEDIC_CHAT_HISTORY_TURNS`).
+- General chats with no chart now also remember those last 3 pairs.
+- The chart check now runs before a reading is saved, so its correction note is stored with the reading.
+- Signing out now clears the chat on screen.
+
 ## [1.31.0]
 
 ### Changed

@@ -1705,8 +1705,23 @@
             margin-top: 14px;
         }
 
+        /* Signed-in phone header: the name, theme label and credits were wider than the
+           screen, which widened the whole page and pushed centred panels off it. */
+        @media (max-width: 600px) {
+            #user-display-name, #theme-toggle-label { display: none; }
+            #user-profile-widget { margin-right: 0 !important; }
+            #logged-in-widget { gap: 4px !important; }
+            .header-controls { gap: 4px; min-width: 0; flex-shrink: 0; }
+            .header-controls .lang-select-btn, .theme-toggle-btn { padding: 6px 8px !important; }
+            #logged-in-widget > div { padding: 6px !important; }
+            .chat-input-bar { gap: 6px; }
+            #chat-history-btn, #chat-new-reading { width: 38px; min-width: 38px; padding: 0; justify-content: center; }
+            .chat-input { padding: 12px 10px; }
+        }
+
         .chat-input {
             flex: 1;
+            min-width: 0;
             background: var(--bg-input) !important;
             border: 1px solid rgba(217, 119, 6, 0.28) !important;
             border-radius: 10px;
@@ -5126,8 +5141,11 @@
                     </div>
 
                     <div class="chat-input-bar">
-                        <button class="chat-send-btn" id="chat-new-reading" onclick="clearAIChat()" title="New Reading — clear this conversation" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold);">
-                            <i class="fa-solid fa-rotate-left"></i>
+                        <button class="chat-send-btn" id="chat-history-btn" onclick="openChatHistory()" title="Chat history" aria-label="Chat history" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold);">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </button>
+                        <button class="chat-send-btn" id="chat-new-reading" onclick="clearAIChat()" title="New Reading — start a new chat" aria-label="New Reading" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold);">
+                            <i class="fa-solid fa-plus"></i>
                         </button>
                         <input type="text" class="chat-input" id="chat-user-textbox" placeholder="Ask Astro AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)..." onkeydown="if(event.key === 'Enter') sendAIChatMessage()">
                         <button class="chat-send-btn" id="chat-send-trigger" onclick="sendAIChatMessage()">
@@ -10604,27 +10622,25 @@
         let isChatResponding = false;
         let isJyothiResponding = false;   // double-submit guard for /api/ai-predict
         let isMarriageAIResponding = false; // double-submit guard for /api/ai-predict-marriage
-        let aiChatHistory = [];
-        let lastMessageTime = null;
-        let sessionTokenCount = 0;
+        let activeConversationId = null;    // the saved chat being continued, if any
+        let activeConversationHasChart = false;
         let lastWelcomeArgs = null;     // args of the last chart-aware welcome, for "New Reading"
         let genericWelcomeHTML = null;  // original (no-chart) welcome bubble, captured before first overwrite
 
-        function estimateTokens(text) {
-            if (!text) return 0;
-            return Math.ceil(text.length / 3.5);
+        function removeChatMessages() {
+            const container = document.getElementById('chat-messages-container');
+            const welcome = document.getElementById('initial-welcome-bubble');
+            if (container) {
+                Array.from(container.children).forEach(ch => { if (ch !== welcome) ch.remove(); });
+            }
         }
 
-        window.addEventListener('beforeunload', function() {
-            aiChatHistory = [];
-            sessionTokenCount = 0;
-            lastMessageTime = null;
-        });
-
         function preloadCosmicWelcomeMessage(name, pob, dob, tob) {
-            aiChatHistory = [];
-            sessionTokenCount = 0;
-            lastMessageTime = null;
+            // A newly calculated chart starts a new chat, so the next question is
+            // never answered from the chart of a chat that was open before.
+            activeConversationId = null;
+            activeConversationHasChart = false;
+            removeChatMessages();
             lastWelcomeArgs = [name, pob, dob, tob];
             const chatMessages = document.getElementById('chat-messages-container');
             
@@ -10702,23 +10718,169 @@
             bubble.innerHTML = welcomeHtml;
         }
 
-        // "New Reading" — wipe the conversation (frontend-only; the backend chat
-        // is stateless, history is re-sent each turn) and restore the welcome.
+        // "New Reading" — start a new chat and restore the welcome. The chat that
+        // was open stays saved in History.
         function clearAIChat() {
-            aiChatHistory = [];
-            sessionTokenCount = 0;
-            lastMessageTime = null;
+            activeConversationId = null;
+            activeConversationHasChart = false;
             const container = document.getElementById('chat-messages-container');
             const welcome = document.getElementById('initial-welcome-bubble');
-            if (container) {
-                Array.from(container.children).forEach(ch => { if (ch !== welcome) ch.remove(); });
-            }
+            removeChatMessages();
             if (calculatedChartData && lastWelcomeArgs) {
                 preloadCosmicWelcomeMessage(...lastWelcomeArgs);  // chart-aware welcome
             } else if (welcome && genericWelcomeHTML !== null) {
                 welcome.innerHTML = genericWelcomeHTML;           // generic welcome
             }
             if (container) container.scrollTop = 0;
+        }
+
+        const CHAT_HISTORY_LABELS = {
+            en: { title: 'Chat history', empty: 'No saved chats yet. Your chats will appear here.', clearAll: 'Clear all history', confirmClearAll: 'Delete all your saved chats? This cannot be undone.', confirmDelete: 'Delete this chat? This cannot be undone.', remove: 'Delete this chat', continuing: 'Continuing your saved chat', continuingFor: 'Continuing your saved chat for {name}', loadError: 'Could not load your chats. Please try again.', deleteError: 'Could not delete. Please try again.', busy: 'Please wait for the current answer to finish.', gone: 'That chat is no longer saved. Your next question will start a new one.', you: 'You' },
+            ta: { title: 'உரையாடல் வரலாறு', empty: 'சேமிக்கப்பட்ட உரையாடல்கள் இல்லை. உங்கள் உரையாடல்கள் இங்கே தோன்றும்.', clearAll: 'அனைத்து வரலாற்றையும் அழி', confirmClearAll: 'சேமித்த அனைத்து உரையாடல்களையும் நீக்கவா? இதை மீட்டெடுக்க முடியாது.', confirmDelete: 'இந்த உரையாடலை நீக்கவா? இதை மீட்டெடுக்க முடியாது.', remove: 'இந்த உரையாடலை நீக்கு', continuing: 'சேமித்த உரையாடல் தொடர்கிறது', continuingFor: '{name} அவர்களுக்கான சேமித்த உரையாடல் தொடர்கிறது', loadError: 'உரையாடல்களை ஏற்ற முடியவில்லை. மீண்டும் முயலவும்.', deleteError: 'நீக்க முடியவில்லை. மீண்டும் முயலவும்.', busy: 'தற்போதைய பதில் முடியும் வரை காத்திருக்கவும்.', gone: 'அந்த உரையாடல் இனி சேமிப்பில் இல்லை. உங்கள் அடுத்த கேள்வி புதிய உரையாடலைத் தொடங்கும்.', you: 'நீங்கள்' },
+            te: { title: 'చాట్ చరిత్ర', empty: 'సేవ్ చేసిన చాట్‌లు లేవు. మీ చాట్‌లు ఇక్కడ కనిపిస్తాయి.', clearAll: 'మొత్తం చరిత్రను తొలగించు', confirmClearAll: 'సేవ్ చేసిన అన్ని చాట్‌లను తొలగించాలా? దీన్ని తిరిగి పొందలేరు.', confirmDelete: 'ఈ చాట్‌ను తొలగించాలా? దీన్ని తిరిగి పొందలేరు.', remove: 'ఈ చాట్‌ను తొలగించు', continuing: 'సేవ్ చేసిన చాట్ కొనసాగుతోంది', continuingFor: '{name} కోసం సేవ్ చేసిన చాట్ కొనసాగుతోంది', loadError: 'చాట్‌లను లోడ్ చేయలేకపోయాము. మళ్లీ ప్రయత్నించండి.', deleteError: 'తొలగించలేకపోయాము. మళ్లీ ప్రయత్నించండి.', busy: 'ప్రస్తుత సమాధానం పూర్తయ్యే వరకు వేచి ఉండండి.', gone: 'ఆ చాట్ ఇప్పుడు సేవ్ అయి లేదు. మీ తదుపరి ప్రశ్న కొత్త చాట్‌ను ప్రారంభిస్తుంది.', you: 'మీరు' },
+            ml: { title: 'ചാറ്റ് ചരിത്രം', empty: 'സംരക്ഷിച്ച ചാറ്റുകൾ ഇല്ല. നിങ്ങളുടെ ചാറ്റുകൾ ഇവിടെ കാണാം.', clearAll: 'എല്ലാ ചരിത്രവും മായ്ക്കുക', confirmClearAll: 'സംരക്ഷിച്ച എല്ലാ ചാറ്റുകളും ഇല്ലാതാക്കണോ? ഇത് തിരികെ ലഭിക്കില്ല.', confirmDelete: 'ഈ ചാറ്റ് ഇല്ലാതാക്കണോ? ഇത് തിരികെ ലഭിക്കില്ല.', remove: 'ഈ ചാറ്റ് ഇല്ലാതാക്കുക', continuing: 'സംരക്ഷിച്ച ചാറ്റ് തുടരുന്നു', continuingFor: '{name} എന്നവർക്കായി സംരക്ഷിച്ച ചാറ്റ് തുടരുന്നു', loadError: 'ചാറ്റുകൾ ലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.', deleteError: 'ഇല്ലാതാക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക.', busy: 'ഇപ്പോഴത്തെ മറുപടി പൂർത്തിയാകുന്നതുവരെ കാത്തിരിക്കുക.', gone: 'ആ ചാറ്റ് ഇപ്പോൾ സംരക്ഷിച്ചിട്ടില്ല. നിങ്ങളുടെ അടുത്ത ചോദ്യം പുതിയ ചാറ്റ് തുടങ്ങും.', you: 'നിങ്ങൾ' },
+            kn: { title: 'ಚಾಟ್ ಇತಿಹಾಸ', empty: 'ಉಳಿಸಿದ ಚಾಟ್‌ಗಳಿಲ್ಲ. ನಿಮ್ಮ ಚಾಟ್‌ಗಳು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.', clearAll: 'ಎಲ್ಲಾ ಇತಿಹಾಸವನ್ನು ಅಳಿಸಿ', confirmClearAll: 'ಉಳಿಸಿದ ಎಲ್ಲಾ ಚಾಟ್‌ಗಳನ್ನು ಅಳಿಸಬೇಕೇ? ಇದನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗುವುದಿಲ್ಲ.', confirmDelete: 'ಈ ಚಾಟ್ ಅಳಿಸಬೇಕೇ? ಇದನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗುವುದಿಲ್ಲ.', remove: 'ಈ ಚಾಟ್ ಅಳಿಸಿ', continuing: 'ಉಳಿಸಿದ ಚಾಟ್ ಮುಂದುವರಿಯುತ್ತಿದೆ', continuingFor: '{name} ಅವರ ಉಳಿಸಿದ ಚಾಟ್ ಮುಂದುವರಿಯುತ್ತಿದೆ', loadError: 'ಚಾಟ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.', deleteError: 'ಅಳಿಸಲಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.', busy: 'ಈಗಿನ ಉತ್ತರ ಮುಗಿಯುವವರೆಗೆ ಕಾಯಿರಿ.', gone: 'ಆ ಚಾಟ್ ಈಗ ಉಳಿಸಲಾಗಿಲ್ಲ. ನಿಮ್ಮ ಮುಂದಿನ ಪ್ರಶ್ನೆ ಹೊಸ ಚಾಟ್ ಆರಂಭಿಸುತ್ತದೆ.', you: 'ನೀವು' },
+            hi: { title: 'चैट इतिहास', empty: 'कोई सहेजी गई चैट नहीं है। आपकी चैट यहाँ दिखाई देंगी।', clearAll: 'पूरा इतिहास मिटाएँ', confirmClearAll: 'क्या सभी सहेजी गई चैट हटानी हैं? इन्हें वापस नहीं लाया जा सकता।', confirmDelete: 'क्या यह चैट हटानी है? इसे वापस नहीं लाया जा सकता।', remove: 'यह चैट हटाएँ', continuing: 'सहेजी गई चैट जारी है', continuingFor: '{name} की सहेजी गई चैट जारी है', loadError: 'चैट लोड नहीं हो सकीं। कृपया फिर से प्रयास करें।', deleteError: 'हटाया नहीं जा सका। कृपया फिर से प्रयास करें।', busy: 'कृपया वर्तमान उत्तर पूरा होने तक प्रतीक्षा करें।', gone: 'वह चैट अब सहेजी नहीं है। आपका अगला प्रश्न नई चैट शुरू करेगा।', you: 'आप' }
+        };
+
+        function chatHistoryLabel(key) {
+            return (CHAT_HISTORY_LABELS[currentLang] || CHAT_HISTORY_LABELS.en)[key];
+        }
+
+        function buildChatComparedBanner(profiles, primaryName) {
+            if (!profiles || !profiles.length) return '';
+            const primaryLabel = escapeHtml(primaryName || 'Primary Native');
+            const badges = profiles.map(p => {
+                const rel = escapeHtml((p.relationship || '').toUpperCase());
+                const lagna = p.lagna ? ` · Lagna: ${escapeHtml(p.lagna.split(' ')[0])}` : '';
+                const moon = p.moon ? ` · Moon: ${escapeHtml(p.moon.split(' ')[0])}` : '';
+                const dasa = p.mahadasa ? ` · Dasa: ${escapeHtml(p.mahadasa)}${p.antardasa ? '/' + escapeHtml(p.antardasa) : ''}` : '';
+                return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(212,175,55,0.14);border:1px solid var(--border-gold);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--accent-gold);">
+                    <i class="fa-solid fa-user-check"></i> <strong>${escapeHtml(p.name)}</strong> <span style="opacity:0.85;">(${rel}${lagna}${moon}${dasa})</span>
+                </span>`;
+            }).join(' ');
+            return `<div style="margin-bottom:10px;padding:8px 10px;background:rgba(212,175,55,0.06);border-left:3px solid var(--accent-gold);border-radius:6px;font-size:11.5px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+                <span style="color:var(--text-secondary);font-weight:600;"><i class="fa-solid fa-people-arrows" style="color:var(--accent-gold);margin-right:4px;"></i>Cross-Chart Comparison (${primaryLabel} × Saved Profile):</span>
+                ${badges}
+            </div>`;
+        }
+
+        async function openChatHistory() {
+            if (!currentUser) { openLoginModal(); return; }
+            document.getElementById('chat-history-title').textContent = chatHistoryLabel('title');
+            document.getElementById('chat-history-clear-all-label').textContent = chatHistoryLabel('clearAll');
+            document.getElementById('chat-history-modal').style.display = 'flex';
+            await renderChatHistoryList();
+        }
+
+        function closeChatHistory() {
+            document.getElementById('chat-history-modal').style.display = 'none';
+        }
+
+        async function renderChatHistoryList() {
+            const list = document.getElementById('chat-history-list');
+            const clearAll = document.getElementById('chat-history-clear-all');
+            list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+            clearAll.style.display = 'none';
+            try {
+                const response = await apiFetch('/api/ai-chat/conversations');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const { conversations } = await response.json();
+                if (!conversations.length) {
+                    list.innerHTML = `<p style="padding: 20px; text-align: center; font-size: 13px; color: var(--text-secondary);">${escapeHtml(chatHistoryLabel('empty'))}</p>`;
+                    return;
+                }
+                clearAll.style.display = 'block';
+                list.innerHTML = conversations.map(c => {
+                    const when = new Date(`${String(c.updated_at).replace(' ', 'T')}Z`).toLocaleString();
+                    const details = [c.client_name, when].filter(Boolean).map(escapeHtml).join(' · ');
+                    const isOpen = c.id === activeConversationId;
+                    const removeLabel = escapeHtml(chatHistoryLabel('remove'));
+                    return `<div style="display: flex; align-items: stretch; border: 1px solid ${isOpen ? 'var(--accent-gold)' : 'var(--border-glass)'}; border-radius: 8px;">
+                        <button type="button" class="chat-history-open" onclick="openSavedChat(${Number(c.id)})" style="flex: 1; min-width: 0; padding: 10px 12px; background: transparent; border: none; text-align: left; cursor: pointer; color: var(--text-primary);">
+                            <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.title)}</div>
+                            <div style="font-size: 11px; margin-top: 3px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${details}</div>
+                        </button>
+                        <button type="button" class="chat-history-delete" onclick="deleteSavedChat(${Number(c.id)})" title="${removeLabel}" aria-label="${removeLabel}" style="flex-shrink: 0; width: 44px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                console.error('Chat history failed:', err);
+                list.innerHTML = `<p style="padding: 20px; text-align: center; font-size: 13px; color: #ef4444;">${escapeHtml(chatHistoryLabel('loadError'))}</p>`;
+            }
+        }
+
+        async function openSavedChat(id) {
+            if (isChatResponding) { showToast(chatHistoryLabel('busy')); return; }
+            try {
+                const response = await apiFetch(`/api/ai-chat/conversations/${Number(id)}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const chat = await response.json();
+                activeConversationId = chat.id;
+                activeConversationHasChart = !!chat.has_chart;
+                removeChatMessages();
+
+                const container = document.getElementById('chat-messages-container');
+                const notice = document.createElement('div');
+                notice.className = 'chat-message system';
+                notice.textContent = chat.client_name
+                    ? chatHistoryLabel('continuingFor').replace('{name}', chat.client_name)
+                    : chatHistoryLabel('continuing');
+                container.appendChild(notice);
+
+                chat.messages.forEach(m => {
+                    const bubble = document.createElement('div');
+                    if (m.role === 'user') {
+                        bubble.className = 'chat-message user';
+                        bubble.innerHTML = `<span class="chat-message-meta">${escapeHtml(chatHistoryLabel('you'))}</span><div>${escapeHtml(m.content)}</div>`;
+                    } else {
+                        const meta = m.meta || {};
+                        bubble.className = 'chat-message ai';
+                        bubble.innerHTML = `<span class="chat-message-meta">Astro AI</span><div class="ai-predict-display">${buildChatComparedBanner(meta.compared_profiles, meta.primary_name)}${formatMarkdown(m.content)}</div>`;
+                    }
+                    container.appendChild(bubble);
+                });
+
+                // Bring back the people this chat was comparing, where still saved.
+                selectedChatCompareIds.clear();
+                (chat.comparison_ids || []).forEach(savedId => {
+                    if (savedProfilesForChat.some(p => p.id === savedId)) selectedChatCompareIds.add(savedId);
+                });
+                renderAIChatFamilyProfilesBar();
+
+                closeChatHistory();
+                container.scrollTop = container.scrollHeight;
+                document.getElementById('chat-user-textbox').focus();
+            } catch (err) {
+                console.error('Opening chat failed:', err);
+                showToast(chatHistoryLabel('loadError'));
+            }
+        }
+
+        async function deleteSavedChat(id) {
+            if (!window.confirm(chatHistoryLabel('confirmDelete'))) return;
+            try {
+                const response = await apiFetch(`/api/ai-chat/conversations/${Number(id)}`, { method: 'DELETE' });
+                if (!response.ok && response.status !== 404) throw new Error(`HTTP ${response.status}`);
+                if (id === activeConversationId) clearAIChat();
+                await renderChatHistoryList();
+            } catch (err) {
+                console.error('Deleting chat failed:', err);
+                showToast(chatHistoryLabel('deleteError'));
+            }
+        }
+
+        async function clearAllChatHistory() {
+            if (!window.confirm(chatHistoryLabel('confirmClearAll'))) return;
+            try {
+                const response = await apiFetch('/api/ai-chat/conversations', { method: 'DELETE' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (activeConversationId !== null) clearAIChat();
+                await renderChatHistoryList();
+            } catch (err) {
+                console.error('Clearing chats failed:', err);
+                showToast(chatHistoryLabel('deleteError'));
+            }
         }
 
         async function sendAIChatMessage() {
@@ -10730,33 +10892,6 @@
             textbox.value = '';
 
             const chatContainer = document.getElementById('chat-messages-container');
-
-            // Session check: Inactive for 20 minutes or consumed > 100k tokens per session
-            const IDLE_TIMEOUT = 20 * 60 * 1000; // 20 minutes in ms
-            const TOKEN_LIMIT = 100000;
-            const now = Date.now();
-            let sessionReset = false;
-            let resetReason = "";
-
-            if (lastMessageTime !== null && (now - lastMessageTime) > IDLE_TIMEOUT) {
-                sessionReset = true;
-                resetReason = "Session ended due to inactivity (idle for more than 20 minutes). Chat history cleared.";
-            } else if (sessionTokenCount >= TOKEN_LIMIT) {
-                sessionReset = true;
-                resetReason = `Session ended because token consumption exceeded 100k limit (${sessionTokenCount} tokens used). Chat history cleared.`;
-            }
-
-            if (sessionReset) {
-                aiChatHistory = [];
-                sessionTokenCount = 0;
-                lastMessageTime = null;
-
-                const sysMsgDiv = document.createElement('div');
-                sysMsgDiv.className = 'chat-message system';
-                sysMsgDiv.innerHTML = `<span class="chat-message-meta" style="color: #be123c;">System Notice</span><div>${resetReason}</div>`;
-                chatContainer.appendChild(sysMsgDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
 
             // 1. Render User Message bubble
             const userMsgDiv = document.createElement('div');
@@ -10787,22 +10922,27 @@
                 (currentUser.dob && currentUser.tob) ||
                 ((typeof savedProfilesForChat !== 'undefined') && savedProfilesForChat.some(c => (c.relationship || '').toLowerCase() === 'self'))
             );
-            if (calculatedChartData || hasOwnBirthProfile) {
-                const name = document.getElementById('in-name').value;
-                const pob = document.getElementById('in-pob').value;
+            // An open saved chat keeps its own kind: the server uses its stored chart
+            // and messages, so neither is sent again.
+            const usesChart = activeConversationId !== null
+                ? activeConversationHasChart
+                : (calculatedChartData || hasOwnBirthProfile);
+            if (usesChart) {
+                const resuming = activeConversationId !== null;
                 apiPath = '/api/ai-predict-chat';
                 apiBody = {
-                    chart_data: calculatedChartData || null,
-                    client_name: name,
-                    place_name: pob,
+                    chart_data: resuming ? null : (calculatedChartData || null),
+                    client_name: document.getElementById('in-name').value,
+                    place_name: document.getElementById('in-pob').value,
                     query: messageText,
-                    history: aiChatHistory,
                     lang: currentLang,
-                    comparison_chart_ids: (typeof selectedChatCompareIds !== 'undefined') ? Array.from(selectedChatCompareIds) : []
+                    comparison_chart_ids: (typeof selectedChatCompareIds !== 'undefined') ? Array.from(selectedChatCompareIds) : [],
+                    save_history: true,
+                    conversation_id: activeConversationId
                 };
             } else {
                 apiPath = '/api/query';
-                apiBody = { query: messageText, lang: currentLang };
+                apiBody = { query: messageText, lang: currentLang, save_history: true, conversation_id: activeConversationId };
             }
 
             try {
@@ -10814,6 +10954,11 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 404 && activeConversationId !== null) {
+                        activeConversationId = null;
+                        activeConversationHasChart = false;
+                        throw new Error(escapeHtml(chatHistoryLabel('gone')));
+                    }
                     const errBody = await response.json().catch(() => null);
                     const detail = errBody && typeof errBody.detail === 'string' ? errBody.detail : `HTTP error! status: ${response.status}`;
                     throw new Error(escapeHtml(detail));
@@ -10822,24 +10967,12 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
-                const manifestState = { manifest: null, comparedProfiles: null, comparedPrimaryName: null, prefixLength: 0 };
-
-                const buildComparedBanner = (profiles) => {
-                    if (!profiles || !profiles.length) return '';
-                    const primaryLabel = escapeHtml(manifestState.comparedPrimaryName || 'Primary Native');
-                    const badges = profiles.map(p => {
-                        const rel = escapeHtml((p.relationship || '').toUpperCase());
-                        const lagna = p.lagna ? ` · Lagna: ${escapeHtml(p.lagna.split(' ')[0])}` : '';
-                        const moon = p.moon ? ` · Moon: ${escapeHtml(p.moon.split(' ')[0])}` : '';
-                        const dasa = p.mahadasa ? ` · Dasa: ${escapeHtml(p.mahadasa)}${p.antardasa ? '/' + escapeHtml(p.antardasa) : ''}` : '';
-                        return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(212,175,55,0.14);border:1px solid var(--border-gold);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--accent-gold);">
-                            <i class="fa-solid fa-user-check"></i> <strong>${escapeHtml(p.name)}</strong> <span style="opacity:0.85;">(${rel}${lagna}${moon}${dasa})</span>
-                        </span>`;
-                    }).join(' ');
-                    return `<div style="margin-bottom:10px;padding:8px 10px;background:rgba(212,175,55,0.06);border-left:3px solid var(--accent-gold);border-radius:6px;font-size:11.5px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
-                        <span style="color:var(--text-secondary);font-weight:600;"><i class="fa-solid fa-people-arrows" style="color:var(--accent-gold);margin-right:4px;"></i>Cross-Chart Comparison (${primaryLabel} × Saved Profile):</span>
-                        ${badges}
-                    </div>`;
+                const manifestState = { manifest: null, comparedProfiles: null, comparedPrimaryName: null, conversationId: null, prefixLength: 0 };
+                const adoptConversation = () => {
+                    if (manifestState.conversationId !== null) {
+                        activeConversationId = manifestState.conversationId;
+                        activeConversationHasChart = apiPath === '/api/ai-predict-chat';
+                    }
                 };
 
                 while (true) {
@@ -10851,7 +10984,7 @@
 
                     const processed = processStreamChunk(accumulatedText, manifestState);
                     const renderText = processed.cleanText;
-                    const bannerHtml = buildComparedBanner(processed.comparedProfiles);
+                    const bannerHtml = buildChatComparedBanner(processed.comparedProfiles, manifestState.comparedPrimaryName);
 
                     outputPane.innerHTML = bannerHtml + formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
                     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -10859,22 +10992,10 @@
 
                 const processed = processStreamChunk(accumulatedText, manifestState);
                 const renderText = processed.cleanText;
-                const bannerHtml = buildComparedBanner(processed.comparedProfiles);
+                const bannerHtml = buildChatComparedBanner(processed.comparedProfiles, manifestState.comparedPrimaryName);
                 outputPane.innerHTML = bannerHtml + formatMarkdown(renderText);
 
-                // Calculate and update session tokens
-                const requestTokens = 5000 + estimateTokens(messageText) + estimateTokens(JSON.stringify(aiChatHistory));
-                const responseTokens = estimateTokens(renderText);
-                const totalMessageTokens = requestTokens + responseTokens;
-                sessionTokenCount += totalMessageTokens;
-                lastMessageTime = Date.now();
-                console.log(`[Session Token Count] Current message: ${totalMessageTokens} tokens (Req: ${requestTokens}, Resp: ${responseTokens}). Total Session: ${sessionTokenCount} tokens.`);
-
-                // Save to session memory
-                if (calculatedChartData || hasOwnBirthProfile) {
-                    aiChatHistory.push({ role: 'user', content: messageText });
-                    aiChatHistory.push({ role: 'assistant', content: renderText });
-                }
+                adoptConversation();
 
             } catch (err) {
                 console.error("AI chat failed:", err);
@@ -11393,6 +11514,11 @@
             if (!chartData) return;
             
             calculatedChartData = chartData;
+            // Switching person starts a new chat, as calculating a chart does: a saved
+            // chat keeps answering from its own chart.
+            activeConversationId = null;
+            activeConversationHasChart = false;
+            removeChatMessages();
             const prefix = gender === 'male' ? 'm-' : 'f-';
             document.getElementById('in-name').value = document.getElementById(`in-${prefix}name`).value;
             
@@ -13581,6 +13707,7 @@
             }
             localStorage.removeItem('session_token');
             currentUser = null;
+            clearAIChat();   // a saved chat must not stay on screen after signing out
             updateAuthUI();
         }
 
@@ -14552,6 +14679,7 @@
                             streamState.manifest = parsed.manifest;
                             streamState.comparedProfiles = parsed.compared_profiles || null;
                             streamState.comparedPrimaryName = parsed.primary_name || null;
+                            if (parsed.conversation_id) streamState.conversationId = parsed.conversation_id;
                             streamState.prefixLength = stripped + firstLineEnd + 1;
                             currentActiveManifest = streamState.manifest;
                         } catch (e) {
@@ -15177,6 +15305,7 @@
             hook(['openServerSettings'], 'closeServerSettings', 'server', 'server-settings-modal');
             hook(['downloadReportPDF'], 'closePdfSectionModal', 'pdf', 'pdf-section-modal');
             hook(['showGiftCard'], 'closeGiftCard', 'gift', 'gift-card-modal');
+            hook(['openChatHistory'], 'closeChatHistory', 'chatHistory', 'chat-history-modal');
             hook(['showCitationCard'], 'closeCitationCard', 'citation', 'citation-card-modal');
 
             // The drawer is a toggle, not an open/close pair.
@@ -15856,6 +15985,17 @@
     </script>
 
     <!-- Server Settings Modal (Capacitor / self-host backend configuration) -->
+    <div id="chat-history-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 22px; width: 480px; max-width: 92vw; max-height: 80vh; display: flex; flex-direction: column; position: relative; box-sizing: border-box;">
+            <button onclick="closeChatHistory()" aria-label="Close" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="chat-history-title" style="font-family: var(--font-heading); color: var(--accent-gold); margin: 0 30px 14px 0;">Chat history</h3>
+            <div id="chat-history-list" style="flex: 1; min-height: 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+            <button id="chat-history-clear-all" onclick="clearAllChatHistory()" style="display: none; margin-top: 14px; padding: 9px 12px; background: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 8px; font-size: 12px; cursor: pointer;">
+                <i class="fa-solid fa-trash-can"></i>&nbsp; <span id="chat-history-clear-all-label">Clear all history</span>
+            </button>
+        </div>
+    </div>
+
     <div id="server-settings-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: var(--bg-card); border: 1px solid var(--border-gold); border-radius: 16px; padding: 25px 30px; width: 400px; max-width: 92vw; position: relative;">
             <button onclick="closeServerSettings()" style="position: absolute; right: 15px; top: 15px; background: transparent; border: none; color: var(--text-secondary); font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>

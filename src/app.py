@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from src.core.config import VERSION, STATIC_DIR, API_KEY, REQUIRE_API_KEY, CORS_ALLOW_ORIGINS
 from src.api.deps import _is_key_protected
 from src.api import (
+    chat_history,
     corpus,
     auth,
     billing,
@@ -116,6 +117,7 @@ app.include_router(auth.router)
 app.include_router(billing.router)
 app.include_router(chart.router)
 app.include_router(ai.router)
+app.include_router(chat_history.router)
 app.include_router(horoscope.router)
 app.include_router(panchangam.router)
 app.include_router(user.router)

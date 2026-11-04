@@ -847,11 +847,11 @@ _stream_out = "".join(_deps.llm_stream(
 ))
 _deps.get_llm_client = _real_client
 check("llm_stream: stray word is repaired in the streamed and completed text",
-      _BENGALI not in _stream_out and _completed == [f"{_TAMIL_B} {_TAMIL_A} {_TAMIL_A}"])
+      _BENGALI not in _stream_out and _completed == [f"{_TAMIL_B} {_TAMIL_A} {_TAMIL_A}\nNOTE"])
 check("llm_stream: the citation manifest is not filtered",
       json.dumps({"manifest": [{"index": 1, "snippet": _DEVANAGARI}]}) in _stream_out)
 check("llm_stream: post_check sees the cleaned text and its note is appended",
-      _checked == _completed and _stream_out.endswith("\nNOTE"))
+      _checked == [f"{_TAMIL_B} {_TAMIL_A} {_TAMIL_A}"] and _stream_out.endswith("\nNOTE"))
 check("llm_stream: the reading uses the configured temperature",
       _fake.chat.completions.kwargs[0]["temperature"] == _deps.LLM_TEMPERATURE)
 

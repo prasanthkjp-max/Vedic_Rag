@@ -498,6 +498,43 @@ def init_user_db():
     )
     """)
 
+    # Saved AI chats. chart_blob is the compressed chart the chat is about (NULL for
+    # a general chat), so continuing it later answers from the same chart.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        client_name TEXT NOT NULL DEFAULT '',
+        place_name TEXT NOT NULL DEFAULT '',
+        chart_blob BLOB,
+        lang TEXT NOT NULL DEFAULT 'en',
+        comparison_ids TEXT NOT NULL DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        meta TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+    )
+    """)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_chat_conversations_user "
+        "ON chat_conversations(user_id, updated_at)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation "
+        "ON chat_messages(conversation_id, id)"
+    )
+
     # Referral codes: a partial UNIQUE index (multiple NULLs allowed) and a
     # one-time backfill so every existing account has a shareable code.
     cursor.execute(
@@ -865,8 +902,9 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
     - Model text passes through a ScriptGuard for `lang`, so a word in the wrong
       script is replaced or removed. The citation manifest and backend error
       messages don't pass through it.
-    - `post_check(full_text)` (optional) runs after a clean finish and may return a
-      note to append. Like `on_complete`, it can never break the response.
+    - `post_check(full_text)` (optional) runs first after a clean finish and may
+      return a note to append, which `on_complete` then receives as part of the
+      text. It can never break the response either.
     """
     def _open_stream(evaluated_prompt):
         """Open the chat-completion stream, retrying once on a transient error
@@ -1005,20 +1043,22 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                            action_type, lang, guard.replaced, guard.removed)
         # Reached only when the stream ended without an exception or a
         # mid-stream error payload (both paths return above).
-        if on_complete and produced_content:
-            full_text = "".join(content_parts).strip()
-            if full_text:
-                try:
-                    on_complete(full_text)
-                except Exception as e:
-                    logger.error("on_complete hook failed (%s): %s", action_type, e)
-        if post_check and produced_content:
+        if not produced_content:
+            return
+        full_text = "".join(content_parts).strip()
+        note = ""
+        if post_check:
             try:
-                note = post_check("".join(content_parts).strip())
-                if note:
-                    yield note
+                note = post_check(full_text) or ""
             except Exception as e:
                 logger.warning("Reading check failed (%s): %s", action_type, e)
+        if on_complete and full_text:
+            try:
+                on_complete(full_text + note)
+            except Exception as e:
+                logger.error("on_complete hook failed (%s): %s", action_type, e)
+        if note:
+            yield note
 
     return generator()
 

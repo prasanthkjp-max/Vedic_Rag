@@ -40,6 +40,13 @@ from src.engines.prediction_engine import (
     get_current_dasa,
 )
 from src.engines import horoscope_engine
+from src.api.chat_history import (
+    create_conversation,
+    encode_chart,
+    load_conversation,
+    recent_messages,
+    save_turn,
+)
 from src.engines.fact_check import chart_facts, format_fact_sheet
 from src.core.translations import READING_SECTIONS
 from src.api.deps import (
@@ -343,6 +350,10 @@ class AIChatRequest(BaseModel):
     history: list[AIChatMessage] = Field(default=[], max_length=50)
     lang: LangCode = "en"
     comparison_chart_ids: list[int] = Field(default=[], max_length=10)
+    # Save this turn. With conversation_id, continue that saved chat: its stored chart
+    # and messages are used, and chart_data, names and history are ignored.
+    save_history: bool = False
+    conversation_id: Optional[int] = None
 
 
 _PROFILE_CHART_CACHE: OrderedDict = OrderedDict()
@@ -973,9 +984,20 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
     saved_profiles, history_profiles = _load_user_saved_profiles(prelim_user["id"])
 
+    # A missing chat is a clean 404 before any charge.
+    conversation = None
+    if req.save_history and req.conversation_id is not None:
+        conversation = load_conversation(prelim_user["id"], req.conversation_id)
+        if conversation is None or conversation["chart"] is None:
+            raise HTTPException(status_code=404, detail="Chat not found.")
+
     chart = req.chart_data if (req.chart_data and "metadata" in req.chart_data) else None
     client = (req.client_name or "").strip()
     place = (req.place_name or "").strip()
+    if conversation:
+        chart = conversation["chart"]
+        client = conversation["client_name"]
+        place = conversation["place_name"]
 
     # If the user opened AI Chat without calculating a chart first, use their own
     # 'self' profile. Never fall back to a relative's chart: "how is my career?"
@@ -1000,11 +1022,22 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
     client = client or prelim_user.get("full_name") or "Native"
     place = place or prelim_user.get("birth_place") or prelim_user.get("location_name") or "Birth Place"
+    chart_blob = encode_chart(chart) if req.save_history and not conversation else None
 
     user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict_chat")
     query_text = req.query
     model_name = CHAT_LLM_MODEL  # Enforce the chat model on the backend
     history = req.history
+    conversation_id = None
+    if conversation:
+        conversation_id = conversation["id"]
+        history = [
+            AIChatMessage.model_construct(**m)
+            for m in recent_messages(conversation_id, CHAT_HISTORY_TURNS * 2)
+        ]
+    elif req.save_history:
+        conversation_id = create_conversation(user["id"], query_text, client, place, chart_blob, req.lang)
+    turn_meta = {}
     target_lang = _LANG_MAP.get(req.lang, "English")
     reading_facts = {}
 
@@ -1274,15 +1307,23 @@ OUTPUT GENERATION RULES:
 Start directly with the chat response:
 """
         manifest = citation_manifest(raw_passages)
+        turn_meta["manifest"] = manifest
         if compared_meta:
-            return prompt, {"manifest": manifest, "compared_profiles": compared_meta, "primary_name": client}
-        return prompt, manifest
+            turn_meta["compared_profiles"] = compared_meta
+            turn_meta["primary_name"] = client
+        if conversation_id is None:
+            return prompt, dict(turn_meta) if compared_meta else manifest
+        return prompt, {**turn_meta, "conversation_id": conversation_id}
 
 
     return StreamingResponse(llm_stream(
         prompt_builder, model_name, user, "ai_predict_chat", lang=req.lang,
         post_check=lambda text: check_reading(text, reading_facts, req.lang, CHAT_LLM_MODEL),
         helper_model=CHAT_LLM_MODEL,
+        on_complete=(
+            (lambda text: save_turn(conversation_id, query_text, text, turn_meta, req.comparison_chart_ids))
+            if conversation_id is not None else None
+        ),
     ), media_type="text/event-stream")
 
 
