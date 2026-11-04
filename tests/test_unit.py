@@ -514,42 +514,188 @@ from src.api.ai import (
     _compute_cached_profile_chart,
     resolve_referenced_profiles,
 )
+import re
+from src.api.ai import AIChatMessage, _load_user_saved_profiles, _relation_to_primary
+from src.core.config import DB_PATH as _CHAT_DB_PATH, connect_db as _chat_connect_db
 from src.engines.prediction_engine import build_cross_chart_comparison
 
-_demo_profiles = []
-for _cid, _nm, _dob, _tob, _pob, _lat, _lon, _gen, _rel, _alias in [
-    (35, "Prasanth", "1992-06-08", "20:10", "Nellore, India", 14.4426, 79.9865, "male", "self", "Prasanth"),
-    (50, "Shanmuga Priya", "1994-08-11", "17:12", "Manamadurai, India", 9.6961, 78.4517, "female", "spouse", "Shanmuga Priya"),
-    (63, "Jagadeesan", "1965-01-31", "18:10", "Sriharikota, India", 13.7259, 80.2266, "male", "parent", "Appa"),
-    (70, "Vijayalakshmi", "1966-09-23", "13:15", "Nellore, India", 14.4426, 79.9865, "female", "parent", "Amma"),
-]:
-    _crel, _drel, _kws = _canonical_relationship_info(_rel, _gen, _alias)
-    _demo_profiles.append({
-        "id": _cid, "name": _nm, "dob": _dob, "tob": _tob, "pob": _pob,
-        "lat": _lat, "lon": _lon, "gender": _gen, "ayanamsa": "Lahiri",
-        "is_saved": 1, "relationship": _rel, "canonical_relationship": _crel,
-        "display_relationship": _drel, "profile_name": _alias, "match_keywords": _kws,
-    })
+
+def _demo_profile(cid, name, dob, tob, lat, lon, gender, rel, alias):
+    crel, drel, kws = _canonical_relationship_info(rel, gender, alias)
+    return {
+        "id": cid, "name": name, "dob": dob, "tob": tob, "pob": "Test City",
+        "lat": lat, "lon": lon, "gender": gender, "ayanamsa": "Lahiri",
+        "is_saved": 1, "relationship": rel, "canonical_relationship": crel,
+        "display_relationship": drel, "profile_name": alias, "match_keywords": kws,
+    }
+
+
+# Fictional family: owner Arun, wife Meena Sundari, parents Bala and Kala, son Hari.
+_owner = _demo_profile(1, "Arun", "1990-03-10", "08:30", 13.08, 80.27, "male", "self", "Self")
+_wife = _demo_profile(2, "Meena Sundari", "1992-07-21", "17:12", 9.69, 78.45, "female", "spouse", "Meena Sundari")
+_father = _demo_profile(3, "Bala", "1960-01-31", "18:10", 13.72, 80.22, "male", "parent", "Appa")
+_mother = _demo_profile(4, "Kala", "1963-09-23", "13:15", 14.44, 79.98, "female", "parent", "Amma")
+_son = _demo_profile(5, "Hari", "2018-02-02", "06:00", 13.08, 80.27, "male", "child", "Hari")
+_demo_profiles = [_owner, _wife, _father, _mother]
+_family_profiles = _demo_profiles + [_son]
+_as_of = datetime.date(2026, 11, 4)
+
+
+def _resolved(query, profiles=None, primary="Arun", dob="1990-03-10", history=None, ids=None):
+    return [p["name"] for p in resolve_referenced_profiles(
+        profiles if profiles is not None else _family_profiles, [], primary, dob, query,
+        history=history, explicit_ids=ids,
+    )]
+
+
+def _cross(a, b, relationship, ref_date=_as_of):
+    return build_cross_chart_comparison(
+        _compute_cached_profile_chart(a), a["name"],
+        _compute_cached_profile_chart(b), b["name"], relationship, ref_date=ref_date,
+    )
+
 
 check("chat_cross: spouse matched by 'wife' relationship",
-      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Check my wife's chart and compare with mine")] == ["Shanmuga Priya"])
-check("chat_cross: spouse matched by name 'Shanmuga Priya' or 'Priya'",
-      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "How is Priya's dasha right now?")] == ["Shanmuga Priya"])
-check("chat_cross: father matched by 'father' or alias 'Appa' or name 'Jagadeesan'",
-      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Compare my chart with my father")] == ["Jagadeesan"]
-      and [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "How is Appa's health?")] == ["Jagadeesan"])
-check("chat_cross: mother matched by 'mother' or alias 'Amma' or name 'Vijayalakshmi'",
-      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Check my mother's astrology with mine")] == ["Vijayalakshmi"]
-      and [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Check Amma's dasha")] == ["Vijayalakshmi"])
+      _resolved("Check my wife's chart and compare with mine", _demo_profiles) == ["Meena Sundari"])
+check("chat_cross: spouse matched by name token",
+      _resolved("How is Sundari's dasha right now?", _demo_profiles) == ["Meena Sundari"])
+check("chat_cross: father matched by 'father' or alias 'Appa'",
+      _resolved("Compare my chart with my father", _demo_profiles) == ["Bala"]
+      and _resolved("How is Appa's health?", _demo_profiles) == ["Bala"])
+check("chat_cross: mother matched by 'mother' or alias 'Amma'",
+      _resolved("Check my mother's astrology with mine", _demo_profiles) == ["Kala"]
+      and _resolved("Check Amma's dasha", _demo_profiles) == ["Kala"])
 check("chat_cross: collective 'parents' matches both father and mother",
-      {p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Compare my chart with my parents")} == {"Jagadeesan", "Vijayalakshmi"})
+      set(_resolved("Compare my chart with my parents", _demo_profiles)) == {"Bala", "Kala"})
 check("chat_cross: build_cross_chart_comparison includes synastry, overlays, dasas & marriage kootas",
-      "MARRIAGE COMPATIBILITY" in build_cross_chart_comparison(
-          _compute_cached_profile_chart(_demo_profiles[0]), "Prasanth",
-          _compute_cached_profile_chart(_demo_profiles[1]), "Shanmuga Priya", "wife (spouse)"
-      ))
+      "MARRIAGE COMPATIBILITY" in _cross(_owner, _wife, "wife (spouse)"))
 check("chat_cross: UI family profiles bar present in index.html",
       'id="ai-family-profiles-bar"' in _index_html and 'renderAIChatFamilyProfilesBar' in _index_html)
+
+# Relationships are relative to the account owner; analysis must be relative to the active chart.
+check("chat_relation: owner active keeps the saved relationship",
+      _relation_to_primary("self", _wife)[0] == "wife" and _relation_to_primary("self", _father)[0] == "father")
+check("chat_relation: wife active reads the owner as husband and his parents as in-laws",
+      _relation_to_primary("wife", _owner)[0] == "husband"
+      and _relation_to_primary("wife", _father)[0] == "father-in-law"
+      and _relation_to_primary("wife", _mother)[0] == "mother-in-law")
+check("chat_relation: father active reads mother as wife, owner as son, wife as daughter-in-law",
+      _relation_to_primary("father", _mother)[0] == "wife"
+      and _relation_to_primary("father", _owner)[0] == "son"
+      and _relation_to_primary("father", _wife)[0] == "daughter-in-law"
+      and _relation_to_primary("father", _son)[0] == "grandson")
+check("chat_relation: son active reads the owner as father and grandparents correctly",
+      _relation_to_primary("son", _owner)[0] == "father"
+      and _relation_to_primary("son", _wife)[0] == "mother"
+      and _relation_to_primary("son", _father)[0] == "grandfather")
+check("chat_relation: a friend's chart has no family link to the owner's relatives",
+      _relation_to_primary("friend", _wife)[0] == "other")
+check("chat_relation: an unsaved active chart never labels the owner as SELF",
+      _relation_to_primary(None, _owner)[0] == "other" and _relation_to_primary(None, _wife)[0] == "wife")
+
+_koota = "MARRIAGE COMPATIBILITY"
+check("chat_relation: Koota runs for parents with each other, not father with daughter-in-law",
+      _koota in _cross(_father, _mother, _relation_to_primary("father", _mother)[1])
+      and _koota not in _cross(_father, _wife, _relation_to_primary("father", _wife)[1]))
+check("chat_relation: husband's father gets no Pitru Bhava section on the wife's chart",
+      "Pitru Bhava" not in _cross(_wife, _father, _relation_to_primary("wife", _father)[1]))
+check("chat_relation: wife active compares with the owner as her husband, with Koota",
+      _koota in _cross(_wife, _owner, _relation_to_primary("wife", _owner)[1]))
+check("chat_relation: 'my husband' finds the owner when the wife's chart is active",
+      _resolved("Compare with my husband", primary="Meena Sundari", dob="1992-07-21") == ["Arun"])
+check("chat_relation: 'mother-in-law' finds the owner's mother when the wife's chart is active",
+      _resolved("How is my mother-in-law?", primary="Meena Sundari", dob="1992-07-21") == ["Kala"])
+
+# False positives in profile resolution.
+for _query in ("How is my mother-in-law's health?", "Will my father-in-law help me?", "my son-in-law's job",
+               "How will my business partner behave?", "Is my friend's wife going to recover?",
+               "How is my wife's mother?", "How is my family life?", "How is the Thai month for me?"):
+    check(f"chat_match: nobody resolved for {_query!r}", _resolved(_query) == [])
+check("chat_match: Hindi 'husband' does not fire inside Jupiter or house lord",
+      _resolved("बृहस्पति का प्रभाव क्या है?") == [] and _resolved("सप्तम अधिपति कहाँ है?") == [])
+check("chat_match: Hindi 'husband' still matches as its own word",
+      _resolved("मेरे पति कैसे हैं?") == ["Meena Sundari"])
+check("chat_match: Kannada 'daughter' does not match a son, but 'son' does",
+      _resolved("ನನ್ನ ಮಗಳು ಹೇಗೆ") == [] and _resolved("ನನ್ನ ಮಗ ಹೇಗೆ") == ["Hari"])
+_chandra = _demo_profile(6, "Chandra Sekhar", "1985-01-01", "10:00", 13.08, 80.27, "male", "other", "")
+_ravi = _demo_profile(7, "Ravi", "1985-01-01", "10:00", 13.08, 80.27, "male", "friend", "Ravi")
+check("chat_match: planet names are not person mentions, full names still are",
+      _resolved("How strong is Chandra in my chart?", [_owner, _chandra]) == []
+      and _resolved("What does Ravi dasa give me?", [_owner, _ravi]) == []
+      and _resolved("How is Chandra Sekhar doing?", [_owner, _chandra]) == ["Chandra Sekhar"])
+_cousin_a = _demo_profile(8, "Vel Murugan", "1985-01-01", "10:00", 13.08, 80.27, "male", "other", "")
+_cousin_b = _demo_profile(9, "Siva Murugan", "1986-01-01", "10:00", 13.08, 80.27, "male", "other", "")
+check("chat_match: a shared surname identifies nobody",
+      _resolved("Tell me about Murugan", [_owner, _cousin_a, _cousin_b]) == [])
+_placeholder = _demo_profile(10, "Name", "1985-01-01", "10:00", 13.08, 80.27, "male", "other", "")
+check("chat_match: a chart left at the default form name is not a mention",
+      _resolved("What does my name mean?", [_owner, _placeholder]) == [])
+check("chat_match: a pinned primary is not compared with itself",
+      _resolved("hello", ids=[1]) == [] and _resolved("hello", ids=[2]) == ["Meena Sundari"])
+check("chat_match: a dd/mm/yyyy stored DOB still identifies the primary",
+      _resolved("hello", [_demo_profile(1, "Arun", "10/03/1990", "08:30", 13.08, 80.27, "male", "self", "Self")], ids=[1]) == [])
+
+# Follow-up turns.
+_wife_turn = [AIChatMessage(role="user", content="Compare with my wife"), AIChatMessage(role="assistant", content="ok")]
+check("chat_followup: an unrelated follow-up drops the earlier profile",
+      _resolved("what about my career", history=_wife_turn) == []
+      and _resolved("tell me whether this year is good", history=_wife_turn) == [])
+check("chat_followup: a pronoun or group word carries the profile over",
+      _resolved("how is her health", history=_wife_turn) == ["Meena Sundari"]
+      and _resolved("compare with my father and tell me about both", history=_wife_turn) == ["Bala", "Meena Sundari"])
+check("chat_followup: naming someone new does not pull in the earlier profile",
+      _resolved("compare with my father", history=_wife_turn) == ["Bala"])
+
+# The saved relationship outranks alias words and defaulted gender.
+_role = lambda rel, gender, alias: _canonical_relationship_info(rel, gender, alias)[0]
+check("chat_role: alias does not override an explicit relationship",
+      _role("child", "female", "Papa") == "daughter" and _role("spouse", "female", "Mama") == "wife"
+      and _role("friend", "female", "Anna") == "friend" and _role("self", "male", "Appa") == "self")
+check("chat_role: explicit role beats a defaulted gender",
+      _role("daughter", "male", "") == "daughter" and _role("sister", "male", "") == "sister"
+      and _role("wife", "male", "") == "wife" and _role("parent", "male", "Amma") == "mother")
+check("chat_role: an alias still classifies a profile saved as 'other'",
+      _role("other", "male", "Appa") == "father" and _role("other", "female", "Amma") == "mother")
+
+# build_cross_chart_comparison output.
+_sonia = _canonical_relationship_info("friend", "female", "Sonia")[1]
+check("chat_engine: an alias containing 'son' does not select the child section",
+      "PARENT–CHILD" not in _cross(_owner, _wife, _sonia))
+check("chat_engine: 29 February does not raise, for spouse or other relations",
+      _koota in _cross(_owner, _wife, "wife (spouse)", datetime.date(2028, 2, 29))
+      and "Next 10 Years" in _cross(_owner, _father, "father", datetime.date(2028, 2, 29)))
+_overlap_text = _cross(_owner, _father, "father")
+_overlap_dates = re.findall(r"(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}): Arun in", _overlap_text)
+check("chat_engine: overlap windows are clipped to the next 10 years",
+      all("2026-11-04" <= lo and hi <= "2036-11-04" for lo, hi in _overlap_dates))
+_spouse_text = _cross(_owner, _wife, "wife (spouse)")
+check("chat_engine: spouse reading reports the overlap once, and Koota lines are clean",
+      "Simultaneous Natural-Malefic" not in _spouse_text and "MALEFIC DASA OVERLAP" in _spouse_text
+      and "Points: " in _spouse_text and "/ —" not in _spouse_text)
+
+# Account self profile vs. an auto-recorded history row of the same chart.
+_conn = _chat_connect_db(_CHAT_DB_PATH)
+_columns = {row[1] for row in _conn.execute("PRAGMA table_info(users)")}
+_values = {"email": "chat-self@example.test", "full_name": "Arun", "dob": "1990-03-10", "tob": "08:30",
+           "birth_place": "Test City", "birth_latitude": 13.08, "birth_longitude": 80.27, "gender": "male"}
+_values = {k: v for k, v in _values.items() if k in _columns}
+_values.update({k: "x" for k in ("password_hash", "password", "salt") if k in _columns})
+_uid = _conn.execute(
+    f"INSERT INTO users ({','.join(_values)}) VALUES ({','.join('?' * len(_values))})", tuple(_values.values())
+).lastrowid
+_insert_chart = ("INSERT INTO user_charts (user_id,name,dob,tob,pob,latitude,longitude,gender,ayanamsa,chart_style,"
+                 "is_saved,relationship,profile_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+_conn.execute(_insert_chart, (_uid, "Arun", "1990-03-10", "08:30", "Test City", 13.08, 80.27, "male", "Lahiri", "south", 0, "other", ""))
+_conn.execute(_insert_chart, (_uid, "Bala", "1960-01-31", "18:10", "Test City", 13.72, 80.22, "male", "Lahiri", "south", 1, "parent", "Appa"))
+_conn.commit()
+_conn.close()
+_saved, _hist = _load_user_saved_profiles(_uid)
+check("chat_self: a history row of the owner's chart does not hide the self profile",
+      [(p["name"], p["canonical_relationship"]) for p in _saved] == [("Arun", "self"), ("Bala", "father")]
+      and _hist == [])
+
+check("chat_ui: profile chip escapes the name and alias",
+      '<span class="profile-rel">${escapeHtml(relLabel)}</span>' in _index_html)
 
 
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))

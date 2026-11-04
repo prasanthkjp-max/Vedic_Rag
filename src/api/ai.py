@@ -2,7 +2,9 @@
 prediction, chat, varshaphala, remedies, compatibility, and prashna."""
 import hashlib
 import re
-from collections import OrderedDict
+import threading
+import unicodedata
+from collections import Counter, OrderedDict
 from datetime import date, datetime, timedelta
 from typing import List, Literal, Optional
 
@@ -332,19 +334,24 @@ class AIChatRequest(BaseModel):
 
 _PROFILE_CHART_CACHE: OrderedDict = OrderedDict()
 _PROFILE_CHART_CACHE_MAX = 128
+_PROFILE_CHART_CACHE_LOCK = threading.Lock()
+_ROSTER_MAX = 12
 
+# Generic relationship keywords deliberately omit words that collide with other
+# meanings: "mama" (maternal uncle), "mata" (deity epithet), "thai" (Tamil month),
+# "anna" (common given name). A profile aliased with one still matches by alias.
 _FATHER_ALIASES = {
     "father", "dad", "daddy", "appa", "papa", "pitru", "pita", "pitaji",
     "thandhai", "nanna", "acchan", "tande", "அப்பா", "தந்தை", "నాన్న",
     "తండ్రి", "पिता", "पापा", "അച്ഛൻ", "ತಂದೆ", "ಅಪ್ಪ",
 }
 _MOTHER_ALIASES = {
-    "mother", "mom", "mummy", "mama", "amma", "matru", "mata", "mataji",
-    "thai", "thalli", "ammachi", "tayi", "அம்மா", "தாய்", "అమ్మ", "తల్లి",
+    "mother", "mom", "mummy", "amma", "matru", "mataji",
+    "thalli", "ammachi", "tayi", "அம்மா", "தாய்", "అమ్మ", "తల్లి",
     "माता", "माँ", "मम्मी", "അമ്മ", "ತಾಯಿ", "ಅಮ್ಮ",
 }
 _SPOUSE_ALIASES = {
-    "spouse", "wife", "husband", "partner", "better half", "manaivi",
+    "spouse", "wife", "husband", "life partner", "better half", "manaivi",
     "patni", "pati", "kalatra", "bharya", "ardhangini", "bharta",
     "மனைவி", "கணவர்", "துணைவர்", "భార్య", "భర్త", "पत्नी", "बीवी", "पति",
     "ഭാര്യ", "ഭർത്താവ്", "ಹೆಂಡತಿ", "ಪತ್ನಿ", "ಗಂಡ", "ಪತಿ",
@@ -358,26 +365,203 @@ _CHILD_ALIASES = {
     "child", "children", "kid", "kids", "son", "daughter", "putra", "putri",
     "magan", "magal", "beta", "beti", "koduku", "kuthuru", "மகன்", "மகள்",
     "குழந்தை", "కొడుకు", "కూతురు", "बेटा", "पुत्र", "बेटी", "पुत्री", "മകൻ",
-    "മകൾ", "ಮಗ", "ಮಗಳು",
+    "മകൾ", "ಮಗ", "ಮಗಳ", "ಮಗಳು",
 }
 _SON_ONLY_ALIASES = {"son", "putra", "magan", "beta", "koduku", "மகன்", "కొడుకు", "बेटा", "पुत्र", "മകൻ", "ಮಗ"}
-_DAUGHTER_ONLY_ALIASES = {"daughter", "putri", "magal", "beti", "kuthuru", "மகள்", "కూతురు", "बेटी", "पुत्री", "മകൾ", "ಮಗಳು"}
+_DAUGHTER_ONLY_ALIASES = {"daughter", "putri", "magal", "beti", "kuthuru", "மகள்", "కూతురు", "बेटी", "पुत्री", "മകൾ", "ಮಗಳ", "ಮಗಳು"}
 _SIBLING_ALIASES = {
-    "sibling", "siblings", "brother", "sister", "anna", "thambi", "akka",
+    "sibling", "siblings", "brother", "sister", "thambi", "akka",
     "thangai", "bhai", "behen", "thammudu", "chelli", "சகோதரன்", "அண்ணன்",
     "தம்பி", "சகோதரி", "அக்கா", "தங்கை", "भाई", "बहन",
 }
 _FRIEND_ALIASES = {"friend", "friends", "best friend", "mitra", "nanban", "dost", "snehithudu"}
-_SELF_ALIASES = {"self", "myself", "my chart", "my own chart", "compare with me", "compare with my"}
+_SELF_ALIASES = {"myself", "my own chart", "compare with me", "compare with mine"}
 _PARENT_COLLECTIVE = {
     "parent", "parents", "my parents", "mom and dad", "dad and mom",
     "father and mother", "mother and father", "amma and appa", "appa and amma",
     "amma appa", "appa amma", "பெற்றோர்",
 }
+# Phrases only: a bare "family" would turn "how is my family life?" into a
+# multi-chart comparison.
 _FAMILY_COLLECTIVE = {
-    "family", "my family", "all profiles", "saved profiles", "whole family",
+    "with my family", "all profiles", "saved profiles", "whole family", "entire family",
     "everyone in family", "family members", "family charts",
 }
+
+# Tokens that never identify a person on their own: honorifics, placeholder form
+# values, and Jyotish vocabulary that doubles as a given name ("How is Chandra
+# placed?" is about the Moon). Such people match by full multi-word name, by
+# relationship, or by pinning their chip.
+_NON_PERSON_TOKENS = frozenset({
+    "the", "and", "mrs", "sri", "smt", "kum", "devi", "kumar", "rao",
+    "self", "other", "parent", "spouse", "child", "friend", "name", "native", "user", "guest", "test",
+    "ravi", "surya", "suryan", "sun", "chandra", "chandran", "soma", "moon", "mangal", "mangala",
+    "kuja", "angaraka", "mars", "budha", "budhan", "mercury", "guru", "brihaspati", "jupiter",
+    "shukra", "sukra", "venus", "shani", "sani", "saturn", "rahu", "ketu", "lagna", "dasa", "bhava", "kala",
+    "mesha", "vrishabha", "mithuna", "karka", "simha", "kanya", "tula", "vrischika", "dhanus",
+    "makara", "kumbha", "meena",
+    "ashwini", "bharani", "krittika", "krithika", "rohini", "mrigashira", "ardra", "punarvasu",
+    "pushya", "ashlesha", "magha", "hasta", "chitra", "chithira", "swati", "swathi", "vishakha",
+    "visakha", "anuradha", "jyeshta", "jyeshtha", "moola", "mula", "shravana", "sravana",
+    "dhanishta", "shatabhisha", "revati", "revathi",
+})
+
+_FOLLOWUP_PRONOUNS = ("he", "she", "him", "her", "his", "hers", "they", "them", "their")
+_FOLLOWUP_COMPARE = ("compare", "comparison", "compatibility", "match", "synastry", "between")
+_FOLLOWUP_GROUP = ("both", "together", "each other")
+
+_GENERIC_CHILD_KEYWORDS = {"child", "children", "kid", "kids", "குழந்தை"}
+_ROLE_KEYWORDS = {
+    "father": _FATHER_ALIASES | _PARENT_COLLECTIVE,
+    "mother": _MOTHER_ALIASES | _PARENT_COLLECTIVE,
+    "parent": _FATHER_ALIASES | _MOTHER_ALIASES | _PARENT_COLLECTIVE,
+    "wife": _SPOUSE_ALIASES | _SPOUSE_CONTEXT_PHRASES,
+    "husband": _SPOUSE_ALIASES | _SPOUSE_CONTEXT_PHRASES,
+    "spouse": _SPOUSE_ALIASES | _SPOUSE_CONTEXT_PHRASES,
+    "son": _SON_ONLY_ALIASES | _GENERIC_CHILD_KEYWORDS,
+    "daughter": _DAUGHTER_ONLY_ALIASES | _GENERIC_CHILD_KEYWORDS,
+    "child": _CHILD_ALIASES,
+    "brother": _SIBLING_ALIASES,
+    "sister": _SIBLING_ALIASES,
+    "sibling": _SIBLING_ALIASES,
+}
+_ROLE_DISPLAY = {
+    "father": "father",
+    "mother": "mother",
+    "parent": "parent",
+    "wife": "wife (spouse)",
+    "husband": "husband (spouse)",
+    "spouse": "spouse",
+    "son": "son (child)",
+    "daughter": "daughter (child)",
+    "child": "child",
+    "brother": "brother (sibling)",
+    "sister": "sister (sibling)",
+    "sibling": "sibling",
+    "other": "other (no direct family link)",
+}
+_ROLE_GROUP = {
+    "wife": "spouse", "husband": "spouse", "spouse": "spouse",
+    "father": "parent", "mother": "parent", "parent": "parent",
+    "son": "child", "daughter": "child", "child": "child",
+    "brother": "sibling", "sister": "sibling", "sibling": "sibling",
+    "self": "self",
+}
+# (male, female, unknown gender) labels for each relation.
+_REL_SPOUSE = ("husband", "wife", "spouse")
+_REL_PARENT = ("father", "mother", "parent")
+_REL_CHILD = ("son", "daughter", "child")
+_REL_SIBLING = ("brother", "sister", "sibling")
+_REL_PARENT_IN_LAW = ("father-in-law", "mother-in-law", "parent-in-law")
+_REL_CHILD_IN_LAW = ("son-in-law", "daughter-in-law", "child-in-law")
+_REL_SIBLING_IN_LAW = ("brother-in-law", "sister-in-law", "sibling-in-law")
+_REL_GRANDPARENT = ("grandfather", "grandmother", "grandparent")
+_REL_GRANDCHILD = ("grandson", "granddaughter", "grandchild")
+_REL_UNCLE_AUNT = ("uncle", "aunt", "aunt/uncle")
+_REL_NEPHEW_NIECE = ("nephew", "niece", "niece/nephew")
+# (active primary's role, other profile's role) -- both stored relative to the
+# account owner -- to the other profile's relation to the primary.
+_RELATION_TABLE = {
+    ("spouse", "self"): _REL_SPOUSE,
+    ("spouse", "parent"): _REL_PARENT_IN_LAW,
+    ("spouse", "child"): _REL_CHILD,
+    ("spouse", "sibling"): _REL_SIBLING_IN_LAW,
+    ("parent", "self"): _REL_CHILD,
+    ("parent", "spouse"): _REL_CHILD_IN_LAW,
+    ("parent", "child"): _REL_GRANDCHILD,
+    ("parent", "sibling"): _REL_CHILD,
+    ("child", "self"): _REL_PARENT,
+    ("child", "spouse"): _REL_PARENT,
+    ("child", "parent"): _REL_GRANDPARENT,
+    ("child", "child"): _REL_SIBLING,
+    ("child", "sibling"): _REL_UNCLE_AUNT,
+    ("sibling", "self"): _REL_SIBLING,
+    ("sibling", "spouse"): _REL_SIBLING_IN_LAW,
+    ("sibling", "parent"): _REL_PARENT,
+    ("sibling", "child"): _REL_NEPHEW_NIECE,
+    ("sibling", "sibling"): _REL_SIBLING,
+}
+
+_ALL_RELATION_ALIASES = (
+    _FATHER_ALIASES | _MOTHER_ALIASES | _SPOUSE_ALIASES | _CHILD_ALIASES
+    | _SIBLING_ALIASES | _FRIEND_ALIASES | _PARENT_COLLECTIVE
+)
+_NON_ASCII_ALIASES = tuple(a for a in _ALL_RELATION_ALIASES if not a.isascii())
+_THIRD_PARTY_RELATION_RE = re.compile(
+    r"\b([a-z]+)['’]s\s+(?:"
+    + "|".join(re.escape(a) for a in sorted((a for a in _ALL_RELATION_ALIASES if a.isascii()), key=len, reverse=True))
+    + r")s?\b"
+)
+
+
+def _relation_to_primary(primary_role, other: dict):
+    """Return (canonical, display) for `other` relative to the ACTIVE primary chart.
+
+    Saved relationships are relative to the account owner, so they only apply as
+    stored when the owner's chart is active. A primary_role of None means the
+    active chart is not a saved profile and is read as the speaker's own, except
+    that the owner's self profile then cannot be labelled "self".
+    Assumes an ordinary family: siblings share parents, a spouse parents the children.
+    """
+    other_role = other["canonical_relationship"]
+    if primary_role == "self" or (primary_role is None and other_role != "self"):
+        return other_role, other["display_relationship"]
+
+    primary_group = _ROLE_GROUP.get(primary_role)
+    other_group = _ROLE_GROUP.get(other_role)
+    if primary_group == "parent" and other_group == "parent":
+        # Two parents of the owner are each other's spouse; two fathers are not.
+        labels = _REL_SPOUSE if primary_role != other_role or primary_role == "parent" else None
+    else:
+        labels = _RELATION_TABLE.get((primary_group, other_group))
+
+    if labels is None:
+        return "other", _ROLE_DISPLAY["other"]
+    gender = (other.get("gender") or "").lower()
+    role = labels[0] if gender == "male" else labels[1] if gender == "female" else labels[2]
+    return role, _ROLE_DISPLAY.get(role, role)
+
+
+def _keywords_for_role(role: str) -> set:
+    """Words that refer to someone holding `role`, including in-law style labels."""
+    if role in _ROLE_KEYWORDS:
+        return set(_ROLE_KEYWORDS[role])
+    if role == "other":
+        return set()
+    return {role, role.replace("-", " ")}
+
+
+def _strip_third_party_relations(text_lower: str, primary_tokens: set) -> str:
+    """Drop "<someone>'s <relation>" so "my friend's wife" or "my wife's mother"
+    never resolve to the user's own wife or mother. The primary's own possessive
+    ("Arun's wife" with Arun active) is kept."""
+    return _THIRD_PARTY_RELATION_RE.sub(
+        lambda m: m.group(0) if m.group(1) in primary_tokens else " ",
+        text_lower,
+    )
+
+
+def _normalize_dob(dob: str) -> str:
+    """ISO form of a stored DOB, so a dd/mm/yyyy profile still matches the chart's date."""
+    try:
+        return _parse_dob_tob(dob, "00:00")[0].isoformat()
+    except (ValueError, AttributeError):
+        return (dob or "").strip()[:10]
+
+
+def _is_same_person(profile: dict, name: str, dob: str) -> bool:
+    name_norm = (name or "").strip().lower()
+    if not name_norm or profile["name"].strip().lower() != name_norm:
+        return False
+    return not dob or _normalize_dob(profile["dob"]) == _normalize_dob(dob)
+
+
+def _primary_role(saved_profiles: list[dict], name: str, dob: str):
+    """The active chart's saved role relative to the owner, or None if it is not saved."""
+    for profile in saved_profiles:
+        if _is_same_person(profile, name, dob):
+            return profile.get("canonical_relationship")
+    return None
 
 
 def _canonical_relationship_info(rel: str, gender: str, profile_name: str):
@@ -391,11 +575,25 @@ def _canonical_relationship_info(rel: str, gender: str, profile_name: str):
         if w
     }
 
-    if r == "father" or (r == "parent" and g == "male") or (alias_words & _FATHER_ALIASES):
+    # The saved relationship always wins. An alias only classifies a profile saved
+    # as "other", so a daughter nicknamed "Papa" stays a daughter. Within "parent",
+    # the alias outranks gender because gender silently defaults to male.
+    inferable = r in ("", "other")
+    alias_hint = lambda aliases: bool(alias_words & aliases)
+
+    if (
+        r == "father"
+        or (r == "parent" and (alias_hint(_FATHER_ALIASES) or (g == "male" and not alias_hint(_MOTHER_ALIASES))))
+        or (inferable and alias_hint(_FATHER_ALIASES))
+    ):
         canonical = "father"
         display = "father (parent)" if r == "parent" else "father"
         keywords = set(_FATHER_ALIASES) | _PARENT_COLLECTIVE
-    elif r == "mother" or (r == "parent" and g == "female") or (alias_words & _MOTHER_ALIASES):
+    elif (
+        r == "mother"
+        or (r == "parent" and (alias_hint(_MOTHER_ALIASES) or g == "female"))
+        or (inferable and alias_hint(_MOTHER_ALIASES))
+    ):
         canonical = "mother"
         display = "mother (parent)" if r == "parent" else "mother"
         keywords = set(_MOTHER_ALIASES) | _PARENT_COLLECTIVE
@@ -403,35 +601,40 @@ def _canonical_relationship_info(rel: str, gender: str, profile_name: str):
         canonical = "parent"
         display = "parent"
         keywords = set(_FATHER_ALIASES) | set(_MOTHER_ALIASES) | _PARENT_COLLECTIVE
-    elif r in ("spouse", "wife", "husband") or (alias_words & _SPOUSE_ALIASES):
-        if g == "female" or r == "wife":
+    elif r in ("spouse", "wife", "husband") or (inferable and alias_hint(_SPOUSE_ALIASES)):
+        if r == "wife" or (r != "husband" and g == "female"):
             canonical = "wife"
             display = "wife (spouse)"
-        elif g == "male" or r == "husband":
+        elif r == "husband" or g == "male":
             canonical = "husband"
             display = "husband (spouse)"
         else:
             canonical = "spouse"
             display = "spouse"
         keywords = set(_SPOUSE_ALIASES) | _SPOUSE_CONTEXT_PHRASES
-    elif r in ("child", "son", "daughter") or (alias_words & _CHILD_ALIASES):
-        if g == "male" or r == "son" or (alias_words & _SON_ONLY_ALIASES):
+    elif r in ("child", "son", "daughter") or (inferable and alias_hint(_CHILD_ALIASES)):
+        is_son = r == "son" or (r != "daughter" and alias_hint(_SON_ONLY_ALIASES))
+        is_daughter = r == "daughter" or (not is_son and alias_hint(_DAUGHTER_ONLY_ALIASES))
+        if is_son or (not is_daughter and g == "male"):
             canonical = "son"
             display = "son (child)"
-            keywords = set(_SON_ONLY_ALIASES) | {"child", "children", "kid", "kids", "குழந்தை"}
-        elif g == "female" or r == "daughter" or (alias_words & _DAUGHTER_ONLY_ALIASES):
+            keywords = set(_SON_ONLY_ALIASES) | _GENERIC_CHILD_KEYWORDS
+        elif is_daughter or g == "female":
             canonical = "daughter"
             display = "daughter (child)"
-            keywords = set(_DAUGHTER_ONLY_ALIASES) | {"child", "children", "kid", "kids", "குழந்தை"}
+            keywords = set(_DAUGHTER_ONLY_ALIASES) | _GENERIC_CHILD_KEYWORDS
         else:
             canonical = "child"
             display = "child"
             keywords = set(_CHILD_ALIASES)
-    elif r in ("sibling", "brother", "sister") or (alias_words & _SIBLING_ALIASES):
-        canonical = "brother" if g == "male" else ("sister" if g == "female" else "sibling")
+    elif r in ("sibling", "brother", "sister") or (inferable and alias_hint(_SIBLING_ALIASES)):
+        if r in ("brother", "sister"):
+            canonical = r
+        else:
+            canonical = "brother" if g == "male" else ("sister" if g == "female" else "sibling")
         display = f"{canonical} (sibling)" if canonical != "sibling" else "sibling"
         keywords = set(_SIBLING_ALIASES)
-    elif r == "friend" or (alias_words & _FRIEND_ALIASES):
+    elif r == "friend" or (inferable and alias_hint(_FRIEND_ALIASES)):
         canonical = "friend"
         display = "friend"
         keywords = set(_FRIEND_ALIASES)
@@ -509,13 +712,19 @@ def _load_user_saved_profiles(user_id: int):
         else:
             history_profiles.append(entry)
 
-    # Include account-level birth profile ("self") if not already in user_charts
+    # Include account-level birth profile ("self") unless a SAVED chart already covers
+    # it. An auto-recorded history row of the owner's own chart must not hide it, or
+    # the owner has no self profile and "my chart" can resolve to nobody.
     if user_row:
         u_name, u_dob, u_tob, u_place, u_lat, u_lon, u_gender = user_row
         if u_dob and u_tob and u_lat is not None and u_lon is not None:
             u_key = ((u_name or "Self").strip().lower(), u_dob.strip(), u_tob.strip()[:5])
-            if u_key not in seen_keys:
-                seen_keys.add(u_key)
+            saved_keys = {(p["name"].lower(), p["dob"], p["tob"][:5]) for p in saved_profiles}
+            if u_key not in saved_keys:
+                history_profiles = [
+                    h for h in history_profiles
+                    if (h["name"].lower(), h["dob"], h["tob"][:5]) != u_key
+                ]
                 canonical_rel, display_rel, match_keywords = _canonical_relationship_info(
                     "self", u_gender or "male", "Self"
                 )
@@ -552,10 +761,13 @@ def _compute_cached_profile_chart(profile: dict):
         profile.get("ayanamsa") or "Lahiri",
         profile.get("gender") or "male",
     )
-    cached = _PROFILE_CHART_CACHE.get(cache_key)
-    if cached is not None:
-        _PROFILE_CHART_CACHE.move_to_end(cache_key)
-        return cached
+    # Prompts are built on per-request worker threads; the lock stops a concurrent
+    # eviction from raising KeyError between the lookup and move_to_end.
+    with _PROFILE_CHART_CACHE_LOCK:
+        cached = _PROFILE_CHART_CACHE.get(cache_key)
+        if cached is not None:
+            _PROFILE_CHART_CACHE.move_to_end(cache_key)
+            return cached
 
     chart = get_astrological_chart(
         bdate.year,
@@ -568,9 +780,10 @@ def _compute_cached_profile_chart(profile: dict):
         profile.get("ayanamsa") or "Lahiri",
         gender=profile.get("gender") or "male",
     )
-    _PROFILE_CHART_CACHE[cache_key] = chart
-    if len(_PROFILE_CHART_CACHE) > _PROFILE_CHART_CACHE_MAX:
-        _PROFILE_CHART_CACHE.popitem(last=False)
+    with _PROFILE_CHART_CACHE_LOCK:
+        _PROFILE_CHART_CACHE[cache_key] = chart
+        if len(_PROFILE_CHART_CACHE) > _PROFILE_CHART_CACHE_MAX:
+            _PROFILE_CHART_CACHE.popitem(last=False)
     return chart
 
 
@@ -581,22 +794,47 @@ def _keyword_in_text(keyword: str, text_lower: str) -> bool:
     kw = keyword.strip().lower()
     if not kw:
         return False
-    if re.match(r"^[a-z0-9 ]+$", kw):
-        pattern = r"\b" + re.escape(kw) + r"(?:'s|’s|s)?\b"
+    if re.match(r"^[a-z0-9 -]+$", kw):
+        # The lookahead keeps "father" from matching "father-in-law".
+        pattern = r"\b" + re.escape(kw) + r"(?:'s|’s|s)?\b(?![-\s]in[-\s]laws?\b)"
         return bool(re.search(pattern, text_lower))
-    return kw in text_lower
+    return _indic_keyword_in_text(kw, text_lower)
 
 
-def _profile_name_in_text(profile: dict, text_lower: str) -> bool:
+def _indic_keyword_in_text(kw: str, text_lower: str) -> bool:
+    """Match a keyword in Indic script, where inflections suffix the word, so only
+    the start needs a boundary: "पति" must not fire inside "बृहस्पति" (Jupiter). A
+    longer alias containing the keyword is masked first, so "ಮಗ" (son) does not
+    fire inside "ಮಗಳು" (daughter)."""
+    masked = text_lower
+    for longer in _NON_ASCII_ALIASES:
+        if kw != longer and kw in longer:
+            masked = masked.replace(longer, " ")
+    pos = masked.find(kw)
+    while pos != -1:
+        if pos == 0 or unicodedata.category(masked[pos - 1])[0] not in "LM":
+            return True
+        pos = masked.find(kw, pos + 1)
+    return False
+
+
+def _name_tokens(name: str) -> list[str]:
+    return [t for t in re.split(r"[\s,()/.-]+", (name or "").strip().lower()) if t]
+
+
+def _profile_name_in_text(profile: dict, text_lower: str, blocked_tokens=frozenset()) -> bool:
     """Return True if the profile's full name, alias (`profile_name`), or any
-    distinctive name token (>= 3 chars) is mentioned in `text_lower`."""
+    distinctive name token (>= 3 chars) is mentioned in `text_lower`.
+    `blocked_tokens` holds tokens that cannot identify this person, such as a
+    surname shared with other relatives."""
+    blocked = _NON_PERSON_TOKENS | blocked_tokens
     candidates = []
     for raw in (profile.get("name", ""), profile.get("profile_name", "")):
         cleaned = raw.strip().lower()
-        if cleaned and cleaned not in ("self", "other", "parent", "spouse", "child", "friend"):
+        if cleaned and cleaned not in blocked:
             candidates.append(cleaned)
-            for tok in re.split(r"[\s,()/.-]+", cleaned):
-                if len(tok) >= 3 and tok not in ("the", "and", "mrs", "sri", "smt", "kum", "devi", "kumar", "rao"):
+            for tok in _name_tokens(cleaned):
+                if len(tok) >= 3 and tok not in blocked:
                     candidates.append(tok)
     return any(_keyword_in_text(c, text_lower) for c in candidates)
 
@@ -613,23 +851,19 @@ def resolve_referenced_profiles(
 ) -> list[dict]:
     """Identify which saved (or recent history) profiles are invoked by ID, name,
     alias, or relationship in the user's chat query (or recent conversation turns)."""
-    prim_name_norm = (primary_name or "").strip().lower()
-    prim_dob_norm = (primary_dob or "").strip()[:10]
-
     def _is_primary(p: dict) -> bool:
-        p_name = p["name"].strip().lower()
-        p_dob = p["dob"].strip()[:10]
-        if prim_name_norm and p_name == prim_name_norm and (not prim_dob_norm or p_dob == prim_dob_norm):
-            return True
-        return False
+        return _is_same_person(p, primary_name, primary_dob)
 
-    # Determine if the currently active primary chart is a non-self profile (e.g. Spouse),
-    # so the 'self' profile can also be matched via spouse/husband/wife keywords.
-    primary_rel = "self"
-    for sp in saved_profiles:
-        if _is_primary(sp):
-            primary_rel = sp.get("canonical_relationship", "self")
-            break
+    # Profiles are saved relative to the account owner, but a user can also refer to
+    # someone by their relation to the active chart: with the wife's chart active,
+    # "my husband" means the owner's self profile. Both vocabularies therefore match.
+    primary_role = _primary_role(saved_profiles, primary_name, primary_dob)
+    primary_tokens = set(_name_tokens(primary_name))
+
+    all_names = {p["name"].strip().lower() for p in saved_profiles + history_profiles}
+    all_names.add((primary_name or "").strip().lower())
+    token_counts = Counter(tok for n in all_names for tok in set(_name_tokens(n)))
+    shared_tokens = frozenset(tok for tok, count in token_counts.items() if count > 1)
 
     matched = []
     matched_keys = set()
@@ -643,10 +877,10 @@ def resolve_referenced_profiles(
     all_profiles = saved_profiles + history_profiles
     explicit_set = set(explicit_ids or [])
 
-    # 1. Explicit chart IDs selected via UI chips
+    # 1. Explicit chart IDs selected via UI chips (a chart is never compared with itself)
     if explicit_set:
         for p in all_profiles:
-            if p.get("id") in explicit_set:
+            if p.get("id") in explicit_set and not _is_primary(p):
                 _add(p)
 
     def _scan_text(text: str, allow_collective: bool = True):
@@ -662,42 +896,44 @@ def resolve_referenced_profiles(
 
         # Direct Name / Alias match across saved profiles first, then history profiles
         for p in saved_profiles:
-            if not _is_primary(p) and _profile_name_in_text(p, t_low):
+            if not _is_primary(p) and _profile_name_in_text(p, t_low, shared_tokens):
                 _add(p)
 
         # Relationship keyword match across saved profiles
+        relation_text = _strip_third_party_relations(t_low, primary_tokens)
         for sp in saved_profiles:
             if _is_primary(sp):
                 continue
             kws = set(sp.get("match_keywords") or set())
-            if sp.get("canonical_relationship") == "self" and primary_rel in ("wife", "husband", "spouse"):
-                kws = kws | _SPOUSE_ALIASES | _SPOUSE_CONTEXT_PHRASES
-            if any(_keyword_in_text(kw, t_low) for kw in kws):
+            if primary_role not in (None, "self"):
+                kws |= _keywords_for_role(_relation_to_primary(primary_role, sp)[0])
+            if any(_keyword_in_text(kw, relation_text) for kw in kws):
                 _add(sp)
 
         # Name match in history profiles (if user calculated a friend/relative chart without clicking Save)
         for hp in history_profiles:
-            if not _is_primary(hp) and _profile_name_in_text(hp, t_low):
+            if not _is_primary(hp) and _profile_name_in_text(hp, t_low, shared_tokens):
                 _add(hp)
 
     # 2. Scan the current user query
     _scan_text(query_text, allow_collective=True)
 
-    # 3. If the current query uses follow-up comparison/pronoun cues (or no profile was
-    # matched yet in a follow-up turn), scan the last 2 user messages from history.
+    # 3. Carry a person over from recent turns only when this query actually points
+    # back at them. Pronouns and comparison words resolve a query that names nobody;
+    # group words ("both", "together") add to whoever it does name. A query with no
+    # cue ("how is my career?") is about the primary alone.
     if history:
         q_low = (query_text or "").lower()
-        followup_cues = (
-            "both", "compare", "comparison", "her ", "his ", "their ", "between",
-            "together", "each other", "match", "compatibility", "synastry",
-            "wife", "husband", "spouse", "father", "mother", "appa", "amma",
-        )
-        if not matched or any(cue in q_low for cue in followup_cues):
+        def _has_cue(cues) -> bool:
+            return any(_keyword_in_text(cue, q_low) for cue in cues)
+
+        if _has_cue(_FOLLOWUP_GROUP) or (not matched and _has_cue(_FOLLOWUP_PRONOUNS + _FOLLOWUP_COMPARE)):
             recent_user_msgs = [m.content for m in history if m.role == "user"][-2:]
             for prev_text in reversed(recent_user_msgs):
-                if len(matched) >= max_matches:
-                    break
+                before = len(matched)
                 _scan_text(prev_text, allow_collective=False)
+                if len(matched) > before or len(matched) >= max_matches:
+                    break
 
     return matched
 
@@ -728,21 +964,24 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     client = (req.client_name or "").strip()
     place = (req.place_name or "").strip()
 
-    # If the user opened AI Chat without calculating a chart first, auto-resolve
-    # their primary chart from their saved 'self' profile (or first saved profile).
+    # If the user opened AI Chat without calculating a chart first, use their own
+    # 'self' profile. Never fall back to a relative's chart: "how is my career?"
+    # would be answered from someone else's placements. The name and place come from
+    # the profile because the request carries unrelated birth-form defaults here.
     if chart is None:
-        if req.chart_data is not None and len(req.chart_data) == 0 and not saved_profiles:
-            raise HTTPException(status_code=400, detail="chart_data missing required key: metadata")
         primary_prof = next(
             (p for p in saved_profiles if p.get("canonical_relationship") == "self"),
-            saved_profiles[0] if saved_profiles else None,
+            None,
         )
         if not primary_prof:
-            raise HTTPException(status_code=400, detail="chart_data missing required key: metadata")
+            raise HTTPException(
+                status_code=400,
+                detail="No active chart: calculate a birth chart, or add your own birth details to your profile.",
+            )
         try:
             chart = _compute_cached_profile_chart(primary_prof)
-            client = client or primary_prof["name"]
-            place = place or primary_prof["pob"]
+            client = primary_prof["name"]
+            place = primary_prof["pob"]
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Could not compute saved profile chart: {e}")
 
@@ -763,11 +1002,14 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
             raise ValueError(f"Invalid chart_data: {e}")
 
         today = date.today()
+        primary_role = _primary_role(saved_profiles, client, primary_dob)
 
-        # 1. Build a compact roster of all saved profiles in the user's account so the
-        # AI always knows the family members on file (even before deep comparison).
+        # 1. Build a compact roster of the saved profiles so the AI knows who is on
+        # file. This goes to a third-party LLM on every message, so it omits birth
+        # date, time and place; those are sent only for profiles actually invoked.
         roster_lines = []
-        for sp in saved_profiles:
+        roster_profiles = [p for p in saved_profiles if not _is_same_person(p, client, primary_dob)]
+        for sp in roster_profiles[:_ROSTER_MAX]:
             try:
                 sp_chart = _compute_cached_profile_chart(sp)
                 sp_lagna = sp_chart["placements"]["Lagna"]
@@ -779,9 +1021,9 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
                     if sp_dasa.get("mahadasa")
                     else "—"
                 )
+                sp_relation = _relation_to_primary(primary_role, sp)[1]
                 roster_lines.append(
-                    f"- {sp['name']} (Relationship: {sp['display_relationship'].upper()}, Gender: {sp['gender'].capitalize()}): "
-                    f"Born {sp['dob']} {sp['tob']} in {sp['pob']} | "
+                    f"- {sp['name']} (Relationship to {client}: {sp_relation.upper()}, Gender: {sp['gender'].capitalize()}): "
                     f"Lagna: {sp_lagna['rasi_name']} ({sp_lagna['degree']:.2f}°) | "
                     f"Moon: {sp_moon['rasi_name']} ({sp_moon['degree']:.2f}°), Nakshatra: {sp_naks} | "
                     f"Running Dasa: {dasa_str}"
@@ -814,6 +1056,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
         for ref_prof in referenced_profiles:
             try:
+                rel_role, rel_display = _relation_to_primary(primary_role, ref_prof)
                 ref_chart = _compute_cached_profile_chart(ref_prof)
                 ref_transit = None
                 try:
@@ -830,13 +1073,13 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
                     primary_name=client,
                     other_chart=ref_chart,
                     other_name=ref_prof["name"],
-                    relationship=ref_prof["display_relationship"],
+                    relationship=rel_display,
                     ref_date=today,
                 )
                 ref_panch = ref_chart.get("panchangam", {})
                 cross_chart_sections.append(
                     f"=== INVOKED SAVED PROFILE: {ref_prof['name']} "
-                    f"(Relationship to {client}: {ref_prof['display_relationship'].upper()}) ===\n"
+                    f"(Relationship to {client}: {rel_display.upper()}) ===\n"
                     f"Birth Details: Born {ref_prof['dob']} at {ref_prof['tob']} in {ref_prof['pob']} "
                     f"(Lat: {ref_prof['lat']}, Lon: {ref_prof['lon']}, Gender: {ref_prof['gender']})\n"
                     f"Birth Panchangam: Nakshatra: {ref_panch.get('nakshatra', '—')} | "
@@ -847,24 +1090,24 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
                 )
                 # Add targeted RAG queries for the invoked profile & relationship
                 extra_queries.extend(build_rag_queries(ref_chart, ref_analysis, max_queries=4))
-                if ref_prof["canonical_relationship"] in ("wife", "husband", "spouse"):
+                if rel_role in ("wife", "husband", "spouse"):
                     p_naks = chart.get("panchangam", {}).get("nakshatra", "")
                     r_naks = ref_panch.get("nakshatra", "")
                     extra_queries.append(f"marriage compatibility Koota Porutham {p_naks} {r_naks} seventh house")
                     extra_queries.append("seventh house lord Upapada Lagna Darakaraka spouse harmony")
-                elif ref_prof["canonical_relationship"] == "father":
+                elif rel_role == "father":
                     extra_queries.append("ninth house Pitru bhava Sun Dwadashamsha father results")
-                elif ref_prof["canonical_relationship"] == "mother":
+                elif rel_role == "mother":
                     extra_queries.append("fourth house Matru bhava Moon Dwadashamsha mother results")
-                elif ref_prof["canonical_relationship"] in ("child", "son", "daughter"):
+                elif rel_role in ("child", "son", "daughter"):
                     extra_queries.append("fifth house Putra bhava Jupiter Saptamsha progeny results")
 
                 ref_cd = ref_analysis.get("current_dasa", {})
                 compared_meta.append({
                     "id": ref_prof.get("id"),
                     "name": ref_prof["name"],
-                    "relationship": ref_prof["display_relationship"],
-                    "canonical_relationship": ref_prof["canonical_relationship"],
+                    "relationship": rel_display,
+                    "canonical_relationship": rel_role,
                     "lagna": ref_chart["placements"]["Lagna"]["rasi_name"],
                     "moon": ref_chart["placements"]["Moon"]["rasi_name"],
                     "nakshatra": ref_panch.get("nakshatra", ""),
@@ -920,7 +1163,7 @@ Both {client}'s complete computed chart AND the complete computed chart(s) + cro
         format_rule = (
             f"- Format: Structure the reading clearly to address {client}'s cross-chart / comparative inquiry across {client} and {', '.join(m['name'] for m in compared_meta)}: "
             "(1) Individual Ascendant, Moon & Key Placements of Both Natives, (2) Cross-Chart Synastry & Bhava Overlays / Compatibility, "
-            "(3) Combined Dasa–Bhukti & Transit Timing, (4) Direct Synthesis & Classical Remedies. Speak directly to {client}."
+            f"(3) Combined Dasa–Bhukti & Transit Timing, (4) Direct Synthesis & Classical Remedies. Speak directly to {client}."
             if compared_meta
             else f"- Format: Present the reading in clear sections tailored to {client}'s question (covering relevant Ascendant/Core Strength, Bhavas/Yogas, Vargas/Strengths, and Current Dasa-Bhukti/Transit Timing). Speak directly to {client}."
         )
@@ -1019,7 +1262,7 @@ Start directly with the chat response:
                 "snippet": snippet
             })
         if compared_meta:
-            return prompt, {"manifest": manifest, "compared_profiles": compared_meta}
+            return prompt, {"manifest": manifest, "compared_profiles": compared_meta, "primary_name": client}
         return prompt, manifest
 
 
