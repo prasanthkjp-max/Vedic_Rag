@@ -29,6 +29,7 @@ src/
     prediction_engine.py  # interpretive analysis + RAG query building
     muhurtham_engine.py   # marriage/event muhurtham rules
     horoscope_engine.py   # universal sign-horoscope calendars/gochara tables
+    calendar_overlay.py   # per-profile Tara Bala, Chandrashtama and star-birthday flags
     digest_engine.py      # daily digest kalam windows + email labels
     search_engine.py      # hybrid dense+FTS5 RAG search (VedicSearchEngine)
     pdf_generator.py       # report PDF rendering (ReportLab) + PDF-side translations
