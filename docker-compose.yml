@@ -33,6 +33,7 @@ services:
       - MODEL_PREMIUM=${MODEL_PREMIUM:-deepseek/deepseek-v4-pro}
       - MODEL_EMBEDDING=${MODEL_EMBEDDING:-openai/text-embedding-3-small}
       - VEDIC_LLM_MODEL=${VEDIC_LLM_MODEL:-google/gemma-4-31b-it}
+      - VEDIC_CHAT_LLM_MODEL=${VEDIC_CHAT_LLM_MODEL:-deepseek/deepseek-v4.1-flash}
       - VEDIC_EMBED_DIM=${VEDIC_EMBED_DIM:-1536}
       - VEDIC_EMBED_TIMEOUT=${VEDIC_EMBED_TIMEOUT:-30}
       - VEDIC_LLM_TIMEOUT=${VEDIC_LLM_TIMEOUT:-300}

@@ -848,7 +848,8 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
 
 # --- app.py:1087-1225 ---
 def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai",
-               on_complete=None, lang: str = "en", allow_scripts=(), post_check=None):
+               on_complete=None, lang: str = "en", allow_scripts=(), post_check=None,
+               helper_model: str = MODEL_FAST):
     """Shared streaming generator for all AI endpoints, backed by OpenRouter via
     the OpenAI SDK (chat completions, streamed).
 
@@ -889,7 +890,7 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
     def generator():
         produced_content = False
         content_parts = []  # real model output only (no keepalives/errors)
-        guard = ScriptGuard(lang, translate=lambda text: _translate_stray(text, lang),
+        guard = ScriptGuard(lang, translate=lambda text: _translate_stray(text, lang, helper_model),
                             allow_scripts=allow_scripts)
 
         def released(text):
@@ -1023,11 +1024,11 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
 
 
 # --- app.py:1840-1849 ---
-def _translate_stray(text: str, lang: str) -> str:
+def _translate_stray(text: str, lang: str, model: str = MODEL_FAST) -> str:
     """Translate one stray word or phrase into the reading's language."""
     target = _LANG_MAP.get(lang, "English")
     resp = get_llm_client().with_options(timeout=LLM_REPAIR_TIMEOUT).chat.completions.create(
-        model=MODEL_FAST,
+        model=model,
         messages=[{"role": "user", "content": (
             f"Translate this word or phrase from a Vedic astrology text into {target}. "
             f"Reply with only the translation, written in {target}.\n\n{text}"
@@ -1051,13 +1052,13 @@ def _llm_complete(prompt: str, model_name: str, lang: str = "en") -> str:
     return clean_text(text, lang, translate=lambda stray: _translate_stray(stray, lang))
 
 
-def check_reading(reading: str, facts_by_person: dict, lang: str) -> str:
+def check_reading(reading: str, facts_by_person: dict, lang: str, model: str = MODEL_FAST) -> str:
     """Return a correction note if the reading's house or lordship statements
     contradict the computed charts, otherwise an empty string."""
     if not facts_by_person:
         return ""
     resp = get_llm_client().with_options(timeout=LLM_CHECK_TIMEOUT).chat.completions.create(
-        model=MODEL_FAST,
+        model=model,
         messages=[{"role": "user", "content": build_claim_prompt(reading, list(facts_by_person))}],
         temperature=0,
     )

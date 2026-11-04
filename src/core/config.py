@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.30.0"
+VERSION = "1.31.0"
 
 # --- Paths (env-overridable) ---
 # config.py lives at <repo_root>/src/core/config.py, but BASE_DIR must stay the
@@ -122,6 +122,9 @@ MODEL_EMBEDDING = os.environ.get("MODEL_EMBEDDING", "openai/text-embedding-3-sma
 # The single LLM used by every AI endpoint (backend-enforced; client-supplied
 # `model` is ignored). Defaults to the balanced tier; override via VEDIC_LLM_MODEL.
 DEFAULT_LLM_MODEL = os.environ.get("VEDIC_LLM_MODEL", MODEL_BALANCED)
+# AI chat has its own model, used for the reply and for that reply's helper calls
+# (stray-word repair and chart check). Override via VEDIC_CHAT_LLM_MODEL.
+CHAT_LLM_MODEL = os.environ.get("VEDIC_CHAT_LLM_MODEL", "deepseek/deepseek-v4.1-flash")
 
 # Embedding model + its output dimensionality. text-embedding-3-small is 1536-dim
 # (vs. the old nomic-embed-text 768) — changing the model REQUIRES re-ingesting
