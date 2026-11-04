@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.29.0]
+
+### Added
+- **Personal star overlay (`src/engines/calendar_overlay.py`, `GET /api/calendar-overlay`):** a family-member selector marks Chandrashtama days (Moon in the 8th rasi from the birth Moon sign) and highlights Sampat, Kshema, Sadhaka, Mitra and Paramamitra Tara Bala days. Each saved profile's monthly Janma Nakshatra day and annual star birthday (Janma Masa + Nakshatra) appear on the calendar.
+- **Richer day cells:** tithi with an S.11 / K.14 tag, a paksha colour strip, the full nakshatra name, a +N pill for extra observances, and a hover or long-press quick-peek with transition times, observances, Rahu Kalam, Abhijit Muhurtham and Subha Hora.
+- **Activity Muhurtham filter:** highlights the month's days for marriage, housewarming, vehicle purchase, business opening, baby naming, Aksharabhyasam or travel. Filter pills show counts, and Muhurtham badges separate Valarpirai from Theipirai.
+- **Navigation:** Today button, regional month and year subtitle, a collapsible key-dates agenda, panel highlight on date selection, Ask AI about this day (fills in the question without sending or charging credits), and `.ics` export for a month or a day's auspicious timings.
+
+### Changed
+- The Vrata filter now also covers Sashti, Sankatahara Chaturthi and Masa Shivaratri, and follows the engine's observance day. It no longer marks every day whose sunrise tithi is Ekadashi or Trayodashi.
+- A festival now takes the cell's speciality slot ahead of "Marriage Muhurtham", which has its own badge.
+
+### Fixed
+- The calendar's "today" highlight used the UTC date, so it showed yesterday between midnight and 05:30 IST.
+- Muhurtham, Vrata and Kari Naal cell badges were hardcoded to Tamil or English; they now follow the selected language.
+
 ## [1.28.1]
 
 ### Fixed
