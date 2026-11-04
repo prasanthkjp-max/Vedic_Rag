@@ -47,6 +47,34 @@ KARANA = {
 
 TABLES = {"nakshatra": NAKSHATRA, "yogam": YOGAM, "karana": KARANA}
 
+# Section headings for a two-chart AI reading. Giving the model the finished heading
+# stops it inventing one with an English gloss. Not part of TABLES: these are
+# backend-only prompt text, not generated into the frontend.
+READING_SECTIONS = {
+    "en": ["Individual Chart Signatures", "Cross-Chart Compatibility", "Dasa-Bhukti Timing", "Verdict and Remedies"],
+    "ta": ["தனிப்பட்ட ஜாதக அம்சங்கள்", "இரு ஜாதக ஒப்பீடும் பொருத்தமும்", "தசா-புக்தி காலக்கணிப்பு", "முடிவும் பரிகாரங்களும்"],
+    "te": ["వ్యక్తిగత జాతక లక్షణాలు", "ఇరు జాతకాల పోలిక మరియు పొంతన", "దశ-భుక్తి కాల నిర్ణయం", "తీర్పు మరియు పరిహారాలు"],
+    "ml": ["വ്യക്തിഗത ജാതക സവിശേഷതകൾ", "ഇരു ജാതകങ്ങളുടെ താരതമ്യവും പൊരുത്തവും", "ദശാ-ഭുക്തി കാലനിർണ്ണയം", "വിധിയും പരിഹാരങ്ങളും"],
+    "kn": ["ವೈಯಕ್ತಿಕ ಜಾತಕ ಲಕ್ಷಣಗಳು", "ಎರಡು ಜಾತಕಗಳ ಹೋಲಿಕೆ ಮತ್ತು ಹೊಂದಾಣಿಕೆ", "ದಶಾ-ಭುಕ್ತಿ ಕಾಲನಿರ್ಣಯ", "ತೀರ್ಮಾನ ಮತ್ತು ಪರಿಹಾರಗಳು"],
+    "hi": ["व्यक्तिगत कुंडली लक्षण", "दोनों कुंडलियों की तुलना और मिलान", "दशा-भुक्ति समय निर्धारण", "निष्कर्ष और उपाय"],
+}
+
+# The note appended when a reading's house or lordship statement contradicts the chart.
+READING_CHECK_NOTE = {
+    "en": {"heading": "Chart check", "intro": "These statements differ from the computed chart. Rely on the computed details:",
+           "occupies": "occupies house {house}", "lord_of": "lord of houses {lords}"},
+    "ta": {"heading": "ஜாதக சரிபார்ப்பு", "intro": "கீழ்க்கண்ட கூற்றுகள் கணிக்கப்பட்ட ஜாதகத்துடன் பொருந்தவில்லை. கணிக்கப்பட்ட விவரங்களையே பின்பற்றவும்:",
+           "occupies": "{house}-ஆம் வீட்டில் உள்ளது", "lord_of": "{lords} வீடுகளுக்கு அதிபதி"},
+    "te": {"heading": "జాతక పరిశీలన", "intro": "ఈ కింది వాక్యాలు లెక్కించిన జాతకంతో సరిపోలడం లేదు. లెక్కించిన వివరాలనే అనుసరించండి:",
+           "occupies": "{house}వ ఇంట్లో ఉంది", "lord_of": "{lords} ఇళ్లకు అధిపతి"},
+    "ml": {"heading": "ജാതക പരിശോധന", "intro": "താഴെയുള്ള പ്രസ്താവനകൾ കണക്കാക്കിയ ജാതകവുമായി ഒത്തുപോകുന്നില്ല. കണക്കാക്കിയ വിവരങ്ങൾ മാത്രം പിന്തുടരുക:",
+           "occupies": "{house}-ാം ഭാവത്തിൽ നിൽക്കുന്നു", "lord_of": "{lords} ഭാവങ്ങളുടെ അധിപൻ"},
+    "kn": {"heading": "ಜಾತಕ ಪರಿಶೀಲನೆ", "intro": "ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆಗಳು ಲೆಕ್ಕಹಾಕಿದ ಜಾತಕಕ್ಕೆ ಹೊಂದುವುದಿಲ್ಲ. ಲೆಕ್ಕಹಾಕಿದ ವಿವರಗಳನ್ನೇ ಅನುಸರಿಸಿ:",
+           "occupies": "{house}ನೇ ಮನೆಯಲ್ಲಿದೆ", "lord_of": "{lords} ಮನೆಗಳ ಅಧಿಪತಿ"},
+    "hi": {"heading": "कुंडली जाँच", "intro": "नीचे दिए गए कथन गणना की गई कुंडली से मेल नहीं खाते। गणना किए गए विवरण ही मानें:",
+           "occupies": "{house}वें भाव में स्थित", "lord_of": "{lords} भावों का स्वामी"},
+}
+
 
 def _validate():
     """Fail import if any language array is misaligned with its canonical 'en'."""

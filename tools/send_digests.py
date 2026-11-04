@@ -27,6 +27,7 @@ from datetime import date, datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from src.engines.output_guard import has_foreign_script  # noqa: E402
 from src.core.config import (  # noqa: E402
     DB_PATH,
     connect_db,
@@ -93,6 +94,9 @@ def _llm_polish(text, lang):
             model=MODEL_FAST, messages=[{"role": "user", "content": prompt}]
         )
         polished = (resp.choices[0].message.content or "").strip()
+        if has_foreign_script(polished, lang):
+            logger.warning("LLM polish used the wrong script; sending deterministic text")
+            return text
         return polished or text
     except Exception as e:
         logger.warning("LLM polish failed, sending deterministic text: %s", e)

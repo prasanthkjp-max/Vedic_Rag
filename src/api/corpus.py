@@ -19,7 +19,10 @@ from src.core.config import (
     EMBEDDING_DIM,
     connect_db,
 )
-from src.api.deps import logger, LangCode, search_engine, check_credits_or_raise, llm_stream, _LANG_MAP
+from src.api.deps import (
+    logger, LangCode, search_engine, check_credits_or_raise, llm_stream, _LANG_MAP, _language_lock,
+)
+from src.engines.prediction_engine import is_reference_page
 
 router = APIRouter()
 
@@ -367,8 +370,11 @@ def query_rag(request: QueryRequest, raw_req: Request):
         # Reload engine to get latest pages
         search_engine.reload()
 
-        # Retrieve top 3 matching pages
-        results = search_engine.hybrid_search(query_text, top_k=3)
+        # Retrieve the top 3 matching pages, leaving out contents and index pages
+        results = [
+            r for r in search_engine.hybrid_search(query_text, top_k=8)
+            if not is_reference_page(r.get("raw_text"))
+        ][:3]
         
         if not results:
             # Fallback if DB is empty
@@ -400,10 +406,14 @@ CRITICAL REQUIREMENT: Write the entire response â€” headings, labels, and body â
 
 USER QUERY: {query_text}
 
-Provide an elegant, authoritative, and helpful answer. Start directly with the answer:
+Provide an elegant, authoritative, and helpful answer.
+
+{_language_lock(request.lang, allow_devanagari=True)}
+
+Start directly with the answer:
 """
         return prompt
 
-    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "query"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "query", lang=request.lang, allow_scripts=("Devanagari",)), media_type="text/event-stream")
 
 

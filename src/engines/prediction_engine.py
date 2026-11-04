@@ -930,10 +930,84 @@ def build_rag_queries(chart, analysis, max_queries=10):
     return out
 
 
+_CONTENTS_CHAPTER = re.compile(r"CHAPTER\s+\d+\s+\d+\s*[-–]\s*\d+")
+_CONTENTS_DASA_ENTRY = re.compile(r"\b\d{1,3}\.\s+(?:Antardasa|Pratyantardasa|Sookshmadasa)\s+of\b")
+_ROMAN_PAGE_HEADER = re.compile(r"\s*\([xivlc]{1,7}\)\s", re.IGNORECASE)
+# A bare roman page number before a running title, like "xii  PHALADEEPIKA".
+_ROMAN_TITLE_HEADER = re.compile(r"\W*[xvil]{2,7}\s[^a-z]{0,8}[A-Z]{4,}")
+_INDEX_HEADER = re.compile(r"\b(?:INDEX|CONTENTS)\b")
+_EXCERPT_STOPWORDS = frozenset({
+    "effects", "results", "result", "predictions", "with", "from", "that", "this", "their",
+    "house", "chart", "compare", "predict", "about",
+})
+_EXCERPT_MARGIN = 120
+
+
+def is_reference_page(text):
+    """True for a contents or index page. Those match many searches because they
+    list every topic, but they state no rule a reading could use."""
+    text = text or ""
+    return bool(
+        _INDEX_HEADER.search(text[:80])
+        or _ROMAN_PAGE_HEADER.match(text)
+        or _ROMAN_TITLE_HEADER.match(text)
+        or _CONTENTS_CHAPTER.search(text)
+        or len(_CONTENTS_DASA_ENTRY.findall(text)) >= 5
+    )
+
+
+def query_terms(queries):
+    """Distinctive lowercase words from search queries, used to locate the excerpt."""
+    terms = set()
+    for query in queries:
+        terms.update(re.findall(r"[a-z]{4,}", (query or "").lower()))
+    return terms - _EXCERPT_STOPWORDS
+
+
+def best_excerpt(text, terms, size=900):
+    """The `size`-character window of a page that best matches `terms`. Falls back
+    to the start of the page when nothing matches."""
+    text = (text or "").strip()
+    if len(text) <= size:
+        return text
+    hits = []
+    if terms:
+        pattern = r"\b(" + "|".join(re.escape(t) for t in sorted(terms)) + r")"
+        hits = [(m.start(), m.group(1)) for m in re.finditer(pattern, text.lower())]
+    start = 0
+    best = (0, 0)
+    for position, _ in hits:
+        candidate = max(0, position - _EXCERPT_MARGIN)
+        inside = [term for pos, term in hits if candidate <= pos < candidate + size]
+        score = (len(set(inside)), len(inside))
+        if score > best:
+            best, start = score, candidate
+    start = min(start, len(text) - size)
+    if start > 0:
+        # Begin on a line or sentence boundary if one is close, else on a word.
+        before = text[max(0, start - _EXCERPT_MARGIN):start + 1]
+        cut = max(before.rfind("\n"), before.rfind(". "))
+        if cut >= 0:
+            start = start - len(before) + 1 + cut + 1
+        else:
+            space = text.find(" ", start)
+            if 0 <= space < start + _EXCERPT_MARGIN:
+                start = space + 1
+    end = start + size
+    excerpt = text[start:end]
+    if end < len(text):
+        space = excerpt.rfind(" ")
+        if space > size - _EXCERPT_MARGIN:
+            excerpt = excerpt[:space]
+    return ("…" if start > 0 else "") + excerpt.strip() + ("…" if end < len(text) else "")
+
+
 def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, snippet_chars=900, category=None):
     """
-    Run each query through the hybrid search engine, dedupe by (book, page),
-    and return a formatted context string of the top unique passages.
+    Run each query through the hybrid search engine, leave out contents and index
+    pages, dedupe by (book, page), and return a formatted context string of the top
+    unique passages. Each returned passage gains an `excerpt`: the part of the page
+    that best matches the queries that found it, which is what the model is given.
     """
     if search_engine is None or not queries:
         return "", []
@@ -950,13 +1024,15 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
         logger.warning("RAG batch embed failed (dense retrieval degraded to sparse): %s", e)
         query_vectors = [None] * len(queries)
 
-    scored = {}  # (book_id, page_num) -> {res, score}
+    # Fetch extra so a skipped contents page doesn't cost the query a real result.
+    fetch_k = per_query + 4
+    scored = {}  # (book_id, page_num) -> {res, score, queries}
     for q_idx, (q, vec) in enumerate(zip(queries, query_vectors)):
         dense_results, sparse_results = [], []
         try:
             if vec:
-                dense_results = search_engine.dense_search_with_vector(vec, top_k=per_query, category=category)
-            sparse_results = search_engine.sparse_search(q, top_k=per_query, category=category)
+                dense_results = search_engine.dense_search_with_vector(vec, top_k=fetch_k, category=category)
+            sparse_results = search_engine.sparse_search(q, top_k=fetch_k, category=category)
         except Exception as e:
             logger.warning("RAG search failed for query %r: %s", q[:60], e)
             continue
@@ -966,7 +1042,8 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
         # best sparse hit.
         best_rank = {}
         for res_list in (dense_results, sparse_results):
-            for rank, res in enumerate(res_list):
+            usable = [r for r in res_list if not is_reference_page(r.get("raw_text"))][:per_query]
+            for rank, res in enumerate(usable):
                 key = (res["book_id"], res["page_num"])
                 if key not in best_rank or rank < best_rank[key][0]:
                     best_rank[key] = (rank, res)
@@ -975,23 +1052,24 @@ def retrieve_rag_context(search_engine, queries, per_query=3, max_passages=8, sn
             contribution = query_weight / (1 + rank)
             if key in scored:
                 scored[key]["score"] += contribution
+                scored[key]["queries"].append(q)
             else:
-                scored[key] = {"res": res, "score": contribution}
+                scored[key] = {"res": res, "score": contribution, "queries": [q]}
 
     ranked = sorted(scored.values(), key=lambda x: x["score"], reverse=True)[:max_passages]
 
     parts = []
+    passages = []
     for i, item in enumerate(ranked):
         res = item["res"]
-        text = res["raw_text"].strip()
-        if len(text) > snippet_chars:
-            text = text[:snippet_chars] + "…"
+        text = best_excerpt(res["raw_text"], query_terms(item["queries"]), size=snippet_chars)
+        passages.append({**res, "excerpt": text})
         parts.append(
             f"Source [{i+1}]: \"{res['book_title']}\", Page {res['page_num'] + 1}\n"
             f"--- TEXT START ---\n{text}\n--- TEXT END ---"
         )
     context_str = "\n\n".join(parts) if parts else "No specific classical passages were retrieved."
-    return context_str, [item["res"] for item in ranked]
+    return context_str, passages
 
 
 # ============================================================================

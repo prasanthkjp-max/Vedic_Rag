@@ -28,6 +28,7 @@ from src.api.deps import (
     _llm_complete,
     _LANG_MAP,
     _VEDIC_GUARDRAILS,
+    _language_lock,
 )
 from src.api.ai import _parse_dob_tob
 
@@ -113,11 +114,13 @@ Return ONLY a valid JSON object — no markdown fences, no commentary before or 
 {json.dumps(horoscope_engine.SIGN_KEYS)}
 Each value must be a single plain-text prediction of {_HOROSCOPE_LENGTH[scope]}, written ENTIRELY in {target_lang}. Do not include the sign name inside the text.
 
+{_language_lock(lang)}
+
 JSON:"""
 
     last_err = None
     for attempt in range(2):
-        raw = _llm_complete(prompt, DEFAULT_LLM_MODEL)
+        raw = _llm_complete(prompt, DEFAULT_LLM_MODEL, lang=lang)
         try:
             predictions = horoscope_engine.parse_sign_json(raw)
             break

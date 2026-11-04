@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.29.0"
+VERSION = "1.30.0"
 
 # --- Paths (env-overridable) ---
 # config.py lives at <repo_root>/src/core/config.py, but BASE_DIR must stay the
@@ -134,6 +134,16 @@ EMBEDDING_DIM = _env_int("VEDIC_EMBED_DIM", 1536)
 # that generous.
 EMBED_TIMEOUT = _env_int("VEDIC_EMBED_TIMEOUT", 30)
 LLM_STREAM_TIMEOUT = _env_int("VEDIC_LLM_TIMEOUT", 300)
+# Short helper calls made while a reading is being delivered, so they stay bounded.
+LLM_REPAIR_TIMEOUT = _env_int("VEDIC_LLM_REPAIR_TIMEOUT", 10)
+LLM_CHECK_TIMEOUT = _env_int("VEDIC_LLM_CHECK_TIMEOUT", 25)
+
+# Lower than the provider default: readings should stay close to the supplied data.
+try:
+    LLM_TEMPERATURE = float(os.environ.get("VEDIC_LLM_TEMPERATURE") or 0.4)
+except ValueError:
+    logger.warning("VEDIC_LLM_TEMPERATURE is not a number; using 0.4")
+    LLM_TEMPERATURE = 0.4
 
 # Process-wide cached OpenAI client pointed at OpenRouter. Lazily constructed so
 # importing config (e.g. for the astro/PDF tools) doesn't hard-require the
