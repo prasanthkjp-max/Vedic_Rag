@@ -694,6 +694,59 @@ check("chat_self: a history row of the owner's chart does not hide the self prof
       [(p["name"], p["canonical_relationship"]) for p in _saved] == [("Arun", "self"), ("Bala", "father")]
       and _hist == [])
 
+# ── Personal calendar overlay ────────────────────────────────────────────────
+from src.engines.astro_engine import NAKSHATRAS as _NAKSHATRAS, get_astrological_chart as _overlay_chart
+from src.engines.calendar_overlay import build_day_overlay, is_chandrashtama, janma_details, tara_bala
+from src.api.panchangam import _compute_month_panchangam
+
+check("overlay: Tara Bala counts inclusively from the birth star",
+      tara_bala(0, 0) == (1, "Janma") and tara_bala(0, 1) == (2, "Sampat")
+      and tara_bala(0, 5) == (6, "Sadhaka") and tara_bala(0, 8) == (9, "Paramamitra"))
+check("overlay: Tara Bala repeats every 9 stars and wraps past Revati",
+      tara_bala(0, 9) == (1, "Janma") and tara_bala(0, 18) == (1, "Janma")
+      and tara_bala(26, 0) == (2, "Sampat") and tara_bala(26, 26) == (1, "Janma"))
+check("overlay: Chandrashtama is the 8th rasi counted from the birth rasi, with wrap",
+      is_chandrashtama(0, 7) and is_chandrashtama(6, 1) and not is_chandrashtama(0, 8) and not is_chandrashtama(7, 0))
+
+_janma = {"nakshatra": "Ashwini", "nakshatra_index": 0, "rasi_index": 0, "solar_month": "Chithirai"}
+_overlay_day = lambda **kw: build_day_overlay(_janma, {
+    "nakshatra_index": 1, "moon_rasi_index": 1, "moon_rasi_index_end": 1, "solar_month": "Aadi", **kw})
+check("overlay: Sampat, Kshema, Sadhaka, Mitra and Paramamitra are the highlighted Taras",
+      [_overlay_day(nakshatra_index=i)["tara_name"] for i in range(9) if _overlay_day(nakshatra_index=i)["tara_good"]]
+      == ["Sampat", "Kshema", "Sadhaka", "Mitra", "Paramamitra"])
+check("overlay: Chandrashtama is flagged at sunrise or when the Moon enters later that day",
+      _overlay_day(moon_rasi_index=7)["chandrashtama"] and _overlay_day(moon_rasi_index_end=7)["chandrashtama"]
+      and not _overlay_day()["chandrashtama"])
+check("overlay: star day recurs monthly, star birthday needs the birth solar month too",
+      _overlay_day(nakshatra_index=0)["star_day"] and not _overlay_day(nakshatra_index=0)["star_birthday"]
+      and _overlay_day(nakshatra_index=0, solar_month="Chithirai")["star_birthday"]
+      and not _overlay_day(nakshatra_index=1, solar_month="Chithirai")["star_birthday"])
+_janma_chart = _overlay_chart(1990, 3, 10, 8, 30, 80.27, 13.08, "Lahiri", light=True)
+_janma_read = janma_details(_janma_chart)
+check("overlay: birth details read from a light chart",
+      _NAKSHATRAS[_janma_read["nakshatra_index"]] == _janma_chart["panchangam"]["nakshatra"]
+      and _janma_read["rasi_index"] == _janma_chart["placements"]["Moon"]["rasi_index"]
+      and bool(_janma_read["solar_month"]))
+
+_month = _compute_month_panchangam(2026, 11, "ta", 13.08, 80.27)["days"]
+_activity_names = {"VIVAHA", "GRAHAPRAVESHA", "AKSHARABHYASAM", "VAHAN_KHARIDI", "BUSINESS_OPENING", "NAMAKARANA", "TRAVEL"}
+check("month: each day carries the overlay and filter fields",
+      len(_month) == 30 and all(
+          0 <= d["nakshatra_index"] < 27 and 0 <= d["moon_rasi_index"] < 12 and d["paksha"] in ("sukla", "krishna")
+          # Pournami and Amavasya are named in the tithi string, without a number.
+          and (1 <= d["tithi_num"] <= 14 or d["is_pournami"] or d["is_amavasya"] or "Pournami" in d["tithi"] or "Amavasya" in d["tithi"])
+          and d["solar_month"] and d["rahu_kalam"]
+          for d in _month))
+check("month: activity list holds only real engine activities, and varies by activity",
+      {a for d in _month for a in d["activities"]} <= _activity_names
+      and len({a for d in _month for a in d["activities"]}) > 1
+      and all(("VIVAHA" in d["activities"]) == d["is_subha_muhurtham"] for d in _month))
+check("month: Pournami is waxing and Amavasya is waning",
+      all(d["paksha"] == "sukla" for d in _month if "Pournami" in d["tithi"])
+      and all(d["paksha"] == "krishna" for d in _month if "Amavasya" in d["tithi"]))
+check("month: nakshatra stays a full name in the grid, not a 5-character slice",
+      "translatedNak.slice(0, 5)" not in _index_html)
+
 check("chat_ui: profile chip escapes the name and alias",
       '<span class="profile-rel">${escapeHtml(relLabel)}</span>' in _index_html)
 

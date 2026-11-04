@@ -3175,6 +3175,159 @@
         [data-theme="chandra"] .cell-sacred-badge.karinaal { color: #f87171; }
         [data-theme="chandra"] .cell-sacred-badge.vrata { color: #fbbf24; }
 
+        /* Calendar: paksha strip, tithi row, personal overlay, peek, agenda */
+        /* Cells now grow with their badges, so each row sizes itself. Equal rows would
+           stretch the whole month, and the weekday header, to the tallest day. */
+        .calendar-grid { grid-auto-rows: auto; }
+        .calendar-cell { height: auto; min-height: 125px; min-width: 0; }
+        .calendar-cell-content, .cell-mid, .cell-bottom { min-width: 0; }
+        .calendar-cell.paksha-sukla { border-top: 3px solid #e3b23c; }
+        .calendar-cell.paksha-krishna { border-top: 3px solid #475569; }
+        .cell-tithi {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            line-height: 1.2;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cell-tithi-tag { font-weight: 800; color: var(--text-primary); }
+        .cell-speciality-row { display: flex; align-items: center; gap: 3px; min-width: 0; }
+        .cell-speciality-row .cell-speciality { flex: 1; min-width: 0; }
+        .cell-more-pill {
+            flex: none;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 4px;
+            margin-top: 4px;
+            border-radius: 8px;
+            color: #fff;
+            background: #c2410c;
+        }
+        .calendar-cell.tara-good { background: rgba(22, 163, 74, 0.13); }
+        .calendar-cell.chandrashtama { background: rgba(100, 116, 139, 0.16); }
+        [data-theme="chandra"] .calendar-cell.tara-good { background: rgba(22, 163, 74, 0.2); }
+        [data-theme="chandra"] .calendar-cell.chandrashtama { background: rgba(148, 163, 184, 0.2); }
+        .cell-sacred-badge.chandrashtama {
+            background: rgba(71, 85, 105, 0.16);
+            color: #334155;
+            border: 1px solid rgba(71, 85, 105, 0.35);
+        }
+        .cell-sacred-badge.tara {
+            background: rgba(22, 163, 74, 0.15);
+            color: #15803d;
+            border: 1px solid rgba(22, 163, 74, 0.35);
+        }
+        .cell-sacred-badge.star {
+            background: rgba(219, 39, 119, 0.12);
+            color: #be185d;
+            border: 1px solid rgba(219, 39, 119, 0.3);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        [data-theme="chandra"] .cell-sacred-badge.chandrashtama { color: #cbd5e1; }
+        [data-theme="chandra"] .cell-sacred-badge.tara { color: #4ade80; }
+        [data-theme="chandra"] .cell-sacred-badge.star { color: #f9a8d4; }
+        .cal-regional-subtitle {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: right;
+            margin: -8px 0 10px;
+            min-height: 15px;
+        }
+        .cal-today-btn, .cal-filter-select {
+            padding: 4px 10px;
+            border-radius: 14px;
+            border: 1px solid rgba(180, 120, 40, 0.4);
+            background: rgba(255, 251, 235, 0.85);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            max-width: 100%;
+        }
+        .cal-today-btn:hover { border-color: #ea580c; color: #ea580c; }
+        [data-theme="chandra"] .cal-today-btn, [data-theme="chandra"] .cal-filter-select {
+            background: rgba(24, 19, 54, 0.9);
+            border-color: rgba(245, 158, 11, 0.32);
+            color: #e2e8f0;
+        }
+        .cal-agenda {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-gold);
+            border-radius: 10px;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+        .cal-agenda summary { cursor: pointer; font-weight: 700; color: var(--text-gold); }
+        .cal-agenda-group { margin: 10px 0; }
+        .cal-agenda-group h4 { margin: 0 0 5px; font-size: 12px; color: var(--text-secondary); }
+        .cal-agenda-items { display: flex; flex-wrap: wrap; gap: 5px; }
+        .cal-agenda-item {
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(180, 120, 40, 0.3);
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .cal-agenda-item:hover { border-color: #ea580c; color: #ea580c; }
+        .cal-agenda-item strong { color: var(--text-gold); }
+        #calendar-peek {
+            position: fixed;
+            z-index: 2000;
+            width: 280px;
+            max-width: calc(100vw - 16px);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-gold);
+            background: #fffdf5;
+            color: #1e293b;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25);
+            font-size: 12px;
+            line-height: 1.45;
+            pointer-events: none;
+        }
+        [data-theme="chandra"] #calendar-peek { background: #181336; color: #e2e8f0; }
+        #calendar-peek h4 { margin: 0 0 5px; font-size: 13px; }
+        #calendar-peek ul { margin: 2px 0 6px; padding-left: 16px; }
+        #calendar-peek .peek-row { margin: 2px 0; }
+        @keyframes calPanelPulse {
+            0%, 100% { box-shadow: none; }
+            40% { box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.55); }
+        }
+        .panchangam-details-panel.cal-panel-pulse { animation: calPanelPulse 1.2s ease; }
+        @media (max-width: 768px) {
+            .calendar-cell { height: auto !important; min-height: 75px; }
+            .cell-tithi { font-size: 8px; margin-top: 1px; }
+            .cell-tithi-name { display: none; }
+            .cell-sacred-badge { font-size: 7px; padding: 0 3px; }
+            .cal-regional-subtitle { text-align: left; margin-top: 0; }
+            .calendar-cell { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+            .calendar-panel > .panel-header { flex-wrap: wrap; gap: 8px; }
+            .calendar-header-nav { gap: 6px !important; max-width: 100%; }
+            .calendar-month-title { white-space: nowrap; }
+        }
+        @media (max-width: 480px) {
+            .calendar-cell { min-height: 55px; overflow: hidden; }
+            .cell-top { gap: 1px; }
+            .cell-day-num { width: auto; min-width: 0; }
+            .cell-speciality-row { justify-content: center; }
+            .cell-speciality-row .cell-speciality { flex: none; }
+            .cell-sacred-badge.star { font-size: 0; padding: 0; border: none; background: none; }
+            .cell-sacred-badge.star::before { content: "🎂"; font-size: 9px; }
+            .cell-sacred-badge.muhurtham, .cell-sacred-badge.vrata, .cell-sacred-badge.karinaal { font-size: 0; padding: 0; width: 6px; height: 6px; border-radius: 50%; }
+            .cell-sacred-badge.tara, .cell-sacred-badge.chandrashtama { font-size: 0; padding: 0; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+            .cell-sacred-badge.chandrashtama { background: #475569; }
+            .cell-more-pill { display: none; }
+        }
+
         /* 3B. Visual 24-Hour Kaalam & Hora Timeline Bar */
         .sacred-24h-timeline-box {
             margin-bottom: 14px;
@@ -3857,6 +4010,7 @@
                                 <span id="lbl-home-calendar" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Astronomical Panchangam Calendar</span>
                             </div>
                             <div class="calendar-header-nav" style="display: flex; align-items: center; gap: 12px; position: relative;">
+                                <button type="button" class="cal-today-btn" id="calendar-today-btn" onclick="jumpCalendarToToday()">Today</button>
                                 <button class="calendar-nav-btn" onclick="navigateMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
                                 <div class="calendar-month-title" id="calendar-title-label" style="font-family: var(--font-heading); font-size: 14px; font-weight: bold; color: var(--text-primary);" onclick="toggleCalendarPopover(event)">May 2026 <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--accent-gold); margin-left: 2px;"></i></div>
                                 <button class="calendar-nav-btn" onclick="navigateMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
@@ -3873,6 +4027,8 @@
                             </div>
                         </div>
                         
+                        <div id="calendar-regional-subtitle" class="cal-regional-subtitle"></div>
+
                         <!-- Calendar Quick-Filter Bar (UI/UX Divine Elevation 3A) -->
                         <div class="calendar-quick-filters" id="calendar-quick-filters">
                             <button type="button" class="cal-filter-btn" data-filter="muhurtham" onclick="toggleCalendarFilter('muhurtham')">
@@ -3882,23 +4038,35 @@
                                 <span>🌕 Pournami / Amavasya</span>
                             </button>
                             <button type="button" class="cal-filter-btn" data-filter="vrata" onclick="toggleCalendarFilter('vrata')">
-                                <span>🕉️ Ekadashi / Pradosham</span>
+                                <span>🕉️ Vrata</span>
                             </button>
                             <button type="button" class="cal-filter-btn" data-filter="karinaal" onclick="toggleCalendarFilter('karinaal')">
                                 <span>⚠️ Kari Naal</span>
                             </button>
+                            <select id="calendar-activity-select" class="cal-filter-select" aria-label="Activity Muhurtham" onchange="onCalendarActivityChange(this.value)"></select>
+                            <select id="calendar-overlay-select" class="cal-filter-select" aria-label="My Star Overlay" style="display: none;" onchange="onCalendarOverlayChange(this.value)"></select>
                         </div>
 
                         <div class="calendar-grid" id="calendar-grid-container">
                             <!-- Populated dynamically via JS -->
                         </div>
+
+                        <details id="calendar-agenda" class="cal-agenda" style="display: none;">
+                            <summary id="calendar-agenda-title">This Month's Key Dates &amp; Festivals</summary>
+                            <div id="calendar-agenda-body"></div>
+                            <button type="button" class="cal-today-btn" id="calendar-export-month-btn" onclick="exportCalendarMonthICS()"><i class="fa-solid fa-calendar-plus"></i> <span>Export month (.ics)</span></button>
+                        </details>
                     </div>
                     
                     <!-- Right Column: Daily Panchangam Details & Gochara Transits (Rendered Below Calendar) -->
-                    <div class="panchangam-details-panel">
-                        <div class="panel-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                    <div class="panchangam-details-panel" id="panchangam-details-panel">
+                        <div class="panel-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
                             <i class="fa-solid fa-calendar-day" style="color: var(--accent-gold);"></i>
                             <span id="lbl-title-panch" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Daily Panchangam</span>
+                            <span style="margin-left: auto; display: inline-flex; gap: 6px; flex-wrap: wrap;">
+                                <button type="button" class="cal-today-btn" id="calendar-ask-ai-btn" onclick="askAIAboutSelectedDay()"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>Ask AI about this day</span></button>
+                                <button type="button" class="cal-today-btn" id="calendar-export-day-btn" onclick="exportSelectedDayICS()"><i class="fa-solid fa-calendar-plus"></i> <span>Export day (.ics)</span></button>
+                            </span>
                         </div>
                         <div class="details-layout-wrapper" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; width: 100%;">
                             
@@ -7435,6 +7603,9 @@
         // Panchangam is deterministic, so cached months never go stale; the
         // "today"/"active" highlights are recomputed from live state at render.
         const monthPanchangamCache = {};
+        const calendarOverlayCache = {};
+        let calendarOverlayProfileId = null; // null until the saved choice or self default is applied
+        let calendarActivity = '';
         let currentGocharaStyle = 'south';
 
         function setGocharaStyle(style) {
@@ -8274,9 +8445,10 @@
             }
 
             const daysInMonth = new Date(year, month, 0).getDate();
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = _localDateStr(new Date());
             const byDay = {};
             if (data && data.days) data.days.forEach(d => { byDay[d.day] = d; });
+            const overlay = data ? calendarOverlayCache[_calOverlayKey(year, month)] : null;
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayInfo = byDay[day];
@@ -8289,10 +8461,12 @@
                 cell.className = classes;
                 cell.setAttribute('data-date', cellDateStr);
 
-                let moonIconHtml = '', festivalImgHtml = '', specialityHtml = '', regionalDateHtml = '', naksHtml = '', sacredBadgesHtml = '';
+                let moonIconHtml = '', festivalImgHtml = '', specialityHtml = '', regionalDateHtml = '', naksHtml = '', tithiHtml = '', sacredBadgesHtml = '';
                 if (dayInfo) {
-                    const specs = dayInfo.specialities || [];
+                    const dayClass = classifyCalendarDay(dayInfo);
+                    const { specs, primarySpec, hasMuhurtham, hasMoon, hasVrata, hasKariNaal, vrataSpec } = dayClass;
                     const tithiLower = (dayInfo.tithi || '').toLowerCase();
+                    if (dayInfo.paksha) cell.classList.add(`paksha-${dayInfo.paksha}`);
                     if (dayInfo.is_pournami) {
                         moonIconHtml = '<span class="cell-moon moon-pournami" title="Pournami (Full Moon)">🌕</span>';
                     } else if (dayInfo.is_amavasya) {
@@ -8308,12 +8482,8 @@
                         }
                     }
 
-                    // Check sacred filter categories (Muhurtham, Moon, Ekadashi/Pradosham Vrata, Kari Naal)
-                    const hasMuhurtham = !!(dayInfo.is_subha_muhurtham || specs.includes("Marriage Muhurtham"));
-                    const hasMoon = !!(dayInfo.is_pournami || dayInfo.is_amavasya);
-                    const hasVrata = specs.some(s => s === "Ekadashi" || s === "Pradosham" || s === "Shivaratri") || tithiLower.includes("ekadashi") || tithiLower.includes("trayodashi");
-                    const hasKariNaal = !!(dayInfo.is_kari_naal || (typeof isTamilDateKariNaal === 'function' && isTamilDateKariNaal(dayInfo.tamil_date)));
-
+                    const hasActivity = !!calendarActivity && (dayInfo.activities || []).includes(calendarActivity);
+                    if (hasActivity) cell.setAttribute('data-has-activity', '1');
                     if (hasMuhurtham) cell.setAttribute('data-has-muhurtham', '1');
                     if (hasMoon) cell.setAttribute('data-has-moon', '1');
                     if (hasVrata) cell.setAttribute('data-has-vrata', '1');
@@ -8321,35 +8491,64 @@
 
                     const badgePills = [];
                     if (hasMuhurtham) {
-                        badgePills.push(`<span class="cell-sacred-badge muhurtham" title="Subha Muhurtham (Auspicious)">✨ சுப</span>`);
+                        const waxing = dayInfo.paksha !== 'krishna';
+                        const muhurthamTitle = calT(waxing ? 'valarpirai' : 'theipirai');
+                        badgePills.push(`<span class="cell-sacred-badge muhurtham" title="${escapeHtml(muhurthamTitle)}">✨${waxing ? '🌕' : '🌘'} ${escapeHtml(calT('subha'))}</span>`);
+                    }
+                    if (hasActivity) {
+                        badgePills.push(`<span class="cell-sacred-badge tara" title="${escapeHtml(calT('activity'))}">⭐ ${escapeHtml(calT(calendarActivity))}</span>`);
                     }
                     if (hasVrata) {
-                        const vLabel = specs.includes("Pradosham") ? "🕉️ பிரதோஷம்" : "🕉️ ஏகாதசி";
-                        badgePills.push(`<span class="cell-sacred-badge vrata" title="Sacred Vrata">${currentLang === 'ta' ? vLabel : (specs.includes("Pradosham") ? "🕉️ Pradosham" : "🕉️ Ekadashi")}</span>`);
+                        badgePills.push(`<span class="cell-sacred-badge vrata" title="${escapeHtml(calT('vrata'))}">🕉️ ${escapeHtml(translateSpeciality(vrataSpec))}</span>`);
                     }
                     if (hasKariNaal) {
-                        badgePills.push(`<span class="cell-sacred-badge karinaal" title="Kari Naal (Avoid Auspicious Ceremonies)">${currentLang === 'ta' ? '⚠️ கரிநாள்' : '⚠️ Kari Naal'}</span>`);
+                        badgePills.push(`<span class="cell-sacred-badge karinaal" title="${escapeHtml(calT('karinaal'))}">⚠️ ${escapeHtml(calT('karinaal'))}</span>`);
                     }
+
+                    if (overlay) {
+                        const selected = overlay.profiles.find(p => String(p.id) === String(calendarOverlayProfileId));
+                        const flags = selected && selected.days[day];
+                        if (flags) {
+                            cell.setAttribute('data-tara', flags.tara_name || '');
+                            if (flags.chandrashtama) {
+                                cell.classList.add('chandrashtama');
+                                badgePills.push(`<span class="cell-sacred-badge chandrashtama">🌙 ${escapeHtml(calT('chandrashtama'))}</span>`);
+                            } else if (flags.tara_good) {
+                                cell.classList.add('tara-good');
+                                badgePills.push(`<span class="cell-sacred-badge tara" title="Tara Bala">✓ ${escapeHtml(flags.tara_name)}</span>`);
+                            }
+                        }
+                        overlay.profiles.forEach(p => {
+                            const f = p.days[day];
+                            if (!f || !f.star_day) return;
+                            const label = `${f.star_birthday ? '🎂🎉' : '🎂'} ${escapeHtml(p.name)}`;
+                            const title = `${escapeHtml(p.name)} · ${escapeHtml(calT(f.star_birthday ? 'starBirthday' : 'starDay'))}`;
+                            badgePills.push(`<span class="cell-sacred-badge star" title="${title}">${label}</span>`);
+                        });
+                    }
+
                     if (badgePills.length > 0) {
                         sacredBadgesHtml = `<div class="cell-sacred-badges">${badgePills.join('')}</div>`;
                     }
 
-                    if (specs.length > 0) {
-                        const imgPath = getFestivalImage(specs[0], currentLang);
+                    if (primarySpec) {
+                        const imgPath = getFestivalImage(primarySpec, currentLang);
                         if (imgPath) {
-                            festivalImgHtml = `<img src="${imgPath}?v=3" alt="${specs[0]}" class="cell-fest-img" loading="lazy" decoding="async" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
+                            festivalImgHtml = `<img src="${imgPath}?v=3" alt="${primarySpec}" class="cell-fest-img" loading="lazy" decoding="async" style="width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" />`;
                         }
-                        specialityHtml = `<div class="cell-speciality">${translateSpeciality(specs[0])}</div>`;
+                        const morePill = specs.length > 1 ? `<span class="cell-more-pill">+${specs.length - 1}</span>` : '';
+                        specialityHtml = `<div class="cell-speciality-row"><div class="cell-speciality">${translateSpeciality(primarySpec)}</div>${morePill}</div>`;
                     }
                     const translatedNak = translateNakshatra(dayInfo.nakshatra);
-                    const abbreviatedNak = translatedNak.slice(0, 5) + (translatedNak.length > 5 ? '.' : '');
-                    naksHtml = `<div class="cell-naks"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${abbreviatedNak}</div>`;
+                    naksHtml = `<div class="cell-naks" title="${escapeHtml(translatedNak)}"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${translatedNak}</div>`;
+                    const tithiLabel = calendarTithiLabel(dayInfo);
+                    tithiHtml = `<div class="cell-tithi" title="${escapeHtml(translateTithi(dayInfo.tithi))}"><span class="cell-tithi-tag">${tithiLabel.tag}</span> <span class="cell-tithi-name">${escapeHtml(tithiLabel.name)}</span></div>`;
                     if (dayInfo.tamil_date) {
                         regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translateTamilMonth(dayInfo.tamil_date)}</div>`;
                     }
 
                     if (typeof activeCalendarFilter !== 'undefined' && activeCalendarFilter) {
-                        const matchMap = { muhurtham: hasMuhurtham, moon: hasMoon, vrata: hasVrata, karinaal: hasKariNaal };
+                        const matchMap = { muhurtham: hasMuhurtham, moon: hasMoon, vrata: hasVrata, karinaal: hasKariNaal, activity: hasActivity };
                         if (matchMap[activeCalendarFilter]) {
                             cell.classList.add('filter-matched');
                         } else {
@@ -8366,6 +8565,7 @@
                         </div>
                         <div class="cell-mid" style="margin-top: 4px;">
                             ${regionalDateHtml}
+                            ${tithiHtml}
                             ${naksHtml}
                             ${sacredBadgesHtml}
                         </div>
@@ -8375,9 +8575,11 @@
                     </div>
                 `;
                 cell.onclick = function() {
-                    fetchDailyPanchangam(cellDateStr);
-                    document.querySelectorAll('.calendar-cell').forEach(el => el.classList.remove('active'));
-                    cell.classList.add('active');
+                    if (calendarPeekSuppressClick) {
+                        calendarPeekSuppressClick = false;
+                        return;
+                    }
+                    selectCalendarDate(cellDateStr);
                 };
                 frag.appendChild(cell);
             }
@@ -8433,9 +8635,10 @@
             document.getElementById('calendar-title-label').innerHTML =
                 `${mn[month - 1]} ${year} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--accent-gold); margin-left: 4px;"></i>`;
 
+            hideCalendarPeek();
             const cached = monthPanchangamCache[_calCacheKey(year, month)];
             if (cached) {
-                container.replaceChildren(buildCalendarGrid(year, month, cached));
+                _paintCalendarMonth(container, year, month, cached);
                 _calAnimate(container);
                 prefetchAdjacentMonths(year, month);
                 return;
@@ -8443,7 +8646,7 @@
 
             // Paint an instant day-number skeleton so the month switch is never
             // blocked on the fetch, then enrich it once the data arrives.
-            container.replaceChildren(buildCalendarGrid(year, month, null));
+            _paintCalendarMonth(container, year, month, null);
             _calAnimate(container);
 
             try {
@@ -8453,13 +8656,504 @@
                 if (!data || !data.days) throw new Error("Invalid month-panchangam data structure");
                 monthPanchangamCache[_calCacheKey(year, month)] = data;
                 if (token !== calendarRenderToken) return; // a newer month render superseded this one
-                container.replaceChildren(buildCalendarGrid(year, month, data));
+                _paintCalendarMonth(container, year, month, data);
                 prefetchAdjacentMonths(year, month);
             } catch (err) {
                 if (token !== calendarRenderToken) return;
                 console.error("Monthly calendar rendering failed:", err);
                 _calRenderError(container);
             }
+        }
+
+        // ── Calendar: labels ──────────────────────────────────────────────
+        const CAL_ACTIVITY_KEYS = ['VIVAHA', 'GRAHAPRAVESHA', 'VAHAN_KHARIDI', 'BUSINESS_OPENING', 'NAMAKARANA', 'AKSHARABHYASAM', 'TRAVEL'];
+        const CAL_UI = {
+            en: { today: 'Today', overlayNone: 'My Star Overlay: off', activityNone: 'Activity Muhurtham…', VIVAHA: 'Marriage', GRAHAPRAVESHA: 'Housewarming', VAHAN_KHARIDI: 'Vehicle purchase', BUSINESS_OPENING: 'Business opening', NAMAKARANA: 'Baby naming', AKSHARABHYASAM: 'Aksharabhyasam', TRAVEL: 'Travel', activity: 'Activity Muhurtham', subha: 'Subha', muhurtham: 'Subha Muhurtham', moon: 'Pournami / Amavasya', vrata: 'Vrata', karinaal: 'Kari Naal', valarpirai: 'Valarpirai (waxing moon) Subha Muhurtham', theipirai: 'Theipirai (waning moon) Subha Muhurtham', chandrashtama: 'Chandrashtama', starDay: 'Janma Nakshatra day', starBirthday: 'Vedic birthday (Janma Masa + Nakshatra)', agenda: "This Month's Key Dates & Festivals", festivals: 'Festivals', exportMonth: 'Export month (.ics)', exportDay: 'Export day (.ics)', askAI: 'Ask AI about this day', detailsBelow: 'Daily Panchangam updated below', observances: 'Observances', tithiEnds: 'Tithi ends', nakshatraEnds: 'Nakshatra ends', rahu: 'Rahu Kalam', abhijit: 'Abhijit Muhurtham', subhaHora: 'Subha Hora (Jupiter, Venus)', noDay: 'Select a date first.', abhijitEv: 'Abhijit Muhurtham', brahmaEv: 'Brahma Muhurtham', godhuliEv: 'Godhuli Muhurtham', vijayaEv: 'Vijaya Muhurtham' },
+            ta: { today: 'இன்று', overlayNone: 'என் நட்சத்திர பார்வை: இல்லை', activityNone: 'நிகழ்வு முகூர்த்தம்…', VIVAHA: 'திருமணம்', GRAHAPRAVESHA: 'கிரகப் பிரவேசம்', VAHAN_KHARIDI: 'வாகனம் வாங்குதல்', BUSINESS_OPENING: 'தொழில் தொடக்கம்', NAMAKARANA: 'பெயர் சூட்டல்', AKSHARABHYASAM: 'அட்சராப்பியாசம்', TRAVEL: 'பயணம்', activity: 'நிகழ்வு முகூர்த்தம்', subha: 'சுப', muhurtham: 'சுப முகூர்த்தம்', moon: 'பௌர்ணமி / அமாவாசை', vrata: 'விரதம்', karinaal: 'கரிநாள்', valarpirai: 'வளர்பிறை சுப முகூர்த்தம்', theipirai: 'தேய்பிறை சுப முகூர்த்தம்', chandrashtama: 'சந்திராஷ்டமம்', starDay: 'ஜன்ம நட்சத்திர நாள்', starBirthday: 'நட்சத்திரப் பிறந்தநாள் (ஜன்ம மாதம் + நட்சத்திரம்)', agenda: 'இந்த மாத முக்கிய நாட்கள் & பண்டிகைகள்', festivals: 'பண்டிகைகள்', exportMonth: 'மாதத்தை ஏற்றுமதி (.ics)', exportDay: 'நாளை ஏற்றுமதி (.ics)', askAI: 'இந்த நாளைப் பற்றி AI-இடம் கேளுங்கள்', detailsBelow: 'தினசரி பஞ்சாங்கம் கீழே புதுப்பிக்கப்பட்டது', observances: 'அனுசரிப்புகள்', tithiEnds: 'திதி முடிவு', nakshatraEnds: 'நட்சத்திர முடிவு', rahu: 'ராகு காலம்', abhijit: 'அபிஜித் முகூர்த்தம்', subhaHora: 'சுப ஹோரை (குரு, சுக்கிரன்)', noDay: 'முதலில் ஒரு தேதியைத் தேர்ந்தெடுக்கவும்.', abhijitEv: 'அபிஜித் முகூர்த்தம்', brahmaEv: 'பிரம்ம முகூர்த்தம்', godhuliEv: 'கோதூளி முகூர்த்தம்', vijayaEv: 'விஜய முகூர்த்தம்' },
+            te: { today: 'ఈ రోజు', overlayNone: 'నా నక్షత్ర ఓవర్‌లే: ఆఫ్', activityNone: 'కార్య ముహూర్తం…', VIVAHA: 'వివాహం', GRAHAPRAVESHA: 'గృహ ప్రవేశం', VAHAN_KHARIDI: 'వాహన కొనుగోలు', BUSINESS_OPENING: 'వ్యాపార ప్రారంభం', NAMAKARANA: 'నామకరణం', AKSHARABHYASAM: 'అక్షరాభ్యాసం', TRAVEL: 'ప్రయాణం', activity: 'కార్య ముహూర్తం', subha: 'శుభ', muhurtham: 'శుభ ముహూర్తం', moon: 'పౌర్ణమి / అమావాస్య', vrata: 'వ్రతం', karinaal: 'కరి నాళ్', valarpirai: 'శుక్ల పక్ష శుభ ముహూర్తం', theipirai: 'కృష్ణ పక్ష శుభ ముహూర్తం', chandrashtama: 'చంద్రాష్టమం', starDay: 'జన్మ నక్షత్ర దినం', starBirthday: 'నక్షత్ర పుట్టినరోజు (జన్మ మాసం + నక్షత్రం)', agenda: 'ఈ నెల ముఖ్య తేదీలు & పండుగలు', festivals: 'పండుగలు', exportMonth: 'నెలను ఎగుమతి చేయండి (.ics)', exportDay: 'రోజును ఎగుమతి చేయండి (.ics)', askAI: 'ఈ రోజు గురించి AIని అడగండి', detailsBelow: 'దిగువ దైనిక పంచాంగం నవీకరించబడింది', observances: 'ఆచరణలు', tithiEnds: 'తిథి ముగింపు', nakshatraEnds: 'నక్షత్ర ముగింపు', rahu: 'రాహు కాలం', abhijit: 'అభిజిత్ ముహూర్తం', subhaHora: 'శుభ హోర (గురు, శుక్ర)', noDay: 'ముందుగా తేదీని ఎంచుకోండి.', abhijitEv: 'అభిజిత్ ముహూర్తం', brahmaEv: 'బ్రహ్మ ముహూర్తం', godhuliEv: 'గోధూళి ముహూర్తం', vijayaEv: 'విజయ ముహూర్తం' },
+            kn: { today: 'ಇಂದು', overlayNone: 'ನನ್ನ ನಕ್ಷತ್ರ ಓವರ್‌ಲೇ: ಆಫ್', activityNone: 'ಕಾರ್ಯ ಮುಹೂರ್ತ…', VIVAHA: 'ವಿವಾಹ', GRAHAPRAVESHA: 'ಗೃಹ ಪ್ರವೇಶ', VAHAN_KHARIDI: 'ವಾಹನ ಖರೀದಿ', BUSINESS_OPENING: 'ವ್ಯಾಪಾರ ಆರಂಭ', NAMAKARANA: 'ನಾಮಕರಣ', AKSHARABHYASAM: 'ಅಕ್ಷರಾಭ್ಯಾಸ', TRAVEL: 'ಪ್ರಯಾಣ', activity: 'ಕಾರ್ಯ ಮುಹೂರ್ತ', subha: 'ಶುಭ', muhurtham: 'ಶುಭ ಮುಹೂರ್ತ', moon: 'ಹುಣ್ಣಿಮೆ / ಅಮಾವಾಸ್ಯೆ', vrata: 'ವ್ರತ', karinaal: 'ಕರಿ ನಾಳ್', valarpirai: 'ಶುಕ್ಲ ಪಕ್ಷ ಶುಭ ಮುಹೂರ್ತ', theipirai: 'ಕೃಷ್ಣ ಪಕ್ಷ ಶುಭ ಮುಹೂರ್ತ', chandrashtama: 'ಚಂದ್ರಾಷ್ಟಮ', starDay: 'ಜನ್ಮ ನಕ್ಷತ್ರ ದಿನ', starBirthday: 'ನಕ್ಷತ್ರ ಜನ್ಮದಿನ (ಜನ್ಮ ಮಾಸ + ನಕ್ಷತ್ರ)', agenda: 'ಈ ತಿಂಗಳ ಪ್ರಮುಖ ದಿನಾಂಕಗಳು & ಹಬ್ಬಗಳು', festivals: 'ಹಬ್ಬಗಳು', exportMonth: 'ತಿಂಗಳನ್ನು ರಫ್ತು ಮಾಡಿ (.ics)', exportDay: 'ದಿನವನ್ನು ರಫ್ತು ಮಾಡಿ (.ics)', askAI: 'ಈ ದಿನದ ಬಗ್ಗೆ AI ಅನ್ನು ಕೇಳಿ', detailsBelow: 'ಕೆಳಗೆ ದೈನಿಕ ಪಂಚಾಂಗ ನವೀಕರಿಸಲಾಗಿದೆ', observances: 'ಆಚರಣೆಗಳು', tithiEnds: 'ತಿಥಿ ಅಂತ್ಯ', nakshatraEnds: 'ನಕ್ಷತ್ರ ಅಂತ್ಯ', rahu: 'ರಾಹು ಕಾಲ', abhijit: 'ಅಭಿಜಿತ್ ಮುಹೂರ್ತ', subhaHora: 'ಶುಭ ಹೋರಾ (ಗುರು, ಶುಕ್ರ)', noDay: 'ಮೊದಲು ದಿನಾಂಕವನ್ನು ಆಯ್ಕೆಮಾಡಿ.', abhijitEv: 'ಅಭಿಜಿತ್ ಮುಹೂರ್ತ', brahmaEv: 'ಬ್ರಹ್ಮ ಮುಹೂರ್ತ', godhuliEv: 'ಗೋಧೂಳಿ ಮುಹೂರ್ತ', vijayaEv: 'ವಿಜಯ ಮುಹೂರ್ತ' },
+            ml: { today: 'ഇന്ന്', overlayNone: 'എന്റെ നക്ഷത്ര ഓവർലേ: ഓഫ്', activityNone: 'കർമ്മ മുഹൂർത്തം…', VIVAHA: 'വിവാഹം', GRAHAPRAVESHA: 'ഗൃഹപ്രവേശം', VAHAN_KHARIDI: 'വാഹനം വാങ്ങൽ', BUSINESS_OPENING: 'ബിസിനസ് ആരംഭം', NAMAKARANA: 'നാമകരണം', AKSHARABHYASAM: 'വിദ്യാരംഭം', TRAVEL: 'യാത്ര', activity: 'കർമ്മ മുഹൂർത്തം', subha: 'ശുഭ', muhurtham: 'ശുഭ മുഹൂർത്തം', moon: 'പൗർണ്ണമി / അമാവാസി', vrata: 'വ്രതം', karinaal: 'കരി നാൾ', valarpirai: 'ശുക്ല പക്ഷ ശുഭ മുഹൂർത്തം', theipirai: 'കൃഷ്ണ പക്ഷ ശുഭ മുഹൂർത്തം', chandrashtama: 'ചന്ദ്രാഷ്ടമം', starDay: 'ജന്മ നക്ഷത്ര ദിനം', starBirthday: 'പിറന്നാൾ (ജന്മ മാസം + നക്ഷത്രം)', agenda: 'ഈ മാസത്തെ പ്രധാന തീയതികളും ഉത്സവങ്ങളും', festivals: 'ഉത്സവങ്ങൾ', exportMonth: 'മാസം എക്സ്പോർട്ട് ചെയ്യുക (.ics)', exportDay: 'ദിവസം എക്സ്പോർട്ട് ചെയ്യുക (.ics)', askAI: 'ഈ ദിവസത്തെക്കുറിച്ച് AI-യോട് ചോദിക്കുക', detailsBelow: 'ദൈനിക പഞ്ചാംഗം താഴെ പുതുക്കി', observances: 'ആചരണങ്ങൾ', tithiEnds: 'തിഥി അവസാനം', nakshatraEnds: 'നക്ഷത്ര അവസാനം', rahu: 'രാഹു കാലം', abhijit: 'അഭിജിത് മുഹൂർത്തം', subhaHora: 'ശുഭ ഹോര (വ്യാഴം, ശുക്രൻ)', noDay: 'ആദ്യം ഒരു തീയതി തിരഞ്ഞെടുക്കുക.', abhijitEv: 'അഭിജിത് മുഹൂർത്തം', brahmaEv: 'ബ്രഹ്മ മുഹൂർത്തം', godhuliEv: 'ഗോധൂളി മുഹൂർത്തം', vijayaEv: 'വിജയ മുഹൂർത്തം' },
+            hi: { today: 'आज', overlayNone: 'मेरा नक्षत्र ओवरले: बंद', activityNone: 'कार्य मुहूर्त…', VIVAHA: 'विवाह', GRAHAPRAVESHA: 'गृह प्रवेश', VAHAN_KHARIDI: 'वाहन खरीद', BUSINESS_OPENING: 'व्यापार आरंभ', NAMAKARANA: 'नामकरण', AKSHARABHYASAM: 'अक्षरारंभ', TRAVEL: 'यात्रा', activity: 'कार्य मुहूर्त', subha: 'शुभ', muhurtham: 'शुभ मुहूर्त', moon: 'पूर्णिमा / अमावस्या', vrata: 'व्रत', karinaal: 'करि नाल', valarpirai: 'शुक्ल पक्ष शुभ मुहूर्त', theipirai: 'कृष्ण पक्ष शुभ मुहूर्त', chandrashtama: 'चंद्राष्टम', starDay: 'जन्म नक्षत्र दिवस', starBirthday: 'नक्षत्र जन्मदिन (जन्म मास + नक्षत्र)', agenda: 'इस माह की प्रमुख तिथियां और त्योहार', festivals: 'त्योहार', exportMonth: 'माह निर्यात करें (.ics)', exportDay: 'दिन निर्यात करें (.ics)', askAI: 'इस दिन के बारे में AI से पूछें', detailsBelow: 'दैनिक पंचांग नीचे अपडेट हुआ', observances: 'अनुष्ठान', tithiEnds: 'तिथि समाप्ति', nakshatraEnds: 'नक्षत्र समाप्ति', rahu: 'राहु काल', abhijit: 'अभिजित मुहूर्त', subhaHora: 'शुभ होरा (गुरु, शुक्र)', noDay: 'पहले एक तिथि चुनें।', abhijitEv: 'अभिजित मुहूर्त', brahmaEv: 'ब्रह्म मुहूर्त', godhuliEv: 'गोधूलि मुहूर्त', vijayaEv: 'विजय मुहूर्त' },
+        };
+
+        function calT(key) {
+            return (CAL_UI[currentLang] && CAL_UI[currentLang][key]) || CAL_UI.en[key] || key;
+        }
+
+        function _localDateStr(d) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        // ── Calendar: day classification (shared by the grid, filter counts and agenda) ──
+        const CAL_VRATA_SPECS = new Set(['Ekadashi', 'Pradosham', 'Shivaratri', 'Masa Shivaratri', 'Sashti', 'Sankatahara Chaturthi']);
+        const CAL_AGENDA_OBSERVANCE_SPECS = new Set([...CAL_VRATA_SPECS, 'Pournami', 'Amavasya', 'Ashtami', 'Sukla Chaturthi']);
+        const CAL_MUHURTHAM_SPEC = 'Marriage Muhurtham';
+
+        function classifyCalendarDay(dayInfo) {
+            const specs = dayInfo.specialities || [];
+            // Muhurtham has its own badge, so it only takes the speciality slot on an otherwise plain day.
+            const primarySpec = specs.find(s => s !== CAL_MUHURTHAM_SPEC) || specs[0] || null;
+            // Only the engine's specialities count: when a tithi spans two sunrises it picks
+            // the observance day, so the sunrise tithi alone would mark Ekadashi twice.
+            const vrataSpec = specs.find(s => CAL_VRATA_SPECS.has(s)) || null;
+            return {
+                specs,
+                primarySpec,
+                hasMuhurtham: !!(dayInfo.is_subha_muhurtham || specs.includes(CAL_MUHURTHAM_SPEC)),
+                hasMoon: !!(dayInfo.is_pournami || dayInfo.is_amavasya),
+                hasVrata: !!vrataSpec,
+                vrataSpec,
+                hasKariNaal: !!(dayInfo.is_kari_naal || isTamilDateKariNaal(dayInfo.tamil_date)),
+            };
+        }
+
+        // "S.11" + "Ekadashi". Translated tithis arrive as "<paksha> - <name>".
+        function calendarTithiLabel(dayInfo) {
+            const translated = translateTithi(dayInfo.tithi);
+            const name = currentLang === 'en'
+                ? translated.replace(/^(Sukla|Shukla|Krishna)\s+Paksha\s+/i, '').replace(/\s*\(Tithi.*$/i, '')
+                : translated.split(' - ').pop();
+            const prefix = dayInfo.paksha === 'krishna' ? 'K' : 'S';
+            return { tag: dayInfo.tithi_num ? `${prefix}.${dayInfo.tithi_num}` : '', name };
+        }
+
+        // ── Calendar: month chrome (subtitle, filter counts, agenda) ─────
+        function _paintCalendarMonth(container, year, month, data) {
+            container.replaceChildren(buildCalendarGrid(year, month, data));
+            updateCalendarChrome(year, month, data);
+            if (data) loadCalendarOverlay(year, month);
+        }
+
+        function updateCalendarChrome(year, month, data) {
+            const todayBtn = document.getElementById('calendar-today-btn');
+            if (todayBtn) todayBtn.innerText = calT('today');
+            const askBtn = document.querySelector('#calendar-ask-ai-btn span');
+            if (askBtn) askBtn.innerText = calT('askAI');
+            const dayBtn = document.querySelector('#calendar-export-day-btn span');
+            if (dayBtn) dayBtn.innerText = calT('exportDay');
+
+            const days = (data && data.days) || [];
+            const classified = days.map(d => ({ day: d, info: classifyCalendarDay(d) }));
+            const count = pick => classified.filter(pick).length;
+            const pills = {
+                muhurtham: `✨ ${calT('muhurtham')}`,
+                moon: `🌕 ${calT('moon')}`,
+                vrata: `🕉️ ${calT('vrata')}`,
+                karinaal: `⚠️ ${calT('karinaal')}`,
+            };
+            const counts = {
+                muhurtham: count(c => c.info.hasMuhurtham),
+                moon: count(c => c.info.hasMoon),
+                vrata: count(c => c.info.hasVrata),
+                karinaal: count(c => c.info.hasKariNaal),
+            };
+            Object.keys(pills).forEach(key => {
+                const span = document.querySelector(`#calendar-quick-filters .cal-filter-btn[data-filter="${key}"] span`);
+                if (span) span.innerText = data ? `${pills[key]} (${counts[key]})` : pills[key];
+            });
+
+            const select = document.getElementById('calendar-activity-select');
+            if (select) {
+                const options = [`<option value="">${escapeHtml(calT('activityNone'))}</option>`];
+                CAL_ACTIVITY_KEYS.forEach(act => {
+                    const n = days.filter(d => (d.activities || []).includes(act)).length;
+                    options.push(`<option value="${act}">${escapeHtml(calT(act))}${data ? ` (${n})` : ''}</option>`);
+                });
+                select.innerHTML = options.join('');
+                select.value = calendarActivity;
+            }
+
+            const subtitle = document.getElementById('calendar-regional-subtitle');
+            if (subtitle) {
+                if (days.length) {
+                    const first = days[0], last = days[days.length - 1];
+                    const startMonth = translateTamilMonth(first.tamil_month);
+                    const endMonth = translateTamilMonth(last.tamil_month);
+                    const span = startMonth === endMonth ? startMonth : `${startMonth} – ${endMonth}`;
+                    const yearName = last.tamil_year ? ` (${last.tamil_year})` : '';
+                    subtitle.innerText = `${span}${yearName}`;
+                } else {
+                    subtitle.innerText = '';
+                }
+            }
+            renderCalendarAgenda(year, month, classified);
+        }
+
+        function renderCalendarAgenda(year, month, classified) {
+            const agenda = document.getElementById('calendar-agenda');
+            const body = document.getElementById('calendar-agenda-body');
+            if (!agenda || !body) return;
+            if (!classified.length) {
+                agenda.style.display = 'none';
+                return;
+            }
+            const groups = { festivals: [], vrata: [], muhurtham: [] };
+            classified.forEach(({ day, info }) => {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day.day).padStart(2, '0')}`;
+                const add = (group, label) => groups[group].push({ dateStr, dayNum: day.day, label });
+                info.specs.forEach(spec => {
+                    if (spec === CAL_MUHURTHAM_SPEC) return;
+                    add(CAL_AGENDA_OBSERVANCE_SPECS.has(spec) ? 'vrata' : 'festivals', translateSpeciality(spec));
+                });
+                if (info.hasMuhurtham) add('muhurtham', day.paksha === 'krishna' ? '✨🌘' : '✨🌕');
+            });
+            const titles = { festivals: calT('festivals'), vrata: calT('vrata'), muhurtham: calT('muhurtham') };
+            body.innerHTML = Object.keys(groups).filter(key => groups[key].length).map(key => `
+                <div class="cal-agenda-group">
+                    <h4>${escapeHtml(titles[key])} (${groups[key].length})</h4>
+                    <div class="cal-agenda-items">
+                        ${groups[key].map(item => `<button type="button" class="cal-agenda-item" onclick="selectCalendarDate('${item.dateStr}')"><strong>${item.dayNum}</strong> ${escapeHtml(item.label)}</button>`).join('')}
+                    </div>
+                </div>`).join('');
+            document.getElementById('calendar-agenda-title').innerText = calT('agenda');
+            const exportBtn = document.querySelector('#calendar-export-month-btn span');
+            if (exportBtn) exportBtn.innerText = calT('exportMonth');
+            agenda.style.display = 'block';
+        }
+
+        function onCalendarActivityChange(value) {
+            calendarActivity = value;
+            activeCalendarFilter = value ? 'activity' : null;
+            document.querySelectorAll('#calendar-quick-filters .cal-filter-btn').forEach(btn => btn.classList.remove('active'));
+            renderMonthlyCalendar();
+        }
+
+        // ── Calendar: personal star overlay ──────────────────────────────
+        function _calOverlayKey(year, month) {
+            return `${year}-${month}-${userLocation.lat},${userLocation.lon}`;
+        }
+
+        async function loadCalendarOverlay(year, month) {
+            if (!currentUser) {
+                renderCalendarOverlaySelect(null);
+                return;
+            }
+            const key = _calOverlayKey(year, month);
+            if (calendarOverlayCache[key]) {
+                renderCalendarOverlaySelect(calendarOverlayCache[key]);
+                return;
+            }
+            let overlay = { profiles: [] };
+            try {
+                const res = await apiFetch(`/api/calendar-overlay?year=${year}&month=${month}&lang=${currentLang}&lat=${userLocation.lat}&lon=${userLocation.lon}`);
+                if (res.ok) overlay = await res.json();
+            } catch (err) {
+                console.warn('Calendar overlay unavailable:', err);
+            }
+            calendarOverlayCache[key] = overlay; // also caches failure, so a repaint cannot refetch in a loop
+            if (year === calendarYear && month === calendarMonth) renderMonthlyCalendar();
+        }
+
+        function renderCalendarOverlaySelect(overlay) {
+            const select = document.getElementById('calendar-overlay-select');
+            if (!select) return;
+            const profiles = overlay ? overlay.profiles : [];
+            if (!profiles.length) {
+                select.style.display = 'none';
+                return;
+            }
+            select.innerHTML = [`<option value="">${escapeHtml(calT('overlayNone'))}</option>`]
+                .concat(profiles.map(p => `<option value="${p.id}">🌟 ${escapeHtml(p.name)} · ${escapeHtml(translateNakshatra(p.janma_nakshatra))}</option>`))
+                .join('');
+            const selectedExists = profiles.some(p => String(p.id) === String(calendarOverlayProfileId));
+            select.value = selectedExists ? String(calendarOverlayProfileId) : '';
+            select.style.display = '';
+        }
+
+        function onCalendarOverlayChange(value) {
+            calendarOverlayProfileId = value;
+            try { localStorage.setItem('vedic_calendar_overlay', value); } catch (e) { /* preference only */ }
+            renderMonthlyCalendar();
+        }
+
+        // Called when sign-in state or saved profiles change.
+        function refreshCalendarOverlay() {
+            Object.keys(calendarOverlayCache).forEach(k => delete calendarOverlayCache[k]);
+            let saved = null;
+            try { saved = localStorage.getItem('vedic_calendar_overlay'); } catch (e) { /* preference only */ }
+            const self = (savedProfilesForChat || []).find(c => (c.relationship || '').toLowerCase() === 'self');
+            // Id 0 is the account's own birth profile when no saved chart is marked self.
+            calendarOverlayProfileId = saved !== null ? saved : String(self ? self.id : 0);
+            renderMonthlyCalendar();
+        }
+
+        // ── Calendar: date selection, Today and Ask AI ───────────────────
+        function selectCalendarDate(dateStr) {
+            const [y, m] = dateStr.split('-').map(Number);
+            fetchDailyPanchangam(dateStr);
+            selectedPanchangamDate = dateStr;
+            document.querySelectorAll('.calendar-cell').forEach(el => {
+                el.classList.toggle('active', el.getAttribute('data-date') === dateStr);
+            });
+            if (y !== calendarYear || m !== calendarMonth) {
+                calendarYear = y;
+                calendarMonth = m;
+                renderMonthlyCalendar();
+            }
+            const panel = document.getElementById('panchangam-details-panel');
+            if (panel) {
+                panel.classList.remove('cal-panel-pulse');
+                void panel.offsetWidth; // reflow to restart the pulse
+                panel.classList.add('cal-panel-pulse');
+                if (panel.getBoundingClientRect().top > window.innerHeight - 80) {
+                    showToast(calT('detailsBelow'), 'info');
+                }
+            }
+        }
+
+        function jumpCalendarToToday() {
+            const now = new Date();
+            calendarYear = now.getFullYear();
+            calendarMonth = now.getMonth() + 1;
+            renderMonthlyCalendar();
+            selectCalendarDate(_localDateStr(now));
+        }
+
+        // Pre-fills the question without sending, because each AI message costs credits.
+        function askAIAboutSelectedDay() {
+            const data = dailyPanchangamData;
+            if (!data || !data.panchangam) {
+                showToast(calT('noDay'), 'info');
+                return;
+            }
+            const p = data.panchangam;
+            const lines = [
+                `What does ${data.date} hold for me?`,
+                `Panchangam: Tithi ${p.tithi}; Nakshatra ${p.nakshatra}; Yogam ${p.yogam}; Karanam ${p.karanam}.`,
+            ];
+            if ((data.specialities || []).length) lines.push(`Observances: ${data.specialities.join(', ')}.`);
+            const placements = data.placements || {};
+            const transits = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu']
+                .filter(g => placements[g] && placements[g].rasi_name)
+                .map(g => `${g} in ${placements[g].rasi_name}`);
+            if (transits.length) lines.push(`Gochara: ${transits.join(', ')}.`);
+            navigateToPage('ai');
+            const textbox = document.getElementById('chat-user-textbox');
+            if (textbox) {
+                textbox.value = lines.join('\n');
+                textbox.focus();
+            }
+        }
+
+        // ── Calendar: quick-peek tooltip ─────────────────────────────────
+        const calendarPeekDayCache = {};
+        let calendarPeekTimer = null;
+        let calendarPeekDate = null;
+        let calendarPeekSuppressClick = false;
+
+        function _calendarDayInfo(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const data = monthPanchangamCache[_calCacheKey(y, m)];
+            return data && data.days ? data.days.find(x => x.day === d) : null;
+        }
+
+        function _calendarPeekHtml(dateStr, dayInfo, detail) {
+            const row = (label, value) => value ? `<div class="peek-row"><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>` : '';
+            const specs = (dayInfo.specialities || []).map(s => `<li>${escapeHtml(translateSpeciality(s))}</li>`).join('');
+            const p = detail && detail.panchangam;
+            const subhaHoras = p && Array.isArray(p.horas)
+                ? p.horas.filter(h => h.is_day && (h.lord === 'Jupiter' || h.lord === 'Venus')).map(h => h.span).join(', ')
+                : '';
+            return `
+                <h4>${escapeHtml(dateStr)}</h4>
+                ${row(calendarTithiLabel(dayInfo).tag || 'Tithi', translateTithi(dayInfo.tithi))}
+                ${row(calT('tithiEnds'), p && p.tithi_end_time)}
+                ${row('★', translateNakshatra(dayInfo.nakshatra))}
+                ${row(calT('nakshatraEnds'), p && p.nakshatra_end_time)}
+                ${specs ? `<div class="peek-row"><strong>${escapeHtml(calT('observances'))}:</strong><ul>${specs}</ul></div>` : ''}
+                ${row(calT('rahu'), dayInfo.rahu_kalam)}
+                ${row(calT('abhijit'), dayInfo.abhijit_muhurtham)}
+                ${row(calT('subhaHora'), subhaHoras)}
+            `;
+        }
+
+        function showCalendarPeek(cell) {
+            const dateStr = cell.getAttribute('data-date');
+            const dayInfo = _calendarDayInfo(dateStr);
+            if (!dayInfo) return;
+            let peek = document.getElementById('calendar-peek');
+            if (!peek) {
+                peek = document.createElement('div');
+                peek.id = 'calendar-peek';
+                document.body.appendChild(peek);
+            }
+            calendarPeekDate = dateStr;
+            const cacheKey = `${dateStr}-${currentLang}-${userLocation.lat},${userLocation.lon}`;
+            const place = () => {
+                const rect = cell.getBoundingClientRect();
+                const width = peek.offsetWidth, height = peek.offsetHeight;
+                const left = Math.max(8, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 8));
+                const above = rect.top - height - 8;
+                peek.style.left = `${left}px`;
+                peek.style.top = `${above >= 8 ? above : Math.min(rect.bottom + 8, window.innerHeight - height - 8)}px`;
+            };
+            peek.style.display = 'block';
+            peek.innerHTML = _calendarPeekHtml(dateStr, dayInfo, calendarPeekDayCache[cacheKey]);
+            place();
+            if (calendarPeekDayCache[cacheKey]) return;
+            // Month data is computed without transition times, so fetch them only for a date being read.
+            apiFetch(`/api/panchangam?date_str=${dateStr}&lang=${currentLang}&lat=${userLocation.lat}&lon=${userLocation.lon}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(detail => {
+                    if (!detail) return;
+                    calendarPeekDayCache[cacheKey] = detail;
+                    if (calendarPeekDate === dateStr && peek.style.display === 'block') {
+                        peek.innerHTML = _calendarPeekHtml(dateStr, dayInfo, detail);
+                        place();
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function hideCalendarPeek() {
+            clearTimeout(calendarPeekTimer);
+            calendarPeekDate = null;
+            const peek = document.getElementById('calendar-peek');
+            if (peek) peek.style.display = 'none';
+        }
+
+        function initCalendarPeek() {
+            const cellFrom = target => target.closest && target.closest('#calendar-grid-container .calendar-cell[data-date]');
+            const canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+            if (canHover) {
+                document.addEventListener('mouseover', e => {
+                    const cell = cellFrom(e.target);
+                    if (!cell) return;
+                    if (cell.contains(e.relatedTarget)) return;
+                    clearTimeout(calendarPeekTimer);
+                    calendarPeekTimer = setTimeout(() => showCalendarPeek(cell), 350);
+                });
+                document.addEventListener('mouseout', e => {
+                    const cell = cellFrom(e.target);
+                    if (cell && !cell.contains(e.relatedTarget)) hideCalendarPeek();
+                });
+            }
+            document.addEventListener('touchstart', e => {
+                hideCalendarPeek();
+                const cell = cellFrom(e.target);
+                if (!cell) return;
+                calendarPeekTimer = setTimeout(() => {
+                    calendarPeekSuppressClick = true;
+                    showCalendarPeek(cell);
+                }, 500);
+            }, { passive: true });
+            ['touchmove', 'touchcancel'].forEach(type => document.addEventListener(type, () => clearTimeout(calendarPeekTimer), { passive: true }));
+            document.addEventListener('touchend', () => {
+                clearTimeout(calendarPeekTimer);
+                // The click after a long-press is swallowed; if none fires, do not eat the next tap.
+                setTimeout(() => { calendarPeekSuppressClick = false; }, 400);
+            }, { passive: true });
+            window.addEventListener('scroll', hideCalendarPeek, { passive: true });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCalendarPeek(); });
+        }
+        initCalendarPeek();
+
+        // ── Calendar: .ics export ────────────────────────────────────────
+        function _icsEscape(text) {
+            return String(text).replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
+        }
+
+        // RFC 5545 caps lines at 75 octets, and Indic characters take 3 bytes each.
+        function _icsFold(line) {
+            const encoder = new TextEncoder();
+            const out = [];
+            let current = '', size = 0;
+            for (const ch of line) {
+                const n = encoder.encode(ch).length;
+                if (size + n > 74) {
+                    out.push(current);
+                    current = ' ';
+                    size = 1;
+                }
+                current += ch;
+                size += n;
+            }
+            out.push(current);
+            return out.join('\r\n');
+        }
+
+        function _icsDate(dateStr) { return dateStr.replace(/-/g, ''); }
+
+        function _icsNextDate(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return _localDateStr(new Date(y, m - 1, d + 1));
+        }
+
+        function _icsDocument(events) {
+            const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+            const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Vedic RAG//Panchangam Calendar//EN', 'CALSCALE:GREGORIAN'];
+            events.forEach(ev => {
+                lines.push('BEGIN:VEVENT', `UID:${ev.uid}@vedic-panchangam`, `DTSTAMP:${stamp}`, ...ev.when, `SUMMARY:${_icsEscape(ev.summary)}`, 'END:VEVENT');
+            });
+            lines.push('END:VCALENDAR');
+            return lines.map(_icsFold).join('\r\n') + '\r\n';
+        }
+
+        function _icsDownload(filename, content) {
+            const url = URL.createObjectURL(new Blob([content], { type: 'text/calendar;charset=utf-8' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function exportCalendarMonthICS() {
+            const year = calendarYear, month = calendarMonth;
+            const data = monthPanchangamCache[_calCacheKey(year, month)];
+            if (!data || !data.days) return;
+            const events = [];
+            data.days.forEach(day => {
+                const info = classifyCalendarDay(day);
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day.day).padStart(2, '0')}`;
+                const titles = new Set(info.specs.filter(s => s !== CAL_MUHURTHAM_SPEC).map(translateSpeciality));
+                if (info.hasMuhurtham) titles.add(`✨ ${calT(day.paksha === 'krishna' ? 'theipirai' : 'valarpirai')}`);
+                [...titles].forEach((summary, i) => events.push({
+                    uid: `${_icsDate(dateStr)}-${i}`,
+                    when: [`DTSTART;VALUE=DATE:${_icsDate(dateStr)}`, `DTEND;VALUE=DATE:${_icsDate(_icsNextDate(dateStr))}`],
+                    summary,
+                }));
+            });
+            _icsDownload(`panchangam-${year}-${String(month).padStart(2, '0')}.ics`, _icsDocument(events));
+        }
+
+        // "04:13 PM" to "161300".
+        function _icsClock(text) {
+            const match = /^\s*(\d{1,2}):(\d{2})\s*(AM|PM)\s*$/i.exec(text || '');
+            if (!match) return null;
+            let hour = parseInt(match[1], 10) % 12;
+            if (match[3].toUpperCase() === 'PM') hour += 12;
+            return `${String(hour).padStart(2, '0')}${match[2]}00`;
+        }
+
+        function exportSelectedDayICS() {
+            const data = dailyPanchangamData;
+            if (!data || !data.panchangam) {
+                showToast(calT('noDay'), 'info');
+                return;
+            }
+            const windows = [
+                ['brahma_muhurtham', 'brahmaEv'],
+                ['abhijit_muhurtham', 'abhijitEv'],
+                ['vijaya_muhurtham', 'vijayaEv'],
+                ['godhuli_muhurtham', 'godhuliEv'],
+            ];
+            const events = [];
+            windows.forEach(([field, label]) => {
+                const [startText, endText] = String(data.panchangam[field] || '').split(' - ');
+                const start = _icsClock(startText), end = _icsClock(endText);
+                if (!start || !end) return;
+                // Floating local times, so the event stays at the panchangam's clock time.
+                const endDate = end <= start ? _icsNextDate(data.date) : data.date;
+                events.push({
+                    uid: `${_icsDate(data.date)}-${field}`,
+                    when: [`DTSTART:${_icsDate(data.date)}T${start}`, `DTEND:${_icsDate(endDate)}T${end}`],
+                    summary: calT(label),
+                });
+            });
+            _icsDownload(`panchangam-${data.date}.ics`, _icsDocument(events));
         }
 
         // Navigates calendar months
@@ -14219,6 +14913,7 @@
                 savedProfilesForChat = [];
                 selectedChatCompareIds.clear();
                 renderAIChatFamilyProfilesBar();
+                refreshCalendarOverlay();
                 return;
             }
 
@@ -14256,6 +14951,7 @@
                         `;
                     });
                     renderAIChatFamilyProfilesBar();
+                    refreshCalendarOverlay();
                 }
             } catch (e) {
                 console.error("Error loading profile chips:", e);
@@ -14640,6 +15336,12 @@
             document.querySelectorAll('#calendar-quick-filters .cal-filter-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-filter') === activeCalendarFilter);
             });
+            if (calendarActivity) {
+                // Rebuild so the activity's badges go along with its highlight.
+                calendarActivity = '';
+                renderMonthlyCalendar();
+                return;
+            }
             applyCalendarFilterToDOM();
         }
 

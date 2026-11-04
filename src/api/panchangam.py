@@ -4,14 +4,16 @@ import html as _htmlmod
 import json
 from collections import OrderedDict
 from datetime import date, datetime, timedelta
+from functools import lru_cache
 from typing import Literal, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from src.core.config import PORTAL_BASE_URL
 from src.core.cities import CITIES
 from src.engines.astro_engine import (
+    NAKSHATRAS,
     get_astrological_chart,
     get_regional_panchangam,
     calculate_luni_solar_month_index,
@@ -26,7 +28,9 @@ from src.engines.pdf_generator import (
     DAYS_OF_WEEK_LOCAL,
 )
 from src.engines.digest_engine import kalam_windows, LABELS as DIGEST_LABELS
-from src.api.deps import logger, LangCode, RegionalParadigm, TargetActivity
+from src.engines.calendar_overlay import build_day_overlay, janma_details
+from src.api.ai import _load_user_saved_profiles, _parse_dob_tob
+from src.api.deps import get_user_by_session, logger, LangCode, RegionalParadigm, TargetActivity
 
 router = APIRouter()
 
@@ -456,7 +460,8 @@ def get_day_panchangam_and_festivals(year: int, month: int, day: int, lon: float
         "is_pournami": is_pournami,
         "is_amavasya": is_amavasya,
         "tithi_sunrise": tithi_sunrise,
-        "chart_sunrise": chart_sunrise
+        "chart_sunrise": chart_sunrise,
+        "moon_rasi_index_end": chart_midnight["placements"]["Moon"]["rasi_index"],
     }
 
 def get_paradigm_from_lang(lang_code):
@@ -483,6 +488,7 @@ def get_paradigm_from_lang(lang_code):
 from collections import OrderedDict
 _MONTH_CACHE = OrderedDict()
 _MONTH_CACHE_MAX = 240  # ~20 years of months at one location, or fewer across many
+_OVERLAY_MAX_PROFILES = 12
 
 
 def _month_cache_key(year, month, lang, lat, lon):
@@ -509,12 +515,16 @@ def _compute_month_panchangam(year, month, lang, lat, lon):
 
         day_specialities = list(res["specialities"])
         is_subha_muhurtham = False
-        # Compute Marriage Muhurtham for this day at 06:00 AM local time
+        activities = []
+        # Compute Muhurtham for this day at 06:00 AM local time. One call returns the
+        # verdict for every activity, so the calendar's activity filter costs nothing extra.
         try:
             muh_res = calculate_muhurtham(
                 f"{year}-{month:02d}-{day:02d}T06:00:00", lat, lon, paradigm, "VIVAHA"
             )
-            if muh_res["muhurtham_status"]["activity_compatibility"].get("VIVAHA", False):
+            compatibility = muh_res["muhurtham_status"]["activity_compatibility"]
+            activities = [act for act, ok in compatibility.items() if ok and act != "GENERAL"]
+            if compatibility.get("VIVAHA", False):
                 is_subha_muhurtham = True
                 day_specialities.insert(0, "Marriage Muhurtham")
         except Exception as e:
@@ -522,10 +532,21 @@ def _compute_month_panchangam(year, month, lang, lat, lon):
 
         raw_tamil_date = res.get("chart_sunrise", {}).get("panchangam", {}).get("tamil_date", "") or res["panchangam"].get("tamil_date", "")
         is_kari_naal = _is_kari_naal_from_tamil_date(raw_tamil_date)
+        sunrise_chart = res["chart_sunrise"]
+        tithi = res["tithi_sunrise"]
 
         days_data.append({
             "day": day,
-            "tithi": res["tithi_sunrise"],
+            "tithi": tithi,
+            "tithi_num": _tithi_num(tithi),
+            "paksha": "krishna" if ("Krishna" in tithi or "Amavasya" in tithi) else "sukla",
+            "activities": activities,
+            "nakshatra_index": NAKSHATRAS.index(sunrise_chart["panchangam"]["nakshatra"]),
+            "moon_rasi_index": sunrise_chart["placements"]["Moon"]["rasi_index"],
+            "moon_rasi_index_end": res["moon_rasi_index_end"],
+            "solar_month": sunrise_chart["panchangam"]["tamil_month"],
+            "rahu_kalam": res["panchangam"].get("rahu_kalam", ""),
+            "abhijit_muhurtham": res["panchangam"].get("abhijit_muhurtham", ""),
             "is_pournami": res["is_pournami"],
             "is_amavasya": res["is_amavasya"],
             "is_kari_naal": is_kari_naal,
@@ -554,6 +575,10 @@ async def get_month_panchangam(year: int, month: int, lang: str = "en", lat: flo
     if not (1900 <= year <= 2100):
         raise HTTPException(status_code=400, detail=f"year must be 1900-2100, got {year}")
 
+    return _cached_month_panchangam(year, month, lang, lat, lon)
+
+
+def _cached_month_panchangam(year, month, lang, lat, lon):
     key = _month_cache_key(year, month, lang, lat, lon)
     cached = _MONTH_CACHE.get(key)
     if cached is not None:
@@ -572,6 +597,54 @@ async def get_month_panchangam(year: int, month: int, lang: str = "en", lat: flo
     if len(_MONTH_CACHE) > _MONTH_CACHE_MAX:
         _MONTH_CACHE.popitem(last=False)  # evict oldest
     return result
+
+
+@lru_cache(maxsize=512)
+def _cached_janma_details(dob, tob, lat, lon, ayanamsa, gender):
+    birth_date, hour, minute = _parse_dob_tob(dob, tob)
+    chart = get_astrological_chart(
+        birth_date.year, birth_date.month, birth_date.day, hour, minute,
+        lon, lat, ayanamsa, gender=gender, light=True,
+    )
+    return janma_details(chart)
+
+
+@router.get("/api/calendar-overlay")
+async def get_calendar_overlay(
+    request: Request, year: int, month: int, lang: str = "en", lat: float = 13.08, lon: float = 80.27,
+):
+    """Tara Bala, Chandrashtama and star-birthday flags for the signed-in user's saved
+    profiles across one month. Free: pure local math, like the chart itself."""
+    token = request.headers.get("x-session-token") or request.cookies.get("session_token")
+    user = get_user_by_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
+    if not (1 <= month <= 12):
+        raise HTTPException(status_code=400, detail=f"month must be 1-12, got {month}")
+    if not (1900 <= year <= 2100):
+        raise HTTPException(status_code=400, detail=f"year must be 1900-2100, got {year}")
+
+    saved_profiles, _ = _load_user_saved_profiles(user["id"])
+    month_data = _cached_month_panchangam(year, month, lang, lat, lon)
+
+    profiles = []
+    for profile in saved_profiles[:_OVERLAY_MAX_PROFILES]:
+        try:
+            janma = _cached_janma_details(
+                profile["dob"], profile["tob"], profile["lat"], profile["lon"],
+                profile["ayanamsa"], profile["gender"],
+            )
+        except Exception as e:
+            logger.warning("Skipping calendar overlay for chart %s: %s", profile["id"], e)
+            continue
+        profiles.append({
+            "id": profile["id"],
+            "name": profile["name"],
+            "relationship": profile["canonical_relationship"],
+            "janma_nakshatra": janma["nakshatra"],
+            "days": {d["day"]: build_day_overlay(janma, d) for d in month_data["days"]},
+        })
+    return {"year": year, "month": month, "profiles": profiles}
 
 
 # --- app.py:5959-6210 ---
