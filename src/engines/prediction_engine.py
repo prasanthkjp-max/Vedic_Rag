@@ -10,6 +10,7 @@ structured analysis block plus a set of targeted RAG queries so the LLM can
 ground its reading in the classical texts.
 """
 import logging
+import re
 from datetime import datetime, date
 
 logger = logging.getLogger("vedic.prediction")
@@ -1147,6 +1148,29 @@ def _malefic_dasa_windows(dasa_table, start, end):
     return windows
 
 
+def _ten_years_after(d):
+    """The same calendar date ten years on; 29 Feb falls back to 28 Feb when the
+    target year is not a leap year."""
+    try:
+        return d.replace(year=d.year + 10)
+    except ValueError:
+        return d.replace(year=d.year + 10, day=28)
+
+
+def _malefic_dasa_overlaps(dasas_a, dasas_b, start, end):
+    """(lo, hi, lord_a, lord_b) for periods within [start, end] when both natives run
+    natural-malefic maha dasas. Clipped to the range, since a maha dasa can begin
+    years before `start` or finish long after `end`."""
+    overlaps = []
+    for lord_a, start_a, end_a in _malefic_dasa_windows(dasas_a, start, end):
+        for lord_b, start_b, end_b in _malefic_dasa_windows(dasas_b, start, end):
+            lo = max(_parse(start_a), _parse(start_b), start)
+            hi = min(_parse(end_a), _parse(end_b), end)
+            if lo < hi:
+                overlaps.append((lo, hi, lord_a, lord_b))
+    return overlaps
+
+
 def build_compatibility_analysis(male_chart, female_chart, compatibility=None, ref_date=None):
     """Cross-chart analysis for the premium compatibility reading — the layer
     the 10-porutham match does NOT cover: each native's 7th house and 7th
@@ -1213,17 +1237,13 @@ def build_compatibility_analysis(male_chart, female_chart, compatibility=None, r
         lines.append(f"Verdict: {kuja.get('compatibility_verdict', 'n/a')}")
 
     # Dasa sandhi: years in the next decade when BOTH run malefic maha dasas.
-    end = date(ref_date.year + 10, ref_date.month, ref_date.day)
-    m_windows = _malefic_dasa_windows(male_chart.get("dasas"), ref_date, end)
-    f_windows = _malefic_dasa_windows(female_chart.get("dasas"), ref_date, end)
     lines.append("\n--- MALEFIC DASA OVERLAP, NEXT 10 YEARS ---")
-    overlaps = []
-    for ml, ms, me in m_windows:
-        for fl, fs, fe in f_windows:
-            lo = max(_parse(ms), _parse(fs))
-            hi = min(_parse(me), _parse(fe))
-            if lo and hi and lo < hi:
-                overlaps.append(f"{lo.isoformat()} to {hi.isoformat()}: male in {ml} dasa AND female in {fl} dasa")
+    overlaps = [
+        f"{lo.isoformat()} to {hi.isoformat()}: male in {ml} dasa AND female in {fl} dasa"
+        for lo, hi, ml, fl in _malefic_dasa_overlaps(
+            male_chart.get("dasas"), female_chart.get("dasas"), ref_date, _ten_years_after(ref_date)
+        )
+    ]
     if overlaps:
         lines.append("Windows where both natives run natural-malefic mahadasas simultaneously (extra care needed):")
         lines.extend(f"  - {o}" for o in overlaps)
@@ -1269,7 +1289,13 @@ def build_cross_chart_comparison(
     p_lords = house_lords(p_lagna_idx)
     o_lords = house_lords(o_lagna_idx)
 
-    rel_norm = (relationship or "other").lower()
+    relationship = relationship or "other"
+    # Match whole words, ignoring the free-text alias: a friend aliased "Sonia" must
+    # not read as a "son". An in-law, or a grandparent, has no bhava section here.
+    rel_core = relationship.lower().split("[alias:")[0]
+    rel_words = set() if "in-law" in rel_core else set(re.findall(r"[a-z]+", rel_core))
+    is_spouse = bool(rel_words & {"spouse", "wife", "husband", "partner"})
+
     lines = [
         f"=== CROSS-CHART SYNASTRY & COMPARATIVE ANALYSIS: {primary_name} vs. {other_name} ({relationship.upper()}) ==="
     ]
@@ -1345,27 +1371,25 @@ def build_cross_chart_comparison(
                 f"and {other_name}'s {om_lord} ({RASI_SHORT[o_plac[om_lord]['rasi_index']]}) stand in {d_m1}/{d_m2} relation -> {d_mrel}."
             )
 
-    end_10y = date(ref_date.year + 10, ref_date.month, ref_date.day)
-    p_mal_w = _malefic_dasa_windows(primary_chart.get("dasas"), ref_date, end_10y)
-    o_mal_w = _malefic_dasa_windows(other_chart.get("dasas"), ref_date, end_10y)
-    overlaps = []
-    for pl, ps, pe in p_mal_w:
-        for ol, os_, oe in o_mal_w:
-            lo = max(_parse(ps), _parse(os_))
-            hi = min(_parse(pe), _parse(oe))
-            if lo and hi and lo < hi:
-                overlaps.append(f"{lo.isoformat()} to {hi.isoformat()}: {primary_name} in {pl} Dasa & {other_name} in {ol} Dasa")
-    if overlaps:
-        lines.append("  - Simultaneous Natural-Malefic Mahadasa Windows (Next 10 Years): " + "; ".join(overlaps))
-    else:
-        lines.append("  - Simultaneous Natural-Malefic Mahadasa Windows (Next 10 Years): None.")
+    # The spouse branch below gets this same overlap from build_compatibility_analysis.
+    if not is_spouse:
+        overlaps = [
+            f"{lo.isoformat()} to {hi.isoformat()}: {primary_name} in {pl} Dasa & {other_name} in {ol} Dasa"
+            for lo, hi, pl, ol in _malefic_dasa_overlaps(
+                primary_chart.get("dasas"), other_chart.get("dasas"), ref_date, _ten_years_after(ref_date)
+            )
+        ]
+        if overlaps:
+            lines.append("  - Simultaneous Natural-Malefic Mahadasa Windows (Next 10 Years): " + "; ".join(overlaps))
+        else:
+            lines.append("  - Simultaneous Natural-Malefic Mahadasa Windows (Next 10 Years): None.")
 
     # 4. Relationship-Specific Classical Synthesis
-    is_spouse = any(k in rel_norm for k in ("spouse", "wife", "husband", "partner"))
-    is_father = "father" in rel_norm or ("parent" in rel_norm and other_chart.get("metadata", {}).get("gender") == "male")
-    is_mother = "mother" in rel_norm or ("parent" in rel_norm and other_chart.get("metadata", {}).get("gender") == "female")
-    is_child = any(k in rel_norm for k in ("child", "son", "daughter"))
-    is_sibling = any(k in rel_norm for k in ("sibling", "brother", "sister"))
+    other_gender = other_chart.get("metadata", {}).get("gender")
+    is_father = "father" in rel_words or ("parent" in rel_words and other_gender == "male")
+    is_mother = "mother" in rel_words or ("parent" in rel_words and other_gender == "female")
+    is_child = bool(rel_words & {"child", "son", "daughter"})
+    is_sibling = bool(rel_words & {"sibling", "brother", "sister"})
 
     if is_spouse:
         try:
@@ -1383,9 +1407,7 @@ def build_cross_chart_comparison(
             )
             for _, detail in (comp.get("details") or {}).items():
                 status = "MATCH" if detail.get("match") else "MISMATCH"
-                lines.append(
-                    f"  - {detail.get('label')}: {status} (Points: {detail.get('score')}/{detail.get('max', '')}) — {detail.get('description', '')}"
-                )
+                lines.append(f"  - {detail.get('label')}: {status} (Points: {detail.get('score')})")
             lines.append(build_compatibility_analysis(male_chart, female_chart, comp, ref_date=ref_date))
         except Exception as e:
             logger.warning("Spouse compatibility calculation in chat skipped: %s", e)
