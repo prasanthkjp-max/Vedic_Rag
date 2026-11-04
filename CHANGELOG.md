@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.28.1]
+
+### Fixed
+- **AI chat cross-chart relationships:** saved relationships are relative to the account owner, but comparisons treated them as relative to the active chart. With the father's chart active, his daughter-in-law got a marriage Koota and his wife got a Matru Bhava reading. They are now translated to the active chart, including in-laws and grandparents, with no family link assumed for a friend's chart.
+- **Wrong primary chart:** with no active chart, chat could read a relative's chart as the user's own, under the birth form's default name and place. It now uses the user's self profile or returns a clear 400. A history row of the owner's own chart no longer hides their self profile.
+- **False profile matches:** in-law terms, "business partner", "my friend's wife", a bare "family", Indic substrings (`पति` in `बृहस्पति`, `ಮಗ` in `ಮಗಳು`), planet and nakshatra names used as given names, shared surnames and default form names no longer trigger comparisons.
+- **Sticky follow-ups:** an earlier profile no longer attaches to later questions unless the query points back with a pronoun, comparison or group word.
+- **Relationship classification:** the saved relationship now outranks alias words and defaulted gender, and aliases no longer select the analysis section (a friend aliased "Sonia" read as a son).
+- **`build_cross_chart_comparison`:** no longer fails on 29 February (also fixed in `build_compatibility_analysis`), clips malefic Dasa overlaps to the 10-year range in both, reports the overlap once for spouses, and drops the broken `/` and `—` from Koota lines.
+- **Prompt and UI:** the literal `{client}` placeholder is resolved, a chart is never compared with itself, stale pins are cleared, pins are capped at 4, the profile chip escapes names and aliases, and chat shows the server's error message.
+- **Chart cache:** access is now thread-safe.
+
+### Changed
+- **Privacy:** the saved-profile roster sent to the LLM on every message no longer includes birth date, time or place, and is capped at 12 profiles. Full details are sent only for profiles invoked in that message.
+- **Tests:** replaced personal birth details in `tests/test_unit.py` with fictional data and added regression coverage.
+
 ## [1.28.0]
 
 ### Added
