@@ -10086,10 +10086,14 @@
 
             const outputPane = document.getElementById('active-ai-typing-stream');
 
-            // Smart routing: chart-personalized if birth data available (or user has saved profiles), else general RAG
+            // Smart routing: chart-personalized if a chart is active or the user's own birth
+            // details are on file (the server reads their self profile), else general RAG
             let apiPath, apiBody;
-            const hasSavedProfiles = (typeof savedProfilesForChat !== 'undefined') && savedProfilesForChat.length > 0;
-            if (calculatedChartData || (currentUser && hasSavedProfiles)) {
+            const hasOwnBirthProfile = !!currentUser && (
+                (currentUser.dob && currentUser.tob) ||
+                ((typeof savedProfilesForChat !== 'undefined') && savedProfilesForChat.some(c => (c.relationship || '').toLowerCase() === 'self'))
+            );
+            if (calculatedChartData || hasOwnBirthProfile) {
                 const name = document.getElementById('in-name').value;
                 const pob = document.getElementById('in-pob').value;
                 apiPath = '/api/ai-predict-chat';
@@ -10116,17 +10120,19 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errBody = await response.json().catch(() => null);
+                    const detail = errBody && typeof errBody.detail === 'string' ? errBody.detail : `HTTP error! status: ${response.status}`;
+                    throw new Error(escapeHtml(detail));
                 }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
-                const manifestState = { manifest: null, comparedProfiles: null, prefixLength: 0 };
+                const manifestState = { manifest: null, comparedProfiles: null, comparedPrimaryName: null, prefixLength: 0 };
 
                 const buildComparedBanner = (profiles) => {
                     if (!profiles || !profiles.length) return '';
-                    const primaryLabel = escapeHtml(document.getElementById('in-name')?.value || 'Primary Native');
+                    const primaryLabel = escapeHtml(manifestState.comparedPrimaryName || 'Primary Native');
                     const badges = profiles.map(p => {
                         const rel = escapeHtml((p.relationship || '').toUpperCase());
                         const lagna = p.lagna ? ` · Lagna: ${escapeHtml(p.lagna.split(' ')[0])}` : '';
@@ -10171,7 +10177,7 @@
                 console.log(`[Session Token Count] Current message: ${totalMessageTokens} tokens (Req: ${requestTokens}, Resp: ${responseTokens}). Total Session: ${sessionTokenCount} tokens.`);
 
                 // Save to session memory
-                if (calculatedChartData || (currentUser && hasSavedProfiles)) {
+                if (calculatedChartData || hasOwnBirthProfile) {
                     aiChatHistory.push({ role: 'user', content: messageText });
                     aiChatHistory.push({ role: 'assistant', content: renderText });
                 }
@@ -13851,6 +13857,7 @@
                             const parsed = JSON.parse(firstLine);
                             streamState.manifest = parsed.manifest;
                             streamState.comparedProfiles = parsed.compared_profiles || null;
+                            streamState.comparedPrimaryName = parsed.primary_name || null;
                             streamState.prefixLength = stripped + firstLineEnd + 1;
                             currentActiveManifest = streamState.manifest;
                         } catch (e) {
@@ -14122,6 +14129,7 @@
         let currentSelectedProfileId = 'self';
         let savedProfilesForChat = [];
         const selectedChatCompareIds = new Set();
+        const MAX_CHAT_COMPARE_PROFILES = 4; // matches resolve_referenced_profiles(max_matches) in src/api/ai.py
 
         function formatProfileRelBadge(c) {
             const rel = (c.relationship || 'other').toLowerCase();
@@ -14156,6 +14164,8 @@
             bar.style.display = 'block';
             chipsList.innerHTML = savedProfilesForChat.map(c => {
                 const isPrimary = currentName && c.name.trim().toLowerCase() === currentName && (!currentDob || c.dob === currentDob);
+                // The primary chip cannot be clicked, so a pin on it could never be removed.
+                if (isPrimary) selectedChatCompareIds.delete(c.id);
                 const isSelected = selectedChatCompareIds.has(c.id);
                 const relBadge = escapeHtml(formatProfileRelBadge(c));
                 if (isPrimary) {
@@ -14190,6 +14200,9 @@
         function toggleAIChatCompareProfile(chartId) {
             if (selectedChatCompareIds.has(chartId)) {
                 selectedChatCompareIds.delete(chartId);
+            } else if (selectedChatCompareIds.size >= MAX_CHAT_COMPARE_PROFILES) {
+                showToast(`You can compare up to ${MAX_CHAT_COMPARE_PROFILES} profiles at a time.`);
+                return;
             } else {
                 selectedChatCompareIds.add(chartId);
             }
@@ -14204,6 +14217,7 @@
             if (!currentUser) {
                 section.style.display = 'none';
                 savedProfilesForChat = [];
+                selectedChatCompareIds.clear();
                 renderAIChatFamilyProfilesBar();
                 return;
             }
@@ -14226,6 +14240,8 @@
                 if (res.ok) {
                     const charts = await res.json();
                     savedProfilesForChat = charts || [];
+                    const liveChartIds = new Set(savedProfilesForChat.map(c => c.id));
+                    selectedChatCompareIds.forEach(id => { if (!liveChartIds.has(id)) selectedChatCompareIds.delete(id); });
                     charts.forEach(c => {
                         const chipActive = currentSelectedProfileId === c.id ? 'active' : '';
                         const relLabel = formatProfileRelBadge(c);
@@ -14233,8 +14249,8 @@
                             <div class="profile-chip ${chipActive}" id="profile-chip-${c.id}" onclick="selectProfile(${JSON.stringify(c).replace(/"/g, '&quot;')})">
                                 <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
                                 <div style="display: flex; flex-direction: column;">
-                                    <span class="profile-name">${c.name}</span>
-                                    <span class="profile-rel">${relLabel}</span>
+                                    <span class="profile-name">${escapeHtml(c.name)}</span>
+                                    <span class="profile-rel">${escapeHtml(relLabel)}</span>
                                 </div>
                             </div>
                         `;
