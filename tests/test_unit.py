@@ -1012,7 +1012,7 @@ _captured = {}
 
 def _capture_stream(builder, model, user=None, action="ai", **kw):
     built = builder()
-    _captured[action] = {"prompt": built[0] if isinstance(built, tuple) else built, "kw": kw}
+    _captured[action] = {"prompt": built[0] if isinstance(built, tuple) else built, "kw": kw, "model": model}
     return iter(["done"])
 
 
@@ -1068,6 +1068,19 @@ check("prompts: a two-chart chat states both people's facts and the Tamil headin
       and "Arun:" in _chat and "Meena Sundari:" in _chat and "Individual Ascendant, Moon" not in _chat)
 check("prompts: chat, Preview Phala and marriage readings get the chart check",
       all(_captured[a]["kw"].get("post_check") for a in ("ai_predict", "ai_predict_marriage", "ai_predict_chat")))
+check("models: AI chat and its helper calls use the chat model, and other readings don't",
+      _captured["ai_predict_chat"]["model"] == _ai.CHAT_LLM_MODEL
+      and _captured["ai_predict_chat"]["kw"]["helper_model"] == _ai.CHAT_LLM_MODEL
+      and all(c["model"] == _ai.DEFAULT_LLM_MODEL for a, c in _captured.items() if a != "ai_predict_chat")
+      and all("helper_model" not in c["kw"] for a, c in _captured.items() if a != "ai_predict_chat"))
+_fake = _FakeClient()
+_deps.get_llm_client = lambda: _fake
+_deps._translate_stray("x", "ta", "chat/model")
+_deps.check_reading("reading", {"Arun": {}}, "ta", "chat/model")
+_deps._translate_stray("x", "ta")
+_deps.get_llm_client = _real_client
+check("models: helper calls use the model they're given, and the fast model by default",
+      [k["model"] for k in _fake.chat.completions.kwargs] == ["chat/model", "chat/model", _deps.MODEL_FAST])
 
 
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))

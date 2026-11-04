@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from src.core.config import (
     DB_PATH,
     DEFAULT_LLM_MODEL,
+    CHAT_LLM_MODEL,
     CREDIT_COST_AI_PREDICT,
     CREDIT_COST_VARSHAPHALA,
     CREDIT_COST_REMEDIES,
@@ -1002,7 +1003,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
     user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict_chat")
     query_text = req.query
-    model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
+    model_name = CHAT_LLM_MODEL  # Enforce the chat model on the backend
     history = req.history
     target_lang = _LANG_MAP.get(req.lang, "English")
     reading_facts = {}
@@ -1280,7 +1281,8 @@ Start directly with the chat response:
 
     return StreamingResponse(llm_stream(
         prompt_builder, model_name, user, "ai_predict_chat", lang=req.lang,
-        post_check=lambda text: check_reading(text, reading_facts, req.lang),
+        post_check=lambda text: check_reading(text, reading_facts, req.lang, CHAT_LLM_MODEL),
+        helper_model=CHAT_LLM_MODEL,
     ), media_type="text/event-stream")
 
 

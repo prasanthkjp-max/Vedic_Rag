@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.31.0]
+
+### Changed
+- **AI chat now uses DeepSeek V4.1 Flash (`deepseek/deepseek-v4.1-flash`) on OpenRouter**, including its stray-word repair and chart check calls. `VEDIC_CHAT_LLM_MODEL` overrides it. Other readings, the search embeddings and the digest keep their existing models.
+
 ## [1.30.0]
 
 ### Added

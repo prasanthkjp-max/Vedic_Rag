@@ -199,9 +199,9 @@ these are deliberately distinct.
 
 ## Conventions & gotchas
 
-- **LLM/model is backend-enforced.** All AI endpoints (`src/api/ai.py` and
-  friends) set `model_name = DEFAULT_LLM_MODEL` and ignore any client-supplied
-  `model`. Don't "fix" this. Prompts live inline in each router as f-strings; the
+- **LLM/model is backend-enforced.** AI endpoints (`src/api/ai.py` and
+  friends) set `model_name = DEFAULT_LLM_MODEL`, except AI chat, which uses
+  `CHAT_LLM_MODEL`. All of them ignore any client-supplied `model`. Don't "fix" this. Prompts live inline in each router as f-strings; the
   chart/marriage prompts deliberately instruct reasoning from houses/dignities/dasas,
   not signs.
 - **Astrology math:** sidereal via Swiss Ephemeris; ayanamsa through
