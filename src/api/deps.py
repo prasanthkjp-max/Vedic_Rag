@@ -29,6 +29,10 @@ from src.core.config import (
     REFERRAL_BONUS_REFERRER,
     SIGNUP_BONUS_CREDITS,
     LLM_STREAM_TIMEOUT,
+    LLM_REPAIR_TIMEOUT,
+    LLM_CHECK_TIMEOUT,
+    LLM_TEMPERATURE,
+    MODEL_FAST,
     get_llm_client,
     connect_db,
 )
@@ -39,6 +43,14 @@ from src.engines.prediction_engine import (
     build_rag_queries,
     retrieve_rag_context,
 )
+from src.engines.output_guard import LANG_SCRIPT, ScriptGuard, clean_text
+from src.engines.fact_check import (
+    build_claim_prompt,
+    find_contradictions,
+    parse_claims,
+    render_note,
+)
+from src.engines.pdf_generator import PLANET_TRANSLATIONS
 
 logger = logging.getLogger("vedic.app")
 
@@ -836,7 +848,7 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
 
 # --- app.py:1087-1225 ---
 def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai",
-               on_complete=None):
+               on_complete=None, lang: str = "en", allow_scripts=(), post_check=None):
     """Shared streaming generator for all AI endpoints, backed by OpenRouter via
     the OpenAI SDK (chat completions, streamed).
 
@@ -849,6 +861,11 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
     - `on_complete(full_text)` (optional) fires only when the stream finished
       cleanly with real content — used to cache completed readings. It must
       never break the response: its errors are logged and swallowed.
+    - Model text passes through a ScriptGuard for `lang`, so a word in the wrong
+      script is replaced or removed. The citation manifest and backend error
+      messages don't pass through it.
+    - `post_check(full_text)` (optional) runs after a clean finish and may return a
+      note to append. Like `on_complete`, it can never break the response.
     """
     def _open_stream(evaluated_prompt):
         """Open the chat-completion stream, retrying once on a transient error
@@ -860,7 +877,8 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
         for attempt in range(2):
             try:
                 return client.with_options(timeout=LLM_STREAM_TIMEOUT).chat.completions.create(
-                    model=model_name, messages=messages, stream=True
+                    model=model_name, messages=messages, stream=True,
+                    temperature=LLM_TEMPERATURE,
                 )
             except Exception as e:
                 last = e
@@ -871,6 +889,16 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
     def generator():
         produced_content = False
         content_parts = []  # real model output only (no keepalives/errors)
+        guard = ScriptGuard(lang, translate=lambda text: _translate_stray(text, lang),
+                            allow_scripts=allow_scripts)
+
+        def released(text):
+            nonlocal produced_content
+            if text:
+                produced_content = True
+                content_parts.append(text)
+            return text
+
         # Yield a newline immediately to flush HTTP status/headers to the client
         # and prevent Cloudflare 524 timeouts.
         yield "\n"
@@ -948,24 +976,32 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                     err = getattr(chunk, "error", None)
                     if err:
                         logger.warning("OpenRouter mid-stream error (%s): %s", action_type, err)
+                        held = released(guard.flush(translate=False))
                         if not produced_content and user:
                             refund_user_credits(user, action_type)
-                        yield f"\n\n*AI backend error: {err}*"
+                        yield f"{held}\n\n*AI backend error: {err}*"
                         return
                     if not getattr(chunk, "choices", None):
                         continue
                     delta = chunk.choices[0].delta
                     text_chunk = getattr(delta, "content", None) or ""
                     if text_chunk:
-                        produced_content = True
-                        content_parts.append(text_chunk)
-                        yield text_chunk
+                        clean = released(guard.feed(text_chunk))
+                        if clean:
+                            yield clean
+            tail = released(guard.flush())
+            if tail:
+                yield tail
         except Exception as e:
             logger.error("AI stream failed (%s): %s", action_type, e)
+            held = released(guard.flush(translate=False))
             if not produced_content and user:
                 refund_user_credits(user, action_type)
-            yield f"\n\n*Error streaming from the AI backend: {e}*"
+            yield f"{held}\n\n*Error streaming from the AI backend: {e}*"
             return
+        if guard.replaced or guard.removed:
+            logger.warning("Wrong-script text in %s (%s): %d replaced, %d removed",
+                           action_type, lang, guard.replaced, guard.removed)
         # Reached only when the stream ended without an exception or a
         # mid-stream error payload (both paths return above).
         if on_complete and produced_content:
@@ -975,12 +1011,33 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                     on_complete(full_text)
                 except Exception as e:
                     logger.error("on_complete hook failed (%s): %s", action_type, e)
+        if post_check and produced_content:
+            try:
+                note = post_check("".join(content_parts).strip())
+                if note:
+                    yield note
+            except Exception as e:
+                logger.warning("Reading check failed (%s): %s", action_type, e)
 
     return generator()
 
 
 # --- app.py:1840-1849 ---
-def _llm_complete(prompt: str, model_name: str) -> str:
+def _translate_stray(text: str, lang: str) -> str:
+    """Translate one stray word or phrase into the reading's language."""
+    target = _LANG_MAP.get(lang, "English")
+    resp = get_llm_client().with_options(timeout=LLM_REPAIR_TIMEOUT).chat.completions.create(
+        model=MODEL_FAST,
+        messages=[{"role": "user", "content": (
+            f"Translate this word or phrase from a Vedic astrology text into {target}. "
+            f"Reply with only the translation, written in {target}.\n\n{text}"
+        )}],
+        temperature=0,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
+def _llm_complete(prompt: str, model_name: str, lang: str = "en") -> str:
     """One non-streaming chat completion. Used by the async premium report where
     there is no client stream to feed — just a full narrative string."""
     client = get_llm_client()
@@ -988,8 +1045,27 @@ def _llm_complete(prompt: str, model_name: str) -> str:
         model=model_name,
         messages=[{"role": "user", "content": prompt}],
         stream=False,
+        temperature=LLM_TEMPERATURE,
     )
-    return (resp.choices[0].message.content or "").strip()
+    text = (resp.choices[0].message.content or "").strip()
+    return clean_text(text, lang, translate=lambda stray: _translate_stray(stray, lang))
+
+
+def check_reading(reading: str, facts_by_person: dict, lang: str) -> str:
+    """Return a correction note if the reading's house or lordship statements
+    contradict the computed charts, otherwise an empty string."""
+    if not facts_by_person:
+        return ""
+    resp = get_llm_client().with_options(timeout=LLM_CHECK_TIMEOUT).chat.completions.create(
+        model=MODEL_FAST,
+        messages=[{"role": "user", "content": build_claim_prompt(reading, list(facts_by_person))}],
+        temperature=0,
+    )
+    claims = parse_claims(resp.choices[0].message.content)
+    found = find_contradictions(claims, facts_by_person, reading)
+    if found:
+        logger.warning("Reading check found %d chart contradiction(s)", len(found))
+    return render_note(found, lang, PLANET_TRANSLATIONS.get(lang), show_person=len(facts_by_person) > 1)
 
 
 # --- app.py:4587-4602 ---
@@ -1001,6 +1077,56 @@ _LANG_MAP = {
     "kn": "Kannada (ಕನ್ನಡ)",
     "hi": "Hindi (हिन्दी)",
 }
+
+_LANGUAGE_NAMES_PLAIN = {
+    "en": "English", "ta": "Tamil", "te": "Telugu", "ml": "Malayalam", "kn": "Kannada", "hi": "Hindi",
+}
+
+# How to cite, and how to label anything the retrieved texts don't actually say.
+_GROUNDING_RULES = """SOURCE HONESTY:
+- Put a citation like [3] only after a statement that excerpt 3 actually makes. Never attach a citation to something the excerpt does not say, even to meet a citation requirement.
+- Facts from the computed chart data need no citation.
+- If a rule, interpretation or remedy is not stated in a retrieved excerpt, present it as general Jyotish guidance, with no citation, and introduce it with the reading language's equivalent of "General guidance (not from the retrieved texts):". Never present it as coming from the classical texts.
+- If the excerpts do not address a topic, say so plainly before offering general guidance."""
+
+
+def _language_lock(lang: str, allow_devanagari: bool = False) -> str:
+    """The final instruction of a prompt, so the language rule isn't buried under
+    the long English instructions before it."""
+    name = _LANGUAGE_NAMES_PLAIN.get(lang, "English")
+    if lang == "en":
+        rule = ("Write every word in English. Write Sanskrit terms in Latin letters, and "
+                "do not use any other script.")
+    else:
+        script = LANG_SCRIPT.get(lang, name)
+        rule = (f"Write every word, including headings, in {name}, using only the {script} script "
+                "plus digits, citations such as [1], and punctuation. Write Sanskrit terms and "
+                f"invocations in the {script} script too. Do not add English glosses in brackets. "
+                f"Do not use a word from Bengali or any other language; if you are unsure of a "
+                f"word, choose a simpler {name} word.")
+    if allow_devanagari:
+        rule += " The only exception is a quoted Sanskrit verse, which may stay in Devanagari."
+    return f"FINAL LANGUAGE CHECK (this overrides everything above): {rule}"
+
+
+def citation_manifest(raw_passages) -> list:
+    """The citation cards for a reading: each shows the excerpt the model was given."""
+    manifest = []
+    for i, passage in enumerate(raw_passages):
+        snippet = passage.get("excerpt")
+        if snippet is None:
+            snippet = passage.get("raw_text", "")
+            if len(snippet) > 900:
+                snippet = snippet[:900] + "…"
+        manifest.append({
+            "index": i + 1,
+            "book_id": passage.get("book_id"),
+            "book_title": passage.get("book_title"),
+            "page_num": passage.get("page_num"),
+            "snippet": snippet,
+        })
+    return manifest
+
 
 # Shared guardrails for every depth-feature prompt: same discipline as the
 # main chart prompt — Vedic-only, computed-data-only, text-grounded.

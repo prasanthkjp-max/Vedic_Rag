@@ -39,6 +39,8 @@ from src.engines.prediction_engine import (
     get_current_dasa,
 )
 from src.engines import horoscope_engine
+from src.engines.fact_check import chart_facts, format_fact_sheet
+from src.core.translations import READING_SECTIONS
 from src.api.deps import (
     logger,
     LangCode,
@@ -53,6 +55,10 @@ from src.api.deps import (
     llm_stream,
     _LANG_MAP,
     _VEDIC_GUARDRAILS,
+    _GROUNDING_RULES,
+    _language_lock,
+    citation_manifest,
+    check_reading,
 )
 
 router = APIRouter()
@@ -103,6 +109,7 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
     place = req.place_name
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     lang_code = req.lang
+    reading_facts = {}
 
     def prompt_builder():
         # Validate chart_data structure inside the deferred callback
@@ -127,6 +134,8 @@ def ai_predict(req: AIPredictRequest, raw_req: Request):
         target_lang = lang_map.get(lang_code, "English")
 
         analysis_text, rag_context, raw_passages = build_prediction_context(chart)
+        facts_by_person = {client: chart_facts(chart)}
+        reading_facts.update(facts_by_person)
         calc_type = chart.get('metadata', {}).get('calc_type', 'drik')
         dasa_system = chart.get('metadata', {}).get('dasa_system', 'vimshottari')
         system_guidance = ""
@@ -176,23 +185,23 @@ Using the classical rules from the retrieved texts AND standard Jyotish techniqu
 7. **Gochara (Current Transits)** (in {target_lang}) — address Sade Sati / major transits flagged in the analysis and practical guidance.
 8. **Remedies (Parihara)** (in {target_lang}) — fitting classical remedies.
 
-Be authoritative, compassionate, and precise. Start directly with the invocation in {target_lang}:
+{_GROUNDING_RULES}
+
+Be authoritative, compassionate, and precise.
+
+{format_fact_sheet(facts_by_person)}
+
+{_language_lock(lang_code)}
+
+Start directly with the invocation in {target_lang}:
 """
-        manifest = []
-        for i, passage in enumerate(raw_passages):
-            snippet = passage.get("raw_text", "")
-            if len(snippet) > 900:
-                snippet = snippet[:900] + "…"
-            manifest.append({
-                "index": i + 1,
-                "book_id": passage.get("book_id"),
-                "book_title": passage.get("book_title"),
-                "page_num": passage.get("page_num"),
-                "snippet": snippet
-            })
+        manifest = citation_manifest(raw_passages)
         return prompt, manifest
 
-    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(
+        prompt_builder, model_name, user, "ai_predict", lang=lang_code,
+        post_check=lambda text: check_reading(text, reading_facts, lang_code),
+    ), media_type="text/event-stream")
 
 
 @router.post("/api/ai-predict-marriage")
@@ -214,6 +223,7 @@ def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
     female_place = req.female_place
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     lang_code = req.lang
+    reading_facts = {}
 
     def prompt_builder():
         # Validate chart structure inside the deferred callback
@@ -238,6 +248,8 @@ def ai_predict_marriage(req: AIMarriagePredictRequest, raw_req: Request):
         target_lang = lang_map.get(lang_code, "English")
 
         rag_context, raw_passages = build_marriage_prediction_context(male_chart, female_chart, comp)
+        facts_by_person = {male_name: chart_facts(male_chart), female_name: chart_facts(female_chart)}
+        reading_facts.update(facts_by_person)
 
         # Render a clean text-based comparison of both charts for prompt grounding
         analysis_text = f"""
@@ -297,23 +309,23 @@ Structure your analysis as follows:
 7. **Remedies (Pariharas)** (in {target_lang}) — practical remedies for any discrepancies or doshas.
 8. **Frequently Asked Questions (FAQ)** (in {target_lang}) — You MUST add exactly 4 highly personalized, relevant FAQs regarding this couple's bonding, covering their prosperity, children, wealth, and societal status based on their specific chart placements and transits. Format each question on its own line starting exactly with the characters "Q: " (do not translate or modify the "Q: " prefix) followed by the question text. Format each answer on the next line starting exactly with the characters "A: " (do not translate or modify the "A: " prefix) followed by the answer text.
 
-Be authoritative, compassionate, and precise. Start directly with the invocation:
+{_GROUNDING_RULES}
+
+Be authoritative, compassionate, and precise.
+
+{format_fact_sheet(facts_by_person)}
+
+{_language_lock(lang_code)}
+
+Start directly with the invocation:
 """
-        manifest = []
-        for i, passage in enumerate(raw_passages):
-            snippet = passage.get("raw_text", "")
-            if len(snippet) > 900:
-                snippet = snippet[:900] + "…"
-            manifest.append({
-                "index": i + 1,
-                "book_id": passage.get("book_id"),
-                "book_title": passage.get("book_title"),
-                "page_num": passage.get("page_num"),
-                "snippet": snippet
-            })
+        manifest = citation_manifest(raw_passages)
         return prompt, manifest
 
-    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_marriage"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(
+        prompt_builder, model_name, user, "ai_predict_marriage", lang=lang_code,
+        post_check=lambda text: check_reading(text, reading_facts, lang_code),
+    ), media_type="text/event-stream")
 
 
 # --- app.py:2418-2429 ---
@@ -993,6 +1005,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     history = req.history
     target_lang = _LANG_MAP.get(req.lang, "English")
+    reading_facts = {}
 
     def prompt_builder():
         try:
@@ -1052,6 +1065,8 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
         extra_queries = [query_text]
         cross_chart_sections = []
+        facts_by_person = {client: chart_facts(chart)}
+        reading_facts.update(facts_by_person)
         compared_meta = []
 
         for ref_prof in referenced_profiles:
@@ -1077,6 +1092,8 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
                     ref_date=today,
                 )
                 ref_panch = ref_chart.get("panchangam", {})
+                facts_by_person[ref_prof["name"]] = chart_facts(ref_chart)
+                reading_facts.update(facts_by_person)
                 cross_chart_sections.append(
                     f"=== INVOKED SAVED PROFILE: {ref_prof['name']} "
                     f"(Relationship to {client}: {rel_display.upper()}) ===\n"
@@ -1124,6 +1141,7 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
 
         cross_chart_block = ""
         cross_chart_instructions = ""
+        headings = READING_SECTIONS.get(req.lang, READING_SECTIONS["en"])
         if cross_chart_sections:
             compared_names = ", ".join(
                 f"{m['name']} ({m['relationship']})" for m in compared_meta
@@ -1140,10 +1158,11 @@ Both {client}'s complete computed chart AND the complete computed chart(s) + cro
 - NEVER claim that you do not have the birth chart, placements, or Dasa details of {compared_names} — they are fully computed and provided above!
 - Read every placement, house (bhava), divisional chart (D1..D60), Shadbala, Ashtakavarga, Jaimini Karaka, Arudha Pada, Koota/Porutham score, and running Vimshottari Dasa-Bhukti-Antaram for BOTH {client} and {compared_names} directly from the computed sections above.
 - Structure your response to directly answer {client}'s question by synthesizing:
-  1. **Individual Chart Signatures & Relevant Bhavas** for {client} and {compared_names} (Lagna, Moon sign, Nakshatra, key Yogas, and relational houses such as 7th/UL for spouse, 9th/D12 for father, 4th/D12 for mother, 5th/D7 for child).
-  2. **Cross-Chart Synastry, Compatibility & Planetary Overlays** (Lagna-to-Lagna axis, Moon-to-Moon relation, how each person's Grahas occupy/aspect the other's houses, and Koota/Porutham/Kuja Dosha when comparing with spouse).
-  3. **Synchronized Dasa–Bhukti–Antaram & Gochara Timing** (how both natives' current planetary periods and transits interact right now and in upcoming periods).
-  4. **Synthesized Verdict & Classical Remedies (Parihara)** for harmony, prosperity, and well-being, citing the retrieved classical texts inline ([1], [2], ...).
+  1. **{headings[0]}** for {client} and {compared_names} (Lagna, Moon sign, Nakshatra, key Yogas, and relational houses such as 7th/UL for spouse, 9th/D12 for father, 4th/D12 for mother, 5th/D7 for child).
+  2. **{headings[1]}** (Lagna-to-Lagna axis, Moon-to-Moon relation, how each person's Grahas occupy/aspect the other's houses, and Koota/Porutham/Kuja Dosha when comparing with spouse).
+  3. **{headings[2]}** (how both natives' current planetary periods and transits interact right now and in upcoming periods).
+  4. **{headings[3]}** for harmony, prosperity, and well-being, following the SOURCE HONESTY rules below for every remedy.
+Use those four headings exactly as written, with nothing added to them.
 """
 
         # Format the conversation history if present. Cap it to the most recent
@@ -1161,9 +1180,8 @@ Both {client}'s complete computed chart AND the complete computed chart(s) + cro
             history_text += "----------------------------\n"
 
         format_rule = (
-            f"- Format: Structure the reading clearly to address {client}'s cross-chart / comparative inquiry across {client} and {', '.join(m['name'] for m in compared_meta)}: "
-            "(1) Individual Ascendant, Moon & Key Placements of Both Natives, (2) Cross-Chart Synastry & Bhava Overlays / Compatibility, "
-            f"(3) Combined Dasa–Bhukti & Transit Timing, (4) Direct Synthesis & Classical Remedies. Speak directly to {client}."
+            f"- Format: Structure the reading clearly to address {client}'s cross-chart / comparative inquiry across {client} and {', '.join(m['name'] for m in compared_meta)}, "
+            f"under the four headings given above. Speak directly to {client}."
             if compared_meta
             else f"- Format: Present the reading in clear sections tailored to {client}'s question (covering relevant Ascendant/Core Strength, Bhavas/Yogas, Vargas/Strengths, and Current Dasa-Bhukti/Transit Timing). Speak directly to {client}."
         )
@@ -1239,34 +1257,31 @@ Step 7: Dasa-Bhukti & Transit (Timing of Events)
 - Overlay current planetary transits (Gochara) on the Ashtakavarga bindus to predict current events.
 
 OUTPUT GENERATION RULES:
-- Strict Adherence to Texts: Every prediction or astrological claim MUST be traced back to the classical rules. If combining rules, explain the synthesis. Cite the source book and page (e.g. [Phaladeepika, Page 12]) when applying rules.
+- Texts First: Base predictions on the retrieved excerpts wherever they apply. If combining rules, explain the synthesis.
 - IMPORTANT CITATION REQUIREMENT: You MUST cite the classical text references by their source number inline (e.g. [1], [2], ...) wherever you rely on their principles, rules, or predictions.
 - No Hallucination: If the planetary data provided does not form a specific Yoga, do not invent one.
+- {_GROUNDING_RULES}
 - Holistic Synthesis: Do not contradict yourself. If a planet is a Raja Yoga Karaka but is Astangata (combust), state clearly that the Yoga is nullified or severely weakened as per the rules of Yoga Bhanga.
 - Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas and the Lagna.
 - Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY classical Vedic Graha Drishti (all planets aspect 7th; Saturn aspects 3rd/10th; Jupiter aspects 5th/9th; Mars aspects 4th/8th).
 {format_rule}
 
+{format_fact_sheet(facts_by_person)}
+
+{_language_lock(req.lang)}
+
 Start directly with the chat response:
 """
-        manifest = []
-        for i, passage in enumerate(raw_passages):
-            snippet = passage.get("raw_text", "")
-            if len(snippet) > 900:
-                snippet = snippet[:900] + "…"
-            manifest.append({
-                "index": i + 1,
-                "book_id": passage.get("book_id"),
-                "book_title": passage.get("book_title"),
-                "page_num": passage.get("page_num"),
-                "snippet": snippet
-            })
+        manifest = citation_manifest(raw_passages)
         if compared_meta:
             return prompt, {"manifest": manifest, "compared_profiles": compared_meta, "primary_name": client}
         return prompt, manifest
 
 
-    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "ai_predict_chat"), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(
+        prompt_builder, model_name, user, "ai_predict_chat", lang=req.lang,
+        post_check=lambda text: check_reading(text, reading_facts, req.lang),
+    ), media_type="text/event-stream")
 
 
 # --- app.py:4605-4611 ---
@@ -1339,6 +1354,8 @@ CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}, professionally
 
 {_VEDIC_GUARDRAILS}
 
+{_GROUNDING_RULES}
+
 Write an insightful year-ahead reading in beautiful Markdown, structured as:
 1. **Overview of the Year** (in {target_lang}) — the tone set by the varsha lagna, Muntha placement, and year lord's condition.
 2. **Muntha & Year Lord Judgement** (in {target_lang}) — what the Muntha house and the Varshesha's dignity/strength promise.
@@ -1347,11 +1364,13 @@ Write an insightful year-ahead reading in beautiful Markdown, structured as:
 5. **Timing within the Year** (in {target_lang}) — how the running natal dasa/bhukti colours which months; be conservative where data is thin.
 6. **Guidance** (in {target_lang}) — practical, compassionate counsel for the year.
 
+{_language_lock(req.lang)}
+
 Start directly with the overview in {target_lang}:
 """
 
     return StreamingResponse(
-        llm_stream(prompt_builder, model_name, user, "ai_predict_varshaphala"),
+        llm_stream(prompt_builder, model_name, user, "ai_predict_varshaphala", lang=req.lang),
         media_type="text/event-stream",
     )
 
@@ -1424,11 +1443,15 @@ STRICT REMEDY RULES:
 - If no afflictions were detected, congratulate the native briefly and suggest only the universally traditional practices found in the retrieved passages (if any).
 - End with this framing (translated into {target_lang}): these are traditional spiritual observances from the classical texts, offered for devotion and peace of mind — not medical, financial, or legal advice.
 
-Structure: one section per afflicted graha (heading with the graha name in {target_lang}), each listing its text-supported remedies (mantra/japa, dana, vrata, worship) with citations. Start directly:
+Structure: one section per afflicted graha (heading with the graha name in {target_lang}), each listing its text-supported remedies (mantra/japa, dana, vrata, worship) with citations.
+
+{_language_lock(req.lang)}
+
+Start directly:
 """
 
     return StreamingResponse(
-        llm_stream(prompt_builder, model_name, user, "ai_remedies"),
+        llm_stream(prompt_builder, model_name, user, "ai_remedies", lang=req.lang),
         media_type="text/event-stream",
     )
 
@@ -1494,6 +1517,8 @@ CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}.
 
 {_VEDIC_GUARDRAILS}
 
+{_GROUNDING_RULES}
+
 ADDITIONAL DISCIPLINE:
 - Kuja (Mangal) dosha: use ONLY the computed verdict above, which already applies the classical cancellations. NEVER declare Kuja dosha from a placement alone if the computation says an exception applies.
 - Treat the malefic dasa-overlap windows as periods needing patience, not doom — frame them constructively with classical support.
@@ -1506,11 +1531,13 @@ Write an authoritative, compassionate reading in beautiful Markdown:
 5. **The Decade Ahead Together** (in {target_lang}) — the running dasas and any malefic-overlap windows, with guidance.
 6. **Final Synthesis** (in {target_lang}) — an honest overall judgement combining this deep layer with the porutham score.
 
+{_language_lock(req.lang)}
+
 Start directly with section 1 in {target_lang}:
 """
 
     return StreamingResponse(
-        llm_stream(prompt_builder, model_name, user, "ai_predict_compatibility"),
+        llm_stream(prompt_builder, model_name, user, "ai_predict_compatibility", lang=req.lang),
         media_type="text/event-stream",
     )
 
@@ -1567,6 +1594,8 @@ CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}.
 
 {_VEDIC_GUARDRAILS}
 
+{_GROUNDING_RULES}
+
 PRASHNA JUDGEMENT METHOD (follow it):
 1. Judge the lagna lord and the Moon (the querent and their mind): dignity, house, benefic/malefic association.
 2. Judge the house ruling the matter (given above): its lord's condition, occupants, and the aspects it receives.
@@ -1574,11 +1603,15 @@ PRASHNA JUDGEMENT METHOD (follow it):
 4. Be honest: give a clear YES / NO / MIXED verdict with the astrological reasoning, then practical guidance and (if the texts support one) a simple traditional observance.
 5. Do NOT ask for birth details — prashna is judged from this moment's chart alone.
 
-Structure: **The Question** (restated), **Chart Judgement**, **Verdict**, **Guidance** — all in {target_lang}. Be concise (under 500 words) and precise. Start directly:
+Structure: **The Question** (restated), **Chart Judgement**, **Verdict**, **Guidance** — all in {target_lang}. Be concise (under 500 words) and precise.
+
+{_language_lock(req.lang)}
+
+Start directly:
 """
 
     return StreamingResponse(
-        llm_stream(prompt_builder, model_name, user, "ai_predict_prashna"),
+        llm_stream(prompt_builder, model_name, user, "ai_predict_prashna", lang=req.lang),
         media_type="text/event-stream",
     )
 
@@ -1809,6 +1842,8 @@ CRITICAL REQUIREMENT: Write the ENTIRE response in {target_lang}, professionally
 
 {_VEDIC_GUARDRAILS}
 
+{_GROUNDING_RULES}
+
 Write an insightful, personal year reading in beautiful Markdown, structured as:
 1. **The Year at a Glance** (in {target_lang}) — the overall tone set by the running mahadasa/bhukti and the dominant transits.
 2. **Dasa-Bhukti Timeline** (in {target_lang}) — walk through EACH bhukti window listed above in order, with dates, describing its promise from the lords' natal condition.
@@ -1816,6 +1851,8 @@ Write an insightful, personal year reading in beautiful Markdown, structured as:
 4. **Career, Wealth & Home** (in {target_lang}).
 5. **Relationships & Health** (in {target_lang}).
 6. **Guidance & Remedies** (in {target_lang}) — practical, compassionate counsel grounded in the texts.
+
+{_language_lock(req.lang)}
 
 Start directly with section 1 in {target_lang}:
 """
@@ -1825,7 +1862,7 @@ Start directly with section 1 in {target_lang}:
 
     return StreamingResponse(
         llm_stream(prompt_builder, model_name, user, "ai_varsha_phala",
-                   on_complete=cache_completed_reading),
+                   on_complete=cache_completed_reading, lang=req.lang),
         media_type="text/event-stream",
         headers={"X-Varsha-Cache": "miss"},
     )

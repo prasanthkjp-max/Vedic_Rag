@@ -751,5 +751,324 @@ check("chat_ui: profile chip escapes the name and alias",
       '<span class="profile-rel">${escapeHtml(relLabel)}</span>' in _index_html)
 
 
+# --- Language filter, source selection and chart check (fictional data only) ---
+import json
+import re
+from types import SimpleNamespace as _NS
+from src.api import deps as _deps
+from src.core.translations import READING_CHECK_NOTE, READING_SECTIONS
+from src.engines.fact_check import (
+    chart_facts, find_contradictions, format_fact_sheet, parse_claims, render_note,
+)
+from src.engines.output_guard import LANG_SCRIPT, ScriptGuard, clean_text, has_foreign_script
+from src.engines.prediction_engine import best_excerpt, is_reference_page, retrieve_rag_context
+
+_BENGALI = "\u09b6\u09be\u09b8\u09cd\u09a4\u09cd\u09b0\u09c0\u09af\u09bc"
+_TAMIL_A = "\u0ba4\u0bc0\u0bb0\u0bcd\u0bb5\u0bc1"
+_TAMIL_B = "\u0bae\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0bcd"
+_DEVANAGARI = "\u0936\u093e\u0938\u094d\u0924\u094d\u0930"
+
+
+def _stream(chunks, lang="ta", **kw):
+    guard = ScriptGuard(lang, **kw)
+    return "".join(guard.feed(c) for c in chunks) + guard.flush(), guard
+
+
+_out, _g = _stream([f"{_TAMIL_B} {_BENGALI} {_TAMIL_A}"])
+check("guard: a stray word with no translator is removed without a double space",
+      _out == f"{_TAMIL_B} {_TAMIL_A}" and _g.removed == 1)
+_calls = []
+_out, _g = _stream([f"{_TAMIL_B} {_BENGALI[:3]}", f"{_BENGALI[3:]} {_TAMIL_A}"],
+                   translate=lambda t: (_calls.append(t), _TAMIL_A)[1])
+check("guard: a word split across chunks is translated once, as one word",
+      _out == f"{_TAMIL_B} {_TAMIL_A} {_TAMIL_A}" and _calls == [_BENGALI] and _g.replaced == 1)
+_out, _ = _stream([f"{_BENGALI} {_TAMIL_A} {_BENGALI}."], translate=lambda t: 1 / 0)
+check("guard: a failing translator removes the word instead of breaking the stream",
+      _BENGALI not in _out and _TAMIL_A in _out)
+_out, _ = _stream([_BENGALI], translate=lambda t: _DEVANAGARI)
+check("guard: a translation in the wrong script is rejected", _out == "")
+_n = []
+_stream([" ".join(f"{_BENGALI}{chr(0x985 + i)}\n" for i in range(12))],
+        translate=lambda t: (_n.append(t), _TAMIL_A)[1])
+check("guard: translation calls per reading are capped", len(_n) == 6)
+_plain = f"# {_TAMIL_A} [8]: Lagna 10\n\n- {_TAMIL_B}\n"
+check("guard: the reading language, Latin, digits and citations pass unchanged",
+      _stream([_plain[:5], _plain[5:]])[0] == _plain)
+check("guard: Devanagari is native to Hindi but stray in Tamil and English",
+      not has_foreign_script(_DEVANAGARI, "hi") and has_foreign_script(_DEVANAGARI, "ta")
+      and has_foreign_script(_DEVANAGARI, "en"))
+check("guard: an allowed script is kept for quoted verses",
+      clean_text(f"{_TAMIL_A} {_DEVANAGARI}", "ta", allow_scripts=("Devanagari",)) == f"{_TAMIL_A} {_DEVANAGARI}")
+check("guard: JSON keys survive when a value is cleaned",
+      clean_text('{"mesha": "' + _BENGALI + _TAMIL_A + '"}', "ta") == '{"mesha": "' + _TAMIL_A + '"}')
+
+
+class _FakeChoice:
+    def __init__(self, text):
+        self.choices = [_NS(delta=_NS(content=text))]
+        self.error = None
+
+
+class _FakeStream:
+    def __init__(self, parts):
+        self.parts = parts
+    def __enter__(self):
+        return self
+    def __exit__(self, *a):
+        return False
+    def __iter__(self):
+        return (_FakeChoice(p) for p in self.parts)
+
+
+class _FakeCompletions:
+    def __init__(self):
+        self.kwargs = []
+    def create(self, **kw):
+        self.kwargs.append(kw)
+        if kw.get("stream"):
+            return _FakeStream([f"{_TAMIL_B} {_BENGALI[:2]}", f"{_BENGALI[2:]} {_TAMIL_A}"])
+        return _NS(choices=[_NS(message=_NS(content=_TAMIL_A))])
+
+
+class _FakeClient:
+    def __init__(self):
+        self.chat = _NS(completions=_FakeCompletions())
+    def with_options(self, **kw):
+        return self
+
+
+_real_client = _deps.get_llm_client
+_fake = _FakeClient()
+_deps.get_llm_client = lambda: _fake
+_completed, _checked = [], []
+_stream_out = "".join(_deps.llm_stream(
+    lambda: ("prompt", [{"index": 1, "snippet": _DEVANAGARI}]), "model", None, "test", lang="ta",
+    on_complete=_completed.append, post_check=lambda t: (_checked.append(t), "\nNOTE")[1],
+))
+_deps.get_llm_client = _real_client
+check("llm_stream: stray word is repaired in the streamed and completed text",
+      _BENGALI not in _stream_out and _completed == [f"{_TAMIL_B} {_TAMIL_A} {_TAMIL_A}"])
+check("llm_stream: the citation manifest is not filtered",
+      json.dumps({"manifest": [{"index": 1, "snippet": _DEVANAGARI}]}) in _stream_out)
+check("llm_stream: post_check sees the cleaned text and its note is appended",
+      _checked == _completed and _stream_out.endswith("\nNOTE"))
+check("llm_stream: the reading uses the configured temperature",
+      _fake.chat.completions.kwargs[0]["temperature"] == _deps.LLM_TEMPERATURE)
+
+
+
+class _BreakingStream(_FakeStream):
+    def __iter__(self):
+        yield _FakeChoice(f"{_TAMIL_A} {_BENGALI}")
+        raise RuntimeError("connection lost")
+
+
+_fake = _FakeClient()
+_fake.chat.completions.create = lambda **kw: _BreakingStream([])
+_deps.get_llm_client = lambda: _fake
+_broken = "".join(_deps.llm_stream(lambda: "p", "model", None, "test", lang="ta",
+                                   post_check=lambda t: 1 / 0))
+_deps.get_llm_client = _real_client
+check("llm_stream: a failed stream reports the error and doesn't leak the held word",
+      "connection lost" in _broken and _TAMIL_A in _broken and _BENGALI not in _broken)
+_failing_check = _FakeClient()
+_deps.get_llm_client = lambda: _failing_check
+_survived = "".join(_deps.llm_stream(lambda: "p", "model", None, "test", lang="ta",
+                                     post_check=lambda t: 1 / 0))
+_deps.get_llm_client = _real_client
+check("llm_stream: a failing chart check doesn't break the finished reading",
+      _TAMIL_A in _survived and "Error" not in _survived)
+
+for _code in ("ta", "te", "ml", "kn", "hi"):
+    _lock = _deps._language_lock(_code)
+    check(f"language lock: names the script for {_code}", LANG_SCRIPT[_code] in _lock)
+    _texts = READING_SECTIONS[_code] + [
+        v.format(house=1, lords="1") if "{" in v else v for v in READING_CHECK_NOTE[_code].values()
+    ]
+    check(f"translations: {_code} headings and check note stay in their own script",
+          all(not has_foreign_script(t, _code) for t in _texts))
+check("language lock: quoted verses are the only Devanagari exception",
+      "Devanagari" in _deps._language_lock("ta", allow_devanagari=True)
+      and "Devanagari" not in _deps._language_lock("ta"))
+check("translations: every language has four sections and every note field",
+      all(len(v) == 4 for v in READING_SECTIONS.values())
+      and all(set(v) == set(READING_CHECK_NOTE["en"]) for v in READING_CHECK_NOTE.values())
+      and set(READING_SECTIONS) == set(READING_CHECK_NOTE))
+_src_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "src", "api")
+_src = {name: open(_os.path.join(_src_dir, name), encoding="utf-8").read()
+        for name in ("ai.py", "corpus.py", "chart.py", "horoscope.py")}
+_stream_calls = [m for s in (_src["ai.py"], _src["corpus.py"]) for m in re.findall(r"llm_stream\(.*?lang=|llm_stream\([^)]*\)", s, re.S)]
+check("every streamed reading passes its language to llm_stream",
+      len(_stream_calls) >= 9 and all(c.endswith("lang=") for c in _stream_calls))
+check("every non-streamed reading passes its language to _llm_complete",
+      all("lang=" in line for s in (_src["chart.py"], _src["horoscope.py"])
+          for line in s.splitlines() if "_llm_complete(" in line and "import" not in line))
+check("every prompt ends with the language rule",
+      _src["ai.py"].count("{_language_lock(") == 8 and _src["corpus.py"].count("{_language_lock(") == 1
+      and _src["chart.py"].count("{_language_lock(") == 1 and _src["horoscope.py"].count("{_language_lock(") == 1)
+
+check("reference page: a contents listing, index and roman-numbered page are detected",
+      is_reference_page("(xvi) to ward off afflictions and more text")
+      and is_reference_page("x\nCHAPTER 97 714-775 PROPITIATION")
+      and is_reference_page("58 RENOWN INDEX To become")
+      and is_reference_page("xviii  \u201cI  PHALADEEPIKA  Yogas leading to children")
+      and is_reference_page(" ".join(f"{i}. Antardasa of Saturn in the Mahadasa of Rahu." for i in range(5))))
+check("reference page: ordinary text about dasas is kept",
+      not is_reference_page("Results of the Pratyantardasa of Venus in the Antardasa of Ketu. Danger from foes.")
+      and not is_reference_page("vii) viii) ix) whether Rahu draws good influences on the Moon"))
+
+_filler = "Unrelated words about something else entirely. " * 40
+_page = _filler + "Rahu placed in the Lagna gives trouble to the body, says the sage. " + _filler
+_ex = best_excerpt(_page, {"rahu", "lagna"}, size=300)
+check("excerpt: the window holds the matching passage, not the page start",
+      "Rahu placed in the Lagna" in _ex and len(_ex) <= 302 and _ex.startswith("…") and _ex.endswith("…"))
+check("excerpt: no match falls back to the page start",
+      best_excerpt(_page, {"jupiter"}, size=100).startswith("Unrelated"))
+check("excerpt: a short page is returned whole", best_excerpt("Short page.", {"rahu"}) == "Short page.")
+
+
+class _FakeSearch:
+    def reload(self):
+        pass
+    def get_embeddings_batch(self, queries):
+        return [None for _ in queries]
+    def dense_search_with_vector(self, *a, **k):
+        return []
+    def sparse_search(self, query, top_k=3, category=None):
+        self.top_k = top_k
+        return [
+            {"book_id": 1, "book_title": "Book", "page_num": 1, "raw_text": "(xvi) contents of Rahu chapter"},
+            {"book_id": 1, "book_title": "Book", "page_num": 50, "raw_text": _page},
+        ]
+
+
+_context, _passages = retrieve_rag_context(_FakeSearch(), ["rahu in lagna"], snippet_chars=300)
+check("retrieval: contents pages are left out and the slot goes to a real page",
+      [p["page_num"] for p in _passages] == [50] and "(xvi)" not in _context)
+check("retrieval: the prompt and the citation card share the same excerpt",
+      "Rahu placed in the Lagna" in _context
+      and _deps.citation_manifest(_passages)[0]["snippet"] == _passages[0]["excerpt"]
+      and _passages[0]["excerpt"] in _context)
+check("citation card: a passage without an excerpt still gets a capped snippet",
+      _deps.citation_manifest([{"raw_text": "x" * 1000}])[0]["snippet"] == "x" * 900 + "…")
+
+_sample_facts = {
+    "Arun": {"Jupiter": {"house": 10, "lord_of": [3, 12], "combust": False},
+             "Rahu": {"house": 4, "lord_of": [], "combust": False}},
+    "Meena": {"Jupiter": {"house": 2, "lord_of": [1, 4], "combust": True}},
+}
+_reading = "Arun's Jupiter, lord of the 10th, brings work. Meena's Jupiter is in the 2nd house."
+_claim = lambda **kw: {"person": "Arun", "planet": "Jupiter", "claim": "lord_of", "house": 10,
+                       "quote": "Jupiter, lord of the 10th", **kw}
+_found = find_contradictions([_claim()], _sample_facts, _reading)
+check("fact check: occupying a house is not ruling it",
+      len(_found) == 1 and _found[0]["lord_of"] == [3, 12])
+check("fact check: true statements are not reported",
+      find_contradictions([_claim(house=3), _claim(claim="occupies")], _sample_facts, _reading) == []
+      and find_contradictions([{"person": "Meena", "planet": "Jupiter", "claim": "occupies", "house": 2,
+                                "quote": "Meena's Jupiter is in the 2nd house"}], _sample_facts, _reading) == [])
+check("fact check: a quote that isn't in the reading is ignored",
+      find_contradictions([_claim(quote="not in this reading")], _sample_facts, _reading) == [])
+check("fact check: unusable claims are ignored",
+      find_contradictions([_claim(house="10"), _claim(house=True), _claim(house=13), _claim(planet="Pluto"),
+                           _claim(person="Nobody"), _claim(claim="aspects")], _sample_facts, _reading) == [])
+check("fact check: Rahu lordship is never reported",
+      find_contradictions([_claim(planet="Rahu", quote="Jupiter, lord of the 10th")], _sample_facts, _reading) == [])
+check("fact check: a repeated claim is reported once",
+      len(find_contradictions([_claim(), _claim()], _sample_facts, _reading)) == 1)
+check("fact check: unparseable model replies yield no claims",
+      parse_claims("sorry, no") == [] and parse_claims("[broken") == [] and parse_claims('[1, {"a": 1}]') == [{"a": 1}]
+      and parse_claims('Here: [{"a": 1}] done') == [{"a": 1}])
+check("fact check: nothing wrong means no note", render_note([], "ta") == "")
+_note = render_note(_found, "ta", {"Jupiter": _TAMIL_A})
+check("fact check: the note is in the reading's language and gives the computed facts",
+      READING_CHECK_NOTE["ta"]["heading"] in _note and _TAMIL_A in _note and "3, 12" in _note and "10" in _note)
+_sheet = format_fact_sheet(_sample_facts)
+check("fact sheet: separates occupied and ruled houses, per person",
+      "Arun:" in _sheet and "- Jupiter: occupies house 10; lord of houses: 3, 12" in _sheet
+      and "Rahu: occupies house 4; lord of houses: none" in _sheet and "2; lord of houses: 1, 4; combust" in _sheet)
+_fc_chart = get_astrological_chart(2000, 1, 1, 12, 0, 80.27, 13.08, "Lahiri")
+_fc = chart_facts(_fc_chart)
+check("fact check: facts come from the chart, with each house ruled once and Rahu/Ketu ruling none",
+      len(_fc) == 9 and sorted(h for f in _fc.values() for h in f["lord_of"]) == list(range(1, 13))
+      and _fc["Rahu"]["lord_of"] == [] and _fc["Ketu"]["lord_of"] == [])
+
+
+# Build the real prompt of every reading endpoint, in Tamil, without calling a model.
+from src.api import ai as _ai
+from src.engines.astro_engine import calculate_marriage_compatibility as _compat
+
+_male = get_astrological_chart(1985, 3, 14, 9, 20, 80.27, 13.08, "Lahiri", gender="male")
+_female = get_astrological_chart(1988, 11, 2, 16, 45, 78.45, 9.69, "Lahiri", gender="female")
+_comp = _compat(_male, _female)
+_wife_row = {
+    "id": 2, "name": "Meena Sundari", "dob": "1988-11-02", "tob": "16:45", "pob": "Test City",
+    "lat": 9.69, "lon": 78.45, "gender": "female", "ayanamsa": "Lahiri", "is_saved": 1,
+    "relationship": "wife", "canonical_relationship": "wife", "display_relationship": "Wife",
+    "profile_name": "Meena", "match_keywords": ["wife"],
+}
+_captured = {}
+
+
+def _capture_stream(builder, model, user=None, action="ai", **kw):
+    built = builder()
+    _captured[action] = {"prompt": built[0] if isinstance(built, tuple) else built, "kw": kw}
+    return iter(["done"])
+
+
+_patches = {
+    "llm_stream": _capture_stream,
+    "get_user_by_session": lambda token: {"id": 1, "email": "test@example.com", "full_name": "Arun"},
+    "check_credits_or_raise": lambda *a: {"id": 1, "charged": 0},
+    "_is_premium": lambda user: True,
+    "_load_user_saved_profiles": lambda uid: ([_wife_row], []),
+    "search_engine": _FakeSearch(),
+    "_load_varsha_profile": lambda uid, cid: {
+        "name": "Arun", "dob": "1985-03-14", "tob": "09:20", "place": "Test City",
+        "lat": 13.08, "lon": 80.27, "gender": "male",
+    },
+    "_cached_varsha_phala": lambda *a, **k: None,
+}
+_saved = {name: getattr(_ai, name) for name in _patches}
+_saved_engine = _deps.search_engine
+_deps.search_engine = _patches["search_engine"]
+for _name, _value in _patches.items():
+    setattr(_ai, _name, _value)
+_raw = _NS(headers={"x-session-token": "t"}, cookies={})
+_pair = dict(male_chart=_male, female_chart=_female, compatibility=_comp, male_name="Arun",
+             female_name="Meena Sundari", male_place="Test City", female_place="Test City", lang="ta")
+_single = dict(chart_data=_male, client_name="Arun", place_name="Test City", lang="ta")
+_calls = [
+    (_ai.ai_predict, _ai.AIPredictRequest(**_single)),
+    (_ai.ai_predict_marriage, _ai.AIMarriagePredictRequest(**_pair)),
+    (_ai.ai_predict_chat, _ai.AIChatRequest(**_single, query="Compare my chart with my wife")),
+    (_ai.ai_predict_varshaphala, _ai.VarshaphalaRequest(**_single, year=2026)),
+    (_ai.ai_remedies, _ai.RemediesRequest(**_single)),
+    (_ai.ai_predict_compatibility, _ai.AICompatibilityRequest(**_pair)),
+    (_ai.ai_predict_prashna, _ai.PrashnaRequest(question="Will this work out?", latitude=13.08,
+                                                longitude=80.27, lang="ta")),
+    (_ai.ai_varsha_phala, _ai.PersonalVarshaRequest(lang="ta")),
+]
+try:
+    for _fn, _req in _calls:
+        _fn(_req, _raw)
+finally:
+    for _name, _value in _saved.items():
+        setattr(_ai, _name, _value)
+    _deps.search_engine = _saved_engine
+check("prompts: all eight reading endpoints build a prompt", len(_captured) == 8)
+_final_rule = _deps._language_lock("ta")
+check("prompts: every reading has the Tamil language rule last and streams with lang=ta",
+      all(_final_rule in c["prompt"][-1400:] and c["kw"].get("lang") == "ta" for c in _captured.values()))
+check("prompts: the source-honesty rules reach every reading but the stricter remedy prompt",
+      all(("SOURCE HONESTY" in c["prompt"]) == (a != "ai_remedies") for a, c in _captured.items()))
+_chat = _captured["ai_predict_chat"]["prompt"]
+check("prompts: a two-chart chat states both people's facts and the Tamil headings",
+      all(h in _chat for h in READING_SECTIONS["ta"])
+      and "Arun:" in _chat and "Meena Sundari:" in _chat and "Individual Ascendant, Moon" not in _chat)
+check("prompts: chat, Preview Phala and marriage readings get the chart check",
+      all(_captured[a]["kw"].get("post_check") for a in ("ai_predict", "ai_predict_marriage", "ai_predict_chat")))
+
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

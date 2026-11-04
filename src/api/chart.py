@@ -55,6 +55,8 @@ from src.api.deps import (
     retrieve_rag_context,
     _llm_complete,
     _LANG_MAP,
+    _GROUNDING_RULES,
+    _language_lock,
     _safe_slug,
 )
 
@@ -352,9 +354,15 @@ Reason strictly from the COMPUTED CHART ANALYSIS below — each planet's bhava (
 {rag_context}
 ---------------------------------------------
 
-CRITICAL: Write the ENTIRE chapter in {target_lang}. Be specific, authoritative and compassionate. Produce several substantial paragraphs per chapter. Start directly with the first `## ` heading:
+{_GROUNDING_RULES}
+
+CRITICAL: Write the ENTIRE chapter in {target_lang}. Be specific, authoritative and compassionate. Produce several substantial paragraphs per chapter.
+
+{_language_lock(lang_code)}
+
+Start directly with the first `## ` heading:
 """
-        chapters.append(_llm_complete(prompt, DEFAULT_LLM_MODEL))
+        chapters.append(_llm_complete(prompt, DEFAULT_LLM_MODEL, lang=lang_code))
     return chapters
 
 

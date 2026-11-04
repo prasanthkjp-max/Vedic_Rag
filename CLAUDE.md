@@ -31,6 +31,8 @@ src/
     horoscope_engine.py   # universal sign-horoscope calendars/gochara tables
     calendar_overlay.py   # per-profile Tara Bala, Chandrashtama and star-birthday flags
     digest_engine.py      # daily digest kalam windows + email labels
+    output_guard.py       # keeps LLM output in the reading's language (streaming script filter)
+    fact_check.py         # checks a reading's house/lordship statements against the chart
     search_engine.py      # hybrid dense+FTS5 RAG search (VedicSearchEngine)
     pdf_generator.py       # report PDF rendering (ReportLab) + PDF-side translations
   services/
@@ -134,7 +136,8 @@ entirely.
    assemble a large prompt f-string (analysis + retrieved passages + instructions);
    each `src/api/*.py` router builds its own prompt this way and streams the
    answer from OpenRouter via the shared `llm_stream` helper (chat completions
-   via the OpenAI SDK).
+   via the OpenAI SDK). Pass the reading's `lang` to `llm_stream`/`_llm_complete`, and end
+   each prompt with `_language_lock(lang)`.
 
 **`src/core/config.py` is the single source of truth** for all paths, model
 names, endpoints, tunables, and secrets — every value is env-overridable (see

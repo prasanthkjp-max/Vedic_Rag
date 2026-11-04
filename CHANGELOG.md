@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.30.0]
+
+### Added
+- **Language filter (`src/engines/output_guard.py`):** every AI reading now passes through a filter that catches words in a script that doesn't belong in the reading's language, such as Bengali in a Tamil reading. A caught word is replaced with a quick translation, or removed if that fails. The classical-text question endpoint may still quote Sanskrit verses in Devanagari.
+- **Chart check (`src/engines/fact_check.py`):** AI chat, Preview Phala and marriage readings now end with a correction note when a statement about which house a graha occupies or rules contradicts the computed chart. A fast model extracts the statements, and plain code decides whether they are wrong. This adds one short model call per reading.
+- Those three readings' prompts now state each graha's occupied house, ruled houses and combustion separately, so occupying a house isn't mistaken for ruling it.
+
+### Changed
+- **Language rule:** every prompt now ends with the language rule, so it no longer sits above long English instructions. Two-chart chat readings get their section headings already written in the reading's language. Daily digests fall back to the plain text if the rewrite uses the wrong script.
+- **Source honesty:** readings are told to cite an excerpt only for what it actually says, and to label anything else, including remedies, as general guidance. This is a prompt rule, so it improves readings but can't guarantee it.
+- **Better excerpts:** contents and index pages no longer count as sources. Each source now gives the model the part of the page that best matches the search, not the first 900 characters, and the citation card shows that same text.
+- Readings now use a lower temperature (0.4), which `VEDIC_LLM_TEMPERATURE` can change.
+
 ## [1.29.0]
 
 ### Added
