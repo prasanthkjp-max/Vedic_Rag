@@ -4221,9 +4221,12 @@
                             <label id="lbl-relationship">Profile Relationship</label>
                             <select id="in-relationship">
                                 <option value="self">Self</option>
-                                <option value="spouse">Spouse</option>
-                                <option value="child">Child</option>
+                                <option value="spouse">Spouse (Wife / Husband)</option>
+                                <option value="father">Father</option>
+                                <option value="mother">Mother</option>
                                 <option value="parent">Parent</option>
+                                <option value="child">Child (Son / Daughter)</option>
+                                <option value="sibling">Sibling (Brother / Sister)</option>
                                 <option value="friend">Friend</option>
                                 <option value="other" selected>Other</option>
                             </select>
@@ -4909,6 +4912,18 @@
                 <!-- Loaded birth details summary -->
                 <div class="ai-birth-summary-panel" id="ai-birth-loaded-summary" style="display: none;">
                     <!-- Populated dynamically -->
+                </div>
+
+                <!-- Saved Family & Personal Profiles Bar for Cross-Prediction in AI Chat -->
+                <div id="ai-family-profiles-bar" style="display: none; background: rgba(212, 175, 55, 0.06); border: 1px solid var(--border-gold); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                        <div style="font-size: 11.5px; color: var(--accent-gold); font-weight: 600;">
+                            <i class="fa-solid fa-people-arrows" style="margin-right: 6px;"></i>
+                            <span id="lbl-ai-family-bar-title">Saved Family Profiles for Cross-Prediction (mention by name/relationship in chat, or click to pin):</span>
+                        </div>
+                        <span id="ai-family-selected-hint" style="font-size: 10.5px; color: var(--text-secondary);">Auto-detects Wife/Spouse, Father/Appa, Mother/Amma, or Name in your question</span>
+                    </div>
+                    <div id="ai-family-chips-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
 
                 <!-- Prashna (horary): answers from the chart of THIS moment — no birth details needed -->
@@ -8969,6 +8984,7 @@
                     <strong>Coordinates:</strong> ${lat}°N, ${lon}°E | <strong>Nakshatra:</strong> ${translateNakshatra(calculatedChartData.panchangam.nakshatra)} | <strong>Ayanamsa:</strong> ${ayanamsa}
                 `;
                 summaryPanel.style.display = 'block';
+                if (typeof renderAIChatFamilyProfilesBar === 'function') renderAIChatFamilyProfilesBar();
                 
                 // Preload Cosmic AI chat welcome bubble specifically for this native!
                 preloadCosmicWelcomeMessage(name, pob, dob, tob);
@@ -10070,19 +10086,21 @@
 
             const outputPane = document.getElementById('active-ai-typing-stream');
 
-            // Smart routing: chart-personalized if birth data available, else general RAG
+            // Smart routing: chart-personalized if birth data available (or user has saved profiles), else general RAG
             let apiPath, apiBody;
-            if (calculatedChartData) {
+            const hasSavedProfiles = (typeof savedProfilesForChat !== 'undefined') && savedProfilesForChat.length > 0;
+            if (calculatedChartData || (currentUser && hasSavedProfiles)) {
                 const name = document.getElementById('in-name').value;
                 const pob = document.getElementById('in-pob').value;
                 apiPath = '/api/ai-predict-chat';
                 apiBody = {
-                    chart_data: calculatedChartData,
+                    chart_data: calculatedChartData || null,
                     client_name: name,
                     place_name: pob,
                     query: messageText,
                     history: aiChatHistory,
-                    lang: currentLang
+                    lang: currentLang,
+                    comparison_chart_ids: (typeof selectedChatCompareIds !== 'undefined') ? Array.from(selectedChatCompareIds) : []
                 };
             } else {
                 apiPath = '/api/query';
@@ -10104,7 +10122,25 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let accumulatedText = '';
-                const manifestState = { manifest: null, prefixLength: 0 };
+                const manifestState = { manifest: null, comparedProfiles: null, prefixLength: 0 };
+
+                const buildComparedBanner = (profiles) => {
+                    if (!profiles || !profiles.length) return '';
+                    const primaryLabel = escapeHtml(document.getElementById('in-name')?.value || 'Primary Native');
+                    const badges = profiles.map(p => {
+                        const rel = escapeHtml((p.relationship || '').toUpperCase());
+                        const lagna = p.lagna ? ` · Lagna: ${escapeHtml(p.lagna.split(' ')[0])}` : '';
+                        const moon = p.moon ? ` · Moon: ${escapeHtml(p.moon.split(' ')[0])}` : '';
+                        const dasa = p.mahadasa ? ` · Dasa: ${escapeHtml(p.mahadasa)}${p.antardasa ? '/' + escapeHtml(p.antardasa) : ''}` : '';
+                        return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(212,175,55,0.14);border:1px solid var(--border-gold);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--accent-gold);">
+                            <i class="fa-solid fa-user-check"></i> <strong>${escapeHtml(p.name)}</strong> <span style="opacity:0.85;">(${rel}${lagna}${moon}${dasa})</span>
+                        </span>`;
+                    }).join(' ');
+                    return `<div style="margin-bottom:10px;padding:8px 10px;background:rgba(212,175,55,0.06);border-left:3px solid var(--accent-gold);border-radius:6px;font-size:11.5px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+                        <span style="color:var(--text-secondary);font-weight:600;"><i class="fa-solid fa-people-arrows" style="color:var(--accent-gold);margin-right:4px;"></i>Cross-Chart Comparison (${primaryLabel} × Saved Profile):</span>
+                        ${badges}
+                    </div>`;
+                };
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -10115,14 +10151,16 @@
 
                     const processed = processStreamChunk(accumulatedText, manifestState);
                     const renderText = processed.cleanText;
+                    const bannerHtml = buildComparedBanner(processed.comparedProfiles);
 
-                    outputPane.innerHTML = formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
+                    outputPane.innerHTML = bannerHtml + formatMarkdown(renderText) + '<span class="typing-cursor"></span>';
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
 
                 const processed = processStreamChunk(accumulatedText, manifestState);
                 const renderText = processed.cleanText;
-                outputPane.innerHTML = formatMarkdown(renderText);
+                const bannerHtml = buildComparedBanner(processed.comparedProfiles);
+                outputPane.innerHTML = bannerHtml + formatMarkdown(renderText);
 
                 // Calculate and update session tokens
                 const requestTokens = 5000 + estimateTokens(messageText) + estimateTokens(JSON.stringify(aiChatHistory));
@@ -10133,7 +10171,7 @@
                 console.log(`[Session Token Count] Current message: ${totalMessageTokens} tokens (Req: ${requestTokens}, Resp: ${responseTokens}). Total Session: ${sessionTokenCount} tokens.`);
 
                 // Save to session memory
-                if (calculatedChartData) {
+                if (calculatedChartData || (currentUser && hasSavedProfiles)) {
                     aiChatHistory.push({ role: 'user', content: messageText });
                     aiChatHistory.push({ role: 'assistant', content: renderText });
                 }
@@ -13810,7 +13848,9 @@
                     const firstLine = temp.substring(0, firstLineEnd);
                     if (firstLine.startsWith('{"manifest":')) {
                         try {
-                            streamState.manifest = JSON.parse(firstLine).manifest;
+                            const parsed = JSON.parse(firstLine);
+                            streamState.manifest = parsed.manifest;
+                            streamState.comparedProfiles = parsed.compared_profiles || null;
                             streamState.prefixLength = stripped + firstLineEnd + 1;
                             currentActiveManifest = streamState.manifest;
                         } catch (e) {
@@ -13821,6 +13861,7 @@
             }
             return {
                 manifest: streamState.manifest,
+                comparedProfiles: streamState.comparedProfiles || null,
                 cleanText: streamState.manifest !== null
                     ? accumulatedText.substring(streamState.prefixLength)
                     : accumulatedText
@@ -14079,6 +14120,81 @@
 
         // Profile Manager helper functions
         let currentSelectedProfileId = 'self';
+        let savedProfilesForChat = [];
+        const selectedChatCompareIds = new Set();
+
+        function formatProfileRelBadge(c) {
+            const rel = (c.relationship || 'other').toLowerCase();
+            const alias = (c.profile_name || '').trim();
+            const g = (c.gender || 'male').toLowerCase();
+            let roleLabel = rel.toUpperCase();
+            if (rel === 'parent') {
+                roleLabel = g === 'female' ? 'MOTHER' : 'FATHER';
+            } else if (rel === 'spouse') {
+                roleLabel = g === 'female' ? 'WIFE · SPOUSE' : 'HUSBAND · SPOUSE';
+            }
+            if (alias && alias.toLowerCase() !== (c.name || '').toLowerCase() && alias.toLowerCase() !== rel) {
+                return `${roleLabel} (${alias})`;
+            }
+            return roleLabel;
+        }
+
+        function renderAIChatFamilyProfilesBar() {
+            const bar = document.getElementById('ai-family-profiles-bar');
+            const chipsList = document.getElementById('ai-family-chips-list');
+            const hintEl = document.getElementById('ai-family-selected-hint');
+            if (!bar || !chipsList) return;
+
+            if (!currentUser || !savedProfilesForChat.length) {
+                bar.style.display = 'none';
+                return;
+            }
+
+            const currentName = (document.getElementById('in-name')?.value || '').trim().toLowerCase();
+            const currentDob = (document.getElementById('in-dob')?.value || '').trim();
+
+            bar.style.display = 'block';
+            chipsList.innerHTML = savedProfilesForChat.map(c => {
+                const isPrimary = currentName && c.name.trim().toLowerCase() === currentName && (!currentDob || c.dob === currentDob);
+                const isSelected = selectedChatCompareIds.has(c.id);
+                const relBadge = escapeHtml(formatProfileRelBadge(c));
+                if (isPrimary) {
+                    return `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:18px;font-size:11px;background:rgba(212,175,55,0.22);border:1px solid var(--accent-gold);color:var(--accent-gold);font-weight:600;" title="Currently active primary chart">
+                        <i class="fa-solid fa-star"></i> ${escapeHtml(c.name)} <span style="font-size:9.5px;opacity:0.85;">[PRIMARY · ${relBadge}]</span>
+                    </div>`;
+                }
+                const bg = isSelected ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.04)';
+                const border = isSelected ? '1px solid var(--accent-gold)' : '1px solid var(--border-glass)';
+                const color = isSelected ? 'var(--accent-gold)' : 'var(--text-primary)';
+                const icon = isSelected ? 'fa-circle-check' : 'fa-user-plus';
+                return `<button type="button" onclick="toggleAIChatCompareProfile(${c.id})" style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:18px;font-size:11px;background:${bg};border:${border};color:${color};cursor:pointer;transition:all 0.2s;" title="Click to pin/unpin ${escapeHtml(c.name)} for cross-prediction, or simply mention '${escapeHtml(c.name)}' or '${relBadge}' in your chat message">
+                    <i class="fa-solid ${icon}" style="color:var(--accent-gold);"></i>
+                    <strong>${escapeHtml(c.name)}</strong>
+                    <span style="font-size:9.5px;opacity:0.8;">(${relBadge})</span>
+                </button>`;
+            }).join('');
+
+            if (hintEl) {
+                if (selectedChatCompareIds.size > 0) {
+                    const pinnedNames = savedProfilesForChat
+                        .filter(c => selectedChatCompareIds.has(c.id))
+                        .map(c => c.name)
+                        .join(', ');
+                    hintEl.innerHTML = `<strong style="color:var(--accent-gold);"><i class="fa-solid fa-thumbtack"></i> Pinned for cross-prediction: ${escapeHtml(pinnedNames)}</strong>`;
+                } else {
+                    hintEl.innerText = 'Auto-detects Wife/Spouse, Father/Appa, Mother/Amma, or Name in your question';
+                }
+            }
+        }
+
+        function toggleAIChatCompareProfile(chartId) {
+            if (selectedChatCompareIds.has(chartId)) {
+                selectedChatCompareIds.delete(chartId);
+            } else {
+                selectedChatCompareIds.add(chartId);
+            }
+            renderAIChatFamilyProfilesBar();
+        }
 
         async function refreshProfileChips() {
             const container = document.getElementById('profile-chips-container');
@@ -14087,6 +14203,8 @@
 
             if (!currentUser) {
                 section.style.display = 'none';
+                savedProfilesForChat = [];
+                renderAIChatFamilyProfilesBar();
                 return;
             }
 
@@ -14107,18 +14225,21 @@
                 });
                 if (res.ok) {
                     const charts = await res.json();
+                    savedProfilesForChat = charts || [];
                     charts.forEach(c => {
                         const chipActive = currentSelectedProfileId === c.id ? 'active' : '';
+                        const relLabel = formatProfileRelBadge(c);
                         html += `
                             <div class="profile-chip ${chipActive}" id="profile-chip-${c.id}" onclick="selectProfile(${JSON.stringify(c).replace(/"/g, '&quot;')})">
                                 <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
                                 <div style="display: flex; flex-direction: column;">
                                     <span class="profile-name">${c.name}</span>
-                                    <span class="profile-rel">${c.relationship.toUpperCase()}</span>
+                                    <span class="profile-rel">${relLabel}</span>
                                 </div>
                             </div>
                         `;
                     });
+                    renderAIChatFamilyProfilesBar();
                 }
             } catch (e) {
                 console.error("Error loading profile chips:", e);
@@ -14137,13 +14258,24 @@
                 const chip = document.getElementById('profile-chip-self');
                 if (chip) chip.classList.add('active');
                 
-                if (currentUser) {
+                const savedSelf = (savedProfilesForChat || []).find(c => (c.relationship || '').toLowerCase() === 'self');
+                if (savedSelf) {
+                    document.getElementById('in-name').value = savedSelf.name || (currentUser && currentUser.full_name) || "Self";
+                    document.getElementById('in-dob').value = savedSelf.dob || "";
+                    document.getElementById('in-tob').value = savedSelf.tob || "";
+                    document.getElementById('in-pob').value = savedSelf.pob || "";
+                    document.getElementById('in-lat').value = savedSelf.latitude || "";
+                    document.getElementById('in-lon').value = savedSelf.longitude || "";
+                    document.getElementById('in-gender').value = savedSelf.gender || "male";
+                    document.getElementById('in-relationship').value = "self";
+                    document.getElementById('in-profile-name').value = savedSelf.profile_name || "Self";
+                } else if (currentUser) {
                     document.getElementById('in-name').value = currentUser.full_name || "Self";
                     document.getElementById('in-dob').value = currentUser.dob || "";
                     document.getElementById('in-tob').value = currentUser.tob || "";
-                    document.getElementById('in-pob').value = currentUser.location_name || "";
-                    document.getElementById('in-lat').value = currentUser.latitude || "";
-                    document.getElementById('in-lon').value = currentUser.longitude || "";
+                    document.getElementById('in-pob').value = currentUser.birth_place || currentUser.location_name || "";
+                    document.getElementById('in-lat').value = (currentUser.birth_latitude ?? currentUser.latitude) || "";
+                    document.getElementById('in-lon').value = (currentUser.birth_longitude ?? currentUser.longitude) || "";
                     document.getElementById('in-gender').value = currentUser.gender || "male";
                     document.getElementById('in-relationship').value = "self";
                     document.getElementById('in-profile-name').value = "Self";
@@ -14166,6 +14298,7 @@
                 if (profile.chart_style) document.getElementById('in-style').value = profile.chart_style;
             }
             
+            renderAIChatFamilyProfilesBar();
             generateBirthChart();
         }
 

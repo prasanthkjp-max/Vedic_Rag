@@ -1,6 +1,8 @@
 """AI domain: every streamed, RAG-grounded LLM reading — natal/marriage
 prediction, chat, varshaphala, remedies, compatibility, and prashna."""
 import hashlib
+import re
+from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from typing import List, Literal, Optional
 
@@ -28,6 +30,7 @@ from src.engines.prediction_engine import (
     build_remedy_queries,
     build_varshaphala_queries,
     build_compatibility_analysis,
+    build_cross_chart_comparison,
     classify_prashna_question,
     build_prashna_analysis,
     build_prashna_queries,
@@ -317,13 +320,386 @@ class AIChatMessage(BaseModel):
     content: str = Field(max_length=65536)
 
 class AIChatRequest(BaseModel):
-    chart_data: dict
-    client_name: str = Field(max_length=200)
-    place_name: str = Field(max_length=200)
+    chart_data: Optional[dict] = None
+    client_name: str = Field(default="", max_length=200)
+    place_name: str = Field(default="", max_length=200)
     query: str = Field(max_length=4000)
     model: str = DEFAULT_LLM_MODEL
     history: list[AIChatMessage] = Field(default=[], max_length=50)
     lang: LangCode = "en"
+    comparison_chart_ids: list[int] = Field(default=[], max_length=10)
+
+
+_PROFILE_CHART_CACHE: OrderedDict = OrderedDict()
+_PROFILE_CHART_CACHE_MAX = 128
+
+_FATHER_ALIASES = {
+    "father", "dad", "daddy", "appa", "papa", "pitru", "pita", "pitaji",
+    "thandhai", "nanna", "acchan", "tande", "அப்பா", "தந்தை", "నాన్న",
+    "తండ్రి", "पिता", "पापा", "അച്ഛൻ", "ತಂದೆ", "ಅಪ್ಪ",
+}
+_MOTHER_ALIASES = {
+    "mother", "mom", "mummy", "mama", "amma", "matru", "mata", "mataji",
+    "thai", "thalli", "ammachi", "tayi", "அம்மா", "தாய்", "అమ్మ", "తల్లి",
+    "माता", "माँ", "मम्मी", "അമ്മ", "ತಾಯಿ", "ಅಮ್ಮ",
+}
+_SPOUSE_ALIASES = {
+    "spouse", "wife", "husband", "partner", "better half", "manaivi",
+    "patni", "pati", "kalatra", "bharya", "ardhangini", "bharta",
+    "மனைவி", "கணவர்", "துணைவர்", "భార్య", "భర్త", "पत्नी", "बीवी", "पति",
+    "ഭാര്യ", "ഭർത്താവ്", "ಹೆಂಡತಿ", "ಪತ್ನಿ", "ಗಂಡ", "ಪತಿ",
+}
+_SPOUSE_CONTEXT_PHRASES = {
+    "married life", "marriage life", "marital", "marriage compatibility",
+    "porutham", "koota", "synastry", "both of us", "our charts",
+    "between us", "we both", "our marriage", "my marriage with",
+}
+_CHILD_ALIASES = {
+    "child", "children", "kid", "kids", "son", "daughter", "putra", "putri",
+    "magan", "magal", "beta", "beti", "koduku", "kuthuru", "மகன்", "மகள்",
+    "குழந்தை", "కొడుకు", "కూతురు", "बेटा", "पुत्र", "बेटी", "पुत्री", "മകൻ",
+    "മകൾ", "ಮಗ", "ಮಗಳು",
+}
+_SON_ONLY_ALIASES = {"son", "putra", "magan", "beta", "koduku", "மகன்", "కొడుకు", "बेटा", "पुत्र", "മകൻ", "ಮಗ"}
+_DAUGHTER_ONLY_ALIASES = {"daughter", "putri", "magal", "beti", "kuthuru", "மகள்", "కూతురు", "बेटी", "पुत्री", "മകൾ", "ಮಗಳು"}
+_SIBLING_ALIASES = {
+    "sibling", "siblings", "brother", "sister", "anna", "thambi", "akka",
+    "thangai", "bhai", "behen", "thammudu", "chelli", "சகோதரன்", "அண்ணன்",
+    "தம்பி", "சகோதரி", "அக்கா", "தங்கை", "भाई", "बहन",
+}
+_FRIEND_ALIASES = {"friend", "friends", "best friend", "mitra", "nanban", "dost", "snehithudu"}
+_SELF_ALIASES = {"self", "myself", "my chart", "my own chart", "compare with me", "compare with my"}
+_PARENT_COLLECTIVE = {
+    "parent", "parents", "my parents", "mom and dad", "dad and mom",
+    "father and mother", "mother and father", "amma and appa", "appa and amma",
+    "amma appa", "appa amma", "பெற்றோர்",
+}
+_FAMILY_COLLECTIVE = {
+    "family", "my family", "all profiles", "saved profiles", "whole family",
+    "everyone in family", "family members", "family charts",
+}
+
+
+def _canonical_relationship_info(rel: str, gender: str, profile_name: str):
+    """Derive canonical relationship role, human-readable label, and keyword set
+    for matching a saved profile when a user invokes it by relationship or alias."""
+    r = (rel or "other").strip().lower()
+    g = (gender or "male").strip().lower()
+    alias_words = {
+        w.lower()
+        for w in re.split(r"[\s,()/.-]+", (profile_name or "").strip())
+        if w
+    }
+
+    if r == "father" or (r == "parent" and g == "male") or (alias_words & _FATHER_ALIASES):
+        canonical = "father"
+        display = "father (parent)" if r == "parent" else "father"
+        keywords = set(_FATHER_ALIASES) | _PARENT_COLLECTIVE
+    elif r == "mother" or (r == "parent" and g == "female") or (alias_words & _MOTHER_ALIASES):
+        canonical = "mother"
+        display = "mother (parent)" if r == "parent" else "mother"
+        keywords = set(_MOTHER_ALIASES) | _PARENT_COLLECTIVE
+    elif r == "parent":
+        canonical = "parent"
+        display = "parent"
+        keywords = set(_FATHER_ALIASES) | set(_MOTHER_ALIASES) | _PARENT_COLLECTIVE
+    elif r in ("spouse", "wife", "husband") or (alias_words & _SPOUSE_ALIASES):
+        if g == "female" or r == "wife":
+            canonical = "wife"
+            display = "wife (spouse)"
+        elif g == "male" or r == "husband":
+            canonical = "husband"
+            display = "husband (spouse)"
+        else:
+            canonical = "spouse"
+            display = "spouse"
+        keywords = set(_SPOUSE_ALIASES) | _SPOUSE_CONTEXT_PHRASES
+    elif r in ("child", "son", "daughter") or (alias_words & _CHILD_ALIASES):
+        if g == "male" or r == "son" or (alias_words & _SON_ONLY_ALIASES):
+            canonical = "son"
+            display = "son (child)"
+            keywords = set(_SON_ONLY_ALIASES) | {"child", "children", "kid", "kids", "குழந்தை"}
+        elif g == "female" or r == "daughter" or (alias_words & _DAUGHTER_ONLY_ALIASES):
+            canonical = "daughter"
+            display = "daughter (child)"
+            keywords = set(_DAUGHTER_ONLY_ALIASES) | {"child", "children", "kid", "kids", "குழந்தை"}
+        else:
+            canonical = "child"
+            display = "child"
+            keywords = set(_CHILD_ALIASES)
+    elif r in ("sibling", "brother", "sister") or (alias_words & _SIBLING_ALIASES):
+        canonical = "brother" if g == "male" else ("sister" if g == "female" else "sibling")
+        display = f"{canonical} (sibling)" if canonical != "sibling" else "sibling"
+        keywords = set(_SIBLING_ALIASES)
+    elif r == "friend" or (alias_words & _FRIEND_ALIASES):
+        canonical = "friend"
+        display = "friend"
+        keywords = set(_FRIEND_ALIASES)
+    elif r == "self":
+        canonical = "self"
+        display = "self"
+        keywords = set(_SELF_ALIASES)
+    else:
+        canonical = r or "other"
+        display = r or "other"
+        keywords = {r} if r and r != "other" else set()
+
+    if profile_name and profile_name.strip().lower() not in (display.lower(), ""):
+        display = f"{display} [alias: {profile_name.strip()}]"
+
+    return canonical, display, keywords
+
+
+def _load_user_saved_profiles(user_id: int):
+    """Load a user's saved profiles (`is_saved = 1` + account `self` birth profile)
+    and deduplicated calculation history profiles (`is_saved = 0`) from SQLite."""
+    conn = connect_db(DB_PATH)
+    try:
+        rows = conn.execute(
+            "SELECT id, name, dob, tob, pob, latitude, longitude, gender, ayanamsa, "
+            "is_saved, relationship, profile_name "
+            "FROM user_charts WHERE user_id = ? "
+            "ORDER BY is_saved DESC, created_at DESC",
+            (user_id,),
+        ).fetchall()
+        user_row = conn.execute(
+            "SELECT full_name, dob, tob, COALESCE(birth_place, location_name), "
+            "COALESCE(birth_latitude, latitude), COALESCE(birth_longitude, longitude), gender "
+            "FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    saved_profiles = []
+    history_profiles = []
+    seen_keys = set()
+
+    for r in rows:
+        cid, name, dob, tob, pob, lat, lon, gender, ayan, is_saved, rel, prof_name = r
+        if not name or not dob or not tob or lat is None or lon is None:
+            continue
+        dedup_key = (name.strip().lower(), dob.strip(), tob.strip()[:5])
+        if dedup_key in seen_keys:
+            continue
+        seen_keys.add(dedup_key)
+
+        canonical_rel, display_rel, match_keywords = _canonical_relationship_info(
+            rel or "other", gender or "male", prof_name or ""
+        )
+        entry = {
+            "id": cid,
+            "name": name.strip(),
+            "dob": dob.strip(),
+            "tob": tob.strip(),
+            "pob": (pob or "").strip() or "Unknown",
+            "lat": float(lat),
+            "lon": float(lon),
+            "gender": (gender or "male").strip().lower(),
+            "ayanamsa": (ayan or "Lahiri").strip(),
+            "is_saved": int(is_saved or 0),
+            "relationship": (rel or "other").strip().lower(),
+            "canonical_relationship": canonical_rel,
+            "display_relationship": display_rel,
+            "profile_name": (prof_name or "").strip(),
+            "match_keywords": match_keywords,
+        }
+        if entry["is_saved"] == 1:
+            saved_profiles.append(entry)
+        else:
+            history_profiles.append(entry)
+
+    # Include account-level birth profile ("self") if not already in user_charts
+    if user_row:
+        u_name, u_dob, u_tob, u_place, u_lat, u_lon, u_gender = user_row
+        if u_dob and u_tob and u_lat is not None and u_lon is not None:
+            u_key = ((u_name or "Self").strip().lower(), u_dob.strip(), u_tob.strip()[:5])
+            if u_key not in seen_keys:
+                seen_keys.add(u_key)
+                canonical_rel, display_rel, match_keywords = _canonical_relationship_info(
+                    "self", u_gender or "male", "Self"
+                )
+                saved_profiles.insert(0, {
+                    "id": 0,
+                    "name": (u_name or "Self").strip(),
+                    "dob": u_dob.strip(),
+                    "tob": u_tob.strip(),
+                    "pob": (u_place or "Unknown").strip(),
+                    "lat": float(u_lat),
+                    "lon": float(u_lon),
+                    "gender": (u_gender or "male").strip().lower(),
+                    "ayanamsa": "Lahiri",
+                    "is_saved": 1,
+                    "relationship": "self",
+                    "canonical_relationship": canonical_rel,
+                    "display_relationship": display_rel,
+                    "profile_name": "Self",
+                    "match_keywords": match_keywords,
+                })
+
+    return saved_profiles, history_profiles[:20]
+
+
+def _compute_cached_profile_chart(profile: dict):
+    """Compute (or return from bounded LRU cache) the full astrological chart for a saved profile."""
+    bdate, bh, bm = _parse_dob_tob(profile["dob"], profile["tob"])
+    cache_key = (
+        bdate.isoformat(),
+        bh,
+        bm,
+        round(float(profile["lat"]), 4),
+        round(float(profile["lon"]), 4),
+        profile.get("ayanamsa") or "Lahiri",
+        profile.get("gender") or "male",
+    )
+    cached = _PROFILE_CHART_CACHE.get(cache_key)
+    if cached is not None:
+        _PROFILE_CHART_CACHE.move_to_end(cache_key)
+        return cached
+
+    chart = get_astrological_chart(
+        bdate.year,
+        bdate.month,
+        bdate.day,
+        bh,
+        bm,
+        float(profile["lon"]),
+        float(profile["lat"]),
+        profile.get("ayanamsa") or "Lahiri",
+        gender=profile.get("gender") or "male",
+    )
+    _PROFILE_CHART_CACHE[cache_key] = chart
+    if len(_PROFILE_CHART_CACHE) > _PROFILE_CHART_CACHE_MAX:
+        _PROFILE_CHART_CACHE.popitem(last=False)
+    return chart
+
+
+def _keyword_in_text(keyword: str, text_lower: str) -> bool:
+    """Match a keyword or phrase in `text_lower` using word boundaries for ASCII
+    tokens so short terms like 'son' or 'mom' never false-match inside words
+    like 'person', 'comparison', or 'moment'."""
+    kw = keyword.strip().lower()
+    if not kw:
+        return False
+    if re.match(r"^[a-z0-9 ]+$", kw):
+        pattern = r"\b" + re.escape(kw) + r"(?:'s|’s|s)?\b"
+        return bool(re.search(pattern, text_lower))
+    return kw in text_lower
+
+
+def _profile_name_in_text(profile: dict, text_lower: str) -> bool:
+    """Return True if the profile's full name, alias (`profile_name`), or any
+    distinctive name token (>= 3 chars) is mentioned in `text_lower`."""
+    candidates = []
+    for raw in (profile.get("name", ""), profile.get("profile_name", "")):
+        cleaned = raw.strip().lower()
+        if cleaned and cleaned not in ("self", "other", "parent", "spouse", "child", "friend"):
+            candidates.append(cleaned)
+            for tok in re.split(r"[\s,()/.-]+", cleaned):
+                if len(tok) >= 3 and tok not in ("the", "and", "mrs", "sri", "smt", "kum", "devi", "kumar", "rao"):
+                    candidates.append(tok)
+    return any(_keyword_in_text(c, text_lower) for c in candidates)
+
+
+def resolve_referenced_profiles(
+    saved_profiles: list[dict],
+    history_profiles: list[dict],
+    primary_name: str,
+    primary_dob: str,
+    query_text: str,
+    history: list[AIChatMessage] = None,
+    explicit_ids: list[int] = None,
+    max_matches: int = 4,
+) -> list[dict]:
+    """Identify which saved (or recent history) profiles are invoked by ID, name,
+    alias, or relationship in the user's chat query (or recent conversation turns)."""
+    prim_name_norm = (primary_name or "").strip().lower()
+    prim_dob_norm = (primary_dob or "").strip()[:10]
+
+    def _is_primary(p: dict) -> bool:
+        p_name = p["name"].strip().lower()
+        p_dob = p["dob"].strip()[:10]
+        if prim_name_norm and p_name == prim_name_norm and (not prim_dob_norm or p_dob == prim_dob_norm):
+            return True
+        return False
+
+    # Determine if the currently active primary chart is a non-self profile (e.g. Spouse),
+    # so the 'self' profile can also be matched via spouse/husband/wife keywords.
+    primary_rel = "self"
+    for sp in saved_profiles:
+        if _is_primary(sp):
+            primary_rel = sp.get("canonical_relationship", "self")
+            break
+
+    matched = []
+    matched_keys = set()
+
+    def _add(p: dict):
+        key = (p["name"].lower(), p["dob"], p["tob"][:5])
+        if key not in matched_keys and len(matched) < max_matches:
+            matched_keys.add(key)
+            matched.append(p)
+
+    all_profiles = saved_profiles + history_profiles
+    explicit_set = set(explicit_ids or [])
+
+    # 1. Explicit chart IDs selected via UI chips
+    if explicit_set:
+        for p in all_profiles:
+            if p.get("id") in explicit_set:
+                _add(p)
+
+    def _scan_text(text: str, allow_collective: bool = True):
+        t_low = (text or "").lower()
+        if not t_low.strip():
+            return
+
+        # Collective family reference -> include all saved profiles
+        if allow_collective and any(_keyword_in_text(kw, t_low) for kw in _FAMILY_COLLECTIVE):
+            for sp in saved_profiles:
+                if not _is_primary(sp):
+                    _add(sp)
+
+        # Direct Name / Alias match across saved profiles first, then history profiles
+        for p in saved_profiles:
+            if not _is_primary(p) and _profile_name_in_text(p, t_low):
+                _add(p)
+
+        # Relationship keyword match across saved profiles
+        for sp in saved_profiles:
+            if _is_primary(sp):
+                continue
+            kws = set(sp.get("match_keywords") or set())
+            if sp.get("canonical_relationship") == "self" and primary_rel in ("wife", "husband", "spouse"):
+                kws = kws | _SPOUSE_ALIASES | _SPOUSE_CONTEXT_PHRASES
+            if any(_keyword_in_text(kw, t_low) for kw in kws):
+                _add(sp)
+
+        # Name match in history profiles (if user calculated a friend/relative chart without clicking Save)
+        for hp in history_profiles:
+            if not _is_primary(hp) and _profile_name_in_text(hp, t_low):
+                _add(hp)
+
+    # 2. Scan the current user query
+    _scan_text(query_text, allow_collective=True)
+
+    # 3. If the current query uses follow-up comparison/pronoun cues (or no profile was
+    # matched yet in a follow-up turn), scan the last 2 user messages from history.
+    if history:
+        q_low = (query_text or "").lower()
+        followup_cues = (
+            "both", "compare", "comparison", "her ", "his ", "their ", "between",
+            "together", "each other", "match", "compatibility", "synastry",
+            "wife", "husband", "spouse", "father", "mother", "appa", "amma",
+        )
+        if not matched or any(cue in q_low for cue in followup_cues):
+            recent_user_msgs = [m.content for m in history if m.role == "user"][-2:]
+            for prev_text in reversed(recent_user_msgs):
+                if len(matched) >= max_matches:
+                    break
+                _scan_text(prev_text, allow_collective=False)
+
+    return matched
 
 
 # --- app.py:2998-3135 ---
@@ -331,30 +707,201 @@ class AIChatRequest(BaseModel):
 def ai_predict_chat(req: AIChatRequest, raw_req: Request):
     """
     Streams a real-time Ganesha Astro-AI chat response based on custom RAG books 
-    retrieval and birth placements.
+    retrieval, the primary native's birth placements, AND any saved family/personal
+    profiles invoked by name, alias, or relationship for cross-prediction.
     """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
-    # Validate chart_data shape before charging credits so malformed input gets a
-    # clean 400 (not a 200 event-stream carrying a cryptic "Invalid chart_data" error).
-    for k in ("metadata", "panchangam"):
-        if k not in req.chart_data:
-            raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
+    # If chart_data is explicitly passed as a non-empty dict, validate its shape
+    # before charging credits so malformed input gets a clean 400.
+    if req.chart_data is not None and len(req.chart_data) > 0:
+        for k in ("metadata", "panchangam"):
+            if k not in req.chart_data:
+                raise HTTPException(status_code=400, detail=f"chart_data missing required key: {k}")
+
+    prelim_user = get_user_by_session(token)
+    if not prelim_user:
+        raise HTTPException(status_code=401, detail="Session expired or not authenticated. Please sign in.")
+
+    saved_profiles, history_profiles = _load_user_saved_profiles(prelim_user["id"])
+
+    chart = req.chart_data if (req.chart_data and "metadata" in req.chart_data) else None
+    client = (req.client_name or "").strip()
+    place = (req.place_name or "").strip()
+
+    # If the user opened AI Chat without calculating a chart first, auto-resolve
+    # their primary chart from their saved 'self' profile (or first saved profile).
+    if chart is None:
+        if req.chart_data is not None and len(req.chart_data) == 0 and not saved_profiles:
+            raise HTTPException(status_code=400, detail="chart_data missing required key: metadata")
+        primary_prof = next(
+            (p for p in saved_profiles if p.get("canonical_relationship") == "self"),
+            saved_profiles[0] if saved_profiles else None,
+        )
+        if not primary_prof:
+            raise HTTPException(status_code=400, detail="chart_data missing required key: metadata")
+        try:
+            chart = _compute_cached_profile_chart(primary_prof)
+            client = client or primary_prof["name"]
+            place = place or primary_prof["pob"]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Could not compute saved profile chart: {e}")
+
+    client = client or prelim_user.get("full_name") or "Native"
+    place = place or prelim_user.get("birth_place") or prelim_user.get("location_name") or "Birth Place"
+
     user = check_credits_or_raise(token, CREDIT_COST_AI_PREDICT, "ai_predict_chat")
-    chart = req.chart_data
-    client = req.client_name
-    place = req.place_name
     query_text = req.query
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     history = req.history
     target_lang = _LANG_MAP.get(req.lang, "English")
 
     def prompt_builder():
-        # Validate and build context inside the deferred callback
         try:
-            analysis_text, rag_context, raw_passages = build_prediction_context(chart, extra_queries=[query_text])
-            birth_dt = chart['metadata']['datetime']
+            birth_dt = chart["metadata"]["datetime"]
+            primary_dob = str(birth_dt).split(" ")[0]
         except Exception as e:
             raise ValueError(f"Invalid chart_data: {e}")
+
+        today = date.today()
+
+        # 1. Build a compact roster of all saved profiles in the user's account so the
+        # AI always knows the family members on file (even before deep comparison).
+        roster_lines = []
+        for sp in saved_profiles:
+            try:
+                sp_chart = _compute_cached_profile_chart(sp)
+                sp_lagna = sp_chart["placements"]["Lagna"]
+                sp_moon = sp_chart["placements"]["Moon"]
+                sp_naks = sp_chart.get("panchangam", {}).get("nakshatra") or sp_moon.get("nakshatra", "—")
+                sp_dasa = get_current_dasa(sp_chart.get("dasas", []), today)
+                dasa_str = (
+                    f"{sp_dasa['mahadasa']} Mahadasa / {sp_dasa.get('antardasa') or '—'} Bhukti"
+                    if sp_dasa.get("mahadasa")
+                    else "—"
+                )
+                roster_lines.append(
+                    f"- {sp['name']} (Relationship: {sp['display_relationship'].upper()}, Gender: {sp['gender'].capitalize()}): "
+                    f"Born {sp['dob']} {sp['tob']} in {sp['pob']} | "
+                    f"Lagna: {sp_lagna['rasi_name']} ({sp_lagna['degree']:.2f}°) | "
+                    f"Moon: {sp_moon['rasi_name']} ({sp_moon['degree']:.2f}°), Nakshatra: {sp_naks} | "
+                    f"Running Dasa: {dasa_str}"
+                )
+            except Exception as e:
+                logger.warning("Skipping saved profile %s in roster: %s", sp.get("name"), e)
+
+        saved_roster_section = ""
+        if roster_lines:
+            saved_roster_section = (
+                "\n--- SAVED FAMILY & PERSONAL PROFILES IN USER'S ACCOUNT ---\n"
+                + "\n".join(roster_lines)
+                + "\n"
+            )
+
+        # 2. Resolve any saved/history profiles invoked by name, alias, relationship, or chip ID
+        referenced_profiles = resolve_referenced_profiles(
+            saved_profiles=saved_profiles,
+            history_profiles=history_profiles,
+            primary_name=client,
+            primary_dob=primary_dob,
+            query_text=query_text,
+            history=history,
+            explicit_ids=req.comparison_chart_ids,
+        )
+
+        extra_queries = [query_text]
+        cross_chart_sections = []
+        compared_meta = []
+
+        for ref_prof in referenced_profiles:
+            try:
+                ref_chart = _compute_cached_profile_chart(ref_prof)
+                ref_transit = None
+                try:
+                    ref_transit = get_astrological_chart(
+                        today.year, today.month, today.day, 12, 0,
+                        float(ref_prof["lon"]), float(ref_prof["lat"]),
+                        ref_prof.get("ayanamsa") or "Lahiri", light=True,
+                    )
+                except Exception:
+                    pass
+                ref_analysis = build_analysis(ref_chart, transit_chart=ref_transit, ref_date=today)
+                cross_text = build_cross_chart_comparison(
+                    primary_chart=chart,
+                    primary_name=client,
+                    other_chart=ref_chart,
+                    other_name=ref_prof["name"],
+                    relationship=ref_prof["display_relationship"],
+                    ref_date=today,
+                )
+                ref_panch = ref_chart.get("panchangam", {})
+                cross_chart_sections.append(
+                    f"=== INVOKED SAVED PROFILE: {ref_prof['name']} "
+                    f"(Relationship to {client}: {ref_prof['display_relationship'].upper()}) ===\n"
+                    f"Birth Details: Born {ref_prof['dob']} at {ref_prof['tob']} in {ref_prof['pob']} "
+                    f"(Lat: {ref_prof['lat']}, Lon: {ref_prof['lon']}, Gender: {ref_prof['gender']})\n"
+                    f"Birth Panchangam: Nakshatra: {ref_panch.get('nakshatra', '—')} | "
+                    f"Tithi: {ref_panch.get('tithi', '—')} | Yogam: {ref_panch.get('yogam', '—')}\n\n"
+                    f"--- COMPUTED VEDIC CHART ANALYSIS FOR {ref_prof['name'].upper()} ---\n"
+                    f"{ref_analysis['analysis_text']}\n\n"
+                    f"{cross_text}"
+                )
+                # Add targeted RAG queries for the invoked profile & relationship
+                extra_queries.extend(build_rag_queries(ref_chart, ref_analysis, max_queries=4))
+                if ref_prof["canonical_relationship"] in ("wife", "husband", "spouse"):
+                    p_naks = chart.get("panchangam", {}).get("nakshatra", "")
+                    r_naks = ref_panch.get("nakshatra", "")
+                    extra_queries.append(f"marriage compatibility Koota Porutham {p_naks} {r_naks} seventh house")
+                    extra_queries.append("seventh house lord Upapada Lagna Darakaraka spouse harmony")
+                elif ref_prof["canonical_relationship"] == "father":
+                    extra_queries.append("ninth house Pitru bhava Sun Dwadashamsha father results")
+                elif ref_prof["canonical_relationship"] == "mother":
+                    extra_queries.append("fourth house Matru bhava Moon Dwadashamsha mother results")
+                elif ref_prof["canonical_relationship"] in ("child", "son", "daughter"):
+                    extra_queries.append("fifth house Putra bhava Jupiter Saptamsha progeny results")
+
+                ref_cd = ref_analysis.get("current_dasa", {})
+                compared_meta.append({
+                    "id": ref_prof.get("id"),
+                    "name": ref_prof["name"],
+                    "relationship": ref_prof["display_relationship"],
+                    "canonical_relationship": ref_prof["canonical_relationship"],
+                    "lagna": ref_chart["placements"]["Lagna"]["rasi_name"],
+                    "moon": ref_chart["placements"]["Moon"]["rasi_name"],
+                    "nakshatra": ref_panch.get("nakshatra", ""),
+                    "mahadasa": ref_cd.get("mahadasa") or "",
+                    "antardasa": ref_cd.get("antardasa") or "",
+                })
+            except Exception as e:
+                logger.warning("Failed to build cross-chart analysis for %s: %s", ref_prof.get("name"), e)
+
+        try:
+            analysis_text, rag_context, raw_passages = build_prediction_context(chart, extra_queries=extra_queries)
+        except Exception as e:
+            raise ValueError(f"Invalid chart_data: {e}")
+
+        cross_chart_block = ""
+        cross_chart_instructions = ""
+        if cross_chart_sections:
+            compared_names = ", ".join(
+                f"{m['name']} ({m['relationship']})" for m in compared_meta
+            )
+            cross_chart_block = (
+                "\n\n--- INVOKED SAVED PROFILE(S) & CROSS-CHART COMPARISON DATA ---\n"
+                + "\n\n".join(cross_chart_sections)
+                + "\n--------------------------------------------------------------\n"
+            )
+            cross_chart_instructions = f"""
+CROSS-PREDICTION & MULTI-CHART COMPARISON DIRECTIVE (ACTIVE FOR THIS QUERY):
+The user has invoked or referenced saved profile(s): {compared_names}.
+Both {client}'s complete computed chart AND the complete computed chart(s) + cross-chart synastry/compatibility analysis for {compared_names} are provided verbatim above under `INVOKED SAVED PROFILE(S) & CROSS-CHART COMPARISON DATA`.
+- NEVER claim that you do not have the birth chart, placements, or Dasa details of {compared_names} — they are fully computed and provided above!
+- Read every placement, house (bhava), divisional chart (D1..D60), Shadbala, Ashtakavarga, Jaimini Karaka, Arudha Pada, Koota/Porutham score, and running Vimshottari Dasa-Bhukti-Antaram for BOTH {client} and {compared_names} directly from the computed sections above.
+- Structure your response to directly answer {client}'s question by synthesizing:
+  1. **Individual Chart Signatures & Relevant Bhavas** for {client} and {compared_names} (Lagna, Moon sign, Nakshatra, key Yogas, and relational houses such as 7th/UL for spouse, 9th/D12 for father, 4th/D12 for mother, 5th/D7 for child).
+  2. **Cross-Chart Synastry, Compatibility & Planetary Overlays** (Lagna-to-Lagna axis, Moon-to-Moon relation, how each person's Grahas occupy/aspect the other's houses, and Koota/Porutham/Kuja Dosha when comparing with spouse).
+  3. **Synchronized Dasa–Bhukti–Antaram & Gochara Timing** (how both natives' current planetary periods and transits interact right now and in upcoming periods).
+  4. **Synthesized Verdict & Classical Remedies (Parihara)** for harmony, prosperity, and well-being, citing the retrieved classical texts inline ([1], [2], ...).
+"""
 
         # Format the conversation history if present. Cap it to the most recent
         # CHAT_HISTORY_TURNS turns (user+assistant pairs) so a long thread can't
@@ -370,12 +917,20 @@ def ai_predict_chat(req: AIChatRequest, raw_req: Request):
                 history_text += f"{role_label}: {msg.content}\n"
             history_text += "----------------------------\n"
 
+        format_rule = (
+            f"- Format: Structure the reading clearly to address {client}'s cross-chart / comparative inquiry across {client} and {', '.join(m['name'] for m in compared_meta)}: "
+            "(1) Individual Ascendant, Moon & Key Placements of Both Natives, (2) Cross-Chart Synastry & Bhava Overlays / Compatibility, "
+            "(3) Combined Dasa–Bhukti & Transit Timing, (4) Direct Synthesis & Classical Remedies. Speak directly to {client}."
+            if compared_meta
+            else f"- Format: Present the reading in clear sections tailored to {client}'s question (covering relevant Ascendant/Core Strength, Bhavas/Yogas, Vargas/Strengths, and Current Dasa-Bhukti/Transit Timing). Speak directly to {client}."
+        )
+
         prompt = f"""Role & Persona: You are an enlightened Master of Vedic Astrology (Jyotisha), possessing the combined wisdom of Maharshi Parasara, Vaidyanatha Dikshita, Kalyana Varma, and Mantreswara. Your purpose is to provide highly accurate, classical astrological predictions based strictly on the retrieved scriptures (Brihat Parasara Hora Sastra, Jataka Parijata, Saravali, and Phaladeepika) and the provided computed chart analysis. You do not use modern, western, or unverified astrological systems. Your tone is scholarly, objective, and deeply analytical.
 
 You are in a live chat session with {client}, born at {birth_dt} in {place}.
 
 CARDINAL RULE — GROUND EVERYTHING IN THE COMPUTED DATA BELOW:
-The COMPUTED VEDIC CHART ANALYSIS below already contains the exact, precisely-calculated data for this native. It provides, and you must read verbatim from it:
+The COMPUTED VEDIC CHART ANALYSIS below already contains the exact, precisely-calculated data for {client} (and for any saved family/personal profiles invoked in this chat). It provides, and you must read verbatim from it:
 - The Rasi (D1) chart: Lagna and every Graha's bhava (house), rasi (sign), degree, dignity, retrograde/combust state.
 - Divisional charts actually computed for each body: D2 (Hora), D3 (Drekkana), D4 (Chaturthamsa), D7 (Saptamsa), D9 (Navamsha), D10 (Dashamsha), D12 (Dwadashamsha), D30 (Trishamsha), D60 (Shastiamsha), plus Vimsopaka Bala (/20).
 - Planetary Avasthas (Baladi, Jagradadi, Deeptadi, Sayanadi), Arudha Padas (A1/AL through A12/UL), and the 22nd Drekkana (Khara Drekkana) with its Saravali classification.
@@ -388,11 +943,11 @@ The COMPUTED VEDIC CHART ANALYSIS below already contains the exact, precisely-ca
 
 You MUST NOT invent, alter, shift, or guess any planet's house, sign, degree, aspect, conjunction, dignity, or strength. Use ONLY what is given in the computed analysis below. Never ask the user to supply chart data; it is all below.
 
-The calculated astrological data for {client} and retrieved classical scriptural excerpts are provided below.
+The calculated astrological data for {client}, saved family profile data, and retrieved classical scriptural excerpts are provided below.
 
---- COMPUTED VEDIC CHART ANALYSIS ---
+--- COMPUTED VEDIC CHART ANALYSIS FOR {client.upper()} (PRIMARY NATIVE) ---
 {analysis_text}
-
+{saved_roster_section}{cross_chart_block}
 --- RETRIEVED CLASSICAL TEXT EXCERPTS ---
 {rag_context}
 ---------------------------------------------
@@ -400,9 +955,9 @@ The calculated astrological data for {client} and retrieved classical scriptural
 USER CHAT INQUIRY: {query_text}
 
 CRITICAL REQUIREMENT: Write the ENTIRE response — headings, labels, and body — in {target_lang}. This applies regardless of what language {client}'s question above was typed in (they may type in English for convenience while browsing the site in {target_lang}); always answer in {target_lang}. Do not switch to any other language, including languages that may appear in the retrieved classical text excerpts.
-
+{cross_chart_instructions}
 ANALYTICAL FRAMEWORK & STEP-BY-STEP INSTRUCTIONS:
-When analyzing a nativity, strictly follow this chronological framework, drawing rules from your retrieved classical knowledge base:
+When analyzing a nativity (or comparing two nativities), strictly follow this chronological framework, drawing rules from your retrieved classical knowledge base:
 
 Step 1: Foundational Planetary Strength & State (Avastha) Analysis
 - Dignity & Strength: Evaluate each planet's Sthaana (positional), Dig (directional), Kala (temporal), Cheshta (motional), Naisargika (natural), and Drik (aspectual) strengths, as well as Vimsopaka Bala (/20).
@@ -447,7 +1002,7 @@ OUTPUT GENERATION RULES:
 - Holistic Synthesis: Do not contradict yourself. If a planet is a Raja Yoga Karaka but is Astangata (combust), state clearly that the Yoga is nullified or severely weakened as per the rules of Yoga Bhanga.
 - Do NOT use Western astrology concepts, Tropical coordinates, or outer planets (Uranus, Neptune, Pluto). Focus exclusively on the nine Vedic Grahas and the Lagna.
 - Do NOT apply Western aspect terms (trine, sextile, square, opposition). Use ONLY classical Vedic Graha Drishti (all planets aspect 7th; Saturn aspects 3rd/10th; Jupiter aspects 5th/9th; Mars aspects 4th/8th).
-- Format: Present the reading in clear sections: (1) Core Strength & Ascendant, (2) Wealth & Profession, (3) Marriage & Progeny, (4) Yogas & Curses, (5) Longevity & Health, (6) Current Timing (Dasas). Speak directly to {client}.
+{format_rule}
 
 Start directly with the chat response:
 """
@@ -463,6 +1018,8 @@ Start directly with the chat response:
                 "page_num": passage.get("page_num"),
                 "snippet": snippet
             })
+        if compared_meta:
+            return prompt, {"manifest": manifest, "compared_profiles": compared_meta}
         return prompt, manifest
 
 
