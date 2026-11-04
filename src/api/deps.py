@@ -883,6 +883,33 @@ def build_marriage_prediction_context(male_chart, female_chart, compatibility):
     return rag_context, raw_passages
 
 
+# Comfortably inside the idle limits of the proxies in front of the app.
+_KEEPALIVE_SECONDS = 10
+# Helper calls need a quick answer, so skip the model's thinking where it has any.
+_NO_THINKING = {"reasoning": {"enabled": False}}
+
+
+def _run_with_deadline(fn, seconds):
+    """Return fn(), or raise TimeoutError once `seconds` have passed. A call that
+    overruns finishes on its daemon thread, and its result is ignored."""
+    outcome = {}
+
+    def run():
+        try:
+            outcome["value"] = fn()
+        except Exception as e:
+            outcome["error"] = e
+
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(seconds)
+    if worker.is_alive():
+        raise TimeoutError(f"Timed out after {seconds}s")
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome.get("value")
+
+
 # --- app.py:1087-1225 ---
 def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "ai",
                on_complete=None, lang: str = "en", allow_scripts=(), post_check=None,
@@ -902,9 +929,12 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
     - Model text passes through a ScriptGuard for `lang`, so a word in the wrong
       script is replaced or removed. The citation manifest and backend error
       messages don't pass through it.
-    - `post_check(full_text)` (optional) runs first after a clean finish and may
-      return a note to append, which `on_complete` then receives as part of the
-      text. It can never break the response either.
+    - `post_check(full_text)` (optional) runs first after a clean finish, within
+      LLM_CHECK_TIMEOUT, and may return a note to append, which `on_complete` then
+      receives as part of the text. It can never break the response either.
+    - Both run on their own thread, so the reading is saved even if the client
+      disconnects, while keepalives hold the connection open. A proxy such as
+      Cloudflare drops a connection that goes quiet for too long.
     """
     def _open_stream(evaluated_prompt):
         """Open the chat-completion stream, retrying once on a transient error
@@ -1008,7 +1038,7 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                 else:
                     yield json.dumps({"manifest": manifest}) + "\n"
 
-
+            last_sent = time.monotonic()
             with response:
                 for chunk in response:
                     # OpenRouter may interleave error payloads into the stream.
@@ -1020,6 +1050,10 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
                             refund_user_credits(user, action_type)
                         yield f"{held}\n\n*AI backend error: {err}*"
                         return
+                    # A model can think for a long time before its first word.
+                    if not produced_content and time.monotonic() - last_sent >= _KEEPALIVE_SECONDS:
+                        last_sent = time.monotonic()
+                        yield "\n"
                     if not getattr(chunk, "choices", None):
                         continue
                     delta = chunk.choices[0].delta
@@ -1045,18 +1079,34 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
         # mid-stream error payload (both paths return above).
         if not produced_content:
             return
+        if not post_check and not on_complete:
+            return
         full_text = "".join(content_parts).strip()
-        note = ""
-        if post_check:
+        finished = queue.Queue()
+
+        def finish():
+            note = ""
+            if post_check:
+                try:
+                    note = _run_with_deadline(lambda: post_check(full_text), LLM_CHECK_TIMEOUT) or ""
+                except TimeoutError:
+                    logger.warning("Reading check skipped after %ss (%s)", LLM_CHECK_TIMEOUT, action_type)
+                except Exception as e:
+                    logger.warning("Reading check failed (%s): %s", action_type, e)
+            if on_complete and full_text:
+                try:
+                    on_complete(full_text + note)
+                except Exception as e:
+                    logger.error("on_complete hook failed (%s): %s", action_type, e)
+            finished.put(note)
+
+        threading.Thread(target=finish, daemon=True).start()
+        while True:
             try:
-                note = post_check(full_text) or ""
-            except Exception as e:
-                logger.warning("Reading check failed (%s): %s", action_type, e)
-        if on_complete and full_text:
-            try:
-                on_complete(full_text + note)
-            except Exception as e:
-                logger.error("on_complete hook failed (%s): %s", action_type, e)
+                note = finished.get(timeout=_KEEPALIVE_SECONDS)
+                break
+            except queue.Empty:
+                yield "\n"
         if note:
             yield note
 
@@ -1067,13 +1117,17 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
 def _translate_stray(text: str, lang: str, model: str = MODEL_FAST) -> str:
     """Translate one stray word or phrase into the reading's language."""
     target = _LANG_MAP.get(lang, "English")
-    resp = get_llm_client().with_options(timeout=LLM_REPAIR_TIMEOUT).chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": (
-            f"Translate this word or phrase from a Vedic astrology text into {target}. "
-            f"Reply with only the translation, written in {target}.\n\n{text}"
-        )}],
-        temperature=0,
+    resp = _run_with_deadline(
+        lambda: get_llm_client().with_options(timeout=LLM_REPAIR_TIMEOUT, max_retries=0).chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": (
+                f"Translate this word or phrase from a Vedic astrology text into {target}. "
+                f"Reply with only the translation, written in {target}.\n\n{text}"
+            )}],
+            temperature=0,
+            extra_body=_NO_THINKING,
+        ),
+        LLM_REPAIR_TIMEOUT,
     )
     return (resp.choices[0].message.content or "").strip()
 
@@ -1097,10 +1151,11 @@ def check_reading(reading: str, facts_by_person: dict, lang: str, model: str = M
     contradict the computed charts, otherwise an empty string."""
     if not facts_by_person:
         return ""
-    resp = get_llm_client().with_options(timeout=LLM_CHECK_TIMEOUT).chat.completions.create(
+    resp = get_llm_client().with_options(timeout=LLM_CHECK_TIMEOUT, max_retries=0).chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": build_claim_prompt(reading, list(facts_by_person))}],
         temperature=0,
+        extra_body=_NO_THINKING,
     )
     claims = parse_claims(resp.choices[0].message.content)
     found = find_contradictions(claims, facts_by_person, reading)

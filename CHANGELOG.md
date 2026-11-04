@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.1]
+
+### Fixed
+- **AI chat answers vanishing with "network error":** the chart check added in 1.30.0 could run for minutes with nothing sent to the browser, so the connection was dropped just after the answer finished. The check now has a hard limit (`VEDIC_LLM_CHECK_TIMEOUT`, 25 seconds), and the reading goes without a note if it overruns. Stray-word repair has its own hard limit too. Helper calls now skip the model's thinking and don't retry, and the server sends keepalives while they run.
+- A reading is now saved even if the browser disconnects during the chart check.
+- If the connection drops, the chat keeps the text already shown and adds a message, rather than replacing the answer with an error.
+
 ## [1.32.0]
 
 ### Added
