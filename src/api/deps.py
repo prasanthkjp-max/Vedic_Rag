@@ -936,7 +936,10 @@ def llm_stream(prompt, model_name: str, user: dict = None, action_type: str = "a
 
             if manifest:
                 import json
-                yield json.dumps({"manifest": manifest}) + "\n"
+                if isinstance(manifest, dict) and "manifest" in manifest:
+                    yield json.dumps(manifest) + "\n"
+                else:
+                    yield json.dumps({"manifest": manifest}) + "\n"
 
 
             with response:
