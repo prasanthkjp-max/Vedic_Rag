@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.31.0"
+VERSION = "1.32.0"
 
 # --- Paths (env-overridable) ---
 # config.py lives at <repo_root>/src/core/config.py, but BASE_DIR must stay the
@@ -335,6 +335,9 @@ REFERRAL_BONUS_REFERRER = _env_int("VEDIC_REFERRAL_BONUS_REFERRER", 25)
 # Conversation turns (user+assistant pairs) kept in the AI-chat prompt. Caps
 # prompt-token growth so a long thread can't triple the per-message cost.
 CHAT_HISTORY_TURNS = _env_int("VEDIC_CHAT_HISTORY_TURNS", 3)
+# Saved AI chats: the oldest beyond this limit are removed, per user.
+CHAT_MAX_CONVERSATIONS = _env_int("VEDIC_CHAT_MAX_CONVERSATIONS", 100)
+CHAT_MAX_STORED_CHART_BYTES = _env_int("VEDIC_CHAT_MAX_CHART_BYTES", 2_000_000)
 MAX_SAVED_CHARTS = _env_int("VEDIC_MAX_SAVED_CHARTS", 20)
 
 # --- Horoscopes tab ---

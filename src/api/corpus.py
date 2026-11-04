@@ -4,6 +4,7 @@ import json
 import os
 import urllib.request
 from io import BytesIO
+from typing import Optional
 
 import fitz  # PyMuPDF
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -16,12 +17,15 @@ from src.core.config import (
     DB_RAG_PATH,
     DEFAULT_LLM_MODEL,
     CREDIT_COST_QUERY,
+    CHAT_HISTORY_TURNS,
     EMBEDDING_DIM,
     connect_db,
 )
 from src.api.deps import (
-    logger, LangCode, search_engine, check_credits_or_raise, llm_stream, _LANG_MAP, _language_lock,
+    logger, LangCode, search_engine, check_credits_or_raise, get_user_by_session, llm_stream,
+    _LANG_MAP, _language_lock,
 )
+from src.api.chat_history import create_conversation, load_conversation, recent_messages, save_turn
 from src.engines.prediction_engine import is_reference_page
 
 router = APIRouter()
@@ -32,6 +36,9 @@ class QueryRequest(BaseModel):
     query: str = Field(max_length=4000)
     model: str = DEFAULT_LLM_MODEL
     lang: LangCode = "en"
+    # Save this turn to the user's chats, continuing conversation_id if given.
+    save_history: bool = False
+    conversation_id: Optional[int] = None
 
 
 # --- app.py:1233-1530 ---
@@ -360,9 +367,27 @@ def query_rag(request: QueryRequest, raw_req: Request):
     Retrieves relevant pages and streams the AI-generated astrological answer.
     """
     token = raw_req.headers.get("x-session-token") or raw_req.cookies.get("session_token")
+    conversation = None
+    if request.save_history and request.conversation_id is not None:
+        owner = get_user_by_session(token)
+        if owner:
+            conversation = load_conversation(owner["id"], request.conversation_id)
+        if owner and (conversation is None or conversation["chart"] is not None):
+            raise HTTPException(status_code=404, detail="Chat not found.")
+
     user = check_credits_or_raise(token, CREDIT_COST_QUERY, "query")
 
     query_text = request.query
+    conversation_id = None
+    history_block = ""
+    if conversation:
+        conversation_id = conversation["id"]
+        previous = recent_messages(conversation_id, CHAT_HISTORY_TURNS * 2)
+        lines = [f"{'Scholar' if m['role'] == 'assistant' else 'User'}: {m['content']}" for m in previous]
+        if lines:
+            history_block = "--- CONVERSATION SO FAR ---\n" + "\n".join(lines) + "\n---------------------------\n\n"
+    elif request.save_history:
+        conversation_id = create_conversation(user["id"], query_text, "", "", None, request.lang)
     model_name = DEFAULT_LLM_MODEL  # Enforce cloud model on the backend
     target_lang = _LANG_MAP.get(request.lang, "English")
 
@@ -404,7 +429,7 @@ CRITICAL REQUIREMENT: Write the entire response â€” headings, labels, and body â
 {context_str}
 --- END OF RETRIEVED PAGES ---
 
-USER QUERY: {query_text}
+{history_block}USER QUERY: {query_text}
 
 Provide an elegant, authoritative, and helpful answer.
 
@@ -412,8 +437,16 @@ Provide an elegant, authoritative, and helpful answer.
 
 Start directly with the answer:
 """
-        return prompt
+        if conversation_id is None:
+            return prompt
+        return prompt, {"manifest": [], "conversation_id": conversation_id}
 
-    return StreamingResponse(llm_stream(prompt_builder, model_name, user, "query", lang=request.lang, allow_scripts=("Devanagari",)), media_type="text/event-stream")
+    return StreamingResponse(llm_stream(
+        prompt_builder, model_name, user, "query", lang=request.lang, allow_scripts=("Devanagari",),
+        on_complete=(
+            (lambda text: save_turn(conversation_id, query_text, text))
+            if conversation_id is not None else None
+        ),
+    ), media_type="text/event-stream")
 
 

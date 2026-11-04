@@ -44,6 +44,7 @@ src/
     billing.py             # Razorpay credits, gifts, Astro Pass subscription
     chart.py               # calculate-chart/marriage, muhurtham, PDF report pipeline
     ai.py                   # every streamed RAG-grounded LLM reading
+    chat_history.py         # saved AI chats: storage and list/open/delete endpoints
     horoscope.py            # universal + personal sign horoscopes
     panchangam.py           # daily/monthly panchangam + public SEO panchangam/festival pages
     corpus.py               # classical-text search/RAG corpus endpoints
@@ -191,8 +192,9 @@ and `cancelled`/`halted`/`completed` revoke, all through the idempotent
 `_apply_subscription_charge` (keyed on the charge payment id). A `402` from
 any paid action drives the frontend **paywall bottom sheet** (`showPaywall`);
 `GET /api/billing/usage` feeds the profile **usage dashboard** (balance, spend
-this month, recent ledger). AI chat is **stateless** (history re-sent each turn),
-so "New Reading" (`clearAIChat`) is frontend-only.
+this month, recent ledger). AI chats are saved per user (`src/api/chat_history.py`).
+A saved chat keeps its chart, and the server reads its history from the database.
+"New Reading" (`clearAIChat`) only starts a new chat; History deletes them.
 
 So 403 = "no/invalid API key", 401 = "session expired", 402 = "out of credits" —
 these are deliberately distinct.

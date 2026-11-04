@@ -41,6 +41,9 @@ jobs:
       - name: i18n single-source sync guard
         run: python tests/test_i18n_sync.py
 
+      - name: Chat history tests
+        run: python tests/test_chat_history.py
+
       - name: Growth features (digest engine, kalam windows, SEO cities)
         run: python tests/test_growth_features.py
 
