@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.32.0"
+VERSION = "1.32.1"
 
 # --- Paths (env-overridable) ---
 # config.py lives at <repo_root>/src/core/config.py, but BASE_DIR must stay the
@@ -137,7 +137,8 @@ EMBEDDING_DIM = _env_int("VEDIC_EMBED_DIM", 1536)
 # that generous.
 EMBED_TIMEOUT = _env_int("VEDIC_EMBED_TIMEOUT", 30)
 LLM_STREAM_TIMEOUT = _env_int("VEDIC_LLM_TIMEOUT", 300)
-# Short helper calls made while a reading is being delivered, so they stay bounded.
+# Hard limits on the helper calls made while a reading is being delivered. The SDK's
+# own timeout only limits the gap between bytes, so it can't bound these calls.
 LLM_REPAIR_TIMEOUT = _env_int("VEDIC_LLM_REPAIR_TIMEOUT", 10)
 LLM_CHECK_TIMEOUT = _env_int("VEDIC_LLM_CHECK_TIMEOUT", 25)
 

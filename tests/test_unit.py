@@ -1079,6 +1079,65 @@ _deps._translate_stray("x", "ta", "chat/model")
 _deps.check_reading("reading", {"Arun": {}}, "ta", "chat/model")
 _deps._translate_stray("x", "ta")
 _deps.get_llm_client = _real_client
+import time as _time
+_saved_limit, _saved_keepalive = _deps.LLM_CHECK_TIMEOUT, _deps._KEEPALIVE_SECONDS
+_deps.LLM_CHECK_TIMEOUT, _deps._KEEPALIVE_SECONDS = 0.3, 0.05
+_fake_slow = _FakeClient()
+_deps.get_llm_client = lambda: _fake_slow
+_slow_saved = []
+_slow_parts = list(_deps.llm_stream(lambda: "p", "model", None, "test", lang="ta",
+                                    on_complete=_slow_saved.append,
+                                    post_check=lambda t: (_time.sleep(2), "\nLATE NOTE")[1]))
+check("llm_stream: an overrunning check ends the response at the limit and still saves the reading",
+      _slow_saved and "LATE NOTE" not in _slow_saved[0] and _TAMIL_A in _slow_saved[0]
+      and "LATE NOTE" not in "".join(_slow_parts))
+_quiet_parts = list(_deps.llm_stream(lambda: "p", "model", None, "test", lang="ta",
+                                     post_check=lambda t: (_time.sleep(0.2), "")[1]))
+check("llm_stream: keepalives are sent while the check runs, and aren't saved",
+      _quiet_parts[-1] == "\n" and "\n\n" not in (_slow_saved[0] if _slow_saved else ""))
+_gone_saved = []
+_gone = _deps.llm_stream(lambda: "p", "model", None, "test", lang="ta",
+                         on_complete=_gone_saved.append, post_check=lambda t: (_time.sleep(0.15), "")[1])
+_saw_text = False
+for _part in _gone:
+    _saw_text = _saw_text or _TAMIL_A in _part
+    if _saw_text and _part == "\n":  # the first keepalive after the text: the check is running
+        break
+_gone.close()
+_time.sleep(0.5)
+check("llm_stream: the reading is saved even if the browser disconnects during the check",
+      len(_gone_saved) == 1 and _TAMIL_A in _gone_saved[0])
+_deps.get_llm_client = _real_client
+_deps.LLM_CHECK_TIMEOUT, _deps._KEEPALIVE_SECONDS = _saved_limit, _saved_keepalive
+check("deadline: a slow call raises TimeoutError, and errors and results pass through",
+      _deps._run_with_deadline(lambda: 5, 1) == 5)
+try:
+    _deps._run_with_deadline(lambda: _time.sleep(1), 0.05)
+    _timed_out = False
+except TimeoutError:
+    _timed_out = True
+check("deadline: a slow call is abandoned at the limit", _timed_out)
+_slow_translate = _FakeClient()
+_slow_translate.chat.completions.create = lambda **kw: _time.sleep(1)
+_deps.get_llm_client = lambda: _slow_translate
+_saved_repair = _deps.LLM_REPAIR_TIMEOUT
+_deps.LLM_REPAIR_TIMEOUT = 0.05
+_started = _time.monotonic()
+_cleaned = clean_text(f"{_TAMIL_A} {_BENGALI}", "ta", translate=lambda s: _deps._translate_stray(s, "ta"))
+check("deadline: slow stray-word repair removes the word instead of stalling the stream",
+      _time.monotonic() - _started < 0.8 and _BENGALI not in _cleaned and _TAMIL_A in _cleaned)
+_deps.LLM_REPAIR_TIMEOUT = _saved_repair
+_deps.get_llm_client = _real_client
+check("page: a dropped connection keeps the text already shown",
+      "if (shownReply.trim())" in _index_html and "Never replace an answer" in _index_html)
+check("translations: the interrupted message exists in every language",
+      _index_html.count("interrupted: '") == 6)
+_fake_check = _FakeClient()
+_deps.get_llm_client = lambda: _fake_check
+_deps.check_reading("reading", {"Arun": {}}, "ta", "m")
+_deps.get_llm_client = _real_client
+check("helper calls: the chart check skips the model's thinking",
+      _fake_check.chat.completions.kwargs[0].get("extra_body") == {"reasoning": {"enabled": False}})
 check("models: helper calls use the model they're given, and the fast model by default",
       [k["model"] for k in _fake.chat.completions.kwargs] == ["chat/model", "chat/model", _deps.MODEL_FAST])
 
