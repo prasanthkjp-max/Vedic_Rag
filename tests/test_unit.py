@@ -508,6 +508,49 @@ check("ui_divine: Dasa Explorer Toolbar & Life Age Ribbon present",
 check("ui_divine: Classical Scripture Side-Drawer present",
       'id="classical-scripture-drawer"' in _index_html and 'openScriptureDrawer' in _index_html)
 
+# ── AI Chat Saved Family Profiles Cross-Prediction Verification ──────────────
+from src.api.ai import (
+    _canonical_relationship_info,
+    _compute_cached_profile_chart,
+    resolve_referenced_profiles,
+)
+from src.engines.prediction_engine import build_cross_chart_comparison
+
+_demo_profiles = []
+for _cid, _nm, _dob, _tob, _pob, _lat, _lon, _gen, _rel, _alias in [
+    (35, "Prasanth", "1992-06-08", "20:10", "Nellore, India", 14.4426, 79.9865, "male", "self", "Prasanth"),
+    (50, "Shanmuga Priya", "1994-08-11", "17:12", "Manamadurai, India", 9.6961, 78.4517, "female", "spouse", "Shanmuga Priya"),
+    (63, "Jagadeesan", "1965-01-31", "18:10", "Sriharikota, India", 13.7259, 80.2266, "male", "parent", "Appa"),
+    (70, "Vijayalakshmi", "1966-09-23", "13:15", "Nellore, India", 14.4426, 79.9865, "female", "parent", "Amma"),
+]:
+    _crel, _drel, _kws = _canonical_relationship_info(_rel, _gen, _alias)
+    _demo_profiles.append({
+        "id": _cid, "name": _nm, "dob": _dob, "tob": _tob, "pob": _pob,
+        "lat": _lat, "lon": _lon, "gender": _gen, "ayanamsa": "Lahiri",
+        "is_saved": 1, "relationship": _rel, "canonical_relationship": _crel,
+        "display_relationship": _drel, "profile_name": _alias, "match_keywords": _kws,
+    })
+
+check("chat_cross: spouse matched by 'wife' relationship",
+      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Check my wife's chart and compare with mine")] == ["Shanmuga Priya"])
+check("chat_cross: spouse matched by name 'Shanmuga Priya' or 'Priya'",
+      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "How is Priya's dasha right now?")] == ["Shanmuga Priya"])
+check("chat_cross: father matched by 'father' or alias 'Appa' or name 'Jagadeesan'",
+      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Compare my chart with my father")] == ["Jagadeesan"]
+      and [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "How is Appa's health?")] == ["Jagadeesan"])
+check("chat_cross: mother matched by 'mother' or alias 'Amma' or name 'Vijayalakshmi'",
+      [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Check my mother's astrology with mine")] == ["Vijayalakshmi"]
+      and [p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Check Amma's dasha")] == ["Vijayalakshmi"])
+check("chat_cross: collective 'parents' matches both father and mother",
+      {p["name"] for p in resolve_referenced_profiles(_demo_profiles, [], "Prasanth", "1992-06-08", "Compare my chart with my parents")} == {"Jagadeesan", "Vijayalakshmi"})
+check("chat_cross: build_cross_chart_comparison includes synastry, overlays, dasas & marriage kootas",
+      "MARRIAGE COMPATIBILITY" in build_cross_chart_comparison(
+          _compute_cached_profile_chart(_demo_profiles[0]), "Prasanth",
+          _compute_cached_profile_chart(_demo_profiles[1]), "Shanmuga Priya", "wife (spouse)"
+      ))
+check("chat_cross: UI family profiles bar present in index.html",
+      'id="ai-family-profiles-bar"' in _index_html and 'renderAIChatFamilyProfilesBar' in _index_html)
+
 
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)
