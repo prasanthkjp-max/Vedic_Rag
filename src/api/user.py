@@ -50,7 +50,10 @@ class UserChartSave(BaseModel):
     ayanamsa: AyanamsaName = "Lahiri"
     chart_style: VisualStyle = "south"
     is_saved: int = Field(default=0, ge=0, le=1)
-    relationship: Literal["self", "spouse", "child", "parent", "friend", "other"] = "other"
+    relationship: Literal[
+        "self", "spouse", "wife", "husband", "father", "mother", "parent",
+        "child", "son", "daughter", "sibling", "brother", "sister", "friend", "other"
+    ] = "other"
     profile_name: str = ""
 
 

@@ -1233,6 +1233,226 @@ def build_compatibility_analysis(male_chart, female_chart, compatibility=None, r
     return "\n".join(lines)
 
 
+def build_cross_chart_comparison(
+    primary_chart,
+    primary_name: str,
+    other_chart,
+    other_name: str,
+    relationship: str = "other",
+    ref_date=None,
+) -> str:
+    """Build a comprehensive Vedic cross-chart (synastry & relational) analysis
+    comparing `primary_chart` (`primary_name`) with `other_chart` (`other_name`).
+
+    Covers:
+    - Lagna-to-Lagna and Moon-to-Moon axis (Samasaptaka 7/7, Trikona 5/9,
+      Dwirdwadasha 2/12, Shashtashtama 6/8, etc.)
+    - Planetary House Overlays (where each person's Grahas fall in the other's
+      Bhavas from Lagna)
+    - Relationship-specific Vedic indicators (Marriage Koota/Porutham & Kuja
+      Dosha for spouse; 9th/Sun/D12 for father; 4th/Moon/D12 for mother;
+      5th/Jupiter/D7 for child; 3rd/11th/Mars/D3 for sibling)
+    - Running Vimshottari Dasa-Bhukti-Antaram synchronization and 10-year
+      malefic Dasa overlap windows.
+    """
+    if ref_date is None:
+        ref_date = date.today()
+    elif isinstance(ref_date, datetime):
+        ref_date = ref_date.date()
+    elif isinstance(ref_date, str):
+        ref_date = _parse(ref_date) or date.today()
+
+    p_plac = primary_chart["placements"]
+    o_plac = other_chart["placements"]
+    p_lagna_idx, p_houses = compute_houses(p_plac)
+    o_lagna_idx, o_houses = compute_houses(o_plac)
+    p_lords = house_lords(p_lagna_idx)
+    o_lords = house_lords(o_lagna_idx)
+
+    rel_norm = (relationship or "other").lower()
+    lines = [
+        f"=== CROSS-CHART SYNASTRY & COMPARATIVE ANALYSIS: {primary_name} vs. {other_name} ({relationship.upper()}) ==="
+    ]
+
+    # 1. Lagna-to-Lagna & Moon-to-Moon Axis
+    l_d1, l_d2, l_rel = _moon_relation(p_lagna_idx, o_lagna_idx)
+    p_moon_idx = p_plac["Moon"]["rasi_index"]
+    o_moon_idx = o_plac["Moon"]["rasi_index"]
+    m_d1, m_d2, m_rel = _moon_relation(p_moon_idx, o_moon_idx)
+
+    p_naks = primary_chart.get("panchangam", {}).get("nakshatra") or p_plac["Moon"].get("nakshatra", "—")
+    o_naks = other_chart.get("panchangam", {}).get("nakshatra") or o_plac["Moon"].get("nakshatra", "—")
+
+    lines.append("\n1. ASCENDANT (LAGNA) & MOON (RASI / NAKSHATRA) HARMONY:")
+    lines.append(
+        f"  - Lagna Axis: {primary_name}'s Lagna is {RASI_SHORT[p_lagna_idx]} (Lord: {p_lords[1]}); "
+        f"{other_name}'s Lagna is {RASI_SHORT[o_lagna_idx]} (Lord: {o_lords[1]}). "
+        f"{other_name}'s Lagna is {_ord(l_d1)} from {primary_name}'s Lagna ({_ord(l_d2)} reverse) -> {l_rel}."
+    )
+    lines.append(
+        f"  - Moon Sign (Rasi) Axis: {primary_name}'s Moon is in {RASI_SHORT[p_moon_idx]} (Nakshatra: {p_naks}); "
+        f"{other_name}'s Moon is in {RASI_SHORT[o_moon_idx]} (Nakshatra: {o_naks}). "
+        f"{other_name}'s Moon is {_ord(m_d1)} from {primary_name}'s Moon ({_ord(m_d2)} reverse) -> {m_rel}."
+    )
+
+    # 2. Planetary House Overlays (Synastry)
+    lines.append(f"\n2. PLANETARY BHAVA OVERLAYS (How each native's Grahas activate the other's chart):")
+    o_in_p = []
+    for body in ["Lagna"] + GRAHAS:
+        if body not in o_plac:
+            continue
+        r_idx = o_plac[body]["rasi_index"]
+        h_in_p = ((r_idx - p_lagna_idx) % 12) + 1
+        o_in_p.append(f"{body} ({RASI_SHORT[r_idx]}) in {primary_name}'s {_ord(h_in_p)} house")
+    lines.append(f"  - {other_name}'s placements in {primary_name}'s houses: " + "; ".join(o_in_p))
+
+    p_in_o = []
+    for body in ["Lagna"] + GRAHAS:
+        if body not in p_plac:
+            continue
+        r_idx = p_plac[body]["rasi_index"]
+        h_in_o = ((r_idx - o_lagna_idx) % 12) + 1
+        p_in_o.append(f"{body} ({RASI_SHORT[r_idx]}) in {other_name}'s {_ord(h_in_o)} house")
+    lines.append(f"  - {primary_name}'s placements in {other_name}'s houses: " + "; ".join(p_in_o))
+
+    # 3. Dasa-Bhukti-Antaram Synchronization
+    p_dasa = get_current_dasa(primary_chart.get("dasas", []), ref_date)
+    o_dasa = get_current_dasa(other_chart.get("dasas", []), ref_date)
+    lines.append(f"\n3. RUNNING VIMSHOTTARI DASA–BHUKTI SYNCHRONIZATION (as of {ref_date.isoformat()}):")
+    if p_dasa.get("mahadasa"):
+        p_mw = p_dasa.get("maha_window") or ("", "")
+        p_aw = p_dasa.get("antar_window") or ("", "")
+        lines.append(
+            f"  - {primary_name}: {p_dasa['mahadasa']} Mahadasa ({p_mw[0]} to {p_mw[1]}) / "
+            f"{p_dasa.get('antardasa') or '—'} Bhukti ({p_aw[0]} to {p_aw[1]}) / "
+            f"{p_dasa.get('pratyantardasa') or '—'} Antaram"
+        )
+    if o_dasa.get("mahadasa"):
+        o_mw = o_dasa.get("maha_window") or ("", "")
+        o_aw = o_dasa.get("antar_window") or ("", "")
+        lines.append(
+            f"  - {other_name}: {o_dasa['mahadasa']} Mahadasa ({o_mw[0]} to {o_mw[1]}) / "
+            f"{o_dasa.get('antardasa') or '—'} Bhukti ({o_aw[0]} to {o_aw[1]}) / "
+            f"{o_dasa.get('pratyantardasa') or '—'} Antaram"
+        )
+    if p_dasa.get("mahadasa") and o_dasa.get("mahadasa"):
+        pm_lord = p_dasa["mahadasa"]
+        om_lord = o_dasa["mahadasa"]
+        if pm_lord in p_plac and om_lord in o_plac:
+            d_m1, d_m2, d_mrel = _moon_relation(p_plac[pm_lord]["rasi_index"], o_plac[om_lord]["rasi_index"])
+            lines.append(
+                f"  - Active Mahadasa Lords Cross-Alignment: {primary_name}'s {pm_lord} ({RASI_SHORT[p_plac[pm_lord]['rasi_index']]}) "
+                f"and {other_name}'s {om_lord} ({RASI_SHORT[o_plac[om_lord]['rasi_index']]}) stand in {d_m1}/{d_m2} relation -> {d_mrel}."
+            )
+
+    end_10y = date(ref_date.year + 10, ref_date.month, ref_date.day)
+    p_mal_w = _malefic_dasa_windows(primary_chart.get("dasas"), ref_date, end_10y)
+    o_mal_w = _malefic_dasa_windows(other_chart.get("dasas"), ref_date, end_10y)
+    overlaps = []
+    for pl, ps, pe in p_mal_w:
+        for ol, os_, oe in o_mal_w:
+            lo = max(_parse(ps), _parse(os_))
+            hi = min(_parse(pe), _parse(oe))
+            if lo and hi and lo < hi:
+                overlaps.append(f"{lo.isoformat()} to {hi.isoformat()}: {primary_name} in {pl} Dasa & {other_name} in {ol} Dasa")
+    if overlaps:
+        lines.append("  - Simultaneous Natural-Malefic Mahadasa Windows (Next 10 Years): " + "; ".join(overlaps))
+    else:
+        lines.append("  - Simultaneous Natural-Malefic Mahadasa Windows (Next 10 Years): None.")
+
+    # 4. Relationship-Specific Classical Synthesis
+    is_spouse = any(k in rel_norm for k in ("spouse", "wife", "husband", "partner"))
+    is_father = "father" in rel_norm or ("parent" in rel_norm and other_chart.get("metadata", {}).get("gender") == "male")
+    is_mother = "mother" in rel_norm or ("parent" in rel_norm and other_chart.get("metadata", {}).get("gender") == "female")
+    is_child = any(k in rel_norm for k in ("child", "son", "daughter"))
+    is_sibling = any(k in rel_norm for k in ("sibling", "brother", "sister"))
+
+    if is_spouse:
+        try:
+            from src.engines.astro_engine import calculate_marriage_compatibility
+            p_gender = (primary_chart.get("metadata", {}).get("gender") or "male").lower()
+            if p_gender == "female":
+                male_chart, female_chart = other_chart, primary_chart
+            else:
+                male_chart, female_chart = primary_chart, other_chart
+            comp = calculate_marriage_compatibility(male_chart, female_chart)
+            si = comp.get("south_indian", {})
+            lines.append(
+                f"\n4. MARRIAGE COMPATIBILITY (VIVAHA MELAPAKA — Ashta Koota: {comp.get('score')}/{comp.get('max_score')} "
+                f"[{comp.get('percentage')}%] | South Indian Poruthams: {si.get('score', 0)}/{si.get('max_score', 11)} [{si.get('percentage', 0)}%]):"
+            )
+            for _, detail in (comp.get("details") or {}).items():
+                status = "MATCH" if detail.get("match") else "MISMATCH"
+                lines.append(
+                    f"  - {detail.get('label')}: {status} (Points: {detail.get('score')}/{detail.get('max', '')}) — {detail.get('description', '')}"
+                )
+            lines.append(build_compatibility_analysis(male_chart, female_chart, comp, ref_date=ref_date))
+        except Exception as e:
+            logger.warning("Spouse compatibility calculation in chat skipped: %s", e)
+    elif is_father:
+        ninth_lord = p_lords[9]
+        p_sun = p_plac.get("Sun", {})
+        o_fifth_lord = o_lords[5]
+        lines.append(f"\n4. FATHER–CHILD (PITRU–PUTRA BHAVA & D12 DWADASHAMSHA) LINKAGE:")
+        lines.append(
+            f"  - {primary_name}'s 9th House (Pitru Bhava): {RASI_SHORT[(p_lagna_idx + 8) % 12]}, Lord {ninth_lord} in "
+            f"{_ord(p_houses.get(ninth_lord, 1))} house ({p_plac.get(ninth_lord, {}).get('rasi_name', '—')}, "
+            f"{p_plac.get(ninth_lord, {}).get('dignity', 'Neutral')})."
+        )
+        lines.append(
+            f"  - {primary_name}'s Pitru Karaka (Sun): {_ord(p_houses.get('Sun', 1))} house in {p_sun.get('rasi_name', '—')} "
+            f"(D12 Dwadashamsha: {p_sun.get('dwadashamsha_rasi_name', '—')}), {p_sun.get('dignity', 'Neutral')}; "
+            f"{primary_name}'s D12 Lagna: {p_plac['Lagna'].get('dwadashamsha_rasi_name', '—')}."
+        )
+        lines.append(
+            f"  - Father ({other_name})'s 5th House (Progeny): {RASI_SHORT[(o_lagna_idx + 4) % 12]}, Lord {o_fifth_lord} in "
+            f"{_ord(o_houses.get(o_fifth_lord, 1))} house ({o_plac.get(o_fifth_lord, {}).get('rasi_name', '—')})."
+        )
+    elif is_mother:
+        fourth_lord = p_lords[4]
+        p_moon = p_plac.get("Moon", {})
+        o_fifth_lord = o_lords[5]
+        lines.append(f"\n4. MOTHER–CHILD (MATRU–PUTRA BHAVA & D12 DWADASHAMSHA) LINKAGE:")
+        lines.append(
+            f"  - {primary_name}'s 4th House (Matru Bhava): {RASI_SHORT[(p_lagna_idx + 3) % 12]}, Lord {fourth_lord} in "
+            f"{_ord(p_houses.get(fourth_lord, 1))} house ({p_plac.get(fourth_lord, {}).get('rasi_name', '—')}, "
+            f"{p_plac.get(fourth_lord, {}).get('dignity', 'Neutral')})."
+        )
+        lines.append(
+            f"  - {primary_name}'s Matru Karaka (Moon): {_ord(p_houses.get('Moon', 1))} house in {p_moon.get('rasi_name', '—')} "
+            f"(D12 Dwadashamsha: {p_moon.get('dwadashamsha_rasi_name', '—')}), {p_moon.get('dignity', 'Neutral')}; "
+            f"{primary_name}'s D12 Lagna: {p_plac['Lagna'].get('dwadashamsha_rasi_name', '—')}."
+        )
+        lines.append(
+            f"  - Mother ({other_name})'s 5th House (Progeny): {RASI_SHORT[(o_lagna_idx + 4) % 12]}, Lord {o_fifth_lord} in "
+            f"{_ord(o_houses.get(o_fifth_lord, 1))} house ({o_plac.get(o_fifth_lord, {}).get('rasi_name', '—')})."
+        )
+    elif is_child:
+        fifth_lord = p_lords[5]
+        p_jup = p_plac.get("Jupiter", {})
+        lines.append(f"\n4. PARENT–CHILD (PUTRA BHAVA & D7 SAPTAMSHA) LINKAGE:")
+        lines.append(
+            f"  - {primary_name}'s 5th House (Putra Bhava): {RASI_SHORT[(p_lagna_idx + 4) % 12]}, Lord {fifth_lord} in "
+            f"{_ord(p_houses.get(fifth_lord, 1))} house ({p_plac.get(fifth_lord, {}).get('rasi_name', '—')}, "
+            f"{p_plac.get(fifth_lord, {}).get('dignity', 'Neutral')})."
+        )
+        lines.append(
+            f"  - {primary_name}'s Putra Karaka (Jupiter): {_ord(p_houses.get('Jupiter', 1))} house in {p_jup.get('rasi_name', '—')} "
+            f"(D7 Saptamsha: {p_jup.get('saptamsha_rasi_name', '—')}); D7 Lagna: {p_plac['Lagna'].get('saptamsha_rasi_name', '—')}."
+        )
+    elif is_sibling:
+        third_lord = p_lords[3]
+        eleventh_lord = p_lords[11]
+        lines.append(f"\n4. SIBLING (BHRATRU BHAVA & D3 DREKKANA) LINKAGE:")
+        lines.append(
+            f"  - {primary_name}'s 3rd Lord ({third_lord}) in {_ord(p_houses.get(third_lord, 1))} house; "
+            f"11th Lord ({eleventh_lord}) in {_ord(p_houses.get(eleventh_lord, 1))} house; "
+            f"D3 Drekkana Lagna: {p_plac['Lagna'].get('drekkana_rasi_name', '—')}."
+        )
+
+    return "\n".join(lines)
+
+
 # --- Prashna (horary) ---
 
 # Question domain -> (house judged, keywords). First match wins; order puts
