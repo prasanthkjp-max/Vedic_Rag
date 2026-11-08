@@ -48,3 +48,11 @@ android/local.properties
 android/app/release/
 *.aab
 source.tar.gz
+
+# Local tool / IDE settings (machine-specific, never shared)
+**/.claude/settings.local.json
+android/.idea/deviceManager.xml
+android/.idea/planningMode.xml
+
+# Private security audit notes — keep out of the (possibly public) repo
+AUDIT_REPORT.md
