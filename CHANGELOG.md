@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.4]
+
+### Changed
+- **Android build tooling:** Android Gradle Plugin 8.13.2 → 9.2.1 and Gradle 8.13 → 9.4.1 (Android Studio upgrade). `android/gradle.properties` gains the compatibility flags the upgrade assistant added, which keep the AGP 8 behaviour (old DSL, no built-in Kotlin, R8 and resource-shrinking defaults unchanged).
+- Frontend dev dependency `@types/react` ^19.0.0 → ^19.3.0.
+
 ## [1.32.2]
 
 ### Changed
