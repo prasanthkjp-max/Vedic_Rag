@@ -22,10 +22,7 @@ from src.engines.astro_engine import (
 )
 from src.engines.muhurtham_engine import calculate_muhurtham, KARI_NAAL
 from src.engines.pdf_generator import (
-    translate_tithi,
-    translate_nakshatra,
-    translate_yogam,
-    translate_karanam,
+    localize_panchangam,
     DAYS_OF_WEEK_LOCAL,
 )
 from src.engines.digest_engine import kalam_windows, LABELS as DIGEST_LABELS
@@ -434,6 +431,9 @@ def _compute_month_panchangam(year, month, lang, lat, lon):
             "tamil_month": res["panchangam"]["tamil_month"],
             "tamil_year": res["panchangam"]["tamil_year"],
             "tamil_date": res["panchangam"]["tamil_date"],
+            # Engine IDs for the names above (same sunrise chart), so the
+            # calendar can translate by index instead of by spelling.
+            "ids": res["panchangam"].get("ids"),
             "specialities": day_specialities
         })
 
@@ -689,11 +689,12 @@ def seo_panchangam_page(lang: LangCode, city_slug: str, date_str: str):
     def row(label, value):
         return f"<tr><td>{_htmlmod.escape(label)}</td><td>{_htmlmod.escape(str(value or '—'))}</td></tr>"
 
+    local = localize_panchangam(panch, lang)
     table_rows = "".join([
-        row(L["tithi"], translate_tithi(panch.get("tithi", ""), lang)),
-        row(L["nakshatra"], translate_nakshatra(panch.get("nakshatra", ""), lang)),
-        row(L["yogam"], translate_yogam(panch.get("yogam", ""), lang)),
-        row(S["karanam"], translate_karanam(panch.get("karanam", ""), lang)),
+        row(L["tithi"], local["tithi"]),
+        row(L["nakshatra"], local["nakshatra"]),
+        row(L["yogam"], local["yogam"]),
+        row(S["karanam"], local["karanam"]),
         row(L["sunrise"], panch.get("sunrise", "")),
         row(L["sunset"], panch.get("sunset", "")),
         row(L["rahu_kalam"], kalams.get("rahu_kalam", "")),
@@ -704,8 +705,8 @@ def seo_panchangam_page(lang: LangCode, city_slug: str, date_str: str):
 
     desc = (
         f"{city_name} {S['panchangam']} {dt.isoformat()}: "
-        f"{translate_tithi(panch.get('tithi', ''), lang)}, "
-        f"{translate_nakshatra(panch.get('nakshatra', ''), lang)}, "
+        f"{local['tithi']}, "
+        f"{local['nakshatra']}, "
         f"{L['rahu_kalam']} {kalams.get('rahu_kalam', '')}"
     )
 

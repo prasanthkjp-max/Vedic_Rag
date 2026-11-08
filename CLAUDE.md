@@ -124,7 +124,8 @@ entirely.
    `placements[<graha>]` entry carries its own `dignity` and divisional-chart
    fields (`navamsha_rasi_name`, `drekkana_rasi_name`, `dashamsha_rasi_name`,
    `dwadashamsha_rasi_name`, …) — dignities and divisional charts are NOT
-   top-level. This dict shape IS the `/api/calculate-chart` response and the
+   top-level. `panchangam["ids"]` (and each placement's `nakshatra_index`)
+   give the index behind each panchangam name — see Translations below. This dict shape IS the `/api/calculate-chart` response and the
    frontend's `calculatedChartData`.
 2. `src.engines.prediction_engine.build_analysis(chart, transit_chart, ref_date)`
    derives the *interpretive* layer (houses, lordships, conjunctions, graha
@@ -228,6 +229,13 @@ these are deliberately distinct.
   (`astro_engine.NAKSHATRAS`/`TAMIL_YEARS`/`TAMIL_MONTHS`/`LUNI_SOLAR_MONTHS`/
   `MALAYALAM_MONTHS`, the Yoga/Karana/Tithi name lists inside
   `get_panchangam_details`) — mismatched spellings silently fail to translate.
+  **Translate by ID:** the engine puts `ids` on every panchangam (tithi 1–30,
+  nakshatra/yogam 0–26, karana 0–10, `month` {table, index}, `samvatsara`),
+  `get_regional_panchangam` keeps them right per calendar, and placements carry
+  `nakshatra_index`. Pass them to the translators (`localize_panchangam(panch,
+  lang)` on the backend; `translateTithi(str, ids.tithi)`,
+  `translateTamilMonth(str, ids.month)` etc. via `panchIds(p)` on the page).
+  Name matching remains only as the fallback for charts saved without IDs.
   UI labels (`localization`, PDF `LABEL_LOCALIZATION`, newsletter terms) are
   still separate. Translation tests assert by **label ID**, so don't rename
   existing `id="lbl-..."` / `id="panch-..."` elements in `static/index.html`.

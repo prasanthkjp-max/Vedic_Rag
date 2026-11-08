@@ -18,9 +18,7 @@ from datetime import date, datetime
 from src.engines.astro_engine import get_astrological_chart, get_regional_panchangam
 from src.engines.prediction_engine import get_current_dasa, analyze_gochara
 from src.engines.pdf_generator import (
-    translate_tithi,
-    translate_nakshatra,
-    translate_yogam,
+    localize_panchangam,
     PLANET_TRANSLATIONS,
     RASI_TRANSLATIONS,
     DAYS_OF_WEEK_LOCAL,
@@ -291,9 +289,10 @@ def build_digest(name, dob, tob, latitude, longitude, lang="en", ref_date=None):
     out = [L["greeting"].format(name=name), date_str, ""]
 
     out.append(f"📿 {L['panchangam']}:")
-    out.append(f"  • {L['tithi']}: {translate_tithi(panch.get('tithi', ''), lang)}")
-    out.append(f"  • {L['nakshatra']}: {translate_nakshatra(panch.get('nakshatra', ''), lang)}")
-    out.append(f"  • {L['yogam']}: {translate_yogam(panch.get('yogam', ''), lang)}")
+    local = localize_panchangam(panch, lang)
+    out.append(f"  • {L['tithi']}: {local['tithi']}")
+    out.append(f"  • {L['nakshatra']}: {local['nakshatra']}")
+    out.append(f"  • {L['yogam']}: {local['yogam']}")
     out.append(f"  • {L['sunrise']}: {panch.get('sunrise', '--')} | {L['sunset']}: {panch.get('sunset', '--')}")
     if kalams:
         out.append(f"  • ⚠️ {L['rahu_kalam']}: {kalams['rahu_kalam']}")

@@ -6704,11 +6704,27 @@
             return idx;
         }
 
-        function translateTithi(tithiStr) {
+        // Engine IDs for a panchangam (or calendar day) object; {} for charts
+        // saved before IDs existed, so the translators fall back to the names.
+        function panchIds(p) {
+            return (p && p.ids) || {};
+        }
+
+        function validIndex(idx, size) {
+            return Number.isInteger(idx) && idx >= 0 && idx < size;
+        }
+
+        // tithiId: the engine's tithi number (1-30, panchangam.ids.tithi).
+        function translateTithi(tithiStr, tithiId) {
             if (!tithiStr) return "";
             if (currentLang === 'en') return tithiStr;
             const names = I18N_VALUES.tithi[currentLang];
             if (!names) return tithiStr;
+            if (validIndex(tithiId, 31) && tithiId >= 1) {
+                if (tithiId === 15) return names[14];
+                if (tithiId === 30) return names[15];
+                return `${I18N_VALUES.paksha[currentLang][tithiId < 15 ? 0 : 1]} - ${names[(tithiId - 1) % 15]}`;
+            }
             const lower = tithiStr.toLowerCase();
             if (lower.includes("pournami") || lower.includes("full moon")) return names[14];
             if (lower.includes("amavasya") || lower.includes("new moon")) return names[15];
@@ -6728,26 +6744,28 @@
         // Translate a panchangam value via the generated I18N_VALUES tables
         // (single source: translations.py). Longest-substring match on the
         // canonical English array, then index the active language.
-        function translateValue(group, value) {
+        // idx: the engine's index for this value, when known (panchangam.ids,
+        // placement.nakshatra_index); otherwise matched by spelling.
+        function translateValue(group, value, idx) {
             if (!value) return "";
             if (currentLang === 'en') return value;
             const t = I18N_VALUES[group];
             if (!t) return value;
-            const idx = matchCanonIndex(t.en, value);
+            if (!validIndex(idx, t.en.length)) idx = matchCanonIndex(t.en, value);
             if (idx === -1) return value;
             return (t[currentLang] && t[currentLang][idx]) || value;
         }
 
-        function translateNakshatra(nakStr) {
-            return translateValue('nakshatra', nakStr);
+        function translateNakshatra(nakStr, idx) {
+            return translateValue('nakshatra', nakStr, idx);
         }
 
-        function translateYogam(yogStr) {
-            return translateValue('yogam', yogStr);
+        function translateYogam(yogStr, idx) {
+            return translateValue('yogam', yogStr, idx);
         }
 
-        function translateKaranam(karStr) {
-            return translateValue('karana', karStr);
+        function translateKaranam(karStr, idx) {
+            return translateValue('karana', karStr, idx);
         }
 
         function translateSpeciality(specStr) {
@@ -6823,9 +6841,16 @@
 
         // Panchangam month/date ("Aippasi 22", "Chaitra 12", "Chingam 3"):
         // lunar months first, then Tamil, then Malayalam solar months.
-        function translateTamilMonth(monthStr) {
+        // monthId: panchangam.ids.month ({table, index}) says which month it is.
+        function translateTamilMonth(monthStr, monthId) {
             if (!monthStr) return "";
             if (currentLang === 'en') return monthStr;
+            if (monthId && ['lunar_month', 'tamil_month', 'malayalam_month'].includes(monthId.table)) {
+                const t = I18N_VALUES[monthId.table], i = monthId.index;
+                if (validIndex(i, t.en.length) && monthStr.toLowerCase().includes(t.en[i])) {
+                    return monthStr.replace(new RegExp(t.en[i], 'i'), (t[currentLang] && t[currentLang][i]) || t.en[i]);
+                }
+            }
             for (const group of ['lunar_month', 'tamil_month', 'malayalam_month']) {
                 const out = replaceFirstName(monthStr, I18N_VALUES[group]);
                 if (out !== null) return out;
@@ -6833,7 +6858,8 @@
             return monthStr;
         }
 
-        function translateTamilYear(yearStr) {
+        // samvatsaraIdx: panchangam.ids.samvatsara (0-59), null for era years.
+        function translateTamilYear(yearStr, samvatsaraIdx) {
             if (!yearStr) return "";
             if (currentLang === 'en') return yearStr;
             let localizedYear = yearStr;
@@ -6846,7 +6872,8 @@
             // others (e.g. "bhava" inside "parabhava"), and a first match would
             // translate only the inner fragment, giving output like "Paraபவ".
             const table = I18N_VALUES.samvatsara;
-            const idx = matchCanonIndex(table.en, localizedYear);
+            const idx = (validIndex(samvatsaraIdx, table.en.length) && localizedYear.toLowerCase().includes(table.en[samvatsaraIdx]))
+                ? samvatsaraIdx : matchCanonIndex(table.en, localizedYear);
             if (idx === -1) return localizedYear;
             const yearTranslation = (table[currentLang] && table[currentLang][idx]) || localizedYear;
             return localizedYear.replace(new RegExp(table.en[idx], 'i'), yearTranslation);
@@ -7944,8 +7971,8 @@
             if (!dailyPanchangamData) return;
 
             if (dailyPanchangamData.panchangam) {
-                const currentTithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi);
-                const currentNaksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra);
+                const currentTithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi, panchIds(dailyPanchangamData.panchangam).tithi);
+                const currentNaksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra, panchIds(dailyPanchangamData.panchangam).nakshatra);
                 const stripEl = document.getElementById('strip-today-panchangam');
                 if (stripEl) stripEl.innerText = `${currentTithiTrans}, ${currentNaksTrans}`;
             }
@@ -7978,18 +8005,18 @@
             const activeSys = systemSelect ? systemSelect.value : 'sauramana';
             updateDynamicPanchangamLabels(currentLang, activeSys);
 
-            document.getElementById('panch-tamil-year').innerText = translateTamilYear(dailyPanchangamData.panchangam.tamil_year);
-            document.getElementById('panch-tamil-month').innerText = translateTamilMonth(dailyPanchangamData.panchangam.tamil_date || dailyPanchangamData.panchangam.tamil_month);
+            document.getElementById('panch-tamil-year').innerText = translateTamilYear(dailyPanchangamData.panchangam.tamil_year, panchIds(dailyPanchangamData.panchangam).samvatsara);
+            document.getElementById('panch-tamil-month').innerText = translateTamilMonth(dailyPanchangamData.panchangam.tamil_date || dailyPanchangamData.panchangam.tamil_month, panchIds(dailyPanchangamData.panchangam).month);
             // Translate current values
-            const currentTithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi);
-            const currentNaksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra);
-            const currentYogamTrans = translateYogam(dailyPanchangamData.panchangam.yogam);
-            const currentKaranamTrans = translateKaranam(dailyPanchangamData.panchangam.karanam);
+            const currentTithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi, panchIds(dailyPanchangamData.panchangam).tithi);
+            const currentNaksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra, panchIds(dailyPanchangamData.panchangam).nakshatra);
+            const currentYogamTrans = translateYogam(dailyPanchangamData.panchangam.yogam, panchIds(dailyPanchangamData.panchangam).yogam);
+            const currentKaranamTrans = translateKaranam(dailyPanchangamData.panchangam.karanam, panchIds(dailyPanchangamData.panchangam).karana);
 
             // Construct next values
-            const nextTithiTrans = translateTithi(buildTithiName(dailyPanchangamData.panchangam.tithi_next_idx));
-            const nextNaksTrans = translateNakshatra(NAKSHATRAS_LST[dailyPanchangamData.panchangam.nakshatra_next_idx % 27]);
-            const nextYogamTrans = translateYogam(YOGAMS_LST[dailyPanchangamData.panchangam.yogam_next_idx % 27]);
+            const nextTithiTrans = translateTithi(buildTithiName(dailyPanchangamData.panchangam.tithi_next_idx), dailyPanchangamData.panchangam.tithi_next_idx + 1);
+            const nextNaksTrans = translateNakshatra(NAKSHATRAS_LST[dailyPanchangamData.panchangam.nakshatra_next_idx % 27], dailyPanchangamData.panchangam.nakshatra_next_idx % 27);
+            const nextYogamTrans = translateYogam(YOGAMS_LST[dailyPanchangamData.panchangam.yogam_next_idx % 27], dailyPanchangamData.panchangam.yogam_next_idx % 27);
             const nextKaranamTrans = translateKaranam(getKaranamName(dailyPanchangamData.panchangam.karanam_next_idx % 60));
 
             // Set final displayed texts with transitions
@@ -8434,12 +8461,12 @@
                         const morePill = specs.length > 1 ? `<span class="cell-more-pill">+${specs.length - 1}</span>` : '';
                         specialityHtml = `<div class="cell-speciality-row"><div class="cell-speciality">${translateSpeciality(primarySpec)}</div>${morePill}</div>`;
                     }
-                    const translatedNak = translateNakshatra(dayInfo.nakshatra);
+                    const translatedNak = translateNakshatra(dayInfo.nakshatra, panchIds(dayInfo).nakshatra);
                     naksHtml = `<div class="cell-naks" title="${escapeHtml(translatedNak)}"><i class="fa-solid fa-bahai" style="font-size:7px; color: var(--border-gold);"></i> ${translatedNak}</div>`;
                     const tithiLabel = calendarTithiLabel(dayInfo);
-                    tithiHtml = `<div class="cell-tithi" title="${escapeHtml(translateTithi(dayInfo.tithi))}"><span class="cell-tithi-tag">${tithiLabel.tag}</span> <span class="cell-tithi-name">${escapeHtml(tithiLabel.name)}</span></div>`;
+                    tithiHtml = `<div class="cell-tithi" title="${escapeHtml(translateTithi(dayInfo.tithi, panchIds(dayInfo).tithi))}"><span class="cell-tithi-tag">${tithiLabel.tag}</span> <span class="cell-tithi-name">${escapeHtml(tithiLabel.name)}</span></div>`;
                     if (dayInfo.tamil_date) {
-                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translateTamilMonth(dayInfo.tamil_date)}</div>`;
+                        regionalDateHtml = `<div class="cell-regional-date" style="font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${translateTamilMonth(dayInfo.tamil_date, panchIds(dayInfo).month)}</div>`;
                     }
 
                     if (typeof activeCalendarFilter !== 'undefined' && activeCalendarFilter) {
@@ -8604,7 +8631,7 @@
 
         // "S.11" + "Ekadashi". Translated tithis arrive as "<paksha> - <name>".
         function calendarTithiLabel(dayInfo) {
-            const translated = translateTithi(dayInfo.tithi);
+            const translated = translateTithi(dayInfo.tithi, panchIds(dayInfo).tithi);
             const name = currentLang === 'en'
                 ? translated.replace(/^(Sukla|Shukla|Krishna)\s+Paksha\s+/i, '').replace(/\s*\(Tithi.*$/i, '')
                 : translated.split(' - ').pop();
@@ -8662,8 +8689,8 @@
             if (subtitle) {
                 if (days.length) {
                     const first = days[0], last = days[days.length - 1];
-                    const startMonth = translateTamilMonth(first.tamil_month);
-                    const endMonth = translateTamilMonth(last.tamil_month);
+                    const startMonth = translateTamilMonth(first.tamil_month, panchIds(first).month);
+                    const endMonth = translateTamilMonth(last.tamil_month, panchIds(last).month);
                     const span = startMonth === endMonth ? startMonth : `${startMonth} – ${endMonth}`;
                     const yearName = last.tamil_year ? ` (${last.tamil_year})` : '';
                     subtitle.innerText = `${span}${yearName}`;
@@ -8851,9 +8878,9 @@
                 : '';
             return `
                 <h4>${escapeHtml(dateStr)}</h4>
-                ${row(calendarTithiLabel(dayInfo).tag || 'Tithi', translateTithi(dayInfo.tithi))}
+                ${row(calendarTithiLabel(dayInfo).tag || 'Tithi', translateTithi(dayInfo.tithi, panchIds(dayInfo).tithi))}
                 ${row(calT('tithiEnds'), p && p.tithi_end_time)}
-                ${row('★', translateNakshatra(dayInfo.nakshatra))}
+                ${row('★', translateNakshatra(dayInfo.nakshatra, panchIds(dayInfo).nakshatra))}
                 ${row(calT('nakshatraEnds'), p && p.nakshatra_end_time)}
                 ${specs ? `<div class="peek-row"><strong>${escapeHtml(calT('observances'))}:</strong><ul>${specs}</ul></div>` : ''}
                 ${row(calT('rahu'), dayInfo.rahu_kalam)}
@@ -9570,7 +9597,7 @@
                 const summaryPanel = document.getElementById('ai-birth-loaded-summary');
                 summaryPanel.innerHTML = `
                     <strong>Loaded Birth Data:</strong> ${name} | Born in ${pob} on ${dob} at ${tob}<br>
-                    <strong>Coordinates:</strong> ${lat}°N, ${lon}°E | <strong>Nakshatra:</strong> ${translateNakshatra(calculatedChartData.panchangam.nakshatra)} | <strong>Ayanamsa:</strong> ${ayanamsa}
+                    <strong>Coordinates:</strong> ${lat}°N, ${lon}°E | <strong>Nakshatra:</strong> ${translateNakshatra(calculatedChartData.panchangam.nakshatra, panchIds(calculatedChartData.panchangam).nakshatra)} | <strong>Ayanamsa:</strong> ${ayanamsa}
                 `;
                 summaryPanel.style.display = 'block';
                 if (typeof renderAIChatFamilyProfilesBar === 'function') renderAIChatFamilyProfilesBar();
@@ -9638,22 +9665,22 @@
                 const localizedGender = genderTranslations[currentLang] || (genderVal === 'female' ? 'Female' : 'Male');
                 
                 const tithiLocal = formatTransitionText(
-                    translateTithi(calculatedChartData.panchangam.tithi),
+                    translateTithi(calculatedChartData.panchangam.tithi, panchIds(calculatedChartData.panchangam).tithi),
                     calculatedChartData.panchangam.tithi_end_time,
-                    translateTithi(buildTithiName(calculatedChartData.panchangam.tithi_next_idx))
+                    translateTithi(buildTithiName(calculatedChartData.panchangam.tithi_next_idx), calculatedChartData.panchangam.tithi_next_idx + 1)
                 );
                 const naksLocal = formatTransitionText(
-                    translateNakshatra(calculatedChartData.panchangam.nakshatra),
+                    translateNakshatra(calculatedChartData.panchangam.nakshatra, panchIds(calculatedChartData.panchangam).nakshatra),
                     calculatedChartData.panchangam.nakshatra_end_time,
-                    translateNakshatra(NAKSHATRAS_LST[calculatedChartData.panchangam.nakshatra_next_idx % 27])
+                    translateNakshatra(NAKSHATRAS_LST[calculatedChartData.panchangam.nakshatra_next_idx % 27], calculatedChartData.panchangam.nakshatra_next_idx % 27)
                 );
                 const yogLocal = formatTransitionText(
-                    translateYogam(calculatedChartData.panchangam.yogam),
+                    translateYogam(calculatedChartData.panchangam.yogam, panchIds(calculatedChartData.panchangam).yogam),
                     calculatedChartData.panchangam.yogam_end_time,
-                    translateYogam(YOGAMS_LST[calculatedChartData.panchangam.yogam_next_idx % 27])
+                    translateYogam(YOGAMS_LST[calculatedChartData.panchangam.yogam_next_idx % 27], calculatedChartData.panchangam.yogam_next_idx % 27)
                 );
                 const karLocal = formatTransitionText(
-                    translateKaranam(calculatedChartData.panchangam.karanam),
+                    translateKaranam(calculatedChartData.panchangam.karanam, panchIds(calculatedChartData.panchangam).karana),
                     calculatedChartData.panchangam.karanam_end_time,
                     translateKaranam(getKaranamName(calculatedChartData.panchangam.karanam_next_idx % 60))
                 );
@@ -9759,11 +9786,11 @@
                     </div>
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.t_year}</span>
-                        <span class="panch-value">${translateTamilYear(calculatedChartData.panchangam.tamil_year)}</span>
+                        <span class="panch-value">${translateTamilYear(calculatedChartData.panchangam.tamil_year, panchIds(calculatedChartData.panchangam).samvatsara)}</span>
                     </div>
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.t_date}</span>
-                        <span class="panch-value">${translateTamilMonth(calculatedChartData.panchangam.tamil_date)}</span>
+                        <span class="panch-value">${translateTamilMonth(calculatedChartData.panchangam.tamil_date, panchIds(calculatedChartData.panchangam).month)}</span>
                     </div>
                     <div class="panch-item">
                         <span class="panch-label">${activeLbl.kali}</span>
@@ -9901,7 +9928,7 @@
 
                 // Fetch and translate Nakshatra
                 const rawNakshatra = plac.nakshatra || "";
-                const translatedNakshatra = translateNakshatra(rawNakshatra) || rawNakshatra;
+                const translatedNakshatra = translateNakshatra(rawNakshatra, plac.nakshatra_index) || rawNakshatra;
 
                 // Pada
                 const padaVal = plac.pada !== undefined ? plac.pada : "";
@@ -10532,7 +10559,7 @@
                 hi: "एस्ट्रो AI • ब्रह्मांडीय मंगलाचरण"
             };
 
-            const naksLocal = translateNakshatra(calculatedChartData.panchangam.nakshatra);
+            const naksLocal = translateNakshatra(calculatedChartData.panchangam.nakshatra, panchIds(calculatedChartData.panchangam).nakshatra);
 
             const welcomeTexts = {
                 en: `
@@ -15046,7 +15073,7 @@
 
             let tithiStr = "";
             if (dailyPanchangamData && dailyPanchangamData.panchangam) {
-                tithiStr = translateTithi(dailyPanchangamData.panchangam.tithi);
+                tithiStr = translateTithi(dailyPanchangamData.panchangam.tithi, panchIds(dailyPanchangamData.panchangam).tithi);
             }
 
             const parts = [];
@@ -15414,8 +15441,8 @@
             if (dailyPanchangamData && dailyPanchangamData.panchangam) {
                 const naksEl = document.getElementById('sky-naks-text');
                 const tithiEl = document.getElementById('sky-tithi-text');
-                const naksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra);
-                const tithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi);
+                const naksTrans = translateNakshatra(dailyPanchangamData.panchangam.nakshatra, panchIds(dailyPanchangamData.panchangam).nakshatra);
+                const tithiTrans = translateTithi(dailyPanchangamData.panchangam.tithi, panchIds(dailyPanchangamData.panchangam).tithi);
                 const naksEnd = dailyPanchangamData.panchangam.nakshatra_end_time || '';
                 const tithiEnd = dailyPanchangamData.panchangam.tithi_end_time || '';
                 if (naksEl) {

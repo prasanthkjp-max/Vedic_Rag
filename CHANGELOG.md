@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.33.0]
+
+### Added
+- **Panchangam values carry their IDs.** Every chart's `panchangam` now has an `ids` object: `tithi` (1–30), `nakshatra` and `yogam` (0–26), `karana` (0–10), `month` (`{"table": "tamil_month" | "lunar_month" | "malayalam_month", "index"}`) and `samvatsara` (0–59, or `null` for era years such as Kolla Varsham). `get_regional_panchangam` sets the right month table for each language's calendar. Each placement also has `nakshatra_index`, and each day from `/api/month-panchangam` has `ids`.
+- `pdf_generator.localize_panchangam(panch, lang)` returns the panchangam's tithi, nakshatra, yogam, karanam, month and year in one language, translated by ID.
+
+### Changed
+- **Translation looks values up by ID instead of matching English spellings.** The app page, the PDF, the public panchangam pages and the daily digest pass the engine's IDs to the translators. A spelling the tables don't know no longer leaves a value in English. Charts saved before this release have no IDs and are still translated by name. All output is unchanged: tests compare by-ID and by-name results over many charts in every language.
+- `tests/test_i18n_sync.py` checks that the IDs name the same values as the engine's strings, that translating by ID gives the same text as by name (48 dates × 5 languages), that an ID beats an unknown spelling, and that a bad ID falls back to the name.
+
 ## [1.32.8]
 
 ### Changed
