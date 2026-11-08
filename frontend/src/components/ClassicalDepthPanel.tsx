@@ -1,6 +1,7 @@
 import React from 'react';
 import { astroStore, useAstroStore } from '../store/astroStore';
 import { ChartResponse } from '../types/astrology';
+import { firstWord } from '../lib/format';
 
 interface Props {
   chart: ChartResponse;
@@ -15,6 +16,10 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
   const vimsopaka = chart.vimsopaka_bala || {};
   const khara = chart.khara_drekkana;
   const nadi = chart.nadi;
+  // Empty {} (light mode) is truthy in JS, so test for real content, not just presence.
+  const hasArudha = !!arudha?.arudha_lagna;
+  const hasKhara = !!khara?.rasi_name;
+  const padas = Object.values(arudha?.padas || {}).sort((a, b) => a.house - b.house);
 
   const openShloka = (query: string, title: string) => {
     if (typeof window.openScriptureDrawer === 'function') {
@@ -26,7 +31,7 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
     <div className="vx-panel-section" id="react-classical-depth-panel">
       {/* 1. Arudha Padas (AL, UL, A2..A11) & 22nd Drekkana */}
       <div className="vx-two-col">
-        {arudha && (
+        {hasArudha && arudha && (
           <div className="vx-mini-box" id="arudha-padas-box">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h5 style={{ margin: 0 }}>
@@ -56,12 +61,12 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
               </span>
             </div>
             <div className="vx-pada-chips">
-              {Object.values(arudha.padas || {}).map((p) => (
+              {padas.map((p) => (
                 <div
                   key={p.code}
                   className={`vx-pada-chip ${p.house === 1 || p.house === 12 ? 'key' : ''}`}
-                  title={`House ${p.house} (${p.bhava_rasi_name}, Lord ${p.bhava_lord})`}
-                  onClick={() => astroStore.setSelectedPlanet(p.bhava_lord, true)}
+                  title={`${p.alias} — House ${p.house} (${p.house_rasi}, Lord ${p.house_lord})`}
+                  onClick={() => astroStore.setSelectedPlanet(p.house_lord, true)}
                   style={{ cursor: 'pointer' }}
                 >
                   <strong>{p.code}:</strong> {p.pada_rasi_short} (H{p.house_from_lagna})
@@ -71,7 +76,7 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
           </div>
         )}
 
-        {khara && (
+        {hasKhara && khara && (
           <div className="vx-mini-box" id="khara-drekkana-box">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h5 style={{ margin: 0 }}>
@@ -82,7 +87,7 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
                 className="vx-shloka-link-btn"
                 onClick={() =>
                   openShloka(
-                    `22nd Drekkana Khara ${khara.nature.split(' ')[0]} (Saravali Ch. 10 & Jataka Parijata)`,
+                    `22nd Drekkana Khara ${firstWord(khara.nature)} (Saravali Ch. 10 & Jataka Parijata)`,
                     '22nd Drekkana (Saravali Ch. 10)'
                   )
                 }
@@ -92,8 +97,7 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
             </div>
             <div className="vx-khara-details">
               <div>
-                <strong>22nd Drekkana Sign:</strong> {khara.rasi_name} (Decanate {khara.decanate}:{' '}
-                {khara.degree_span})
+                <strong>22nd Drekkana Sign:</strong> {khara.rasi_name} ({khara.decanate_label})
               </div>
               <div>
                 <strong>Khara Lord (8th of D3):</strong>{' '}
@@ -111,16 +115,16 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
               </div>
             </div>
 
-            {nadi?.elemental_trines && (
+            {Array.isArray(nadi?.elemental_trines) && nadi.elemental_trines.length > 0 && (
               <div style={{ marginTop: '10px', borderTop: '1px dashed rgba(217,119,6,0.25)', paddingTop: '8px' }}>
                 <strong style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>
                   <i className="fa-solid fa-fire-flame-curved" /> Bhrigu Nadi Elemental Trines (1–5–9):
                 </strong>
                 <div className="vx-trine-grid">
-                  {Object.entries(nadi.elemental_trines).map(([tName, info]) => (
-                    <div key={tName} className="vx-trine-row">
-                      <strong>{tName.split(' ')[0]}:</strong>{' '}
-                      {info.planets.length ? info.planets.join(', ') : 'Empty'}
+                  {nadi.elemental_trines.map((t) => (
+                    <div key={t.tattva} className="vx-trine-row" title={(t.signs || []).join(', ')}>
+                      <strong>{firstWord(t.tattva)}:</strong>{' '}
+                      {t.planets?.length ? t.planets.join(', ') : 'Empty'}
                     </div>
                   ))}
                 </div>
@@ -186,23 +190,21 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
                     </td>
                     <td>
                       {av ? (
-                        <span title={av.baladi_meaning}>
-                          {av.baladi.split(' ')[0]}{' '}
-                          <small className="vx-muted">({Math.round(av.proportion_multiplier * 100)}%)</small>
+                        <span title={av.baladi}>
+                          {firstWord(av.baladi)}{' '}
+                          <small className="vx-muted">({Math.round(Number(av.baladi_result_pct) || 0)}%)</small>
                         </span>
                       ) : (
                         '—'
                       )}
                     </td>
-                    <td>{av?.jagradadi?.split(' ')[0] || '—'}</td>
+                    <td>{firstWord(av?.jagradadi) || '—'}</td>
                     <td>
-                      <span className="vx-deeptadi-chip">{av?.deeptadi?.split(' ')[0] || '—'}</span>
+                      <span className="vx-deeptadi-chip">{firstWord(av?.deeptadi) || '—'}</span>
                     </td>
                     <td>
                       {av ? (
-                        <span>
-                          {av.sayanadi} <small className="vx-muted">[{av.cheshta_sub_state}]</small>
-                        </span>
+                        <span>{av.sayanadi}</span>
                       ) : (
                         '—'
                       )}
@@ -210,15 +212,15 @@ export const ClassicalDepthPanel: React.FC<Props> = ({ chart }) => {
                     <td className="vx-tabular">
                       {vb ? (
                         <span className="vx-vb-score">
-                          <strong>{vb.score}</strong>/20 <small>({vb.percentage}%)</small>
+                          <strong>{vb.score}</strong>/{vb.max_score ?? 20} <small title={vb.status}>({vb.percentage}%)</small>
                         </span>
                       ) : (
                         '—'
                       )}
                     </td>
-                    <td>{pl?.hora_rasi_name?.split(' ')[0] || '—'}</td>
-                    <td>{pl?.chaturthamsha_rasi_name?.split(' ')[0] || '—'}</td>
-                    <td>{pl?.saptamsha_rasi_name?.split(' ')[0] || '—'}</td>
+                    <td>{firstWord(pl?.hora_rasi_name) || '—'}</td>
+                    <td>{firstWord(pl?.chaturthamsha_rasi_name) || '—'}</td>
+                    <td>{firstWord(pl?.saptamsha_rasi_name) || '—'}</td>
                   </tr>
                 );
               })}

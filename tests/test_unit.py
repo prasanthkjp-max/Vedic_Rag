@@ -1142,5 +1142,40 @@ check("models: helper calls use the model they're given, and the fast model by d
       [k["model"] for k in _fake.chat.completions.kwargs] == ["chat/model", "chat/model", _deps.MODEL_FAST])
 
 
+# ---- public share page: "hide birth details" must also hide the name / dasa dates
+try:
+    _conn = sqlite3.connect(app.DB_PATH)
+    _cid = _conn.execute("SELECT id FROM user_charts WHERE name = 'Sister Chart' LIMIT 1").fetchone()[0]
+    _conn.close()
+    _hdr = {"x-session-token": _session_token}
+
+    _slug_hidden = client.post(f"/api/user/charts/{_cid}/share", headers=_hdr,
+                               json={"hide_birth_details": True}).json()["slug"]
+    _page = client.get(f"/share/{_slug_hidden}")
+    check("share(hidden): page renders", _page.status_code == 200)
+    check("share(hidden): owner's name is not on the page", "Sister Chart" not in _page.text)
+    check("share(hidden): generic title is used", "Shared Birth Chart" in _page.text)
+    check("share(hidden): birth date/time/place are not on the page",
+          "1995-10-10" not in _page.text and "15:45" not in _page.text and "Bangalore" not in _page.text)
+    check("share(hidden): the dasa end date is not shown", "(until " not in _page.text)
+    _og = client.get(f"/share/{_slug_hidden}/og.png")
+    check("share(hidden): og card renders", _og.status_code == 200 and _og.content[:4] == b"\x89PNG")
+    from src.api import user as _user_api
+    check("share(hidden): og card is drawn with the generic title, not the name",
+          _user_api._share_display_name({"hide": True, "name": "Sister Chart"}) == "Shared Birth Chart"
+          and _user_api._share_display_name({"hide": False, "name": "Sister Chart"}) == "Sister Chart")
+
+    # Same chart, details shown: the name is allowed again (the owner opted in).
+    client.post(f"/api/user/charts/{_cid}/share", headers=_hdr, json={"hide_birth_details": False})
+    _page2 = client.get(f"/share/{_slug_hidden}")
+    check("share(shown): name and birth details appear", "Sister Chart" in _page2.text and "1995-10-10" in _page2.text)
+    # Hiding again must not serve the cached 'shown' page.
+    client.post(f"/api/user/charts/{_cid}/share", headers=_hdr, json={"hide_birth_details": True})
+    check("share: re-hiding is effective immediately (cache is keyed on the flag)",
+          "Sister Chart" not in client.get(f"/share/{_slug_hidden}").text)
+except Exception as e:
+    check(f"share privacy tests ran ({type(e).__name__}: {e})", False)
+
+
 print("\n" + ("ALL UNIT TESTS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

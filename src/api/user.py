@@ -302,6 +302,14 @@ def _load_share(slug: str):
     }
 
 
+SHARE_HIDDEN_TITLE = "Shared Birth Chart"
+
+
+def _share_display_name(share):
+    """Name shown on a public share page/card; generic when the owner hid details."""
+    return SHARE_HIDDEN_TITLE if share["hide"] else share["name"]
+
+
 def _compute_share_chart(share):
     y, m, d = (int(x) for x in share["dob"].split("-"))
     th, tm = (int(x) for x in share["tob"].split(":")[:2])
@@ -359,7 +367,9 @@ def public_shared_chart(slug: str):
     chart = _compute_share_chart(share)
     placements = chart["placements"]
     panch = chart["panchangam"]
-    name = _htmlmod.escape(share["name"])
+    # "Hide birth details" must also hide who the chart belongs to: a name plus a
+    # chart is identifying, and the dasa end date narrows the birth date.
+    name = _htmlmod.escape(_share_display_name(share))
 
     dasa = get_current_dasa(chart.get("dasas", []))
     dasa_line = ""
@@ -367,7 +377,7 @@ def public_shared_chart(slug: str):
         dasa_line = f"{dasa['mahadasa']} Mahadasa"
         if dasa.get("antardasa"):
             dasa_line += f" / {dasa['antardasa']} Bhukti"
-        if dasa.get("maha_window"):
+        if dasa.get("maha_window") and not share["hide"]:
             dasa_line += f" (until {dasa['maha_window'][1]})"
 
     birth_line = ""
@@ -469,7 +479,7 @@ def public_shared_chart_og(slug: str):
             except Exception:
                 pass  # non-Latin glyphs unsupported by the base-14 fonts
 
-        _text(fitz.Point(70, 150), share["name"][:40], 58, (0.91, 0.76, 0.29), "hebo")
+        _text(fitz.Point(70, 150), _share_display_name(share)[:40], 58, (0.91, 0.76, 0.29), "hebo")
         _text(fitz.Point(70, 215), "Vedic Birth Chart (Sidereal)", 30, (0.91, 0.89, 0.85))
         _text(fitz.Point(70, 320), f"Moon: {moon.get('rasi_name', '?')}   Nakshatra: {naks}", 34, (0.95, 0.9, 0.78))
         _text(fitz.Point(70, 380), f"Lagna: {lagna.get('rasi_name', '?')}", 34, (0.95, 0.9, 0.78))

@@ -55,3 +55,19 @@ jobs:
 
       - name: Frontend JS syntax check
         run: python tools/check_js.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # package-lock.json is gitignored in this repo, so this is `npm install`.
+      - name: React frontend (install, typecheck, build)
+        working-directory: frontend
+        run: |
+          npm install --no-audit --no-fund
+          npx tsc --noEmit
+          npx vite build --outDir /tmp/react-dist --emptyOutDir
+
+      - name: React panels render against real engine output
+        run: python tests/test_react_panels.py

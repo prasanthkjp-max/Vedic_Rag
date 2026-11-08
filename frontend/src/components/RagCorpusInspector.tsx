@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChartResponse } from '../types/astrology';
+import { firstWord, isCurrentPeriod } from '../lib/format';
 
 interface Props {
   chart: ChartResponse;
@@ -15,25 +16,22 @@ export const RagCorpusInspector: React.FC<Props> = ({ chart }) => {
   const kp = chart.kp;
   const arudha = chart.arudha_padas;
   const khara = chart.khara_drekkana;
+  const pada = (a?: { pada_rasi_short?: string }) => a?.pada_rasi_short || '';
 
   if (calcType === 'JAIMINI' || dasaSys === 'CHARA') {
     const ak = jaimini?.atmakaraka;
-    const krasi = (jaimini?.karakamsa_rasi_name || '').split(' ')[0];
+    const krasi = firstWord(jaimini?.karakamsa_rasi_name);
     if (ak?.planet) queries.push(`Atmakaraka Karakamsa ${ak.planet} ${krasi} (BPHS Ch. 32–33)`);
     queries.push('Chara Dasa Jaimini rasi periods (BPHS Ch. 46)');
-    if (arudha?.arudha_lagna) {
-      queries.push(
-        `Arudha Pada ${arudha.arudha_lagna.pada_rasi_short} Upapada ${arudha.upapada_lagna?.pada_rasi_short} (BPHS Ch. 29)`
-      );
-    }
   }
 
   if (dasaSys === 'ASHTOTTARI') {
-    const firstActive = chart.ashtottari_dasas?.dasas?.[0]?.dasa_lord || 'Sun';
-    queries.push(`Astottari dasa ${firstActive} mahadasa bhukti (BPHS Vol. 2 Ch. 46)`);
+    const ashDasas = chart.ashtottari_dasas?.dasas || [];
+    const running = ashDasas.find((d) => isCurrentPeriod(d.start_date, d.end_date)) || ashDasas[0];
+    queries.push(`Astottari dasa ${running?.dasa_lord || 'Sun'} mahadasa bhukti (BPHS Vol. 2 Ch. 46)`);
   }
 
-  if (calcType === 'KP' && kp?.cusps?.length) {
+  if (calcType === 'KP' && kp && Array.isArray(kp.cusps) && kp.cusps.length >= 10) {
     const c1 = kp.cusps[0];
     const c10 = kp.cusps[9];
     const c7 = kp.cusps[6];
@@ -47,16 +45,14 @@ export const RagCorpusInspector: React.FC<Props> = ({ chart }) => {
     queries.push(`nakshatra ${moonNaks} pada trine linkage`);
   }
 
-  const lagnaRasi = chart.placements?.Lagna?.rasi_name?.split(' ')[0] || 'Mesha';
+  const lagnaRasi = firstWord(chart.placements?.Lagna?.rasi_name) || 'Mesha';
   queries.push(`${lagnaRasi} lagna ascendant personality (Saravali & Phaladeepika)`);
   queries.push('planetary avastha Sayanadi Deepta Kumara Yuva (BPHS Ch. 45)');
   if (arudha?.arudha_lagna) {
-    queries.push(
-      `Arudha Pada ${arudha.arudha_lagna.pada_rasi_short} Upapada ${arudha.upapada_lagna?.pada_rasi_short} (BPHS Ch. 29)`
-    );
+    queries.push(`Arudha Pada ${pada(arudha.arudha_lagna)} Upapada ${pada(arudha.upapada_lagna)} (BPHS Ch. 29)`);
   }
-  if (khara?.rasi_short) {
-    queries.push(`22nd Drekkana Khara ${khara.nature.split(' ')[0]} (Saravali Ch. 10 & Jataka Parijata)`);
+  if (khara?.rasi_short && khara.nature) {
+    queries.push(`22nd Drekkana Khara ${firstWord(khara.nature)} (Saravali Ch. 10 & Jataka Parijata)`);
   }
 
   return (

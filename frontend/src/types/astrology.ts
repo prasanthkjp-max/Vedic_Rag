@@ -48,67 +48,75 @@ export interface PlacementInfo {
   kp_house?: number;
 }
 
+/** Shapes below mirror what `get_astrological_chart` actually returns
+ *  (src/engines/astro_engine.py). tests/test_react_panels.py renders every panel
+ *  against real engine output, so drift between this file and the engine fails CI. */
+
 export interface KPCusp {
   house: number;
   longitude: number;
   rasi_index: number;
   rasi_name: string;
-  degree_in_sign: number;
-  rasi_lord: string;
+  degree: number;
+  dms: string;
   nakshatra: string;
+  sign_lord: string;
   star_lord: string;
   sub_lord: string;
   sub_sub_lord: string;
 }
 
 export interface KPHouseSignificator {
-  level_1_occupants_of_star_of_occupants: string[];
-  level_2_occupants: string[];
-  level_3_occupants_of_star_of_owner: string[];
-  level_4_owner: string;
+  house: number;
+  cusp_star_lord: string;
+  cusp_sub_lord: string;
+  level_1_star_of_occupant: string[];
+  level_2_occupant: string[];
+  level_3_star_of_owner: string[];
+  level_4_owner: string[];
   all_significators: string[];
 }
 
 export interface KPData {
   cusps: KPCusp[];
-  planet_significators: Record<
-    string,
-    {
-      occupied_house: number;
-      owned_houses: number[];
-      star_lord: string;
-      sub_lord: string;
-      sub_sub_lord: string;
-    }
-  >;
+  planets?: Record<string, any>;
   house_significators: Record<string, KPHouseSignificator>;
 }
 
 export interface JaiminiKarakaInfo {
   code: string;
-  name: string;
-  meaning: string;
+  /** e.g. "Atmakaraka (Soul & King of Chart)" */
+  role: string;
   planet: string;
-  degree_in_sign: number;
-  rasi_index: number;
+  degree: number;
   rasi_name: string;
   navamsha_rasi_index: number;
   navamsha_rasi_name: string;
 }
 
+export interface ArgalaItem {
+  type: string;
+  argala_sign: string;
+  argala_planets: string[];
+  virodha_sign: string;
+  virodha_planets: string[];
+  status: string;
+}
+
 export interface CharaAntardasa {
+  /** e.g. "Vrishabha (Venus)" */
+  bhukti_lord: string;
   rasi_index: number;
-  rasi_name: string;
-  rasi_short: string;
+  duration_years: number;
   start_date: string;
   end_date: string;
 }
 
 export interface CharaDasaPeriod {
+  /** e.g. "Mesha (Mars)" */
+  dasa_lord: string;
   rasi_index: number;
   rasi_name: string;
-  rasi_short: string;
-  lord: string;
   duration_years: number;
   start_date: string;
   end_date: string;
@@ -116,7 +124,7 @@ export interface CharaDasaPeriod {
 }
 
 export interface JaiminiData {
-  karakas: Record<string, JaiminiKarakaInfo>;
+  karakas: JaiminiKarakaInfo[];
   atmakaraka: JaiminiKarakaInfo;
   amatyakaraka: JaiminiKarakaInfo;
   darakaraka: JaiminiKarakaInfo;
@@ -124,14 +132,15 @@ export interface JaiminiData {
   karakamsa_rasi_name: string;
   karakamsa_lord: string;
   swamsa_house_from_d9_lagna: number;
-  rasi_drishti: Record<string, string[]>;
-  argala_on_lagna: Record<string, { house_from_ref: number; rasi_short: string; planets: string[] }>;
-  argala_on_atmakaraka: Record<string, { house_from_ref: number; rasi_short: string; planets: string[] }>;
+  rasi_drishti: Record<string, { aspected_signs: string[]; occupants: string[]; aspected_planets: string[] }>;
+  argala_on_lagna: ArgalaItem[];
+  argala_on_atmakaraka: ArgalaItem[];
   chara_dasas: CharaDasaPeriod[];
 }
 
 export interface AshtottariBhukti {
   bhukti_lord: string;
+  duration_years: number;
   start_date: string;
   end_date: string;
 }
@@ -145,22 +154,22 @@ export interface AshtottariMaha {
 }
 
 export interface AshtottariDasaData {
-  applicable: boolean;
-  applicability_reason: string;
-  total_cycle_years: number;
+  cycle_years: number;
+  is_bphs_applicable: boolean;
+  applicability_note: string;
   dasas: AshtottariMaha[];
 }
 
 export interface ArudhaPadaItem {
   code: string;
+  alias: string;
   house: number;
-  bhava_rasi_index: number;
-  bhava_rasi_name: string;
-  bhava_lord: string;
-  lord_rasi_index: number;
+  house_rasi: string;
+  house_lord: string;
   pada_rasi_index: number;
   pada_rasi_name: string;
   pada_rasi_short: string;
+  pada_lord: string;
   house_from_lagna: number;
   exception_applied: boolean;
 }
@@ -173,54 +182,48 @@ export interface ArudhaPadasData {
 
 export interface GrahaAvastha {
   baladi: string;
-  baladi_meaning: string;
+  baladi_result_pct: number;
   jagradadi: string;
   deeptadi: string;
   sayanadi: string;
-  sayanadi_index: number;
-  cheshta_sub_state: string;
-  proportion_multiplier: number;
 }
 
 export interface KharaDrekkana {
   rasi_index: number;
   rasi_name: string;
   rasi_short: string;
-  decanate: number;
-  degree_span: string;
   lord: string;
+  decanate: number;
+  decanate_label: string;
   nature: string;
+}
+
+export interface NadiTrine {
+  tattva: string;
+  signs: string[];
+  planets: string[];
 }
 
 export interface NadiLink {
   planet: string;
-  rasi_short: string;
   nakshatra: string;
   pada: number;
+  purushartha: string;
   star_lord: string;
-  star_lord_houses_owned: number[];
-  dispositor: string;
-  element_trine: string;
-  trine_connected_planets: string[];
+  sub_lord: string;
+  signified_houses: number[];
 }
 
 export interface NadiData {
-  elemental_trines: Record<
-    string,
-    {
-      signs: string[];
-      planets: string[];
-      significance: string;
-    }
-  >;
-  nakshatra_nadi_links: Record<string, NadiLink>;
+  elemental_trines: NadiTrine[];
+  nakshatra_links: Record<string, NadiLink>;
 }
 
 export interface VimsopakaBalaItem {
   score: number;
   max_score: number;
   percentage: number;
-  tier: string;
+  status: string;
 }
 
 export interface ChartResponse {
