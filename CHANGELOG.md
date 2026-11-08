@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.6]
+
+### Removed
+- The site footer ("© 2026 Vedic Astro AI · Free software licensed under the GNU AGPL-3.0 · Download source") and the "License: GNU AGPL-3.0" row in the sidebar settings. `GET /api/source` still serves the source, but the page no longer links to it.
+
 ## [1.32.5]
 
 ### Fixed
