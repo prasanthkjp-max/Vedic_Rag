@@ -53,6 +53,7 @@ source.tar.gz
 **/.claude/settings.local.json
 android/.idea/deviceManager.xml
 android/.idea/planningMode.xml
+.vscode/
 
 # Private security audit notes — keep out of the (possibly public) repo
 AUDIT_REPORT.md

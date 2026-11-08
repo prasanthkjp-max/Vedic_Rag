@@ -18,6 +18,11 @@ All notable changes to this project are documented here. Versions follow
 - Typos: Kannada tithi 12 is "ದ್ವಾದಶಿ" (was "ದ್ವಿದಶಿ" in the app), Malayalam Shravana month is "ശ്രാവണം" (was "ശ്രാവണവും", "and Shravana", in the app), Malayalam year Nandana is "നന്ദന" (was "നനന്ദന" in the PDF), and the PDF's Malayalam lunar months use the standard "-ം" ending.
 - `tools/gen_frontend_i18n.py` keeps LF line endings when run on Windows.
 
+## [1.32.7]
+
+### Changed
+- `.gitignore` now excludes the `.vscode/` editor settings folder.
+
 ## [1.32.6]
 
 ### Removed
