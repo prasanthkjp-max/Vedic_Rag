@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.5]
+
+### Fixed
+- **Public share links leaked the owner's name when "hide birth details" was on.** The share page title, heading and preview card still showed the full name, and the current-period line showed the dasa end date (which narrows the birth date). With the option on, the page and the card now say "Shared Birth Chart" and the dasa end date is dropped.
+- **KP and Jaimini panels crashed, blanking the whole advanced-astrology workspace.** The React types didn't match what the engine sends (`degree`/`sign_lord` for KP cusps, `level_1_star_of_occupant`… for significators, lists — not dicts — for Jaimini karakas/argala/nadi trines, `dasa_lord`/`bhukti_lord` for Chara dasa). The types now mirror the engine, and the panels read the real fields.
+- Classical panel showed `NaN%`, `[undefined]`, and a blank decanate; Arudha chips set the selected planet to `undefined`; the Ashtottari badge always read "Universal / Secondary" and its reason text was blank.
+- "ACTIVE NOW" dasa flipped a day early in India between 00:00 and 05:30 (it used the UTC date, not the local date).
+- Re-running a chart added three more `change` listeners to the system/dasa/ayanamsa selects every time; they are now bound once.
+- Two Font Awesome icons used the wrong letter case and did not render; the Arudha scripture query was listed twice for Jaimini charts; the KP scripture queries and the 22nd-drekkana query no longer throw on missing data.
+
+### Added
+- Each React panel now sits behind an error boundary, so one failing panel shows a message with a Retry button instead of taking down the workspace.
+- `tests/test_react_panels.py` renders every panel against real engine output (every calculation system and ayanamsa, plus light-mode charts) and fails on any crash or stray `undefined`/`NaN`. CI runs it, along with the frontend typecheck.
+- Share-page privacy tests in `tests/test_unit.py`.
+
 ## [1.32.4]
 
 ### Changed

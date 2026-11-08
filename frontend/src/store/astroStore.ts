@@ -108,7 +108,8 @@ export const astroStore = {
     emitChange();
   },
 
-  setSelectedPlanet(planet: string | null, notifyChart = false) {
+  setSelectedPlanet(planet: string | null | undefined, notifyChart = false) {
+    planet = planet || null; // never store `undefined` (e.g. a pada with no lord)
     if (state.selectedPlanet === planet) return;
     state = { ...state, selectedPlanet: planet };
     emitChange();

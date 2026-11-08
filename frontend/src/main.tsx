@@ -8,6 +8,28 @@ import './styles/react-astrology.css';
 
 let selectorRoot: Root | null = null;
 let workspaceRoot: Root | null = null;
+let legacySelectsBound = false;
+
+/** Bind the legacy <select>s to the store exactly once. mountReactRoots() runs on
+ *  every chart update, and re-adding listeners each time would pile them up. */
+function bindLegacySelects() {
+  if (legacySelectsBound) return;
+  const sysSelect = document.getElementById('in-system') as HTMLSelectElement | null;
+  const timSelect = document.getElementById('in-timing') as HTMLSelectElement | null;
+  const ayanSelect = document.getElementById('in-ayanamsa') as HTMLSelectElement | null;
+  if (!sysSelect && !timSelect && !ayanSelect) return; // DOM not ready yet; retry next call
+  legacySelectsBound = true;
+
+  sysSelect?.addEventListener('change', () => {
+    astroStore.setSystemConfig({ system: sysSelect.value as AstroSystem });
+  });
+  timSelect?.addEventListener('change', () => {
+    astroStore.setSystemConfig({ timing: timSelect.value as DasaSystem });
+  });
+  ayanSelect?.addEventListener('change', () => {
+    astroStore.setSystemConfig({ ayanamsa: ayanSelect.value as AyanamsaName });
+  });
+}
 
 function mountReactRoots() {
   const selectorEl = document.getElementById('react-system-selector-root');
@@ -30,20 +52,8 @@ function mountReactRoots() {
     );
   }
 
-  // Bind legacy select changes (#in-system, #in-timing, #in-ayanamsa) to React store
-  const sysSelect = document.getElementById('in-system') as HTMLSelectElement | null;
-  const timSelect = document.getElementById('in-timing') as HTMLSelectElement | null;
-  const ayanSelect = document.getElementById('in-ayanamsa') as HTMLSelectElement | null;
-
-  sysSelect?.addEventListener('change', () => {
-    astroStore.setSystemConfig({ system: sysSelect.value as AstroSystem });
-  });
-  timSelect?.addEventListener('change', () => {
-    astroStore.setSystemConfig({ timing: timSelect.value as DasaSystem });
-  });
-  ayanSelect?.addEventListener('change', () => {
-    astroStore.setSystemConfig({ ayanamsa: ayanSelect.value as AyanamsaName });
-  });
+  // Legacy select changes (#in-system, #in-timing, #in-ayanamsa) -> React store
+  bindLegacySelects();
 }
 
 window.__notifyReactChartUpdated = (chart?: ChartResponse | null, lang?: LangCode) => {

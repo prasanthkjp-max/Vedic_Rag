@@ -5,6 +5,7 @@ import { KPSystemPanel } from './KPSystemPanel';
 import { JaiminiSystemPanel } from './JaiminiSystemPanel';
 import { AshtottariDasaPanel } from './AshtottariDasaPanel';
 import { RagCorpusInspector } from './RagCorpusInspector';
+import { PanelErrorBoundary } from './PanelErrorBoundary';
 
 export const AdvancedAstrologyWorkspace: React.FC = () => {
   const { chart, activePanelTab } = useAstroStore();
@@ -74,11 +75,17 @@ export const AdvancedAstrologyWorkspace: React.FC = () => {
       </div>
 
       <div className="vx-workspace-body">
-        {activePanelTab === 'classical' && <ClassicalDepthPanel chart={chart} />}
-        {activePanelTab === 'kp' && <KPSystemPanel chart={chart} />}
-        {activePanelTab === 'jaimini' && <JaiminiSystemPanel chart={chart} />}
-        {activePanelTab === 'dasa' && <AshtottariDasaPanel chart={chart} />}
-        {activePanelTab === 'rag' && <RagCorpusInspector chart={chart} />}
+        {/* key = tab + chart identity, so switching tab or recalculating clears a failed panel */}
+        <PanelErrorBoundary
+          key={`${activePanelTab}-${chart.metadata?.julian_date}-${chart.metadata?.calc_type}-${chart.metadata?.dasa_system}`}
+          label={tabs.find((t) => t.id === activePanelTab)?.label || 'This panel'}
+        >
+          {activePanelTab === 'classical' && <ClassicalDepthPanel chart={chart} />}
+          {activePanelTab === 'kp' && <KPSystemPanel chart={chart} />}
+          {activePanelTab === 'jaimini' && <JaiminiSystemPanel chart={chart} />}
+          {activePanelTab === 'dasa' && <AshtottariDasaPanel chart={chart} />}
+          {activePanelTab === 'rag' && <RagCorpusInspector chart={chart} />}
+        </PanelErrorBoundary>
       </div>
     </div>
   );

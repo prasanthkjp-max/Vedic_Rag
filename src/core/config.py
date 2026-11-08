@@ -48,7 +48,7 @@ def _env_int(name, default):
 
 
 # --- Version ---
-VERSION = "1.32.4"
+VERSION = "1.32.5"
 
 # --- Paths (env-overridable) ---
 # config.py lives at <repo_root>/src/core/config.py, but BASE_DIR must stay the

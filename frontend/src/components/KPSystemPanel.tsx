@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChartResponse } from '../types/astrology';
+import { asList, firstWord } from '../lib/format';
 
 interface Props {
   chart: ChartResponse;
@@ -22,7 +23,7 @@ const HOUSE_MEANINGS: Record<number, string> = {
 
 export const KPSystemPanel: React.FC<Props> = ({ chart }) => {
   const kp = chart.kp;
-  if (!kp || !kp.cusps) {
+  if (!kp || !kp.cusps || kp.cusps.length === 0) {
     return <div className="vx-empty-state">KP Cuspal data is not available for this chart.</div>;
   }
 
@@ -31,7 +32,7 @@ export const KPSystemPanel: React.FC<Props> = ({ chart }) => {
       <div className="vx-panel-header">
         <div>
           <h4>
-            <i className="fa-solid fa-Satellite-dish" /> Krishnamurti Padhati (KP) — 12 Placidus House Cusps & Stellar Sub-Lords
+            <i className="fa-solid fa-satellite-dish" /> Krishnamurti Padhati (KP) — 12 Placidus House Cusps & Stellar Sub-Lords
           </h4>
           <p>
             In KP Astrology, the <strong>Star-Lord (Nakshatra Lord)</strong> shows the source of an event and the{' '}
@@ -64,10 +65,10 @@ export const KPSystemPanel: React.FC<Props> = ({ chart }) => {
                     <span className="vx-cusp-badge">Cusp {c.house}</span>
                     <div className="vx-subtext">{HOUSE_MEANINGS[c.house]}</div>
                   </td>
-                  <td>{c.rasi_name.split(' ')[0]}</td>
-                  <td>{c.degree_in_sign.toFixed(2)}°</td>
+                  <td>{firstWord(c.rasi_name)}</td>
+                  <td>{Number(c.degree).toFixed(2)}°</td>
                   <td>{c.nakshatra}</td>
-                  <td>{c.rasi_lord}</td>
+                  <td>{c.sign_lord}</td>
                   <td>
                     <span className="vx-lord-chip star">{c.star_lord}</span>
                   </td>
@@ -81,16 +82,16 @@ export const KPSystemPanel: React.FC<Props> = ({ chart }) => {
                     {sig ? (
                       <div className="vx-sig-levels">
                         <span title="Level I: Occupants of Star of Occupants">
-                          <strong>L1:</strong> {sig.level_1_occupants_of_star_of_occupants.join(', ') || '—'}
+                          <strong>L1:</strong> {asList(sig.level_1_star_of_occupant).join(', ') || '—'}
                         </span>
                         <span title="Level II: Direct Occupants">
-                          <strong>L2:</strong> {sig.level_2_occupants.join(', ') || '—'}
+                          <strong>L2:</strong> {asList(sig.level_2_occupant).join(', ') || '—'}
                         </span>
                         <span title="Level III: Occupants of Star of Owner">
-                          <strong>L3:</strong> {sig.level_3_occupants_of_star_of_owner.join(', ') || '—'}
+                          <strong>L3:</strong> {asList(sig.level_3_star_of_owner).join(', ') || '—'}
                         </span>
                         <span title="Level IV: House Owner">
-                          <strong>L4:</strong> {sig.level_4_owner}
+                          <strong>L4:</strong> {asList(sig.level_4_owner).join(', ') || '—'}
                         </span>
                       </div>
                     ) : (

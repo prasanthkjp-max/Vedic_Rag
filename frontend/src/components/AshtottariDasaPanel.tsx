@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChartResponse } from '../types/astrology';
+import { isCurrentPeriod } from '../lib/format';
 
 interface Props {
   chart: ChartResponse;
@@ -17,18 +18,12 @@ const PLANET_COLORS: Record<string, string> = {
   Ketu: '#78716c',
 };
 
-function isCurrentPeriod(start?: string, end?: string): boolean {
-  if (!start || !end) return false;
-  const today = new Date().toISOString().slice(0, 10);
-  return start <= today && today < end;
-}
-
 export const AshtottariDasaPanel: React.FC<Props> = ({ chart }) => {
   const asht = chart.ashtottari_dasas;
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
 
-  if (!asht || !asht.dasas) {
+  if (!asht || !Array.isArray(asht.dasas) || asht.dasas.length === 0) {
     return <div className="vx-empty-state">Ashtottari Dasa data is not available for this chart.</div>;
   }
 
@@ -71,10 +66,10 @@ export const AshtottariDasaPanel: React.FC<Props> = ({ chart }) => {
           </h4>
           <p>
             <strong>Scriptural Applicability:</strong>{' '}
-            <span className={asht.applicable ? 'vx-badge-ok' : 'vx-badge-note'}>
-              {asht.applicable ? 'Conditional Applicable' : 'Universal / Secondary Reference'}
-            </span>{' '}
-            — {asht.applicability_reason}
+            <span className={asht.is_bphs_applicable ? 'vx-badge-ok' : 'vx-badge-note'}>
+              {asht.is_bphs_applicable ? 'Conditional Applicable' : 'Universal / Secondary Reference'}
+            </span>
+            {asht.applicability_note ? <> — {asht.applicability_note}</> : null}
           </p>
         </div>
         <div className="vx-dasa-explorer-controls">
@@ -100,7 +95,7 @@ export const AshtottariDasaPanel: React.FC<Props> = ({ chart }) => {
       <div className="vx-life-ribbon-box">
         <div className="vx-life-ribbon-head">
           <span>
-            <i className="fa-solid fa-Hourglass-start" /> Life Age Timeline Ribbon (0 → 108 Years)
+            <i className="fa-solid fa-hourglass-start" /> Life Age Timeline Ribbon (0 → 108 Years)
           </span>
           <span className="vx-tabular">Current Age: ~{currentAge} yrs ({currentYear})</span>
         </div>
