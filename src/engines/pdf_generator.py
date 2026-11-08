@@ -1,5 +1,6 @@
 import os
 import math
+import re
 import logging
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -9,7 +10,10 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 # Single source of truth for panchangam value translations (shared with the
 # frontend via tools/gen_frontend_i18n.py). See translations.py.
-from src.core.translations import NAKSHATRA, YOGAM, KARANA
+from src.core.translations import (
+    LANGS, NAKSHATRA, YOGAM, KARANA, PLANET, RASI, DIGNITY, WEEKDAY, TITHI, PAKSHA,
+    LUNAR_MONTH, TAMIL_MONTH, MALAYALAM_MONTH, SAMVATSARA, ERA,
+)
 from src.core.config import BASE_DIR
 
 logger = logging.getLogger("vedic.pdf")
@@ -120,72 +124,22 @@ PLANET_ABBR_LOCAL = {
     "hi": {"Lagna": "लग्न", "Sun": "सूर्य", "Moon": "चन्द्र", "Mars": "मंगल", "Mercury": "बुध", "Jupiter": "गुरु", "Venus": "शुक्र", "Saturn": "शनि", "Rahu": "राहु", "Ketu": "केतु"}
 }
 
-PLANET_TRANSLATIONS = {
-    "en": { "Lagna": "Lagna", "Sun": "Sun", "Moon": "Moon", "Mars": "Mars", "Mercury": "Mercury", "Jupiter": "Jupiter", "Venus": "Venus", "Saturn": "Saturn", "Rahu": "Rahu", "Ketu": "Ketu" },
-    "ta": { "Lagna": "லக்னம்", "Sun": "சூரியன்", "Moon": "சந்திரன்", "Mars": "செவ்வாய்", "Mercury": "புதன்", "Jupiter": "குரு", "Venus": "சுக்கிரன்", "Saturn": "சனி", "Rahu": "ராகு", "Ketu": "கேது" },
-    "te": { "Lagna": "లగ్నము", "Sun": "సూర్యుడు", "Moon": "చంద్రుడు", "Mars": "కుజుడు", "Mercury": "బుధుడు", "Jupiter": "గురుడు", "Venus": "శుక్రుడు", "Saturn": "శని", "Rahu": "రాహువు", "Ketu": "కేతువు" },
-    "ml": { "Lagna": "ലഗ്നം", "Sun": "സൂര്യൻ", "Moon": "ചന്ദ്രൻ", "Mars": "ചൊവ്വ", "Mercury": "ബുധൻ", "Jupiter": "വ്യാഴം", "Venus": "ശുക്രൻ", "Saturn": "ശനി", "Rahu": "രാഹു", "Ketu": "കേതു" },
-    "kn": { "Lagna": "ಲಗ್ನ", "Sun": "ಸೂರ್ಯ", "Moon": "ಚಂದ್ರ", "Mars": "ಮಂಗಳ", "Mercury": "ಬುಧ", "Jupiter": "ಗುರು", "Venus": "ಶುಕ್ರ", "Saturn": "ಶನಿ", "Rahu": "ರಾಹು", "Ketu": "ಕೇತು" },
-    "hi": { "Lagna": "लग्न", "Sun": "सूर्य", "Moon": "चन्द्र", "Mars": "मंगल", "Mercury": "बुध", "Jupiter": "बृहस्पति", "Venus": "शुक्र", "Saturn": "शनि", "Rahu": "राहु", "Ketu": "केतु" }
-}
+# Planet / rasi / dignity / weekday names come from translations.py (single
+# source shared with the frontend); these views keep the shapes callers use.
+_ALL_LANGS = ["en"] + LANGS
 
-RASI_TRANSLATIONS = {
-    "en": ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"],
-    "ta": ["மேஷம்", "ரிஷபம்", "மிதுனம்", "கடகம்", "சிம்மம்", "கன்னி", "துலாம்", "விருச்சிகம்", "தனுசு", "மகரம்", "கும்பம்", "மீனம்"],
-    "te": ["మేషం", "వృషభం", "మిథునం", "కర్కాటకం", "సింహం", "కన్య", "తులా", "వృశ్చికం", "ధనుస్సు", "మకరం", "కుంభం", "మీన"],
-    "ml": ["മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം", "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ധനു", "മകരം", "കുംഭം", "മീനം"],
-    "kn": ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕಾಟಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನುಸ್ಸು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"],
-    "hi": ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"]
-}
+PLANET_TRANSLATIONS = {l: dict(zip(PLANET["en"], PLANET[l])) for l in _ALL_LANGS}
 
+RASI_TRANSLATIONS = {l: RASI[l] for l in _ALL_LANGS}
+
+# The PDF's English column uses short dignity labels; other languages use the
+# shared table.
+_DIGNITY_SHORT_EN = ["Exalted", "Debilitated", "Own Sign", "Friendly", "Inimical", "Neutral", "Neutral"]
 DIGNITY_TRANSLATIONS = {
-    "en": {
-        "Exalted (Ucha)": "Exalted", "Debilitated (Neecha)": "Debilitated", "Own Sign (Swakshetra)": "Own Sign",
-        "Friendly Sign (Mitra Rasi)": "Friendly", "Inimical Sign (Shatru Rasi)": "Inimical", "Neutral Sign (Sama Rasi)": "Neutral", "Neutral": "Neutral"
-    },
-    "ta": {
-        "Exalted (Ucha)": "உச்சம்", "Debilitated (Neecha)": "நீசம்", "Own Sign (Swakshetra)": "ஆட்சி",
-        "Friendly Sign (Mitra Rasi)": "நட்பு", "Inimical Sign (Shatru Rasi)": "பகை", "Neutral Sign (Sama Rasi)": "சமம்", "Neutral": "சமம்"
-    },
-    "te": {
-        "Exalted (Ucha)": "ఉచ్చ", "Debilitated (Neecha)": "నీచ", "Own Sign (Swakshetra)": "స్వక్షేత్రం",
-        "Friendly Sign (Mitra Rasi)": "మిత్ర రాశి", "Inimical Sign (Shatru Rasi)": "శత్రు రాశి", "Neutral Sign (Sama Rasi)": "సమం", "Neutral": "సమం"
-    },
-    "ml": {
-        "Exalted (Ucha)": "ഉച്ചം", "Debilitated (Neecha)": "നീചം", "Own Sign (Swakshetra)": "സ്വക്ഷേത്രം",
-        "Friendly Sign (Mitra Rasi)": "മിത്ര രാശി", "Inimical Sign (Shatru Rasi)": "ശത്രു രാശി", "Neutral Sign (Sama Rasi)": "സമം", "Neutral": "സമം"
-    },
-    "kn": {
-        "Exalted (Ucha)": "ಉಚ್ಚ", "Debilitated (Neecha)": "ನೀಚ", "Own Sign (Swakshetra)": "ಸ್ವಕ್ಷೇತ್ರ",
-        "Friendly Sign (Mitra Rasi)": "ಮಿತ್ರ ರಾಶಿ", "Inimical Sign (Shatru Rasi)": "ಶತ್ರು ರಾಶಿ", "Neutral Sign (Sama Rasi)": "ಸಮ", "Neutral": "ಸಮ"
-    },
-    "hi": {
-        "Exalted (Ucha)": "उच्च", "Debilitated (Neecha)": "नीच", "Own Sign (Swakshetra)": "स्वराशि",
-        "Friendly Sign (Mitra Rasi)": "मित्र राशि", "Inimical Sign (Shatru Rasi)": "शत्रु राशि", "Neutral Sign (Sama Rasi)": "सम", "Neutral": "सम"
-    }
+    l: dict(zip(DIGNITY["en"], _DIGNITY_SHORT_EN if l == "en" else DIGNITY[l])) for l in _ALL_LANGS
 }
 
-DAYS_OF_WEEK_LOCAL = {
-    "en": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    "ta": ["ஞாயிற்றுக்கிழமை", "திங்கள்கிழமை", "செவ்வாய்க்கிழமை", "புதன்கிழமை", "வியாழக்கிழமை", "வெள்ளிக்கிழமை", "சனிக்கிழமை"],
-    "te": ["ఆదివారం", "సోమవారం", "మంగళవారం", "బుధవారం", "గురువారం", "శుక్రవారం", "శనివారం"],
-    "ml": ["ഞായറാഴ്ച", "തിങ്കളാഴ്ച", "ചൊവ്വാഴ്ച", "ബുധനാഴ്ച", "വ്യാഴാഴ്ച", "വെള്ളിയാഴ്ച", "ശനിയാഴ്ച"],
-    "kn": ["ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"],
-    "hi": ["रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार"]
-}
-
-TITHI_TRANSLATIONS = {
-    "ta": {
-        "Amavasya": "அமாவாசை (Amavasya)",
-        "Pournami": "பௌர்ணமி (Pournami)",
-        "Sukla Paksha": "வளர்பிறை (Shukla)",
-        "Krishna Paksha": "தேய்பிறை (Krishna)",
-        "Tithi 1": "பிரதமை", "Tithi 2": "துவிதியை", "Tithi 3": "திருதியை", "Tithi 4": "சதுர்த்தி",
-        "Tithi 5": "பஞ்சமி", "Tithi 6": "சஷ்டி", "Tithi 7": "சப்த்தமி", "Tithi 8": "அஷ்டமி",
-        "Tithi 9": "நவமி", "Tithi 10": "தசமி", "Tithi 11": "ஏகாதசி", "Tithi 12": "துவாதசி",
-        "Tithi 13": "திரயோதசி", "Tithi 14": "சதுர்தசி"
-    }
-}
+DAYS_OF_WEEK_LOCAL = {l: WEEKDAY[l] for l in _ALL_LANGS}
 
 # Traditional Janma Patrika invocation shloka, written at the head of a horoscope.
 INVOCATION_SHLOKA_LOCAL = {
@@ -213,47 +167,27 @@ def _match_canon_idx(names, value):
 
 
 def translate_tithi(tithi_str, lang):
-    if not tithi_str or lang == 'en':
+    """Localize an engine tithi string, e.g. "Sukla Paksha Ekadashi (Tithi 11)"
+    -> "<paksha> - <tithi name>"; Pournami / Amavasya map to their own names."""
+    if not tithi_str or lang == 'en' or lang not in TITHI:
         return tithi_str
     lower = tithi_str.lower()
     if "pournami" in lower or "full moon" in lower:
-        translations = {
-            "ta": "பௌர்ணமி",
-            "te": "పౌర్ణమి",
-            "hi": "पूर्णिमा",
-            "ml": "പൗർണ്ണമി",
-            "kn": "ಪೌರ್ಣಮಿ",
-        }
-        return translations.get(lang, tithi_str)
+        return TITHI[lang][14]
     if "amavasya" in lower or "new moon" in lower:
-        translations = { "ta": "அமாவாசை", "te": "అమావాస్య", "hi": "अमावस्या", "ml": "അമാവാസി", "kn": "ಅಮಾವಾಸ್ಯೆ" }
-        return translations.get(lang, tithi_str)
-    
+        return TITHI[lang][15]
+
     paksha = ""
     if "sukla" in lower or "shukla" in lower:
-        paksha_trans = { "ta": "வளர்பிறை (சுக்ல பக்ஷம்)", "te": "శుక్ల పక్షం", "hi": "शुक्ल पक्ष", "ml": "ശുക്ല പക്ഷം", "kn": "ಶುಕ್ಲ ಪಕ್ಷ" }
-        paksha = paksha_trans.get(lang, "Sukla Paksha")
+        paksha = PAKSHA[lang][0]
     elif "krishna" in lower:
-        paksha_trans = { "ta": "தேய்பிறை (கிருஷ்ண பக்ஷம்)", "te": "కృష్ణ పక్షం", "hi": "कृष्ण पक्ष", "ml": "കൃഷ്ണ പക്ഷം", "kn": "ಕೃಷ್ಣ ಪಕ್ಷ" }
-        paksha = paksha_trans.get(lang, "Krishna Paksha")
-        
+        paksha = PAKSHA[lang][1]
+
     tithi_num = 1
-    import re
     match = re.search(r'tithi\s+(\d+)', lower) or re.search(r'(\d+)', lower)
     if match:
         tithi_num = int(match.group(1))
-    elif "prathama" in lower:
-        tithi_num = 1
-        
-    tithi_names = {
-        "ta": ["", "பிரதமை", "துவிதியை", "திருதியை", "சதுர்த்தி", "பஞ்சமி", "சஷ்டி", "சப்தமி", "அஷ்டமி", "நவமி", "தசமி", "ஏகாதசி", "துவாதசி", "திரயோதசி", "சதுர்தசி"],
-        "te": ["", "పాడ్యమి", "విదియ", "తదియ", "చవితి", "పంచమి", "షష్ఠి", "సప్తమి", "అష్టమి", "నవమి", "దశమి", "ఏకాదశి", "ద్వాదశి", "త్రయోదశి", "చతుర్దశి"],
-        "hi": ["", "प्रथमा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी"],
-        "ml": ["", "പ്രഥമ", "ദ്വിതീയ", "തൃതീയ", "ചതുർത്ഥി", "പഞ്ചമി", "ഷഷ്ഠി", "സപ്തമി", "അഷ്ടമി", "നവമി", "ദശമി", "ഏകാദശി", "ദ്വാദശി", "ത്രയോദശി", "ചതുർദശി"],
-        "kn": ["", "ಪ್ರಥಮ", "ದ್ವಿತೀಯ", "ತೃತೀಯ", "ಚತುರ್ಥಿ", "ಪಞ್ಚಮಿ", "ಷಷ್ಠಿ", "ಸಪ್ತಮಿ", "ಅಷ್ಟಮಿ", "ನವಮಿ", "ದಶಮಿ", "ಏಕಾದಶಿ", "ದ್ವಾದಶಿ", "ತ್ರಯೋದಶಿ", "ಚತುರ್ದಶಿ"]
-    }
-    
-    tithi_name = tithi_names.get(lang, [""] * 15)[tithi_num] if lang in tithi_names and tithi_num < 15 else f"Tithi {tithi_num}"
+    tithi_name = TITHI[lang][tithi_num - 1] if 1 <= tithi_num <= 14 else f"Tithi {tithi_num}"
     return f"{paksha} - {tithi_name}"
 
 def _translate_value(table, value, lang):
@@ -281,138 +215,47 @@ def translate_yogam(yog_str, lang):
 def translate_karanam(kar_str, lang):
     return _translate_value(KARANA, kar_str, lang)
 
+def _replace_first_name(value, table, lang):
+    """Replace the first canonical name (table order) found in `value` with its
+    `lang` translation, keeping the rest (e.g. the day number). None if no match."""
+    lower = value.lower()
+    for i, name in enumerate(table["en"]):
+        if name in lower:
+            return re.sub(name, table[lang][i], value, count=1, flags=re.IGNORECASE)
+    return None
+
+
 def translate_month(month_str, lang):
-    if not month_str or lang == 'en':
+    """Localize a panchangam month/date string ("Aippasi 22", "Chaitra 12",
+    "Chingam 3"). Lunar months are tried first, then Tamil, then Malayalam."""
+    if not month_str or lang == 'en' or lang not in LUNAR_MONTH:
         return month_str
-    
-    en_luni_months = [
-        "chaitra", "vaishakha", "jyeshtha", "ashadha", "shravana", "bhadrapada",
-        "ashvina", "kartika", "margashirsha", "pausha", "magha", "phalguna"
-    ]
-    luni_translations = {
-        "ta": ["சித்திரை (சைத்ரம்)", "வைகாசி (வைசாகம்)", "ஆனி (ஜேஷ்டம்)", "ஆடி (ஆஷாடம்)", "ஆவணி (ஸ்ராவணம்)", "புரட்டாசி (பாத்ரபதம்)", "ஐப்பசி (ஆஸ்வினம்)", "கார்த்திகை (கார்த்திகம்)", "மார்கழி (மார்கசீர்ஷம்)", "தை (புஷ்யம்)", "மாசி (மாகம்)", "பங்குனி (பால்குனம்)"],
-        "te": ["చైత్ర మాసం", "వైశాఖ మాసం", "జ్యేష్ఠ మాసం", "ఆషాఢ మాసం", "శ్రావణ మాసం", "భాద్రపద మాసం", "ఆశ్వయుజ మాసం", "కార్తీక మాసం", "మార్గశిర మాసం", "పుష్య మాసం", "మాఘ మాసం", "ఫాల్గుణ మాసం"],
-        "hi": ["चैत्र मास", "वैशाख मास", "ज्येष्ठ मास", "आषाढ़ मास", "श्रावण मास", "भाद्रपद मास", "आश्विन मास", "कार्तिक मास", "मार्गशीर्ष मास", "पौष मास", "माघ मास", "फाल्गुन मास"],
-        "ml": ["ചൈത്രം", "വൈശാഖം", "ജ്യേഷ്ഠം", "ആഷാഢം", "ശ്രാവണമ്", "ഭാദ്രപദമ്", "ആശ്വിനമ്", "കാർത്തികമ്", "മാർഗ്ഗശീർഷമ്", "പൗഷമ്", "മാഘമ്", "ഫാൽഗുനമ്"],
-        "kn": ["ಚೈತ್ರ ಮಾಸ", "ವೈಶಾಖ ಮಾಸ", "ಜ್ಯೇಷ್ಠ ಮಾಸ", "ಆಷಾಢ ಮಾಸ", "ಶ್ರಾವಣ ಮಾಸ", "ಭಾದ್ರಪದ ಮಾಸ", "ಆಶ್ವಯುಜ ಮಾಸ", "ಕಾರ್ತಿಕ ಮಾಸ", "ಮಾರ್ಗಶಿರ ಮಾಸ", "ಪುಷ್ಯ ಮಾಸ", "ಮಾಘ ಮಾಸ", "ಫಾಲ್ಗುಣ ಮಾಸ"]
-    }
-    
-    lower = month_str.lower()
-    for i, name in enumerate(en_luni_months):
-        if name in lower:
-            trans = luni_translations.get(lang, luni_translations["ta"])[i] if lang in luni_translations else name
-            return month_str.replace(month_str, trans)
-            
-    en_months = [
-        "chithirai", "vaikasi", "aani", "aadi", "aavani", "purattasi",
-        "aippasi", "karthigai", "margazhi", "thai", "maasi", "panguni"
-    ]
-    translations = {
-        "ta": ["சித்திரை", "வைகாசி", "ஆனி", "ஆடி", "ஆவணி", "புரட்டாசி", "ஐப்பசி", "கார்த்திகை", "மார்கழி", "தை", "மாசி", "பங்குனி"],
-        "te": ["చైత్రం (చిత్తిరై)", "వైశాఖం (వైకాసి)", "జ్యేష్ఠం (ఆని)", "ఆషాఢం (ఆడి)", "శ్రావణం (ఆవణి)", "భాద్రపదం (పురటాసి)", "ఆశ్వయుజం (ఐప్పసి)", "కార్తీకం (కార్తిగై)", "మార్గశిరం (మార్గఴి)", "పుష్యం (తై)", "మాఘం (మాసి)", "ఫాల్గుణం (పంగుని)"],
-        "hi": ["चैत्र", "वैशाख", "ज्येष्ठ", "आषाढ़", "श्रावण", "भाद्रपद", "आश्विन", "कार्तिक", "मार्गशीर्ष", "पौष", "माघ", "फाल्गुन"],
-        "ml": ["ചൈത്രം", "വൈശാഖം", "ജ്യേഷ്ഠം", "ആഷാഢം", "ശ്രാവണം", "ഭാദ്രപദം", "ആശ്വിനം", "കാർത്തികം", "മാർഗ്ഗശീർഷം", "പൗഷം", "മാഘം", "ഫാൽഗുനം"],
-        "kn": ["ಚೈತ್ರ", "ವೈಶಾಖ", "ಜ್ಯೇಷ್ಠ", "ಆಷಾಢ", "ಶ್ರಾವಣ", "ಭಾದ್ರಪದ", "ಆಶ್ವಯುಜ", "ಕಾರ್ತಿಕ", "ಮಾರ್ಗಶಿರ", "ಪುಷ್ಯ", "ಮಾಘ", "ಫಾಲ್ಗುಣ"]
-    }
-    for i, name in enumerate(en_months):
-        if name in lower:
-            trans = translations.get(lang, translations["ta"])[i] if lang in translations else name
-            import re
-            return re.sub(name, trans, month_str, flags=re.IGNORECASE)
-            
-    # Malayalam Solar Months
-    en_malayalam_months = [
-        "chingam", "kanni", "thulam", "vrischikam", "dhanu", "makaram",
-        "kumbham", "meenam", "medam", "edavam", "mithunam", "karkidakam"
-    ]
-    malayalam_translations = {
-        "ml": ["ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം", "ധനു", "മകരം", "കുംഭം", "മീനം", "മേടം", "ഇടവം", "മിഥുനം", "കർക്കടകം"],
-        "ta": ["சிங்கம் (ஆவணி)", "கன்னி (புரட்டாசி)", "துலாம் (ஐப்பசி)", "விருச்சிகம் (கார்த்திகை)", "தனுசு (மார்கழி)", "மகரம் (தை)", "கும்பம் (மாசி)", "மீனம் (பங்குனி)", "மேடம் (சித்திரை)", "இடவம் (வைகாசி)", "மிதுனம் (ஆனி)", "கர்க்கடகம் (ஆடி)"],
-        "te": ["చింగం", "కన్ని", "తులం", "వృశ్చికం", "ధనుస్సు", "మకరం", "కుంభం", "మీనం", "మేషం (మేడం)", "వృషభం (ఇడవమ్)", "మిథునం", "కర్కాటకం"],
-        "kn": ["ಚಿಙ್ಙಂ", "ಕನ್ನಿ", "ತುಲಾಂ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ", "ಮೇಡಂ", "ಇಡವಂ", "ಮಿಥುನ", "ಕರ್ಕಟಕ"],
-        "hi": ["चिंगम", "कन्नी", "तुलाम", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन", "मेडम", "इदवम", "मिथुन", "कर्कटकम"]
-    }
-    for i, name in enumerate(en_malayalam_months):
-        if name in lower:
-            trans = malayalam_translations.get(lang, malayalam_translations["ml"])[i] if lang in malayalam_translations else name
-            import re
-            return re.sub(name, trans, month_str, flags=re.IGNORECASE)
-            
+    for table in (LUNAR_MONTH, TAMIL_MONTH, MALAYALAM_MONTH):
+        out = _replace_first_name(month_str, table, lang)
+        if out is not None:
+            return out
     return month_str
 
+
 def translate_year(year_str, lang):
+    """Localize a panchangam year string: an era prefix ("Kolla Varsham 1201")
+    and/or a samvatsara name ("Visvavasu")."""
     if not year_str or lang == 'en':
         return year_str
-        
-    # Translate standard calendar prefixes
-    prefixes = {
-        "Kolla Varsham": {
-            "ta": "கொல்ல வருடம்",
-            "te": "కొల్లా వర్షం",
-            "ml": "കൊല്ലവർഷം",
-            "kn": "ಕೊಲ್ಲ ವರ್ಷ",
-            "hi": "कोल्ला वर्ष"
-        },
-        "Vikrama Samvat": {
-            "ta": "விக்ரம சகாப்தம்",
-            "te": "విక్రమ శకం",
-            "ml": "വിക്രമ സംവത്",
-            "kn": "ವಿಕ್ರಮ ಸಂವತ್ಸರ",
-            "hi": "विक्रम संवत"
-        },
-        "Shalivahana Shaka": {
-            "ta": "சாலிவாகன சகாப்தம்",
-            "te": "శాలివాహన శకం",
-            "ml": "ശാലിവാഹന ശകം",
-            "kn": "ಶಾಲಿವಾಹನ ಶಕ",
-            "hi": "शालिवाहन शक"
-        }
-    }
-    
+
     localized_year = year_str
-    for pref, translations in prefixes.items():
-        if pref in localized_year:
-            trans = translations.get(lang, pref)
-            localized_year = localized_year.replace(pref, trans)
-            
-    # Also translate traditional 60-year names if present
-    en_years = [
-        "prabhava", "vibhava", "sukla", "pramodoota", "prajopathi", "angirasa", "srimukha", "bhava", "yuva", "dhatu",
-        "eesvara", "bahudhanya", "pramathi", "vikrama", "vishu", "chitrabanu", "subanu", "tharana", "parthiba", "viya",
-        "sarvajith", "sarvadhari", "virodhi", "vikruthi", "kara", "nandhana", "vijaya", "jaya", "manmadha", "dhunmuki",
-        "hevilambi", "vilambi", "vikari", "sarvari", "plava", "subakruth", "sobakruth", "krodhi", "visvavasu", "parabhava",
-        "plavanga", "keelaka", "saumya", "sadharana", "virodhikruthu", "paridhaabi", "pramadhicha", "anandha", "rakshasa", "nala",
-        "pingala", "kalayukthi", "siddharthi", "raudhri", "dunmathi", "dhundubhi", "rudhirodhgari", "raktakshi", "krodhana", "akshaya"
-    ]
-    ta_translations = ["பிரபவ", "விபவ", "சுக்ல", "பிரமோதூத", "பிரஜோத்பத்தி", "ஆங்கீரச", "ஸ்ரீமுக", "பவ", "யுவ", "தாது", "ஈஸ்வர", "பஹுதான்ய", "பிரமாதி", "விக்ரம", "விஷு", "சித்ரபானு", "சுபானு", "தாரண", "பார்திப", "விய", "ஸர்வஜித்", "ஸர்வதாரி", "விரோதி", "விக்ருதி", "கர", "நந்தன", "விஜய", "ஜய", "மன்மத", "துன்முகி", "ஹேவிளம்பி", "விளம்பி", "விகாரி", "சார்வரி", "பிலவ", "சுபகிருது", "சோபகிருது", "குரோதி", "விஸ்வாவசு", "பராபவ", "ப்லவங்க", "கீலக", "சௌமிய", "சாதாரண", "விரோதிகிருது", "பரிதாபி", "பிரமாதீச", "ஆனந்த", "ராட்சஸ", "நள", "பிங்கள", "காளயுக்தி", "சித்தார்த்தி", "ரௌத்திரி", "துன்மதி", "துந்துபி", "ருத்ரோத்காரி", "ரக்தாட்சி", "குரோதன", "அட்சய"]
-    te_translations = ["ప్రభవ", "విభవ", "శుక్ల", "ప్రమోదూత", "ప్రజోత్పత్తి", "అంగీరస", "శ్రీముఖ", "భవ", "యువ", "ధాతృ", "ఈశ్వర", "బహుధాన్య", "ప్రమాది", "విక్రమ", "వృష", "చిత్రభాను", "స్వభాను", "తారణ", "పార్థివ", "వ్యయ", "సర్వజిత్తు", "సర్వధారి", "విరోధి", "వికృతి", "ఖర", "నందన", "విజయ", "జయ", "మన్మథ", "దుర్ముఖి", "హేవిళంబి", "విళంబి", "వికారి", "శార్వరి", "ప్లవ", "శుభకృతు", "శోభకృతు", "క్రోధి", "విశ్వావసు", "పరాభవ", "ప్లవంగ", "కీలక", "సౌమ్య", "సాధారణ", "విరోధికృతు", "పరీధావి", "ప్రమాదీచ", "ఆనంద", "రాక్షస", "నల", "పింగళ", "కాళయుక్తి", "సిద్ధార్థి", "రౌద్రి", "దుర్మతి", "దుందుభి", "రుధిరోద్గారి", "రక్తాక్షి", "క్రోధన", "అక్షయ"]
-    hi_translations = ["प्रभव", "विभव", "शुक्ल", "प्रमोदूत", "प्रजोत्पत्ति", "अंगिरस", "श्रीमुख", "भाव", "युव", "धातु", "ईश्वर", "बहुधान्य", "प्रमादी", "विक्रम", "वृष", "चित्रभानु", "सुभानु", "तारण", "पार्थिव", "व्यय", "सर्वजीत", "सर्वधारी", "विरोधी", "विकृति", "खर", "नंदन", "विजय", "जय", "मन्मथ", "दुर्मुख", "हेविलम्बी", "विलम्बी", "विकारी", "शार्वरी", "प्लव", "शुभकृत्", "शोभकृत्", "क्रोधी", "विश्वावसु", "पराभव", "प्लवंग", "कीलक", "सौम्य", "साधारण", "विरोधकृत्", "परिधावी", "प्रमादीचा", "आनन्द", "राक्षस", "नल", "पिंगल", "कालयुक्त", "सिद्धार्थी", "रौद्र", "दुर्मति", "दुन्दुभि", "रुधिरोद्गारी", "रक्ताक्ष", "क्रोधन", "अक्षय"]
-    ml_translations = ["പ്രഭവ", "വിഭവ", "ശുക്ല", "പ്രമോദൂത", "പ്രജോത്പത്തി", "അംഗീരസ", "ശ്രീമുഖ", "ഭവ", "യുവ", "ധാതു", "ഈശ്വര", "ബഹുധാന്യ", "പ്രമാദി", "വിക്രമ", "വൃഷ", "ചിത്രഭാനു", "സ്വഭാനു", "താരണ", "പാർത്ഥിവ", "വ്യയ", "സർവ്വജിത്ത്", "സർവ്വധാരി", "വിരോധി", "വികൃതി", "ഖര", "നനന്ദന", "വിജയ", "ജയ", "മന്മഥ", "ദുർമുഖി", "ഹേവിളമ്പി", "വിളമ്പി", "വികാരി", "ശാർവ്വരി", "പ്ലവ", "ശുഭകൃത്", "ശോഭകൃത്", "ക്രോധീ", "വിശ്വാവസു", "പരാഭവ", "പ്ലവംഗ", "കീലക", "സൗമ്യ", "സാധാരണ", "വിരോധികൃത്", "പരിധാവി", "പ്രമാദീച", "ആനന്ദം", "രാക്ഷസൻ", "നള", "പിംഗള", "കാലയുക്തി", "സിദ്ധാർത്ഥി", "രൗദ്രി", "ദുർമ്മതി", "ദുന്ദുഭി", "രുധിരോദ്ഗാരി", "രക്താക്ഷി", "ക്രോധന", "അക്ഷയം"]
-    kn_translations = ["ಪ್ರಭವ", "ವಿಭವ", "ಶುಕ್ಲ", "ಪ್ರಮೋದೂತ", "ಪ್ರಜೋತ್ಪತ್ತಿ", "ಅಂಗೀರಸ", "ಶ್ರೀಮುಖ", "ಭವ", "ಯುವ", "ಧಾತೃ", "ಈಶ್ವರ", "ಬಹುಧಾನ್ಯ", "ಪ್ರಮಾದಿ", "ವಿಕ್ರಮ", "ವೃಷ", "ಚಿತ್ರಭಾನು", "ಸ್ವಭಾನು", "ತಾರಣ", "ಪಾರ್ಥಿವ", "ವ್ಯಯ", "ಸರ್ವಜಿತ್ತು", "ಸರ್ವಧಾರಿ", "ವಿರೋಧಿ", "ವಿಕೃತಿ", "ಖರ", "ನಂದನ", "ವಿಜಯ", "ಜಯ", "ಮನ್ಮಥ", "ದುರ್ಮುಖಿ", "ಹೇವಿಳಂಬಿ", "ವಿಳಂಬಿ", "ವಿಕಾರಿ", "ಶಾರ್ವರಿ", "ಪ್ಲವ", "ಶುಭಕೃತು", "ಶೋಭಕೃತು", "ಕ್ರೋಧಿ", "ವಿಶ್ವಾವಸು", "ಪರಾಭವ", "ಪ್ಲವಂಗ", "ಕೀಲಕ", "ಸೌಮ್ಯ", "ಸಾಧಾರಣ", "ವಿರೋಧಿಕೃತು", "ಪರೀಧಾವಿ", "ಪ್ರಮಾದೀಚ", "ಆನಂದ", "ರಾಕ್ಷಸ", "ನಲ", "ಪಿಂಗಳ", "ಕಾಳಯುಕ್ತಿ", "ಸಿದ್ಧಾರ್ಥಿ", "ರೌದ್ರಿ", "ದುರ್ಮತಿ", "ದುಂದುಭಿ", "ರುಧಿರೋದ್ಗಾರಿ", "ರಕ್ತಾಕ್ಷಿ", "ಕ್ರೋಧನ", "ಅಕ್ಷಯ"]
-    
+    for era, trans in ERA.items():
+        if era in localized_year:
+            localized_year = localized_year.replace(era, trans.get(lang, era))
+
     # Match the LONGEST year name found, not the first: several samvatsara names
     # are substrings of others (e.g. "bhava" inside "parabhava"), and a
     # first-match would translate only the inner fragment.
-    lower = localized_year.lower()
-    best_idx, best_len = -1, 0
-    for i, name in enumerate(en_years):
-        if name in lower and len(name) > best_len:
-            best_idx, best_len = i, len(name)
-
-    if best_idx != -1:
-        trans_list = {
-            "ta": ta_translations,
-            "te": te_translations,
-            "hi": hi_translations,
-            "ml": ml_translations,
-            "kn": kn_translations
-        }.get(lang)
-        if trans_list:
-            import re
-            localized_year = re.sub(
-                en_years[best_idx], trans_list[best_idx], localized_year, flags=re.IGNORECASE
-            )
-
+    idx = _match_canon_idx(SAMVATSARA["en"], localized_year)
+    if idx != -1 and lang in SAMVATSARA:
+        localized_year = re.sub(
+            SAMVATSARA["en"][idx], SAMVATSARA[lang][idx], localized_year, flags=re.IGNORECASE
+        )
     return localized_year
 
 LABEL_LOCALIZATION = {

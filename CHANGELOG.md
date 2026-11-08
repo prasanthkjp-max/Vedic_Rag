@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.8]
+
+### Changed
+- **One copy of every astrology name in every language.** Planet, rasi, dignity, weekday, tithi, paksha, month (lunar, Tamil, Malayalam), samvatsara year, era, sankranti and festival names now live only in `src/core/translations.py`. The app page, the PDF report, the public panchangam/festival pages and the daily digest all read from it; the page gets it through `tools/gen_frontend_i18n.py`. The app and the PDF/public pages now show the same name for every value in every language.
+- Where the copies disagreed, the app's wording was kept: Tamil Pournami is "பௌர்ணமி (முழு நிலவு)", Telugu Lagna is "లగ్నం", and "Neutral Sign" is "సమ రాశి" / "സമ രാശി" / "ಸಮ ರಾಶಿ" / "सम राशि" in the PDF and digest too.
+- Removed unused tithi, paksha and nakshatra tables (and two functions nothing called) from `src/api/panchangam.py` and `src/engines/pdf_generator.py`.
+- `tests/test_i18n_sync.py` also checks the new tables against the engine's names and order, checks that the PDF's tables come from `translations.py`, and fails if `index.html` gets its own copy again.
+
+### Fixed
+- **Wrong "next tithi" during Krishna paksha.** The panchangam's "…then <next tithi>" text named the tithi after the right one, and showed "undefined" before Amavasya.
+- The PDF, public pages and digest dropped the day number from Hindi, Telugu and Kannada lunar dates (e.g. "चैत्र मास" instead of "चैत्र मास 12").
+- "Deepavali / Diwali (Festival of Lights)" and "Marriage Muhurtham" now translate on the public pages, as they already did in the app.
+- Typos: Kannada tithi 12 is "ದ್ವಾದಶಿ" (was "ದ್ವಿದಶಿ" in the app), Malayalam Shravana month is "ശ്രാവണം" (was "ശ്രാവണവും", "and Shravana", in the app), Malayalam year Nandana is "നന്ദന" (was "നനന്ദന" in the PDF), and the PDF's Malayalam lunar months use the standard "-ം" ending.
+- `tools/gen_frontend_i18n.py` keeps LF line endings when run on Windows.
+
 ## [1.32.6]
 
 ### Removed
