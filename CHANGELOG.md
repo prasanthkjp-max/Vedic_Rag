@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
-## [1.32.3]
+## [1.32.5]
 
 ### Fixed
 - **Public share links leaked the owner's name when "hide birth details" was on.** The share page title, heading and preview card still showed the full name, and the current-period line showed the dasa end date (which narrows the birth date). With the option on, the page and the card now say "Shared Birth Chart" and the dasa end date is dropped.
@@ -17,6 +17,12 @@ All notable changes to this project are documented here. Versions follow
 - Each React panel now sits behind an error boundary, so one failing panel shows a message with a Retry button instead of taking down the workspace.
 - `tests/test_react_panels.py` renders every panel against real engine output (every calculation system and ayanamsa, plus light-mode charts) and fails on any crash or stray `undefined`/`NaN`. CI runs it, along with the frontend typecheck.
 - Share-page privacy tests in `tests/test_unit.py`.
+
+## [1.32.4]
+
+### Changed
+- **Android build tooling:** Android Gradle Plugin 8.13.2 → 9.2.1 and Gradle 8.13 → 9.4.1 (Android Studio upgrade). `android/gradle.properties` gains the compatibility flags the upgrade assistant added, which keep the AGP 8 behaviour (old DSL, no built-in Kotlin, R8 and resource-shrinking defaults unchanged).
+- Frontend dev dependency `@types/react` ^19.0.0 → ^19.3.0.
 
 ## [1.32.2]
 
