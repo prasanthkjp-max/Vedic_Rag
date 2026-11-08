@@ -222,5 +222,36 @@ try:
 except FileNotFoundError:
     print("[SKIP] buildTithiName check — node not installed")
 
+# 9. Page labels are data-driven: every data-i18n / data-i18n-html /
+#    data-i18n-placeholder key has a non-empty value in all six languages
+#    (applyI18n falls back to English, then to stale text, so a gap shows the
+#    previous language), and changeLanguage() doesn't set static labels by hand.
+markup = re.sub(r"<script\b.*?</script>", "", html, flags=re.S)
+i18n_keys = sorted(set(re.findall(r'data-i18n(?:-html|-placeholder)?="(\w+)"', markup)))
+start = html.index("const localization = {")
+brace, depth = html.index("{", start), 0
+for pos in range(brace, len(html)):
+    depth += {"{": 1, "}": -1}.get(html[pos], 0)
+    if depth == 0:
+        break
+import tempfile
+with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+    f.write("const L = (" + html[brace:pos + 1] + ");\nconsole.log(JSON.stringify(Object.fromEntries("
+            "Object.entries(L).map(([k, v]) => [k, Object.keys(v).filter(x => v[x])]))));")
+try:
+    r = subprocess.run(["node", f.name], capture_output=True, text=True, encoding="utf-8")
+    have = {lang: set(keys) for lang, keys in json.loads(r.stdout).items()}
+    gaps = {lang: [k for k in i18n_keys if k not in have[lang]] for lang in ["en"] + translations.LANGS}
+    gaps = {lang: ks for lang, ks in gaps.items() if ks}
+    check(f"every data-i18n key ({len(i18n_keys)}) is filled in all six languages", not gaps, str(gaps))
+except FileNotFoundError:
+    print("[SKIP] data-i18n key coverage — node not installed")
+finally:
+    _os.unlink(f.name)
+cl_start = html.index("async function changeLanguage(")
+cl_body = html[cl_start:html.index("\n        }\n", cl_start)]
+by_hand = re.findall(r"setText\('[\w-]+', dict\.\w+(?: \|\| \"[^\"]*\")?\);", cl_body)
+check("changeLanguage sets no static label by hand (use data-i18n)", not by_hand, str(by_hand[:3]))
+
 print("\n" + ("ALL I18N SYNC CHECKS PASS" if not failures else f"{len(failures)} FAILED: {failures}"))
 sys.exit(1 if failures else 0)

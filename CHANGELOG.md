@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.33.1]
+
+### Changed
+- **Page labels are filled from the markup.** Each label now names its dictionary key: `data-i18n="key"` (text), `data-i18n-html` (markup), `data-i18n-placeholder`, and `data-i18n-suffix=":"`. A new `applyI18n(dict)` fills them all when the language changes. This replaces 159 hand-written assignments in `changeLanguage()`, which shrank from 377 lines to 147. To label a new element, add the key to every language in `localization` and the attribute to the element; no JavaScript is needed. Labels that depend on state (the signup bonus, the "Calculating…" button, partner names) or carry an icon stay in code.
+- `tests/test_i18n_sync.py` fails if a `data-i18n*` key is missing or empty in any of the six languages, or if `changeLanguage()` sets a static label by hand again.
+
+### Fixed
+- "Astrological System" and "Timing Period System (Dasa)" were missing from the English dictionary; the old code covered that with inline fallbacks. They're now in `localization.en`.
+
 ## [1.33.0]
 
 ### Added

@@ -3655,7 +3655,7 @@
         <nav id="side-nav" class="side-nav">
             <div class="side-nav-header">
                 <img src="/assets/oolaichuvadi_icon.png" alt="Oolaichuvadi">
-                <div class="logo-title"><h2 id="lbl-side-title">Vedic Astro AI</h2></div>
+                <div class="logo-title"><h2 id="lbl-side-title" data-i18n="title">Vedic Astro AI</h2></div>
             </div>
             <div class="side-nav-content">
 
@@ -3772,18 +3772,18 @@
             <div class="logo-section">
                 <img src="/assets/oolaichuvadi_icon.png" alt="Oolaichuvadi">
                 <div class="logo-title">
-                    <h1 id="lbl-title">Vedic Astro AI</h1>
-                    <p id="lbl-subtitle">Vedic Astronomical Panchangam & AI Portal</p>
+                    <h1 id="lbl-title" data-i18n="title">Vedic Astro AI</h1>
+                    <p id="lbl-subtitle" data-i18n="subtitle">Vedic Astronomical Panchangam & AI Portal</p>
                 </div>
             </div>
 
             <!-- Top bar subpage tabs left of translation tab -->
             <nav class="nav-top-bar" id="nav-top-bar">
-                <button class="nav-tab active" id="nav-btn-home" title="Shortcut: Press 1" onclick="navigateToPage('home')">Home (Panchangam)</button>
-                <button class="nav-tab" id="nav-btn-jyothisyam" title="Shortcut: Press 2" onclick="navigateToPage('jyothisyam')">Astrology</button>
-                <button class="nav-tab" id="nav-btn-horoscope" title="Shortcut: Press 3" onclick="navigateToPage('horoscope')">Horoscopes</button>
-                <button class="nav-tab" id="nav-btn-marriage" title="Shortcut: Press 4" onclick="navigateToPage('marriage')">Marriage Matching</button>
-                <button class="nav-tab" id="nav-btn-ai" title="Shortcut: Press 5" onclick="navigateToPage('ai')">Astro AI Chat</button>
+                <button class="nav-tab active" id="nav-btn-home" title="Shortcut: Press 1" onclick="navigateToPage('home')" data-i18n="nav_btn_home">Home (Panchangam)</button>
+                <button class="nav-tab" id="nav-btn-jyothisyam" title="Shortcut: Press 2" onclick="navigateToPage('jyothisyam')" data-i18n="nav_btn_jyothisyam">Astrology</button>
+                <button class="nav-tab" id="nav-btn-horoscope" title="Shortcut: Press 3" onclick="navigateToPage('horoscope')" data-i18n="nav_btn_horoscope">Horoscopes</button>
+                <button class="nav-tab" id="nav-btn-marriage" title="Shortcut: Press 4" onclick="navigateToPage('marriage')" data-i18n="nav_btn_marriage">Marriage Matching</button>
+                <button class="nav-tab" id="nav-btn-ai" title="Shortcut: Press 5" onclick="navigateToPage('ai')" data-i18n="nav_btn_ai">Astro AI Chat</button>
                 <span class="nav-sliding-indicator" id="nav-sliding-indicator"></span>
             </nav>
 
@@ -3890,18 +3890,18 @@
                 <!-- Guest Hero -->
                 <div id="home-guest-hero" class="card-soft mb-4" style="background: linear-gradient(135deg, rgba(254, 243, 199, 0.95), rgba(253, 230, 138, 0.9)); border: 1px solid var(--border-gold); padding: 24px; margin-bottom: 20px; display: none;">
                     <div style="max-width: 800px; margin: 0 auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
-                        <h1 id="lbl-hero-title" style="font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--accent-gold); line-height: 1.2;">Your precise Vedic birth chart — free, in your language</h1>
-                        <p id="lbl-hero-subtitle" style="font-size: 14px; color: var(--text-secondary); max-width: 600px; line-height: 1.4;">Experience high-precision Thirukanitha sidereal calculations grounded in classical Vedic texts. Available in 6 languages.</p>
+                        <h1 id="lbl-hero-title" style="font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--accent-gold); line-height: 1.2;" data-i18n="lbl_hero_title">Your precise Vedic birth chart — free, in your language</h1>
+                        <p id="lbl-hero-subtitle" style="font-size: 14px; color: var(--text-secondary); max-width: 600px; line-height: 1.4;" data-i18n="lbl_hero_subtitle">Experience high-precision Thirukanitha sidereal calculations grounded in classical Vedic texts. Available in 6 languages.</p>
                         <div style="display: flex; gap: 12px; margin-top: 8px;">
-                            <button id="lbl-hero-cta-chart" class="btn-primary" onclick="navigateToPage('jyothisyam')">Get your free birth chart</button>
-                            <button id="lbl-hero-cta-panchangam" class="btn-ghost" onclick="document.querySelector('.unified-dashboard-card').scrollIntoView({ behavior: 'smooth' })">Today's Panchangam</button>
+                            <button id="lbl-hero-cta-chart" class="btn-primary" onclick="navigateToPage('jyothisyam')" data-i18n="lbl_hero_cta_chart">Get your free birth chart</button>
+                            <button id="lbl-hero-cta-panchangam" class="btn-ghost" onclick="document.querySelector('.unified-dashboard-card').scrollIntoView({ behavior: 'smooth' })" data-i18n="lbl_hero_cta_panchangam">Today's Panchangam</button>
                         </div>
                         <div class="gap-3 mt-3" style="display: flex; flex-wrap: wrap; justify-content: center; font-size: 11px; color: var(--text-muted);">
-                            <span id="lbl-hero-trust-texts">📜 Grounded in classical texts</span>
+                            <span id="lbl-hero-trust-texts" data-i18n="lbl_hero_trust_texts">📜 Grounded in classical texts</span>
                             <span>•</span>
-                            <span id="lbl-hero-trust-langs">🌐 6 languages</span>
+                            <span id="lbl-hero-trust-langs" data-i18n="lbl_hero_trust_langs">🌐 6 languages</span>
                             <span>•</span>
-                            <span id="lbl-hero-trust-free">🪙 Free chart, no card needed</span>
+                            <span id="lbl-hero-trust-free" data-i18n="lbl_hero_trust_free">🪙 Free chart, no card needed</span>
                         </div>
                     </div>
                 </div>
@@ -3911,12 +3911,12 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 18px;">🕉️</span>
                         <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--text-primary);">
-                            <span id="lbl-welcome-name">Namaste</span>, <span id="welcome-user-name">Guest</span>
+                            <span id="lbl-welcome-name" data-i18n="lbl_welcome_name">Namaste</span>, <span id="welcome-user-name">Guest</span>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 16px; font-size: 12px;">
                         <div style="color: var(--text-secondary);">
-                            <span id="lbl-strip-today">Today:</span> <strong id="strip-today-panchangam">Loading...</strong>
+                            <span id="lbl-strip-today" data-i18n="lbl_strip_today">Today:</span> <strong id="strip-today-panchangam">Loading...</strong>
                         </div>
                         <div class="chip-price">
                             <span>🪙</span> <span id="strip-user-credits">0</span>
@@ -3928,9 +3928,9 @@
                 <div id="home-daily-phala" class="card-soft mb-4" style="display: none; background: rgba(255, 251, 235, 0.92); border: 1px solid var(--border-gold); padding: 14px 20px; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
                         <div style="font-family: var(--font-heading); font-size: 13px; font-weight: 700; color: var(--accent-gold);">
-                            ✨ <span id="lbl-home-phala-title">Your Daily Rasi Phala</span> — <span id="home-phala-sign"></span>
+                            ✨ <span id="lbl-home-phala-title" data-i18n="lbl_home_phala_title">Your Daily Rasi Phala</span> — <span id="home-phala-sign"></span>
                         </div>
-                        <button class="btn-primary" id="lbl-home-phala-more" onclick="navigateToPage('horoscope')" style="font-size: 11px; padding: 4px 12px;">See all signs →</button>
+                        <button class="btn-primary" id="lbl-home-phala-more" onclick="navigateToPage('horoscope')" style="font-size: 11px; padding: 4px 12px;" data-i18n="lbl_home_phala_more">See all signs →</button>
                     </div>
                     <div id="home-phala-text" style="font-size: 12.5px; color: var(--text-primary); line-height: 1.65;"></div>
                 </div>
@@ -3939,7 +3939,7 @@
             <!-- Onboarding Wizard Banner -->
             <div id="onboarding-wizard-card" class="card-soft mb-4" style="background: rgba(254, 243, 199, 0.6); border: 1px dashed var(--accent-gold); padding: 16px; margin-bottom: 20px; display: none; position: relative;">
                 <button onclick="dismissOnboardingWizard()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted);">&times;</button>
-                <h3 id="lbl-wizard-title" style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--text-gold); margin-bottom: 12px;">Welcome! Complete these 3 simple steps to start your journey:</h3>
+                <h3 id="lbl-wizard-title" style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--text-gold); margin-bottom: 12px;" data-i18n="lbl_wizard_title">Welcome! Complete these 3 simple steps to start your journey:</h3>
                 <!-- Goal Gradient: thin progress bar, account creation counted as
                      step 0 so a fresh signup never sees a literal 0% start. Width
                      and label are set in updateHeroAndOnboardingUI(). -->
@@ -3952,11 +3952,11 @@
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div id="wizard-step-1" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-primary);">
                         <input type="checkbox" id="chk-wizard-step-1" disabled style="cursor: default;">
-                        <label id="lbl-wizard-step-1" style="cursor: pointer;" onclick="openProfileModalToTab('birth-info')">① Save your birth details</label>
+                        <label id="lbl-wizard-step-1" style="cursor: pointer;" onclick="openProfileModalToTab('birth-info')" data-i18n="lbl_wizard_step_1">① Save your birth details</label>
                     </div>
                     <div id="wizard-step-2" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-primary);">
                         <input type="checkbox" id="chk-wizard-step-2" disabled style="cursor: default;">
-                        <label id="lbl-wizard-step-2" style="cursor: pointer;" onclick="navigateToPage('jyothisyam')">② See your chart</label>
+                        <label id="lbl-wizard-step-2" style="cursor: pointer;" onclick="navigateToPage('jyothisyam')" data-i18n="lbl_wizard_step_2">② See your chart</label>
                     </div>
                     <div id="wizard-step-3" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-primary);">
                         <input type="checkbox" id="chk-wizard-step-3" disabled style="cursor: default;">
@@ -4016,7 +4016,7 @@
                         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-calendar-days" style="color: var(--accent-gold);"></i> 
-                                <span id="lbl-home-calendar" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Astronomical Panchangam Calendar</span>
+                                <span id="lbl-home-calendar" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);" data-i18n="lbl_home_calendar">Astronomical Panchangam Calendar</span>
                             </div>
                             <div class="calendar-header-nav" style="display: flex; align-items: center; gap: 12px; position: relative;">
                                 <button type="button" class="cal-today-btn" id="calendar-today-btn" onclick="jumpCalendarToToday()">Today</button>
@@ -4071,7 +4071,7 @@
                     <div class="panchangam-details-panel" id="panchangam-details-panel">
                         <div class="panel-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
                             <i class="fa-solid fa-calendar-day" style="color: var(--accent-gold);"></i>
-                            <span id="lbl-title-panch" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);">Daily Panchangam</span>
+                            <span id="lbl-title-panch" style="font-family: var(--font-heading); font-size: 16px; font-weight: bold; color: var(--text-gold);" data-i18n="title_panch">Daily Panchangam</span>
                             <span style="margin-left: auto; display: inline-flex; gap: 6px; flex-wrap: wrap;">
                                 <button type="button" class="cal-today-btn" id="calendar-ask-ai-btn" onclick="askAIAboutSelectedDay()"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>Ask AI about this day</span></button>
                                 <button type="button" class="cal-today-btn" id="calendar-export-day-btn" onclick="exportSelectedDayICS()"><i class="fa-solid fa-calendar-plus"></i> <span>Export day (.ics)</span></button>
@@ -4091,28 +4091,28 @@
                                     <div class="panch-compact-item" id="item-tithi">
                                         <div class="panch-compact-icon"><i class="fa-solid fa-circle-half-stroke"></i></div>
                                         <div class="panch-compact-content">
-                                            <span class="panch-compact-label" id="lbl-tithi">Tithi (Phases)</span>
+                                            <span class="panch-compact-label" id="lbl-tithi" data-i18n="tithi">Tithi (Phases)</span>
                                             <span class="panch-compact-val" id="panch-tithi">--</span>
                                         </div>
                                     </div>
                                     <div class="panch-compact-item" id="item-nakshatra">
                                         <div class="panch-compact-icon"><i class="fa-solid fa-star"></i></div>
                                         <div class="panch-compact-content">
-                                            <span class="panch-compact-label" id="lbl-naks">Nakshatram</span>
+                                            <span class="panch-compact-label" id="lbl-naks" data-i18n="naks">Nakshatram</span>
                                             <span class="panch-compact-val" id="panch-naks">--</span>
                                         </div>
                                     </div>
                                     <div class="panch-compact-item" id="item-yogam">
                                         <div class="panch-compact-icon"><i class="fa-solid fa-link"></i></div>
                                         <div class="panch-compact-content">
-                                            <span class="panch-compact-label" id="lbl-yogam">Yogam</span>
+                                            <span class="panch-compact-label" id="lbl-yogam" data-i18n="yogam">Yogam</span>
                                             <span class="panch-compact-val" id="panch-yogam">--</span>
                                         </div>
                                     </div>
                                     <div class="panch-compact-item" id="item-karanam">
                                         <div class="panch-compact-icon"><i class="fa-solid fa-yin-yang"></i></div>
                                         <div class="panch-compact-content">
-                                            <span class="panch-compact-label" id="lbl-karanam">Karanam</span>
+                                            <span class="panch-compact-label" id="lbl-karanam" data-i18n="karanam">Karanam</span>
                                             <span class="panch-compact-val" id="panch-karanam">--</span>
                                         </div>
                                     </div>
@@ -4129,31 +4129,31 @@
                                         <span class="detail-val" id="panch-tamil-month">--</span>
                                     </div>
                                     <div class="details-row">
-                                        <span class="detail-label" id="lbl-kali-year"><i class="fa-solid fa-timeline"></i> Kali Year:</span>
+                                        <span class="detail-label" id="lbl-kali-year" data-i18n="kali_year"><i class="fa-solid fa-timeline"></i> Kali Year:</span>
                                         <span class="detail-val" id="panch-kali-year">--</span>
                                     </div>
                                     <div class="details-row">
-                                        <span class="detail-label" id="lbl-udayadhi"><i class="fa-solid fa-hourglass-half"></i> Udayadhi:</span>
+                                        <span class="detail-label" id="lbl-udayadhi" data-i18n="udayadhi"><i class="fa-solid fa-hourglass-half"></i> Udayadhi:</span>
                                         <span class="detail-val" id="panch-udayadhi">--</span>
                                     </div>
                                     <div class="details-row">
-                                        <span class="detail-label" id="lbl-sunrise"><i class="fa-solid fa-sun-plant-wilt" style="color: #ea580c;"></i> Sunrise:</span>
+                                        <span class="detail-label" id="lbl-sunrise" data-i18n="sunrise"><i class="fa-solid fa-sun-plant-wilt" style="color: #ea580c;"></i> Sunrise:</span>
                                         <span class="detail-val" id="panch-sunrise">--</span>
                                     </div>
                                     <div class="details-row">
-                                        <span class="detail-label" id="lbl-sunset"><i class="fa-solid fa-sunset" style="color: #b45309;"></i> Sunset:</span>
+                                        <span class="detail-label" id="lbl-sunset" data-i18n="sunset"><i class="fa-solid fa-sunset" style="color: #b45309;"></i> Sunset:</span>
                                         <span class="detail-val" id="panch-sunset">--</span>
                                     </div>
                                     <div class="details-row">
-                                        <span class="detail-label" id="lbl-moonrise"><i class="fa-solid fa-moon"></i> Moonrise:</span>
+                                        <span class="detail-label" id="lbl-moonrise" data-i18n="moonrise"><i class="fa-solid fa-moon"></i> Moonrise:</span>
                                         <span class="detail-val" id="panch-moonrise">--</span>
                                     </div>
                                     <div class="details-row">
-                                        <span class="detail-label" id="lbl-moonset"><i class="fa-solid fa-moon" style="opacity: 0.6;"></i> Moonset:</span>
+                                        <span class="detail-label" id="lbl-moonset" data-i18n="moonset"><i class="fa-solid fa-moon" style="opacity: 0.6;"></i> Moonset:</span>
                                         <span class="detail-val" id="panch-moonset">--</span>
                                     </div>
                                     <div class="details-row" style="display: none;">
-                                        <span id="lbl-ahas">Day Duration (Ahas)</span>
+                                        <span id="lbl-ahas" data-i18n="ahas">Day Duration (Ahas)</span>
                                         <span id="panch-ahas">--</span>
                                     </div>
                                 </div>
@@ -4163,9 +4163,9 @@
                             <div class="gochara-transit-right" style="width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; margin: 0 auto;">
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <div style="font-weight: bold; font-size: 14px; color: var(--text-gold); display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-chart-network"></i> <span id="lbl-title-gochara">Gochara Transits</span>
+                                        <i class="fa-solid fa-chart-network"></i> <span id="lbl-title-gochara" data-i18n="title_gochara">Gochara Transits</span>
                                     </div>
-                                    <div style="font-size: 10.5px; color: var(--text-secondary); line-height: 1.35;" id="lbl-desc-gochara">Today's sidereal transit planetary map in South Indian chart style.</div>
+                                    <div style="font-size: 10.5px; color: var(--text-secondary); line-height: 1.35;" id="lbl-desc-gochara" data-i18n="desc_gochara">Today's sidereal transit planetary map in South Indian chart style.</div>
                                 </div>
                                 
                                 <!-- Gochara Style Toggle Buttons -->
@@ -4190,11 +4190,11 @@
                 <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-book-open-reader"></i> 
-                        <span id="lbl-panch-wisdom-title">Panchangam Wisdom & Astrological Timings</span>
+                        <span id="lbl-panch-wisdom-title" data-i18n="panch_wisdom_title">Panchangam Wisdom & Astrological Timings</span>
                     </div>
                     <!-- Selection of Panchangam Type (Hidden - Auto-linked to Selected Language) -->
                     <div style="display: none;">
-                        <span id="lbl-panch-system-label" style="color: var(--text-secondary); font-weight: bold;">System:</span>
+                        <span id="lbl-panch-system-label" style="color: var(--text-secondary); font-weight: bold;" data-i18n="lbl_panch_system">System:</span>
                         <select id="panch-system-select" onchange="togglePanchangamSystem()">
                             <option value="sauramana">Sauramana (Solar System - e.g., Tamil, Malayalam)</option>
                             <option value="chandramana">Chandramana (Luni-Solar System - e.g., Telugu, Kannada, North Indian)</option>
@@ -4202,7 +4202,7 @@
                     </div>
                 </div>
 
-                <div id="lbl-panch-wisdom-desc" style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+                <div id="lbl-panch-wisdom-desc" style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;" data-i18n-html="panch_wisdom_desc">
                     The Vedic Calendar is divided into two primary regional calculators: 
                     <strong>Sauramana</strong> (reckoned by the Sun's transit through sidereal zodiac signs) and 
                     <strong>Chandramana</strong> (reckoned by the astronomical alignment of synodic lunar cycles). 
@@ -4215,7 +4215,7 @@
                     <!-- Daily Kaalams List -->
                     <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
                         <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title">Daily Kaalams & Auspicious Timings</span>
+                            <i class="fa-solid fa-clock"></i> <span id="lbl-daily-kaalams-title" data-i18n="daily_kaalams_title">Daily Kaalams & Auspicious Timings</span>
                         </div>
                         <!-- Visual 24-Hour Kaalam & Hora Timeline Bar (UI/UX Divine Elevation 3B) -->
                         <div class="sacred-24h-timeline-box" id="sacred-24h-timeline-container">
@@ -4246,38 +4246,38 @@
                             </div>
                         </div>
                         <div class="timings-list">
-                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-rahu-kalam-label">Rahu Kalam (Inauspicious):</span><span class="timing-time" id="panch-rahu-kalam">--</span></div>
-                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-yamagandam-label">Yamagandam (Inauspicious):</span><span class="timing-time" id="panch-yamagandam">--</span></div>
-                            <div class="timing-row omen-neutral"><span class="timing-dot"></span><span class="timing-label" id="lbl-gulika-kalam-label">Gulika Kalam (Auspicious/Neutral):</span><span class="timing-time" id="panch-gulika-kalam">--</span></div>
-                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-abhijit-label">Abhijit Muhurtha (Highly Auspicious):</span><span class="timing-time" id="panch-abhijit">--</span></div>
-                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-brahma-label">Brahma Muhurtha (Predawn Auspicious):</span><span class="timing-time" id="panch-brahma-muhurtha">--</span></div>
-                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-godhuli-label">Godhuli Muhurta (Auspicious):</span><span class="timing-time" id="panch-godhuli-muhurtha">--</span></div>
-                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-nishita-label">Nishita Muhurta (Auspicious):</span><span class="timing-time" id="panch-nishita-muhurtha">--</span></div>
-                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-vijaya-label">Vijaya Muhurta (Auspicious):</span><span class="timing-time" id="panch-vijaya-muhurtha">--</span></div>
-                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-dur-muhurta-label">Dur Muhurtam (Inauspicious):</span><span class="timing-time" id="panch-dur-muhurta">--</span></div>
+                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-rahu-kalam-label" data-i18n="rahu_kalam_label" data-i18n-suffix=":">Rahu Kalam (Inauspicious):</span><span class="timing-time" id="panch-rahu-kalam">--</span></div>
+                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-yamagandam-label" data-i18n="yamagandam_label" data-i18n-suffix=":">Yamagandam (Inauspicious):</span><span class="timing-time" id="panch-yamagandam">--</span></div>
+                            <div class="timing-row omen-neutral"><span class="timing-dot"></span><span class="timing-label" id="lbl-gulika-kalam-label" data-i18n="gulika_kalam_label" data-i18n-suffix=":">Gulika Kalam (Auspicious/Neutral):</span><span class="timing-time" id="panch-gulika-kalam">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-abhijit-label" data-i18n="abhijit_label" data-i18n-suffix=":">Abhijit Muhurtha (Highly Auspicious):</span><span class="timing-time" id="panch-abhijit">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-brahma-label" data-i18n="brahma_label" data-i18n-suffix=":">Brahma Muhurtha (Predawn Auspicious):</span><span class="timing-time" id="panch-brahma-muhurtha">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-godhuli-label" data-i18n="godhuli_muhurta_label" data-i18n-suffix=":">Godhuli Muhurta (Auspicious):</span><span class="timing-time" id="panch-godhuli-muhurtha">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-nishita-label" data-i18n="nishita_muhurta_label" data-i18n-suffix=":">Nishita Muhurta (Auspicious):</span><span class="timing-time" id="panch-nishita-muhurtha">--</span></div>
+                            <div class="timing-row omen-good"><span class="timing-dot"></span><span class="timing-label" id="lbl-vijaya-label" data-i18n="vijaya_muhurta_label" data-i18n-suffix=":">Vijaya Muhurta (Auspicious):</span><span class="timing-time" id="panch-vijaya-muhurtha">--</span></div>
+                            <div class="timing-row omen-bad"><span class="timing-dot"></span><span class="timing-label" id="lbl-dur-muhurta-label" data-i18n="dur_muhurta_label" data-i18n-suffix=":">Dur Muhurtam (Inauspicious):</span><span class="timing-time" id="panch-dur-muhurta">--</span></div>
                         </div>
                     </div>
 
                     <!-- Strength Metrics List -->
                     <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
                         <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-shield-halved"></i> <span id="lbl-strength-title">Muhurtham, Netram & Jeevan Strength</span>
+                            <i class="fa-solid fa-shield-halved"></i> <span id="lbl-strength-title" data-i18n="strength_title">Muhurtham, Netram & Jeevan Strength</span>
                         </div>
                         <ul style="margin: 0; padding-left: 20px; font-size: 11.5px; color: var(--text-primary); line-height: 1.7; list-style-type: square;">
-                            <li><span id="lbl-netram-label" style="font-weight: bold;">Netram (Eye of the Day):</span> <span id="panch-netram" style="font-weight: bold;">--</span></li>
-                            <li><span id="lbl-jeevan-label" style="font-weight: bold;">Jeevan (Life of the Day):</span> <span id="panch-jeevan" style="font-weight: bold;">--</span></li>
-                            <li><span id="lbl-vedic-ritu" style="font-weight: bold;">Vedic Ritu (Season):</span> <span id="panch-ritu" style="font-weight: bold; color: var(--accent-gold);">--</span></li>
-                            <li><span id="lbl-ayana" style="font-weight: bold;">Ayana (Solar Course):</span> <span id="panch-ayana" style="font-weight: bold; color: var(--accent-gold);">--</span></li>
-                            <li><span id="lbl-muhurtham-timings" style="font-weight: bold;">Auspicious Muhurtham Timings (Good Hours):</span> <span id="panch-muhurtham-desc" style="color: var(--text-secondary); white-space: normal;">--</span></li>
+                            <li><span id="lbl-netram-label" style="font-weight: bold;" data-i18n="netram_label">Netram (Eye of the Day):</span> <span id="panch-netram" style="font-weight: bold;">--</span></li>
+                            <li><span id="lbl-jeevan-label" style="font-weight: bold;" data-i18n="jeevan_label">Jeevan (Life of the Day):</span> <span id="panch-jeevan" style="font-weight: bold;">--</span></li>
+                            <li><span id="lbl-vedic-ritu" style="font-weight: bold;" data-i18n="lbl_vedic_ritu">Vedic Ritu (Season):</span> <span id="panch-ritu" style="font-weight: bold; color: var(--accent-gold);">--</span></li>
+                            <li><span id="lbl-ayana" style="font-weight: bold;" data-i18n="lbl_ayana">Ayana (Solar Course):</span> <span id="panch-ayana" style="font-weight: bold; color: var(--accent-gold);">--</span></li>
+                            <li><span id="lbl-muhurtham-timings" style="font-weight: bold;" data-i18n="lbl_muhurtham_timings">Auspicious Muhurtham Timings (Good Hours):</span> <span id="panch-muhurtham-desc" style="color: var(--text-secondary); white-space: normal;">--</span></li>
                         </ul>
                     </div>
 
                     <!-- Horas (Only related to the current hour) -->
                     <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
                         <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-hourglass-half"></i> <span id="lbl-horas-title">Hourly Planetary Horas (Transit Strengths)</span>
+                            <i class="fa-solid fa-hourglass-half"></i> <span id="lbl-horas-title" data-i18n="lbl_horas_title">Hourly Planetary Horas (Transit Strengths)</span>
                         </div>
-                        <div id="lbl-horas-desc" style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
+                        <div id="lbl-horas-desc" style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;" data-i18n="lbl_horas_desc">Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.</div>
                         <div id="panch-horas-list" style="font-size: 11.5px; color: var(--text-primary);">
                             <span style="font-size: 11.5px; color: var(--text-muted);">Please select a date to calculate Horas...</span>
                         </div>
@@ -4286,7 +4286,7 @@
                     <!-- Auspicious Festivals List -->
                     <div style="padding: 12px 16px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px;">
                         <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-gopuram"></i> <span id="lbl-festivals-title">Auspicious Festivals & Observances</span>
+                            <i class="fa-solid fa-gopuram"></i> <span id="lbl-festivals-title" data-i18n="lbl_festivals_title">Auspicious Festivals & Observances</span>
                         </div>
                         <div id="panch-festivals-list" style="font-size: 11.5px; color: var(--text-primary); line-height: 1.5; white-space: normal; padding-left: 4px;">
                             --
@@ -4319,15 +4319,15 @@
 
             <div class="card" id="content-jyothisyam" style="min-height: 500px;">
                 <div class="card-title">
-                    <i class="fa-solid fa-circle-user"></i> <span id="lbl-jyothisyam-title">Jyothisyam (Birth Chart Calculator)</span>
+                    <i class="fa-solid fa-circle-user"></i> <span id="lbl-jyothisyam-title" data-i18n="lbl_jyothisyam_title">Jyothisyam (Birth Chart Calculator)</span>
                 </div>
 
                 <!-- Config subtabs basic vs advanced vs saved vs history -->
                 <div class="sub-tab-bar">
-                    <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic">Birth Details</span></button>
-                    <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced">Astro Settings</span></button>
-                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span id="lbl-subtab-saved-charts">Saved Charts</span></button>
-                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span id="lbl-subtab-chart-history">Chart History</span></button>
+                    <button class="sub-tab-btn active" id="subtab-basic" onclick="switchSubTab('basic')"><span id="lbl-subtab-basic" data-i18n="lbl_subtab_basic">Birth Details</span></button>
+                    <button class="sub-tab-btn" id="subtab-advanced" onclick="switchSubTab('advanced')"><span id="lbl-subtab-advanced" data-i18n="lbl_subtab_advanced">Astro Settings</span></button>
+                    <button class="sub-tab-btn" id="subtab-saved-charts" onclick="switchSubTab('saved-charts')"><span id="lbl-subtab-saved-charts" data-i18n="lbl_subtab_saved_charts">Saved Charts</span></button>
+                    <button class="sub-tab-btn" id="subtab-chart-history" onclick="switchSubTab('chart-history')"><span id="lbl-subtab-chart-history" data-i18n="lbl_subtab_chart_history">Chart History</span></button>
                 </div>
 
                 <div id="jyothisyam-form-container">
@@ -4352,28 +4352,28 @@
                     <!-- Birth details Form -->
                     <div class="form-grid">
                         <div class="input-group">
-                            <label id="lbl-name">Native Full Name</label>
+                            <label id="lbl-name" data-i18n="name">Native Full Name</label>
                             <input type="text" id="in-name" placeholder="e.g. Name" value="Name">
                         </div>
                         <div class="input-group">
-                            <label id="lbl-dob">Date of Birth</label>
+                            <label id="lbl-dob" data-i18n="dob">Date of Birth</label>
                             <input type="date" id="in-dob" value="1995-12-15">
                         </div>
                         <div class="input-group">
-                            <label id="lbl-tob">Time of Birth</label>
+                            <label id="lbl-tob" data-i18n="tob">Time of Birth</label>
                             <input type="time" id="in-tob" value="14:30">
                         </div>
                         <div class="input-group" style="position: relative;">
-                            <label id="lbl-pob">Place of Birth Name</label>
+                            <label id="lbl-pob" data-i18n="pob">Place of Birth Name</label>
                             <input type="text" id="in-pob" placeholder="e.g. Chennai, India" value="Chennai, India" autocomplete="off" oninput="debounceLookupPlace()">
                             <div id="pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
                         <div class="input-group">
-                            <label id="lbl-lon">Longitude (Degrees East)</label>
+                            <label id="lbl-lon" data-i18n="lon">Longitude (Degrees East)</label>
                             <input type="number" step="0.0001" id="in-lon" value="80.2707">
                         </div>
                         <div class="input-group">
-                            <label id="lbl-lat">Latitude (Degrees North)</label>
+                            <label id="lbl-lat" data-i18n="lat">Latitude (Degrees North)</label>
                             <input type="number" step="0.0001" id="in-lat" value="13.0827">
                         </div>
                         <div class="input-group">
@@ -4381,14 +4381,14 @@
                             <input type="number" step="0.25" min="-12" max="14" id="in-tz" placeholder="Auto (estimate from location)">
                         </div>
                         <div class="input-group">
-                            <label id="lbl-gender">Gender</label>
+                            <label id="lbl-gender" data-i18n="gender">Gender</label>
                             <select id="in-gender">
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label id="lbl-chart-style">Visual Chart Style</label>
+                            <label id="lbl-chart-style" data-i18n="chart_style">Visual Chart Style</label>
                             <select id="in-style">
                                 <option value="south">South Indian Chart Style (Rasi Grid)</option>
                                 <option value="north">North Indian Chart Style (Diamond Grid)</option>
@@ -4427,7 +4427,7 @@
                             </select>
                         </div>
                         <div class="input-group advanced-only" style="display: none;">
-                            <label id="lbl-astro-system">Astrological System</label>
+                            <label id="lbl-astro-system" data-i18n="lbl_astro_system">Astrological System</label>
                             <select id="in-system">
                                 <option value="Parashara">Parashara (Vedic Classical) - Default</option>
                                 <option value="KP">KP System (Stellar Sub-lords)</option>
@@ -4437,7 +4437,7 @@
                             </select>
                         </div>
                         <div class="input-group advanced-only" style="display: none;">
-                            <label id="lbl-timing-system">Timing Period System (Dasa)</label>
+                            <label id="lbl-timing-system" data-i18n="lbl_timing_system">Timing Period System (Dasa)</label>
                             <select id="in-timing">
                                 <option value="Vimshottari">Vimshottari Dasa (120 Year Cycle) - Default</option>
                                 <option value="Ashtottari">Ashtottari Dasa (108 Year Cycle)</option>
@@ -4448,7 +4448,7 @@
 
                     <div class="sticky-mobile-calc">
                         <button class="btn-primary" onclick="generateBirthChart()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-btn-generate">Draft Birth Chart Report</span>
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lbl-btn-generate" data-i18n="btn_generate">Draft Birth Chart Report</span>
                         </button>
                     </div>
                 </div>
@@ -4473,7 +4473,7 @@
                     <div id="chart-history-controls" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-glass); gap: 10px; flex-wrap: wrap; width: 100%;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" id="chart-history-select-all" onchange="toggleSelectAllHistory(this)" style="cursor: pointer; width: 15px; height: 15px;">
-                            <label for="chart-history-select-all" style="font-size: 11.5px; color: var(--text-secondary); cursor: pointer;" id="lbl-history-select-all">Select All</label>
+                            <label for="chart-history-select-all" style="font-size: 11.5px; color: var(--text-secondary); cursor: pointer;" id="lbl-history-select-all" data-i18n="lbl_history_select_all">Select All</label>
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="lang-select-btn" onclick="deleteSelectedHistory()" id="lbl-btn-clear-selected" style="padding: 5px 12px; font-size: 10.5px; border-color: #e53e3e; color: #e53e3e; min-height: auto;"><i class="fa-solid fa-trash-can"></i> Delete Selected</button>
@@ -4489,17 +4489,17 @@
                 <div class="chart-output-container" id="birth-report-output" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-gold); padding-bottom: 8px;">
                         <h3 style="font-family: var(--font-heading); font-size: 15px; color: var(--accent-gold);">
-                            <i class="fa-solid fa-award"></i> <span id="lbl-report-success">Astrological Report Generated Successfully</span>
+                            <i class="fa-solid fa-award"></i> <span id="lbl-report-success" data-i18n="lbl_report_success">Astrological Report Generated Successfully</span>
                         </h3>
                         <div style="display: flex; gap: 10px;">
                             <button class="lang-select-btn" id="btn-save-chart-cloud" onclick="saveCurrentChartToCloud()" style="color: var(--accent-gold); border-color: var(--accent-gold); display: none;">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> <span>Save Chart</span>
                             </button>
                             <button class="lang-select-btn" id="btn-jyothi-ai-reading" onclick="generateJyothiAIReading()" style="color: var(--accent-gold); border-color: var(--accent-gold);">
-                                <i class="fa-solid fa-brain"></i> <span id="lbl-btn-astro-ai">Astro-AI Reading</span>
+                                <i class="fa-solid fa-brain"></i> <span id="lbl-btn-astro-ai" data-i18n="lbl_btn_astro_ai">Astro-AI Reading</span>
                             </button>
                             <button class="lang-select-btn" onclick="downloadReportPDF()" style="color: var(--text-primary); border-color: var(--border-gold);">
-                                <i class="fa-solid fa-file-pdf"></i> <span id="lbl-btn-download-pdf">Download PDF</span>
+                                <i class="fa-solid fa-file-pdf"></i> <span id="lbl-btn-download-pdf" data-i18n="lbl_btn_download_pdf">Download PDF</span>
                             </button>
                         </div>
                     </div>
@@ -4507,7 +4507,7 @@
                     <!-- Traditional Birth Details Metadata Panel -->
                     <div class="panchangam-widget" style="margin-top: 15px; margin-bottom: 15px; background: rgba(15,23,42,0.02); border: 1px solid var(--border-gold);">
                         <div class="card-subtitle" style="font-weight: bold; margin-bottom: 10px; color: var(--accent-gold); display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-address-card"></i> <span id="lbl-metadata-birth-title">Janma Patrika & Astronomical Details</span>
+                            <i class="fa-solid fa-address-card"></i> <span id="lbl-metadata-birth-title" data-i18n="lbl_metadata_birth_title">Janma Patrika & Astronomical Details</span>
                         </div>
                         <div class="panchangam-grid" id="birth-metadata-grid-rendered">
                             <!-- Populated dynamically with 20+ localized fields -->
@@ -4518,12 +4518,12 @@
                         <!-- SVG graphics side-by-side -->
                         <div class="charts-row-container">
                             <div class="svg-chart-card-wrapper">
-                                <h5 class="chart-label" id="lbl-rasi-chart-title">Rasi Chart (D1)</h5>
+                                <h5 class="chart-label" id="lbl-rasi-chart-title" data-i18n="lbl_rasi_chart">Rasi Chart (D1)</h5>
                                 <div class="svg-chart-card" id="svg-chart-rendered"></div>
                             </div>
                             <div class="svg-chart-card-wrapper">
                                 <div style="display: flex; gap: 8px; align-items: center; justify-content: center; width: 100%; margin-bottom: 6px;">
-                                    <h5 class="chart-label" id="lbl-navamsha-chart-title" style="margin: 0;">Navamsha Chart (D9)</h5>
+                                    <h5 class="chart-label" id="lbl-navamsha-chart-title" style="margin: 0;" data-i18n="lbl_navamsha_chart">Navamsha Chart (D9)</h5>
                                     <select id="d-chart-select" style="background: #fffbeb; border: 1px solid var(--border-gold); border-radius: 6px; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: bold; color: var(--accent-gold); outline: none; cursor: pointer; transition: all 0.2s ease;">
                                         <option value="d9">Navamsha (D9)</option>
                                         <option value="d2">Hora (D2)</option>
@@ -4562,14 +4562,14 @@
                             <table class="astro-table" id="planet-placement-table">
                                 <thead>
                                     <tr>
-                                        <th id="th-planet">Planet</th>
-                                        <th id="th-rasi">Zodiac Sign (Rasi)</th>
-                                        <th id="th-rasi-lord">Rasi Lord</th>
-                                        <th id="th-longitude">Longitude</th>
-                                        <th id="th-degree">Rasi Degree</th>
-                                        <th id="th-nakshatra">Nakshatra</th>
-                                        <th id="th-pada">Pada</th>
-                                        <th id="th-dignity">Dignity (Strength)</th>
+                                        <th id="th-planet" data-i18n="th_planet">Planet</th>
+                                        <th id="th-rasi" data-i18n="th_rasi">Zodiac Sign (Rasi)</th>
+                                        <th id="th-rasi-lord" data-i18n="th_rasi_lord">Rasi Lord</th>
+                                        <th id="th-longitude" data-i18n="th_longitude">Longitude</th>
+                                        <th id="th-degree" data-i18n="th_degree">Rasi Degree</th>
+                                        <th id="th-nakshatra" data-i18n="th_nakshatra">Nakshatra</th>
+                                        <th id="th-pada" data-i18n="th_pada">Pada</th>
+                                        <th id="th-dignity" data-i18n="th_dignity">Dignity (Strength)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="planet-table-body">
@@ -4588,7 +4588,7 @@
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-gold); background: var(--bg-darker); border-radius: 12px;">
                             <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                 <div style="display:flex; align-items:center; gap:8px;">
-                                    <i class="fa-solid fa-chart-bar"></i> <span id="lbl-shatbalam-title">Shatbalam (Planetary Strengths)</span>
+                                    <i class="fa-solid fa-chart-bar"></i> <span id="lbl-shatbalam-title" data-i18n="lbl_shatbalam_title">Shatbalam (Planetary Strengths)</span>
                                 </div>
                                 <label class="vx-toggle" title="Switch between bar and table view">
                                     <span class="vx-cap" data-cap="bars" style="color:var(--accent-cosmic);">Bars</span>
@@ -4597,7 +4597,7 @@
                                     <span class="vx-cap" data-cap="table">Table</span>
                                 </label>
                             </div>
-                            <p id="lbl-shatbalam-desc" style="font-size: 10px; color: var(--text-secondary); margin-bottom: 12px;">Six-fold mathematical planetary power (Shadbala) comparison against scriptural minimum requirements.</p>
+                            <p id="lbl-shatbalam-desc" style="font-size: 10px; color: var(--text-secondary); margin-bottom: 12px;" data-i18n="lbl_shatbalam_desc">Six-fold mathematical planetary power (Shadbala) comparison against scriptural minimum requirements.</p>
                             <div id="shadbala-bars-container" style="display: flex; flex-direction: column; gap: 10px;">
                                 <!-- Populated dynamically -->
                             </div>
@@ -4607,7 +4607,7 @@
                         <div class="panchangam-widget" style="padding: 16px; border: 1px solid var(--border-gold); background: var(--bg-darker); border-radius: 12px;">
                             <div style="font-weight: bold; font-size: 13px; color: var(--accent-gold); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-table-cells"></i> <span id="lbl-ashtakavarga-title">Ashtakavarga Points</span>
+                                    <i class="fa-solid fa-table-cells"></i> <span id="lbl-ashtakavarga-title" data-i18n="lbl_ashtakavarga_title">Ashtakavarga Points</span>
                                 </div>
                                 <select id="ashtakavarga-select" onchange="renderAshtakavargaGrid()" style="background: #fffbeb; border: 1px solid var(--border-gold); border-radius: 6px; padding: 2px 8px; font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: bold; color: var(--accent-gold); outline: none; cursor: pointer;">
                                     <option value="sav">Sarvashtakavarga (SAV)</option>
@@ -4620,7 +4620,7 @@
                                     <option value="Saturn">Saturn BAV</option>
                                 </select>
                             </div>
-                            <p id="lbl-ashtakavarga-desc" style="font-size: 10px; color: var(--text-secondary); margin-bottom: 12px;">Benefic contribution points distributed across signs (Strong: >28 SAV, Average: 20-28, Weak: &lt;20).</p>
+                            <p id="lbl-ashtakavarga-desc" style="font-size: 10px; color: var(--text-secondary); margin-bottom: 12px;" data-i18n="lbl_ashtakavarga_desc">Benefic contribution points distributed across signs (Strong: >28 SAV, Average: 20-28, Weak: &lt;20).</p>
                             <div id="ashtakavarga-grid-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-family: 'Space Grotesk', sans-serif; text-align: center;">
                                 <!-- Populated dynamically -->
                             </div>
@@ -4631,9 +4631,9 @@
                     <!-- 120 Year Vimshottari dasa timeline -->
                     <div class="dasa-timeline-section">
                         <h4 style="font-family: var(--font-heading); font-size: 13px; color: var(--accent-gold)">
-                            <i class="fa-solid fa-timeline"></i> <span id="lbl-dasa-timeline-title">120-Year Vimshottari Dasa Timeline</span>
+                            <i class="fa-solid fa-timeline"></i> <span id="lbl-dasa-timeline-title" data-i18n="lbl_dasa_timeline_title">120-Year Vimshottari Dasa Timeline</span>
                         </h4>
-                        <p id="lbl-dasa-timeline-desc" style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Chronological timeline of Mahadasas and Bhuktis mapping planetary periods.</p>
+                        <p id="lbl-dasa-timeline-desc" style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;" data-i18n="lbl_dasa_timeline_desc">Chronological timeline of Mahadasas and Bhuktis mapping planetary periods.</p>
                         
                         <!-- Interactive Dasa Timeline -->
                         <div id="dasa-interactive-timeline-container" style="display: none; margin-top: 12px; margin-bottom: 12px; background: var(--bg-darker); border: 1px solid var(--border-glass); border-radius: 12px; padding: 15px; position: relative;">
@@ -4671,10 +4671,10 @@
                     <div id="jyothi-ai-reading-section" style="display: none; margin-top: 24px; border-top: 1px solid var(--border-gold); padding-top: 18px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                             <h3 style="font-family: var(--font-heading); font-size: 15px; color: var(--accent-gold);">
-                                <i class="fa-solid fa-brain"></i> <span id="lbl-jyothi-ai-title">Vedic AI Prediction</span>
+                                <i class="fa-solid fa-brain"></i> <span id="lbl-jyothi-ai-title" data-i18n="lbl_jyothi_ai_title">Vedic AI Prediction</span>
                             </h3>
                             <button class="lang-select-btn" onclick="collapseJyothiAIReading()" style="font-size: 11px;">
-                                <i class="fa-solid fa-chevron-up"></i> <span id="lbl-btn-close-ai">Close</span>
+                                <i class="fa-solid fa-chevron-up"></i> <span id="lbl-btn-close-ai" data-i18n="lbl_btn_close_ai">Close</span>
                             </button>
                         </div>
                         <div id="jyothi-ai-reading-output" class="ai-predict-display" style="min-height: 80px;">
@@ -4697,16 +4697,16 @@
 
                     <!-- Readings Hub (Visible after chart generation) -->
                     <div id="astrology-readings-hub" style="margin-top: 32px; border-top: 1px solid var(--border-gold); padding-top: 24px;">
-                        <h3 class="section-title mb-4" id="lbl-readings-hub-title" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 18px;">Astrology Readings Hub</h3>
+                        <h3 class="section-title mb-4" id="lbl-readings-hub-title" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 18px;" data-i18n="lbl_readings_hub_title">Astrology Readings Hub</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
                             
                             <!-- Card 1: Astro AI Chat -->
                             <div class="card-soft" style="display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-gold); height: 100%;">
                                 <div>
                                     <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--accent-gold); border-bottom: 1px solid var(--border-gold); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-comments"></i> <span id="lbl-hub-chat-title">Astro AI General Chat</span>
+                                        <i class="fa-solid fa-comments"></i> <span id="lbl-hub-chat-title" data-i18n="lbl_hub_chat_title">Astro AI General Chat</span>
                                     </div>
-                                    <p id="lbl-hub-chat-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">
+                                    <p id="lbl-hub-chat-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;" data-i18n="lbl_hub_chat_desc">
                                         Ask Ganesha Astro-AI any personal questions about your life, career, or planetary alignments.
                                     </p>
                                 </div>
@@ -4720,9 +4720,9 @@
                             <div class="card-soft" style="display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-gold); height: 100%;">
                                 <div>
                                     <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--accent-gold); border-bottom: 1px solid var(--border-gold); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-hands-praying"></i> <span id="lbl-hub-remedies-title">Remedies & Strengths</span>
+                                        <i class="fa-solid fa-hands-praying"></i> <span id="lbl-hub-remedies-title" data-i18n="lbl_hub_remedies_title">Remedies & Strengths</span>
                                     </div>
-                                    <p id="lbl-hub-remedies-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">
+                                    <p id="lbl-hub-remedies-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;" data-i18n="lbl_hub_remedies_desc">
                                         Analyze your six-fold planetary strengths (Shadbala) and generate scriptural remedies.
                                     </p>
                                 </div>
@@ -4736,9 +4736,9 @@
                             <div class="card-soft" style="display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-gold); height: 100%;">
                                 <div>
                                     <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--accent-gold); border-bottom: 1px solid var(--border-gold); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-heart-crack"></i> <span id="lbl-hub-compat-title">Relationship Compatibility</span>
+                                        <i class="fa-solid fa-heart-crack"></i> <span id="lbl-hub-compat-title" data-i18n="lbl_hub_compat_title">Relationship Compatibility</span>
                                     </div>
-                                    <p id="lbl-hub-compat-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;">
+                                    <p id="lbl-hub-compat-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 16px;" data-i18n="lbl_hub_compat_desc">
                                         Calculate compatibility with your partner using Thirukanitha Koota Porutham.
                                     </p>
                                 </div>
@@ -4752,14 +4752,14 @@
                             <div class="card-soft" style="display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-gold); height: 100%;">
                                 <div>
                                     <div style="font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--accent-gold); border-bottom: 1px solid var(--border-gold); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-calendar-days"></i> <span id="lbl-hub-varsha-title">Varshaphala (Solar Return Chart)</span>
+                                        <i class="fa-solid fa-calendar-days"></i> <span id="lbl-hub-varsha-title" data-i18n="lbl_hub_varsha_title">Varshaphala (Solar Return Chart)</span>
                                     </div>
-                                    <p id="lbl-hub-varsha-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;">
+                                    <p id="lbl-hub-varsha-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;" data-i18n="lbl_hub_varsha_desc">
                                         Generate your solar return predictions for any specific year.
                                     </p>
                                     
                                     <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
-                                        <label id="lbl-varsha-year-label" style="font-size: 11px; font-weight: 600; color: var(--text-gold);">Select Return Year:</label>
+                                        <label id="lbl-varsha-year-label" style="font-size: 11px; font-weight: 600; color: var(--text-gold);" data-i18n="lbl_varsha_year_label">Select Return Year:</label>
                                         <input type="number" id="in-varsha-year" min="1900" max="2100" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); font-size: 13px;">
                                     </div>
                                 </div>
@@ -4776,7 +4776,7 @@
                     <div id="varshaphala-section" style="display: none; margin-top: 24px; border-top: 1px solid var(--border-gold); padding-top: 18px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                             <h3 style="font-family: var(--font-heading); font-size: 15px; color: var(--accent-gold);">
-                                <i class="fa-solid fa-calendar-days"></i> <span id="lbl-varshaphala-title">Varshaphala Solar Return Analysis</span>
+                                <i class="fa-solid fa-calendar-days"></i> <span id="lbl-varshaphala-title" data-i18n="lbl_varshaphala_title">Varshaphala Solar Return Analysis</span>
                             </h3>
                         </div>
                         <div id="varshaphala-output" class="ai-predict-display" style="min-height: 80px;"></div>
@@ -4791,23 +4791,23 @@
         <div class="single-page-content" id="page-horoscope" style="display:none;">
             <div class="card">
                 <div class="card-title">
-                    <i class="fa-solid fa-star"></i> <span id="lbl-horoscope-title">Rasi Phala — Sign Horoscopes</span>
+                    <i class="fa-solid fa-star"></i> <span id="lbl-horoscope-title" data-i18n="lbl_horoscope_title">Rasi Phala — Sign Horoscopes</span>
                 </div>
-                <p id="lbl-horoscope-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+                <p id="lbl-horoscope-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;" data-i18n="lbl_horoscope_desc">
                     Daily, monthly and yearly predictions for all 12 Moon signs — written by AI from the real planetary transits and grounded in the classical texts.
                 </p>
 
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
-                    <button class="sub-tab-btn active" id="horo-tab-daily" onclick="switchHoroScope('daily')"><span id="lbl-horo-tab-daily">Daily</span></button>
-                    <button class="sub-tab-btn" id="horo-tab-monthly" onclick="switchHoroScope('monthly')"><span id="lbl-horo-tab-monthly">Monthly</span></button>
-                    <button class="sub-tab-btn" id="horo-tab-yearly" onclick="switchHoroScope('yearly')"><span id="lbl-horo-tab-yearly">Yearly</span></button>
-                    <button class="sub-tab-btn" id="horo-tab-personal" onclick="switchHoroScope('personal')"><span id="lbl-horo-tab-personal">My Varsha Phala</span></button>
+                    <button class="sub-tab-btn active" id="horo-tab-daily" onclick="switchHoroScope('daily')"><span id="lbl-horo-tab-daily" data-i18n="lbl_horo_tab_daily">Daily</span></button>
+                    <button class="sub-tab-btn" id="horo-tab-monthly" onclick="switchHoroScope('monthly')"><span id="lbl-horo-tab-monthly" data-i18n="lbl_horo_tab_monthly">Monthly</span></button>
+                    <button class="sub-tab-btn" id="horo-tab-yearly" onclick="switchHoroScope('yearly')"><span id="lbl-horo-tab-yearly" data-i18n="lbl_horo_tab_yearly">Yearly</span></button>
+                    <button class="sub-tab-btn" id="horo-tab-personal" onclick="switchHoroScope('personal')"><span id="lbl-horo-tab-personal" data-i18n="lbl_horo_tab_personal">My Varsha Phala</span></button>
                 </div>
 
                 <!-- Universal (shared) horoscopes: daily / monthly / yearly -->
                 <div id="horo-universal-pane">
                     <div id="horo-calendar-row" style="display: none; margin-bottom: 12px; max-width: 340px;">
-                        <label id="lbl-horo-calendar" style="font-size: 11px; font-weight: 600; color: var(--accent-gold); display: block; margin-bottom: 4px;">New Year Tradition</label>
+                        <label id="lbl-horo-calendar" style="font-size: 11px; font-weight: 600; color: var(--accent-gold); display: block; margin-bottom: 4px;" data-i18n="lbl_horo_calendar">New Year Tradition</label>
                         <select id="horo-calendar-select" onchange="onHoroCalendarChange()" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border-gold); color: var(--text-primary); font-size: 13px;"></select>
                     </div>
                     <div id="horo-period-label" style="font-size: 12px; font-weight: 600; color: var(--accent-gold); margin-bottom: 8px;"></div>
@@ -4817,12 +4817,12 @@
 
                 <!-- Personal varsha phala: dasa-bhukti + gochara year reading -->
                 <div id="horo-personal-pane" style="display: none;">
-                    <p id="lbl-horo-personal-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
+                    <p id="lbl-horo-personal-desc" style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;" data-i18n="lbl_horo_personal_desc">
                         A personal year-ahead reading computed from YOUR saved birth profile: the running dasa-bhukti timeline and the year's transits (gochara), grounded in the classical texts. Save your birth details in Settings first.
                     </p>
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                         <span class="chip-price">🪙 <span id="val-horo-personal-price">25</span></span>
-                        <button class="btn-primary" id="btn-horo-personal" onclick="generatePersonalVarshaPhala()" style="padding: 8px 16px; font-size: 12px;"><span id="lbl-horo-personal-btn">Generate My Year Reading</span></button>
+                        <button class="btn-primary" id="btn-horo-personal" onclick="generatePersonalVarshaPhala()" style="padding: 8px 16px; font-size: 12px;"><span id="lbl-horo-personal-btn" data-i18n="lbl_horo_personal_btn">Generate My Year Reading</span></button>
                     </div>
                     <div id="horo-personal-output" class="ai-predict-display" style="min-height: 80px; margin-top: 16px; display: none;"></div>
                 </div>
@@ -4850,9 +4850,9 @@
 
             <div class="card" id="content-marriage">
                 <div class="card-title">
-                    <i class="fa-solid fa-heart" style="color: #ED64A6;"></i> <span id="lbl-marriage-title">Marriage Compatibility & Harmony</span>
+                    <i class="fa-solid fa-heart" style="color: #ED64A6;"></i> <span id="lbl-marriage-title" data-i18n="lbl_marriage_title">Marriage Compatibility & Harmony</span>
                 </div>
-                <p id="lbl-marriage-intro" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 20px;">
+                <p id="lbl-marriage-intro" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 20px;" data-i18n="lbl_marriage_intro">
                     Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.
                 </p>
 
@@ -4862,34 +4862,34 @@
                     <!-- Male Native Details -->
                     <div style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 8px; padding: 15px;">
                         <h4 style="color: #c2410c; font-family: var(--font-heading); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-mars"></i> <span id="lbl-male-partner-title">Male Partner Details</span>
+                            <i class="fa-solid fa-mars"></i> <span id="lbl-male-partner-title" data-i18n="lbl_male_partner_title">Male Partner Details</span>
                         </h4>
                         <div class="input-group">
-                            <label id="lbl-m-name-txt">Full Name</label>
+                            <label id="lbl-m-name-txt" data-i18n="lbl_full_name">Full Name</label>
                             <input type="text" id="in-m-name" value="Lord Shiva">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label id="lbl-m-dob-txt">Birth Date</label>
+                                <label id="lbl-m-dob-txt" data-i18n="lbl_birth_date">Birth Date</label>
                                 <input type="date" id="in-m-dob" value="1995-05-15">
                             </div>
                             <div class="input-group">
-                                <label id="lbl-m-tob-txt">Birth Time</label>
+                                <label id="lbl-m-tob-txt" data-i18n="lbl_birth_time">Birth Time</label>
                                 <input type="time" id="in-m-tob" value="10:30">
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label id="lbl-m-lon-txt">Longitude (Degrees East)</label>
+                                <label id="lbl-m-lon-txt" data-i18n="lbl_longitude">Longitude (Degrees East)</label>
                                 <input type="number" step="0.0001" id="in-m-lon" value="80.2700">
                             </div>
                             <div class="input-group">
-                                <label id="lbl-m-lat-txt">Latitude (Degrees North)</label>
+                                <label id="lbl-m-lat-txt" data-i18n="lbl_latitude">Latitude (Degrees North)</label>
                                 <input type="number" step="0.0001" id="in-m-lat" value="13.0800">
                             </div>
                         </div>
                         <div class="input-group" style="position: relative;">
-                            <label id="lbl-m-pob-txt">Place of Birth</label>
+                            <label id="lbl-m-pob-txt" data-i18n="lbl_place_of_birth">Place of Birth</label>
                             <input type="text" id="in-m-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('male')">
                             <div id="m-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
@@ -4902,34 +4902,34 @@
                     <!-- Female Native Details -->
                     <div style="background: var(--bg-glass); border: 1px solid var(--border-gold); border-radius: 8px; padding: 15px;">
                         <h4 style="color: #be123c; font-family: var(--font-heading); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-venus"></i> <span id="lbl-female-partner-title">Female Partner Details</span>
+                            <i class="fa-solid fa-venus"></i> <span id="lbl-female-partner-title" data-i18n="lbl_female_partner_title">Female Partner Details</span>
                         </h4>
                         <div class="input-group">
-                            <label id="lbl-f-name-txt">Full Name</label>
+                            <label id="lbl-f-name-txt" data-i18n="lbl_full_name">Full Name</label>
                             <input type="text" id="in-f-name" value="Goddess Parvati">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label id="lbl-f-dob-txt">Birth Date</label>
+                                <label id="lbl-f-dob-txt" data-i18n="lbl_birth_date">Birth Date</label>
                                 <input type="date" id="in-f-dob" value="1996-08-20">
                             </div>
                             <div class="input-group">
-                                <label id="lbl-f-tob-txt">Birth Time</label>
+                                <label id="lbl-f-tob-txt" data-i18n="lbl_birth_time">Birth Time</label>
                                 <input type="time" id="in-f-tob" value="14:15">
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
-                                <label id="lbl-f-lon-txt">Longitude (Degrees East)</label>
+                                <label id="lbl-f-lon-txt" data-i18n="lbl_longitude">Longitude (Degrees East)</label>
                                 <input type="number" step="0.0001" id="in-f-lon" value="80.2700">
                             </div>
                             <div class="input-group">
-                                <label id="lbl-f-lat-txt">Latitude (Degrees North)</label>
+                                <label id="lbl-f-lat-txt" data-i18n="lbl_latitude">Latitude (Degrees North)</label>
                                 <input type="number" step="0.0001" id="in-f-lat" value="13.0800">
                             </div>
                         </div>
                         <div class="input-group" style="position: relative;">
-                            <label id="lbl-f-pob-txt">Place of Birth</label>
+                            <label id="lbl-f-pob-txt" data-i18n="lbl_place_of_birth">Place of Birth</label>
                             <input type="text" id="in-f-pob" value="Chennai" autocomplete="off" oninput="debounceLookupPlaceMarriage('female')">
                             <div id="f-pob-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
@@ -4944,7 +4944,7 @@
                 <!-- Shared Settings & Button -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; border-top: 1px solid var(--border-gold); padding-top: 20px;">
                     <div class="input-group">
-                        <label id="lbl-m-ayan-txt">Ayanamsa System</label>
+                        <label id="lbl-m-ayan-txt" data-i18n="lbl_ayanamsa_system">Ayanamsa System</label>
                         <select id="in-marriage-ayanamsa">
                             <option value="Lahiri">Lahiri (Chitra Paksha)</option>
                             <option value="Raman">Raman</option>
@@ -4954,19 +4954,19 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label id="lbl-m-sys-txt">Calculation System</label>
+                        <label id="lbl-m-sys-txt" data-i18n="lbl_calculation_system">Calculation System</label>
                         <select id="in-marriage-system">
                             <option value="Parashara">Parashara (Classic)</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label id="lbl-m-time-txt">Dasa Timing Scale</label>
+                        <label id="lbl-m-time-txt" data-i18n="lbl_dasa_timing_scale">Dasa Timing Scale</label>
                         <select id="in-marriage-timing">
                             <option value="Vimshottari">Vimshottari (120 Years)</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label id="lbl-m-style-txt">Visual Chart Style</label>
+                        <label id="lbl-m-style-txt" data-i18n="chart_style">Visual Chart Style</label>
                         <select id="in-marriage-style">
                             <option value="south">South Indian Style</option>
                             <option value="north">North Indian Style</option>
@@ -4983,11 +4983,11 @@
                 <!-- Results Block -->
                 <div id="marriage-results-block" style="display: none; border-top: 1px solid var(--border-gold); padding-top: 25px;">
                     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; text-align: center;">
-                        <h4 id="lbl-marriage-result-header" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 15px; margin-bottom: 8px;">Compatibility Matching Result</h4>
+                        <h4 id="lbl-marriage-result-header" style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 15px; margin-bottom: 8px;" data-i18n="lbl_compatibility_result">Compatibility Matching Result</h4>
                         <div id="lbl-marriage-percentage" style="font-size: 42px; font-weight: 800; font-family: var(--font-heading); color: #48BB78; text-shadow: 0 0 10px rgba(72,187,120,0.2);">
                             0%
                         </div>
-                        <p id="lbl-marriage-desc" style="font-size: 11px; color: var(--text-secondary); max-width: 500px; margin-top: 8px;">
+                        <p id="lbl-marriage-desc" style="font-size: 11px; color: var(--text-secondary); max-width: 500px; margin-top: 8px;" data-i18n="lbl_marriage_desc">
                             Calculated across 6 primary Koota Poruthams according to sidereal Thirukanitha placements. Click a partner's name below to load their detailed single chart report.
                         </p>
                     </div>
@@ -5015,14 +5015,14 @@
                     <!-- Compatibility Agreement List -->
                     <div class="table-container" style="margin-bottom: 30px;">
                         <h4 style="font-family: var(--font-heading); margin-bottom: 12px; color: var(--accent-gold); font-size: 13px;">
-                            <i class="fa-solid fa-list-check"></i> <span id="lbl-marriage-report-header">Koota Porutham Agreement Report</span>
+                            <i class="fa-solid fa-list-check"></i> <span id="lbl-marriage-report-header" data-i18n="lbl_koota_report">Koota Porutham Agreement Report</span>
                         </h4>
                         <div class="astro-table-container">
                             <table class="astro-table">
                                 <thead>
                                     <tr>
-                                        <th id="th-marriage-agreement" style="font-size: 12.5px; font-weight: 700; padding: 12px 14px;">Agreement Rule (Porutham)</th>
-                                        <th id="th-marriage-status" style="text-align: right; padding-right: 22px; font-size: 12.5px; font-weight: 700; padding: 12px 14px;">Match Status</th>
+                                        <th id="th-marriage-agreement" style="font-size: 12.5px; font-weight: 700; padding: 12px 14px;" data-i18n="th_marriage_agreement">Agreement Rule (Porutham)</th>
+                                        <th id="th-marriage-status" style="text-align: right; padding-right: 22px; font-size: 12.5px; font-weight: 700; padding: 12px 14px;" data-i18n="th_marriage_status">Match Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="marriage-details-list-body">
@@ -5035,7 +5035,7 @@
                     <!-- AI Predictions Section -->
                     <div style="border-top: 1px solid var(--border-gold); padding-top: 25px;">
                         <h4 style="font-family: var(--font-heading); color: var(--accent-gold); font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-brain"></i> <span id="lbl-marriage-ai-reading">Ganesha Astro-AI Relationship Matching Reading</span>
+                            <i class="fa-solid fa-brain"></i> <span id="lbl-marriage-ai-reading" data-i18n="lbl_marriage_ai_reading">Ganesha Astro-AI Relationship Matching Reading</span>
                         </h4>
 
                         <!-- Chat stream container -->
@@ -5077,7 +5077,7 @@
 
             <div class="card" id="content-ai" style="min-height: 500px;">
                 <div class="card-title">
-                    <i class="fa-solid fa-brain"></i> <span id="lbl-ai-title">Astro AI Chat — General Chat</span>
+                    <i class="fa-solid fa-brain"></i> <span id="lbl-ai-title" data-i18n="lbl_ai_title">Astro AI Chat — General Chat</span>
                 </div>
 
                 <!-- Tip banner (shown when no birth chart loaded) -->
@@ -5129,7 +5129,7 @@
                             <span class="chat-message-meta">Astro AI</span>
                             <div class="ai-predict-display">
                                 नमः सूर्याय चन्द्राय मङ्गलाय बुधाय च । गुरुशुक्रशनिभ्यश्च राहवे केतवे नमः ॥<br>
-                                <p id="lbl-ai-welcome-text" style="margin-top: 6px;">Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in <strong>Astrology</strong>, I will give you personalized chart-specific readings grounded in classical RAG scriptures.</p>
+                                <p id="lbl-ai-welcome-text" style="margin-top: 6px;" data-i18n="lbl_ai_welcome_text">Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in <strong>Astrology</strong>, I will give you personalized chart-specific readings grounded in classical RAG scriptures.</p>
                             </div>
                         </div>
                     </div>
@@ -5141,7 +5141,7 @@
                         <button class="chat-send-btn" id="chat-new-reading" onclick="clearAIChat()" title="New Reading — start a new chat" aria-label="New Reading" style="background: transparent; border: 1px solid var(--border-gold); color: var(--accent-gold);">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <input type="text" class="chat-input" id="chat-user-textbox" placeholder="Ask Astro AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)..." onkeydown="if(event.key === 'Enter') sendAIChatMessage()">
+                        <input type="text" class="chat-input" id="chat-user-textbox" placeholder="Ask Astro AI (e.g. What does Sun in 7th house mean? or explain Saturn dasa effects)..." onkeydown="if(event.key === 'Enter') sendAIChatMessage()" data-i18n-placeholder="lbl_chat_placeholder">
                         <button class="chat-send-btn" id="chat-send-trigger" onclick="sendAIChatMessage()">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
@@ -5364,6 +5364,8 @@
                 lbl_metadata_birth_title: "Janma Patrika Astronomical Coordinates",
                 lbl_subtab_basic: "Birth Details",
                 lbl_subtab_advanced: "Astro Settings",
+                lbl_astro_system: "Astrological System",
+                lbl_timing_system: "Timing Period System (Dasa)",
                 lbl_subtab_saved_charts: "Saved Charts",
                 lbl_subtab_chart_history: "Chart History",
                 lbl_history_select_all: "Select All",
@@ -7052,6 +7054,31 @@
             if (el) el.innerText = txt;
         }
 
+        // Fill every element that names its localization key in the markup:
+        //   data-i18n="key"             -> innerText
+        //   data-i18n-html="key"        -> innerHTML (dictionary entries with markup)
+        //   data-i18n-placeholder="key" -> placeholder
+        //   data-i18n-suffix=":"        -> appended after a data-i18n value
+        // A key missing from `dict` falls back to English, then to the text
+        // already in the page. To label a new element, add the key to every
+        // language in `localization` and the attribute to the element — no JS.
+        function applyI18n(dict) {
+            const en = localization.en;
+            const pick = (key) => dict[key] || en[key];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const val = pick(el.getAttribute('data-i18n'));
+                if (val) el.innerText = val + (el.getAttribute('data-i18n-suffix') || '');
+            });
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const val = pick(el.getAttribute('data-i18n-html'));
+                if (val) el.innerHTML = val;
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const val = pick(el.getAttribute('data-i18n-placeholder'));
+                if (val) el.placeholder = val;
+            });
+        }
+
         // Change website language in real-time
         // The Noto Indic webfonts are large and only one script is shown at a
         // time, so we fetch the selected language's face on demand instead of
@@ -7114,86 +7141,24 @@
                 b.classList.toggle('active', b.getAttribute('data-lang') === langCode);
             });
 
-            // Localize text labels
+            // Static labels are filled by applyI18n(dict) below; this function
+            // keeps only the ones that depend on state or carry markup.
             const dict = localization[langCode];
-            setText('lbl-title', dict.title);
-            setText('lbl-side-title', dict.title);
             // Localize sidebar items carrying a data-i18n-key (nav + account labels)
             document.querySelectorAll('#side-nav [data-i18n-key]').forEach(el => {
                 const key = el.getAttribute('data-i18n-key');
                 if (dict[key]) el.innerText = dict[key];
             });
-            setText('lbl-subtitle', dict.subtitle);
-            setText('lbl-home-calendar', dict.lbl_home_calendar);
 
-            // Phase 1 Translations
-            setText('lbl-hero-title', dict.lbl_hero_title);
-            setText('lbl-hero-subtitle', dict.lbl_hero_subtitle);
-            setText('lbl-hero-cta-chart', dict.lbl_hero_cta_chart);
-            setText('lbl-hero-cta-panchangam', dict.lbl_hero_cta_panchangam);
-            setText('lbl-hero-trust-texts', dict.lbl_hero_trust_texts);
-            setText('lbl-hero-trust-langs', dict.lbl_hero_trust_langs);
-            setText('lbl-hero-trust-free', dict.lbl_hero_trust_free);
-            setText('lbl-welcome-name', dict.lbl_welcome_name);
-            setText('lbl-strip-today', dict.lbl_strip_today);
-            setText('lbl-wizard-title', dict.lbl_wizard_title);
-            setText('lbl-wizard-step-1', dict.lbl_wizard_step_1);
-            setText('lbl-wizard-step-2', dict.lbl_wizard_step_2);
             if (pricing && pricing.signup_bonus) {
                 setText('lbl-wizard-step-3', (dict.lbl_wizard_step_3 || "").replace("{bonus}", pricing.signup_bonus));
             }
-            // IKEA Effect: goal chips shown above the (empty) signup form.
-            setText('lbl-auth-goal-prompt', dict.lbl_auth_goal_prompt);
-            setText('lbl-goal-career', dict.lbl_goal_career);
-            setText('lbl-goal-marriage', dict.lbl_goal_marriage);
-            setText('lbl-goal-general', dict.lbl_goal_general);
-            // Contrast Effect: static "Best Value" chip on the paywall sheet.
-            setText('lbl-best-value', dict.lbl_best_value);
-
-            // Readings Hub & Varshaphala Translations
-            setText('lbl-readings-hub-title', dict.lbl_readings_hub_title);
-            setText('lbl-hub-chat-title', dict.lbl_hub_chat_title);
-            setText('lbl-hub-chat-desc', dict.lbl_hub_chat_desc);
-            setText('lbl-hub-remedies-title', dict.lbl_hub_remedies_title);
-            setText('lbl-hub-remedies-desc', dict.lbl_hub_remedies_desc);
-            setText('lbl-hub-compat-title', dict.lbl_hub_compat_title);
-            setText('lbl-hub-compat-desc', dict.lbl_hub_compat_desc);
-            setText('lbl-hub-varsha-title', dict.lbl_hub_varsha_title);
-            setText('lbl-hub-varsha-desc', dict.lbl_hub_varsha_desc);
-            setText('lbl-varsha-year-label', dict.lbl_varsha_year_label);
-            setText('lbl-varshaphala-title', dict.lbl_varshaphala_title);
-
             // Update active Navagraha slide to match newly selected language
             if (typeof renderNavagrahaSlide === 'function') {
                 renderNavagrahaSlide();
             }
 
-            setText('lbl-jyothisyam-title', dict.lbl_jyothisyam_title);
-            setText('lbl-ai-title', dict.lbl_ai_title);
-            setText('nav-btn-home', dict.nav_btn_home || "Home (Panchangam)");
-            setText('nav-btn-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
-            setText('nav-btn-horoscope', dict.nav_btn_horoscope || "Horoscopes");
-            setText('nav-btn-ai', dict.nav_btn_ai || "Astro AI Chat");
-            const marriageNavBtn = document.getElementById('nav-btn-marriage');
-            if (marriageNavBtn) marriageNavBtn.innerText = dict.nav_btn_marriage || "Marriage Matching";
-
-            // Mobile Nav
-            setText('lbl-mobile-nav-home', dict.nav_btn_home || "Home (Panchangam)");
-            setText('lbl-mobile-nav-jyothisyam', dict.nav_btn_jyothisyam || "Astrology");
-            setText('lbl-mobile-nav-horoscope', dict.nav_btn_horoscope || "Horoscopes");
-            setText('lbl-mobile-nav-marriage', dict.nav_btn_marriage || "Marriage Matching");
-            setText('lbl-mobile-nav-ai', dict.nav_btn_ai || "Astro AI Chat");
-
-            // Horoscopes tab labels + language-sensitive dynamic content
-            setText('lbl-horoscope-title', dict.lbl_horoscope_title);
-            setText('lbl-horoscope-desc', dict.lbl_horoscope_desc);
-            setText('lbl-horo-tab-daily', dict.lbl_horo_tab_daily);
-            setText('lbl-horo-tab-monthly', dict.lbl_horo_tab_monthly);
-            setText('lbl-horo-tab-yearly', dict.lbl_horo_tab_yearly);
-            setText('lbl-horo-tab-personal', dict.lbl_horo_tab_personal);
-            setText('lbl-horo-calendar', dict.lbl_horo_calendar);
-            setText('lbl-horo-personal-desc', dict.lbl_horo_personal_desc);
-            setText('lbl-horo-personal-btn', dict.lbl_horo_personal_btn);
+            // Horoscopes: language-sensitive dynamic content
             if (typeof renderHoroCalendarOptions === 'function') {
                 renderHoroCalendarOptions();
                 renderHoroSignChips();
@@ -7205,16 +7170,10 @@
                 }
             }
             // Home welcome window daily phala (per-language content)
-            setText('lbl-home-phala-title', dict.lbl_home_phala_title);
-            setText('lbl-home-phala-more', dict.lbl_home_phala_more);
             if (typeof loadHomeDailyPhala === 'function') loadHomeDailyPhala();
-            const marriageIntro = document.getElementById('lbl-marriage-intro');
-            if (marriageIntro) marriageIntro.innerText = dict.lbl_marriage_intro || "Enter the birth details of both partners to evaluate Nakshatra compatibility (Koota Porutham) and generate cosmic matching predictions.";
-            const marriageTitle = document.getElementById('lbl-marriage-title');
-            if (marriageTitle) marriageTitle.innerText = dict.lbl_marriage_title || "Marriage Compatibility & Harmony";
-            const malePartnerTitle = document.getElementById('lbl-male-partner-title');
-            if (malePartnerTitle) malePartnerTitle.innerText = dict.lbl_male_partner_title || "Male Partner Details";
 
+            // Partner name links show the entered name once a chart exists, so
+            // only relabel the empty placeholder.
             if (!calculatedMaleChartData) {
                 const linkMale = document.getElementById('link-male-name');
                 if (linkMale) linkMale.innerText = dict.lbl_male_name_placeholder || "Male Name";
@@ -7222,40 +7181,6 @@
             if (!calculatedFemaleChartData) {
                 const linkFemale = document.getElementById('link-female-name');
                 if (linkFemale) linkFemale.innerText = dict.lbl_female_name_placeholder || "Female Name";
-            }
-            const femalePartnerTitle = document.getElementById('lbl-female-partner-title');
-            if (femalePartnerTitle) femalePartnerTitle.innerText = dict.lbl_female_partner_title || "Female Partner Details";
-            const marriageAiReading = document.getElementById('lbl-marriage-ai-reading');
-            if (marriageAiReading) marriageAiReading.innerText = dict.lbl_marriage_ai_reading || "Ganesha Astro-AI Relationship Matching Reading";
-
-            // Translate marriage tab labels dynamically
-            const mLabels = {
-                "lbl-m-name-txt": dict.lbl_full_name || "Full Name",
-                "lbl-m-dob-txt": dict.lbl_birth_date || "Birth Date",
-                "lbl-m-tob-txt": dict.lbl_birth_time || "Birth Time",
-                "lbl-m-lon-txt": dict.lbl_longitude || "Longitude (Degrees East)",
-                "lbl-m-lat-txt": dict.lbl_latitude || "Latitude (Degrees North)",
-                "lbl-m-pob-txt": dict.lbl_place_of_birth || "Place of Birth",
-                "lbl-f-name-txt": dict.lbl_full_name || "Full Name",
-                "lbl-f-dob-txt": dict.lbl_birth_date || "Birth Date",
-                "lbl-f-tob-txt": dict.lbl_birth_time || "Birth Time",
-                "lbl-f-lon-txt": dict.lbl_longitude || "Longitude (Degrees East)",
-                "lbl-f-lat-txt": dict.lbl_latitude || "Latitude (Degrees North)",
-                "lbl-f-pob-txt": dict.lbl_place_of_birth || "Place of Birth",
-                "lbl-m-ayan-txt": dict.lbl_ayanamsa_system || "Ayanamsa System",
-                "lbl-m-sys-txt": dict.lbl_calculation_system || "Calculation System",
-                "lbl-m-time-txt": dict.lbl_dasa_timing_scale || "Dasa Timing Scale",
-                "lbl-m-style-txt": dict.chart_style || "Visual Chart Style",
-                "lbl-marriage-result-header": dict.lbl_compatibility_result || "Compatibility Matching Result",
-                "lbl-marriage-desc": dict.lbl_marriage_desc || "Calculated across...",
-                "lbl-marriage-report-header": dict.lbl_koota_report || "Koota Porutham Agreement Report",
-                "th-marriage-agreement": dict.th_marriage_agreement || "Agreement Rule (Porutham)",
-                "th-marriage-status": dict.th_marriage_status || "Match Status"
-            };
-
-            for (const [id, val] of Object.entries(mLabels)) {
-                const el = document.getElementById(id);
-                if (el) el.innerText = val;
             }
 
             const btnGenMarriage = document.getElementById('btn-generate-marriage');
@@ -7270,123 +7195,14 @@
                     ${dict.lbl_marriage_ai_welcome || "Fill the details and click Calculate Compatibility to get the matching report and Ganesha prediction."}
                 `;
             }
-            const titlePanch = document.getElementById('lbl-title-panch');
-            if (titlePanch) titlePanch.innerText = dict.title_panch;
-            const titleGochara = document.getElementById('lbl-title-gochara');
-            if (titleGochara) titleGochara.innerText = dict.title_gochara;
-            const descGochara = document.getElementById('lbl-desc-gochara');
-            if (descGochara) descGochara.innerText = dict.desc_gochara;
             updateDynamicPanchangamLabels(langCode, systemSelect ? systemSelect.value : 'sauramana');
-            setText('lbl-tithi', dict.tithi);
-            setText('lbl-naks', dict.naks);
-            setText('lbl-yogam', dict.yogam);
-            setText('lbl-karanam', dict.karanam);
-            
-            // Localize new labels
-            setText('lbl-sunrise', dict.sunrise || "Sunrise Time");
-            setText('lbl-sunset', dict.sunset || "Sunset Time");
-            const moonriseLabel = document.getElementById('lbl-moonrise');
-            if (moonriseLabel) moonriseLabel.innerText = dict.moonrise || "Moonrise Time";
-            const moonsetLabel = document.getElementById('lbl-moonset');
-            if (moonsetLabel) moonsetLabel.innerText = dict.moonset || "Moonset Time";
-            setText('lbl-ahas', dict.ahas || "Day Duration (Ahas)");
-            setText('lbl-udayadhi', dict.udayadhi || "Udayadhi Nazhikai");
-            setText('lbl-kali-year', dict.kali_year || "Kali Yuga Year");
-            
-            const panchWisdomTitle = document.getElementById('lbl-panch-wisdom-title');
-            if (panchWisdomTitle) panchWisdomTitle.innerText = dict.panch_wisdom_title || "Panchangam Wisdom & Astrological Timings";
-            const panchWisdomDesc = document.getElementById('lbl-panch-wisdom-desc');
-            if (panchWisdomDesc) panchWisdomDesc.innerHTML = dict.panch_wisdom_desc || "";
-            const dailyKaalamsTitle = document.getElementById('lbl-daily-kaalams-title');
-            if (dailyKaalamsTitle) dailyKaalamsTitle.innerText = dict.daily_kaalams_title || "Daily Kaalams & Auspicious Timings";
-            const rahuKalamLabel = document.getElementById('lbl-rahu-kalam-label');
-            if (rahuKalamLabel) rahuKalamLabel.innerText = (dict.rahu_kalam_label || "Rahu Kalam (Inauspicious)") + ":";
-            const yamagandamLabel = document.getElementById('lbl-yamagandam-label');
-            if (yamagandamLabel) yamagandamLabel.innerText = (dict.yamagandam_label || "Yamagandam (Inauspicious)") + ":";
-            const gulikaKalamLabel = document.getElementById('lbl-gulika-kalam-label');
-            if (gulikaKalamLabel) gulikaKalamLabel.innerText = (dict.gulika_kalam_label || "Gulika Kalam (Auspicious/Neutral)") + ":";
-            const abhijitLabel = document.getElementById('lbl-abhijit-label');
-            if (abhijitLabel) abhijitLabel.innerText = (dict.abhijit_label || "Abhijit Muhurtha (Highly Auspicious)") + ":";
-            const brahmaLabel = document.getElementById('lbl-brahma-label');
-            if (brahmaLabel) brahmaLabel.innerText = (dict.brahma_label || "Brahma Muhurtha (Predawn Auspicious)") + ":";
-            const godhuliLabel = document.getElementById('lbl-godhuli-label');
-            if (godhuliLabel) godhuliLabel.innerText = (dict.godhuli_muhurta_label || "Godhuli Muhurta (Auspicious)") + ":";
-            const nishitaLabel = document.getElementById('lbl-nishita-label');
-            if (nishitaLabel) nishitaLabel.innerText = (dict.nishita_muhurta_label || "Nishita Muhurta (Auspicious)") + ":";
-            const vijayaLabel = document.getElementById('lbl-vijaya-label');
-            if (vijayaLabel) vijayaLabel.innerText = (dict.vijaya_muhurta_label || "Vijaya Muhurta (Auspicious)") + ":";
-            const durMuhurtaLabel = document.getElementById('lbl-dur-muhurta-label');
-            if (durMuhurtaLabel) durMuhurtaLabel.innerText = (dict.dur_muhurta_label || "Dur Muhurtam (Inauspicious)") + ":";
-            const strengthTitle = document.getElementById('lbl-strength-title');
-            if (strengthTitle) strengthTitle.innerText = dict.strength_title || "Muhurtham, Netram & Jeevan Strength";
-            const netramLabel = document.getElementById('lbl-netram-label');
-            if (netramLabel) netramLabel.innerText = dict.netram_label || "Netram (Eye of the Day)";
-            const jeevanLabel = document.getElementById('lbl-jeevan-label');
-            if (jeevanLabel) jeevanLabel.innerText = dict.jeevan_label || "Jeevan (Life of the Day)";
 
-            const panchSysLabel = document.getElementById('lbl-panch-system-label');
-            if (panchSysLabel) panchSysLabel.innerText = dict.lbl_panch_system || "System:";
-            const vedicRituLabel = document.getElementById('lbl-vedic-ritu');
-            if (vedicRituLabel) vedicRituLabel.innerText = dict.lbl_vedic_ritu || "Vedic Ritu (Season)";
-            const ayanaLabel = document.getElementById('lbl-ayana');
-            if (ayanaLabel) ayanaLabel.innerText = dict.lbl_ayana || "Ayana (Solar Course)";
-            const muhurthamLabel = document.getElementById('lbl-muhurtham-timings');
-            if (muhurthamLabel) muhurthamLabel.innerText = dict.lbl_muhurtham_timings || "Auspicious Muhurtham Timings (Good Hours)";
-            const horasTitle = document.getElementById('lbl-horas-title');
-            if (horasTitle) horasTitle.innerText = dict.lbl_horas_title || "Hourly Planetary Horas (Transit Strengths)";
-            const horasDesc = document.getElementById('lbl-horas-desc');
-            if (horasDesc) horasDesc.innerText = dict.lbl_horas_desc || "Planetary rulers change hourly starting from sunrise. Select hours to inspect ruling planet properties.";
-            const festivalsTitle = document.getElementById('lbl-festivals-title');
-            if (festivalsTitle) festivalsTitle.innerText = dict.lbl_festivals_title || "Auspicious Festivals & Observances";
-
-            const subtabBasicLbl = document.getElementById('lbl-subtab-basic');
-            if (subtabBasicLbl) subtabBasicLbl.innerText = dict.lbl_subtab_basic || "Birth Details";
-            const subtabAdvancedLbl = document.getElementById('lbl-subtab-advanced');
-            if (subtabAdvancedLbl) subtabAdvancedLbl.innerText = dict.lbl_subtab_advanced || "Astro Settings";
-            const subtabSavedChartsLbl = document.getElementById('lbl-subtab-saved-charts');
-            if (subtabSavedChartsLbl) subtabSavedChartsLbl.innerText = dict.lbl_subtab_saved_charts || "Saved Charts";
-            const subtabChartHistoryLbl = document.getElementById('lbl-subtab-chart-history');
-            if (subtabChartHistoryLbl) subtabChartHistoryLbl.innerText = dict.lbl_subtab_chart_history || "Chart History";
-            const historySelectAllLbl = document.getElementById('lbl-history-select-all');
-            if (historySelectAllLbl) historySelectAllLbl.innerText = dict.lbl_history_select_all || "Select All";
+            // Buttons with an icon before the label.
             const btnClearSelectedLbl = document.getElementById('lbl-btn-clear-selected');
             if (btnClearSelectedLbl) btnClearSelectedLbl.innerHTML = `<i class="fa-solid fa-trash-can"></i> ` + (dict.lbl_btn_clear_selected || "Delete Selected");
             const btnClearAllLbl = document.getElementById('lbl-btn-clear-all');
             if (btnClearAllLbl) btnClearAllLbl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ` + (dict.lbl_btn_clear_all || "Clear All");
-            const astroSystemLbl = document.getElementById('lbl-astro-system');
-            if (astroSystemLbl) astroSystemLbl.innerText = dict.lbl_astro_system || "Astrological System";
-            const timingSystemLbl = document.getElementById('lbl-timing-system');
-            if (timingSystemLbl) timingSystemLbl.innerText = dict.lbl_timing_system || "Timing Period System (Dasa)";
-            const reportSuccessLbl = document.getElementById('lbl-report-success');
-            if (reportSuccessLbl) reportSuccessLbl.innerText = dict.lbl_report_success || "Astrological Report Generated Successfully";
-            const btnAstroAiLbl = document.getElementById('lbl-btn-astro-ai');
-            if (btnAstroAiLbl) btnAstroAiLbl.innerText = dict.lbl_btn_astro_ai || "Astro-AI Reading";
-            const btnDownloadPdfLbl = document.getElementById('lbl-btn-download-pdf');
-            if (btnDownloadPdfLbl) btnDownloadPdfLbl.innerText = dict.lbl_btn_download_pdf || "Download PDF";
-            const shatbalamTitleLbl = document.getElementById('lbl-shatbalam-title');
-            if (shatbalamTitleLbl) shatbalamTitleLbl.innerText = dict.lbl_shatbalam_title || "Shatbalam (Planetary Strengths)";
-            const shatbalamDescLbl = document.getElementById('lbl-shatbalam-desc');
-            if (shatbalamDescLbl) shatbalamDescLbl.innerText = dict.lbl_shatbalam_desc || "Six-fold mathematical planetary power (Shadbala) comparison against scriptural minimum requirements.";
-            const ashtakavargaTitleLbl = document.getElementById('lbl-ashtakavarga-title');
-            if (ashtakavargaTitleLbl) ashtakavargaTitleLbl.innerText = dict.lbl_ashtakavarga_title || "Ashtakavarga Points";
-            const ashtakavargaDescLbl = document.getElementById('lbl-ashtakavarga-desc');
-            if (ashtakavargaDescLbl) ashtakavargaDescLbl.innerText = dict.lbl_ashtakavarga_desc || "Benefic contribution points distributed across signs (Strong: >28 SAV, Average: 20-28, Weak: <20).";
-            const dasaTimelineTitleLbl = document.getElementById('lbl-dasa-timeline-title');
-            if (dasaTimelineTitleLbl) dasaTimelineTitleLbl.innerText = dict.lbl_dasa_timeline_title || "120-Year Vimshottari Dasa Timeline";
-            const dasaTimelineDescLbl = document.getElementById('lbl-dasa-timeline-desc');
-            if (dasaTimelineDescLbl) dasaTimelineDescLbl.innerText = dict.lbl_dasa_timeline_desc || "Chronological timeline of Mahadasas and Bhuktis mapping planetary periods.";
-            const jyothiAiTitleLbl = document.getElementById('lbl-jyothi-ai-title');
-            if (jyothiAiTitleLbl) jyothiAiTitleLbl.innerText = dict.lbl_jyothi_ai_title || "Vedic AI Prediction";
-            const btnCloseAiLbl = document.getElementById('lbl-btn-close-ai');
-            if (btnCloseAiLbl) btnCloseAiLbl.innerText = dict.lbl_btn_close_ai || "Close";
 
-            setText('lbl-name', dict.name);
-            setText('lbl-dob', dict.dob);
-            setText('lbl-tob', dict.tob);
-            setText('lbl-pob', dict.pob);
-            setText('lbl-lon', dict.lon);
-            setText('lbl-lat', dict.lat);
-            setText('lbl-gender', dict.gender || "Gender");
             const genderSelect = document.getElementById('in-gender');
             if (genderSelect) {
                 const maleTranslations = {
@@ -7398,31 +7214,12 @@
                 genderSelect.options[0].text = maleTranslations[langCode] || 'Male';
                 genderSelect.options[1].text = femaleTranslations[langCode] || 'Female';
             }
-            setText('lbl-chart-style', dict.chart_style);
-            setText('lbl-btn-generate', dict.btn_generate);
             document.getElementById('lbl-ai-p1').innerHTML = `<i class="fa-solid fa-lightbulb" style="color: var(--accent-indigo); margin-right: 6px;"></i>${dict.ai_p1}`;
-            const aiWelcomeText = document.getElementById('lbl-ai-welcome-text');
-            if (aiWelcomeText) aiWelcomeText.innerText = dict.lbl_ai_welcome_text || "Welcome, seeker of cosmic wisdom! Ask me anything about Vedic astrology — planetary dignities, yogas, dasas, classical shlokas, or nakshatras. Once you calculate your birth chart in the Astrology tab, I will give you personalized chart-specific readings grounded in classical RAG scriptures.";
-            const chatInput = document.getElementById('chat-user-textbox');
-            if (chatInput) chatInput.placeholder = dict.lbl_chat_placeholder || "Ask Astro AI...";
 
-            // Localize table headers & chart labels
-            setText('th-planet', dict.th_planet || "Planet");
-            setText('th-longitude', dict.th_longitude || "Longitude");
-            setText('th-rasi', dict.th_rasi || "Zodiac Sign (Rasi)");
-            setText('th-rasi-lord', dict.th_rasi_lord || "Rasi Lord");
-            setText('th-degree', dict.th_degree || "Rasi Degree");
-            setText('th-nakshatra', dict.th_nakshatra || "Nakshatra");
-            setText('th-pada', dict.th_pada || "Pada");
-            setText('th-dignity', dict.th_dignity || "Dignity (Strength)");
-            
-            const rasiLbl = document.getElementById('lbl-rasi-chart-title');
-            if (rasiLbl) rasiLbl.innerText = dict.lbl_rasi_chart || "Rasi Chart (D1)";
-            const navLbl = document.getElementById('lbl-navamsha-chart-title');
-            if (navLbl) navLbl.innerText = dict.lbl_navamsha_chart || "Navamsha Chart (D9)";
-            const metaBirthTitleLbl = document.getElementById('lbl-metadata-birth-title');
-            if (metaBirthTitleLbl) metaBirthTitleLbl.innerText = dict.lbl_metadata_birth_title || "Janma Patrika & Astronomical Details";
-            
+            // Fill every [data-i18n*] element from the dictionary. Runs after
+            // updateDynamicPanchangamLabels, as the code it replaced did.
+            applyI18n(dict);
+
             // Adopt default panchangam system based on language selection
             // systemSelect is already defined at the start of the function scope
             if (systemSelect) {
@@ -16073,11 +15870,11 @@
                      pre-commitment before the blank form — stored locally
                      only, since the backend has no field for it. -->
                 <div id="auth-signup-goal-chips">
-                    <label id="lbl-auth-goal-prompt" style="font-size: 10px; text-transform: uppercase; margin-bottom: 6px; display: block; color: var(--text-secondary);">What brings you here?</label>
+                    <label id="lbl-auth-goal-prompt" style="font-size: 10px; text-transform: uppercase; margin-bottom: 6px; display: block; color: var(--text-secondary);" data-i18n="lbl_auth_goal_prompt">What brings you here?</label>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
-                        <button type="button" class="lang-select-btn goal-chip" data-goal="career" onclick="selectAuthGoal('career')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-career">Career</span></button>
-                        <button type="button" class="lang-select-btn goal-chip" data-goal="marriage" onclick="selectAuthGoal('marriage')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-marriage">Marriage</span></button>
-                        <button type="button" class="lang-select-btn goal-chip" data-goal="general" onclick="selectAuthGoal('general')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-general">General</span></button>
+                        <button type="button" class="lang-select-btn goal-chip" data-goal="career" onclick="selectAuthGoal('career')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-career" data-i18n="lbl_goal_career">Career</span></button>
+                        <button type="button" class="lang-select-btn goal-chip" data-goal="marriage" onclick="selectAuthGoal('marriage')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-marriage" data-i18n="lbl_goal_marriage">Marriage</span></button>
+                        <button type="button" class="lang-select-btn goal-chip" data-goal="general" onclick="selectAuthGoal('general')" style="padding: 6px 12px; font-size: 11px;"><span id="lbl-goal-general" data-i18n="lbl_goal_general">General</span></button>
                     </div>
                 </div>
                 <div class="input-group">
@@ -16133,7 +15930,7 @@
                 <button class="lang-select-btn" onclick="paywallBuy(500)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Pocket<br>500<br><span style="font-size: 9px; color: var(--text-secondary);">₹29</span><br><span id="paywall-rate-500" style="font-size: 8px; color: var(--text-muted);"></span></button>
                 <button class="lang-select-btn" onclick="paywallBuy(1125)" style="flex: 1; justify-content: center; padding: 12px 4px; font-size: 11px; border: 1px solid var(--border-gold); text-align: center;">🪙 Kundli<br>1,125<br><span style="font-size: 9px; color: var(--text-secondary);">₹49</span><br><span id="paywall-rate-1125" style="font-size: 8px; color: var(--text-muted);"></span></button>
                 <button class="lang-select-btn" onclick="paywallBuy(5000)" style="flex: 1.15; justify-content: center; padding: 16px 4px; font-size: 12px; border: 2px solid var(--accent-gold); background: rgba(245, 158, 11, 0.1); text-align: center; position: relative; font-weight: 700;">
-                    <span class="chip-price" style="position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 8px; padding: 2px 7px; white-space: nowrap;">⭐ <span id="lbl-best-value">Best Value</span></span>
+                    <span class="chip-price" style="position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 8px; padding: 2px 7px; white-space: nowrap;">⭐ <span id="lbl-best-value" data-i18n="lbl_best_value">Best Value</span></span>
                     🪙 Astro Pro<br>5,000<br><span style="font-size: 10px; color: var(--text-secondary);">₹199</span><br><span id="paywall-rate-5000" style="font-size: 8px; color: var(--text-muted);"></span>
                 </button>
             </div>
@@ -16395,23 +16192,23 @@
     <nav class="mobile-bottom-nav">
         <button class="mobile-nav-item active" id="mob-btn-home" onclick="navigateToPage('home')">
             <i class="fa-solid fa-house"></i>
-            <span id="lbl-mobile-nav-home">Home</span>
+            <span id="lbl-mobile-nav-home" data-i18n="nav_btn_home">Home</span>
         </button>
         <button class="mobile-nav-item" id="mob-btn-jyothisyam" onclick="navigateToPage('jyothisyam')">
             <i class="fa-solid fa-dharmachakra"></i>
-            <span id="lbl-mobile-nav-jyothisyam">Jyothisyam</span>
+            <span id="lbl-mobile-nav-jyothisyam" data-i18n="nav_btn_jyothisyam">Jyothisyam</span>
         </button>
         <button class="mobile-nav-item" id="mob-btn-horoscope" onclick="navigateToPage('horoscope')">
             <i class="fa-solid fa-star"></i>
-            <span id="lbl-mobile-nav-horoscope">Horoscope</span>
+            <span id="lbl-mobile-nav-horoscope" data-i18n="nav_btn_horoscope">Horoscope</span>
         </button>
         <button class="mobile-nav-item" id="mob-btn-marriage" onclick="navigateToPage('marriage')">
             <i class="fa-solid fa-heart"></i>
-            <span id="lbl-mobile-nav-marriage">Marriage</span>
+            <span id="lbl-mobile-nav-marriage" data-i18n="nav_btn_marriage">Marriage</span>
         </button>
         <button class="mobile-nav-item" id="mob-btn-ai" onclick="navigateToPage('ai')">
             <i class="fa-solid fa-comments"></i>
-            <span id="lbl-mobile-nav-ai">AI Chat</span>
+            <span id="lbl-mobile-nav-ai" data-i18n="nav_btn_ai">AI Chat</span>
         </button>
     </nav>
     <!-- Classical Scripture Grounding Side-Drawer (UI/UX Divine Elevation Section 5) -->
