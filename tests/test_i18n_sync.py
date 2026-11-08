@@ -159,6 +159,46 @@ for lang in translations.LANGS:
                 print(f"   translate_month({m!r} 7, {lang}) = {got!r}, expected {table[lang][i]!r} 7")
 check("pdf tables come from translations.py; months keep their day", months_ok)
 
+# 6b. Engine IDs (panchangam["ids"], placement "nakshatra_index") name the same
+#     values as the English strings, and translating by ID gives the same text
+#     as matching by name — across many dates, every language and calendar.
+import datetime as _dt
+ids_ok, by_id_same = [], []
+for k in range(48):
+    d = _dt.date(2024, 1, 3) + _dt.timedelta(days=k * 23 + k % 5)
+    chart = ae.get_astrological_chart(d.year, d.month, d.day, (k * 5) % 24, (k * 13) % 60,
+                                      80.27, 13.08, "Lahiri", light=True)
+    p = chart["panchangam"]
+    ids = p["ids"]
+    t = ids["tithi"]
+    want_tithi = ("Pournami (Full Moon)" if t == 15 else "Amavasya (New Moon)" if t == 30 else
+                  f"{'Sukla' if t < 15 else 'Krishna'} Paksha {translations.TITHI['en'][(t - 1) % 15].capitalize()} (Tithi {(t - 1) % 15 + 1})")
+    if (p["tithi"].lower() != want_tithi.lower()
+            or p["nakshatra"] != ae.NAKSHATRAS[ids["nakshatra"]]
+            or p["yogam"].lower() != translations.YOGAM["en"][ids["yogam"]]
+            or p["karanam"].lower() != translations.KARANA["en"][ids["karana"]]
+            or chart["placements"]["Moon"]["nakshatra"] != ae.NAKSHATRAS[chart["placements"]["Moon"]["nakshatra_index"]]):
+        ids_ok.append(f"{d}: {p['tithi']}/{p['nakshatra']}/{p['yogam']}/{p['karanam']} vs {ids}")
+    for lang in ["ta", "te", "ml", "kn", "hi"]:
+        reg = ae.get_regional_panchangam(chart, lang)
+        rid = reg["ids"]
+        mt = getattr(translations, rid["month"]["table"].upper())
+        if mt["en"][rid["month"]["index"]] not in reg["tamil_date"].lower():
+            ids_ok.append(f"{d} {lang}: month id {rid['month']} vs {reg['tamil_date']!r}")
+        no_ids = {kk: v for kk, v in reg.items() if kk != "ids"}
+        a, b = pg.localize_panchangam(reg, lang), pg.localize_panchangam(no_ids, lang)
+        if a != b:
+            by_id_same.append(f"{d} {lang}: {[(f, a[f], b[f]) for f in a if a[f] != b[f]]}")
+check("engine IDs name the same values as the engine strings", not ids_ok, "; ".join(ids_ok[:3]))
+check("translating by ID == translating by name (48 dates x 5 langs)", not by_id_same, "; ".join(by_id_same[:3]))
+check("an ID wins over a spelling the tables don't know",
+      pg.translate_nakshatra("Satabhisham", "ta", 23) == translations.NAKSHATRA["ta"][23]
+      and pg.translate_nakshatra("Satabhisham", "ta") == "Satabhisham"
+      and pg.translate_tithi("Krishna Paksha Pratipada", "hi", 16) == f"{translations.PAKSHA['hi'][1]} - {translations.TITHI['hi'][0]}")
+check("a bad ID falls back to the name",
+      pg.translate_nakshatra("Revati", "ta", 99) == translations.NAKSHATRA["ta"][26]
+      and pg.translate_month("Aippasi 3", "ta", {"table": "lunar_month", "index": 2}) == "ஐப்பசி 3")
+
 # 7. index.html no longer carries its own copies of the shared tables.
 html = open("static/index.html", encoding="utf-8").read()
 stale = [m for m in ("const planetTranslations = {", "const rasiTranslations = {", "const dignityTranslations = {",

@@ -14,6 +14,8 @@ from src.core.translations import (
     LANGS, NAKSHATRA, YOGAM, KARANA, PLANET, RASI, DIGNITY, WEEKDAY, TITHI, PAKSHA,
     LUNAR_MONTH, TAMIL_MONTH, MALAYALAM_MONTH, SAMVATSARA, ERA,
 )
+
+_MONTH_TABLES = {"lunar_month": LUNAR_MONTH, "tamil_month": TAMIL_MONTH, "malayalam_month": MALAYALAM_MONTH}
 from src.core.config import BASE_DIR
 
 logger = logging.getLogger("vedic.pdf")
@@ -166,11 +168,27 @@ def _match_canon_idx(names, value):
     return found
 
 
-def translate_tithi(tithi_str, lang):
+def _valid_index(idx, size):
+    """True for an int index into a table of `size` entries (bools excluded)."""
+    return isinstance(idx, int) and not isinstance(idx, bool) and 0 <= idx < size
+
+
+def translate_tithi(tithi_str, lang, tithi_num=None):
     """Localize an engine tithi string, e.g. "Sukla Paksha Ekadashi (Tithi 11)"
-    -> "<paksha> - <tithi name>"; Pournami / Amavasya map to their own names."""
+    -> "<paksha> - <tithi name>"; Pournami / Amavasya map to their own names.
+
+    Pass the engine's `tithi_num` (1-30, from panchangam["ids"]["tithi"]) to
+    translate by number; without it the English string is parsed (older charts).
+    """
     if not tithi_str or lang == 'en' or lang not in TITHI:
         return tithi_str
+    if _valid_index(tithi_num, 31) and tithi_num >= 1:
+        if tithi_num == 15:
+            return TITHI[lang][14]
+        if tithi_num == 30:
+            return TITHI[lang][15]
+        paksha = PAKSHA[lang][0 if tithi_num < 15 else 1]
+        return f"{paksha} - {TITHI[lang][(tithi_num - 1) % 15]}"
     lower = tithi_str.lower()
     if "pournami" in lower or "full moon" in lower:
         return TITHI[lang][14]
@@ -190,30 +208,33 @@ def translate_tithi(tithi_str, lang):
     tithi_name = TITHI[lang][tithi_num - 1] if 1 <= tithi_num <= 14 else f"Tithi {tithi_num}"
     return f"{paksha} - {tithi_name}"
 
-def _translate_value(table, value, lang):
+def _translate_value(table, value, lang, idx=None):
     """Translate a panchangam value via a translations.py table (single source).
 
     `table` is one of NAKSHATRA / YOGAM / KARANA: a dict of parallel per-language
-    arrays whose index i is the i-th canonical entry. Longest-substring match on
-    the canonical 'en' array, then index the requested language.
+    arrays whose index i is the i-th canonical entry. With the engine's `idx`
+    (panchangam["ids"] / placement "nakshatra_index") that entry is used directly;
+    otherwise longest-substring match on the canonical 'en' array (older charts).
     """
     if not value or lang == 'en':
         return value
-    idx = _match_canon_idx(table["en"], value)
+    if not _valid_index(idx, len(table["en"])):
+        idx = _match_canon_idx(table["en"], value)
     if idx == -1 or lang not in table:
         return value
     return table[lang][idx]
 
 
-def translate_nakshatra(nak_str, lang):
-    return _translate_value(NAKSHATRA, nak_str, lang)
+def translate_nakshatra(nak_str, lang, idx=None):
+    return _translate_value(NAKSHATRA, nak_str, lang, idx)
 
 
-def translate_yogam(yog_str, lang):
-    return _translate_value(YOGAM, yog_str, lang)
+def translate_yogam(yog_str, lang, idx=None):
+    return _translate_value(YOGAM, yog_str, lang, idx)
 
-def translate_karanam(kar_str, lang):
-    return _translate_value(KARANA, kar_str, lang)
+
+def translate_karanam(kar_str, lang, idx=None):
+    return _translate_value(KARANA, kar_str, lang, idx)
 
 def _replace_first_name(value, table, lang):
     """Replace the first canonical name (table order) found in `value` with its
@@ -225,11 +246,21 @@ def _replace_first_name(value, table, lang):
     return None
 
 
-def translate_month(month_str, lang):
+def translate_month(month_str, lang, month_id=None):
     """Localize a panchangam month/date string ("Aippasi 22", "Chaitra 12",
-    "Chingam 3"). Lunar months are tried first, then Tamil, then Malayalam."""
+    "Chingam 3"), keeping the day number.
+
+    Pass panchangam["ids"]["month"] ({"table": ..., "index": ...}) to say which
+    month it is; without it, lunar months are tried first, then Tamil, then
+    Malayalam (older charts).
+    """
     if not month_str or lang == 'en' or lang not in LUNAR_MONTH:
         return month_str
+    if isinstance(month_id, dict) and month_id.get("table") in _MONTH_TABLES:
+        table = _MONTH_TABLES[month_id["table"]]
+        idx = month_id.get("index")
+        if _valid_index(idx, len(table["en"])) and table["en"][idx] in month_str.lower():
+            return re.sub(table["en"][idx], table[lang][idx], month_str, count=1, flags=re.IGNORECASE)
     for table in (LUNAR_MONTH, TAMIL_MONTH, MALAYALAM_MONTH):
         out = _replace_first_name(month_str, table, lang)
         if out is not None:
@@ -237,9 +268,10 @@ def translate_month(month_str, lang):
     return month_str
 
 
-def translate_year(year_str, lang):
+def translate_year(year_str, lang, samvatsara_idx=None):
     """Localize a panchangam year string: an era prefix ("Kolla Varsham 1201")
-    and/or a samvatsara name ("Visvavasu")."""
+    and/or a samvatsara name ("Visvavasu"). Pass panchangam["ids"]["samvatsara"]
+    to name the year by index instead of matching its spelling."""
     if not year_str or lang == 'en':
         return year_str
 
@@ -251,12 +283,28 @@ def translate_year(year_str, lang):
     # Match the LONGEST year name found, not the first: several samvatsara names
     # are substrings of others (e.g. "bhava" inside "parabhava"), and a
     # first-match would translate only the inner fragment.
-    idx = _match_canon_idx(SAMVATSARA["en"], localized_year)
+    idx = samvatsara_idx
+    if not (_valid_index(idx, len(SAMVATSARA["en"])) and SAMVATSARA["en"][idx] in localized_year.lower()):
+        idx = _match_canon_idx(SAMVATSARA["en"], localized_year)
     if idx != -1 and lang in SAMVATSARA:
         localized_year = re.sub(
             SAMVATSARA["en"][idx], SAMVATSARA[lang][idx], localized_year, flags=re.IGNORECASE
         )
     return localized_year
+
+def localize_panchangam(panch, lang):
+    """The panchangam's tithi / nakshatra / yogam / karanam / month (date) / year
+    in `lang`, translated by the engine IDs in panch["ids"] when present."""
+    ids = panch.get("ids") if isinstance(panch.get("ids"), dict) else {}
+    return {
+        "tithi": translate_tithi(panch.get("tithi", ""), lang, ids.get("tithi")),
+        "nakshatra": translate_nakshatra(panch.get("nakshatra", ""), lang, ids.get("nakshatra")),
+        "yogam": translate_yogam(panch.get("yogam", ""), lang, ids.get("yogam")),
+        "karanam": translate_karanam(panch.get("karanam", ""), lang, ids.get("karana")),
+        "month": translate_month(panch.get("tamil_date", ""), lang, ids.get("month")),
+        "year": translate_year(panch.get("tamil_year", ""), lang, ids.get("samvatsara")),
+    }
+
 
 LABEL_LOCALIZATION = {
     "en": {
@@ -998,7 +1046,7 @@ def generate_pdf_report(chart_data, client_name, place_name, visual_style="south
     # --- Assemble the report from ordered, selectable sections ---
     # The birth Moon nakshatra titles the Dasa page; capture it now because the
     # planetary-positions loop on the chart page rebinds a local `naks_local`.
-    birth_naks_local = translate_nakshatra(chart_data['panchangam']['nakshatra'], lang)
+    birth_naks_local = localize_panchangam(chart_data['panchangam'], lang)['nakshatra']
 
     def _footer():
         _pdf_footer(c, FONT_REGULAR, lang)
@@ -1155,18 +1203,19 @@ def _pdf_page_chart(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, client
     c.setFont(FONT_REGULAR, 7.5)
     c.setFillColor(HexColor("#2D3748"))
     
-    tithi_local = translate_tithi(chart_data['panchangam']['tithi'], lang)
-    naks_local = translate_nakshatra(chart_data['panchangam']['nakshatra'], lang)
-    yog_local = translate_yogam(chart_data['panchangam']['yogam'], lang)
-    kar_local = translate_karanam(chart_data['panchangam']['karanam'], lang)
-    month_local = translate_month(chart_data['panchangam']['tamil_date'], lang)
+    panch_local = localize_panchangam(chart_data['panchangam'], lang)
+    tithi_local = panch_local['tithi']
+    naks_local = panch_local['nakshatra']
+    yog_local = panch_local['yogam']
+    kar_local = panch_local['karanam']
+    month_local = panch_local['month']
     
     kali_prefix = {
         "en": "Kali ", "ta": "\u0b95\u0bb2\u0bbf-", "te": "\u0c15\u0c32\u0c3f-", "ml": "\u0d15\u0d32\u0d3f-", "kn": "\u0c95\u0c32\u0c3f-", "hi": "\u0915\u0932\u093f-"
     }.get(lang, "Kali ")
     
     panch_fields = [
-        (labels["tamil_year"], translate_year(chart_data['panchangam']['tamil_year'], lang)),
+        (labels["tamil_year"], panch_local['year']),
         (labels["tamil_month"], month_local),
         (labels["kali_year"], f"{kali_prefix}{chart_data['panchangam']['kali_yuga_year']}"),
         (labels["tithi"], tithi_local),
@@ -1247,7 +1296,7 @@ def _pdf_page_chart(c, chart_data, labels, lang, FONT_REGULAR, FONT_BOLD, client
         
         # Translate Nakshatra
         naks_name = plac['nakshatra']
-        naks_local = translate_nakshatra(naks_name, lang)
+        naks_local = translate_nakshatra(naks_name, lang, plac.get('nakshatra_index'))
         
         # Pada
         pada_val = str(plac['pada'])

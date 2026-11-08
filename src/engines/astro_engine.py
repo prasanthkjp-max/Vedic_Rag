@@ -383,6 +383,11 @@ def get_regional_panchangam(chart, lang_code):
     Shaka and this engine's Chaitra-based lunar framing.
     """
     panch = chart["panchangam"].copy()
+    # Own copy of the IDs (the month/year entries are rewritten per calendar below).
+    # Charts saved before IDs existed have none; translators then match by name.
+    ids = dict(panch["ids"]) if isinstance(panch.get("ids"), dict) else None
+    if ids is not None:
+        panch["ids"] = ids
     tamil_month = panch["tamil_month"]
     tamil_year = panch["tamil_year"]
     tamil_day = panch.get("tamil_day", 1)
@@ -445,7 +450,10 @@ def get_regional_panchangam(chart, lang_code):
         panch["tamil_month"] = mal_month
         panch["tamil_date"] = f"{mal_month} {tamil_day}"
         panch["tamil_year"] = f"Kolla Varsham {me_year}"
-        
+        if ids is not None:
+            ids["month"] = {"table": "malayalam_month", "index": mal_month_idx}
+            ids["samvatsara"] = None  # an era year, not a samvatsara name
+
     elif lang_code == "hi":
         # Hindi Luni-Solar Calendar (Purnimanta)
         # Months end on Full Moon (Pournami), shifting Krishna Paksha forward
@@ -468,6 +476,9 @@ def get_regional_panchangam(chart, lang_code):
         panch["tamil_month"] = luni_month
         panch["tamil_date"] = f"{luni_month} {luni_day}"
         panch["tamil_year"] = f"Vikrama Samvat {vs_year}"
+        if ids is not None:
+            ids["month"] = {"table": "lunar_month", "index": luni_idx}
+            ids["samvatsara"] = None
         
     elif lang_code in ["te", "kn"]:
         # Telugu / Kannada Lunar Calendar (Amanta)
@@ -485,6 +496,9 @@ def get_regional_panchangam(chart, lang_code):
         panch["tamil_month"] = luni_month
         panch["tamil_date"] = f"{luni_month} {luni_day}"
         panch["tamil_year"] = f"Shalivahana Shaka {shaka_year}"
+        if ids is not None:
+            ids["month"] = {"table": "lunar_month", "index": amanta_idx}
+            ids["samvatsara"] = None
         
     else:
         # Default Tamil Solar Formatting
@@ -563,6 +577,27 @@ def get_panchangam_details(sun_long, moon_long):
         karanam = KARANAS[(kar_num - 1) % 7 + 1]
         
     return tithi_name, nakshatra, yogam, karanam, naks_num
+
+def get_panchangam_ids(sun_long, moon_long):
+    """Index form of get_panchangam_details' names, for translating by ID
+    instead of by English spelling (translations.py tables use these indexes):
+    tithi 1-30 (15 = Pournami, 30 = Amavasya), nakshatra / yogam 0-26, and
+    karana 0-10 in translations.KARANA order (Kintughna, Bava … Vishti,
+    Shakuni, Chatushpada, Naga)."""
+    diff = (moon_long - sun_long) % 360.0
+    kar_num = math.floor(diff / 6.0) % 60
+    if kar_num == 0:
+        karana = 0
+    elif kar_num >= 57:
+        karana = 8 + (kar_num - 57) % 3
+    else:
+        karana = (kar_num - 1) % 7 + 1
+    return {
+        "tithi": min(math.floor(diff / 12.0) + 1, 30),
+        "nakshatra": math.floor(moon_long / (360.0 / 27.0)) % 27,
+        "yogam": math.floor(((sun_long + moon_long) % 360.0) / (360.0 / 27.0)) % 27,
+        "karana": karana,
+    }
 
 def jd_to_date_string(jd):
     """
@@ -1907,6 +1942,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
             "rasi_name": RASIS[rasi_idx],
             "rasi_lord": rasi_lord,
             "nakshatra": NAKSHATRAS[naks_idx],
+            "nakshatra_index": naks_idx,
             "pada": pada,
             "navamsha_rasi_index": nav_rasi_idx,
             "navamsha_rasi_name": RASIS[nav_rasi_idx],
@@ -1999,6 +2035,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         "rasi_name": RASIS[lagna_rasi_idx],
         "rasi_lord": lag_lord,
         "nakshatra": NAKSHATRAS[lag_naks_idx],
+        "nakshatra_index": lag_naks_idx,
         "pada": lag_pada,
         "navamsha_rasi_index": lag_nav_rasi_idx,
         "navamsha_rasi_name": RASIS[lag_nav_rasi_idx],
@@ -2025,7 +2062,13 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
     tamil_year, tamil_month = get_tamil_year_month(JD, sidereal_positions["Sun"], gregorian_year=year)
     tamil_day = calculate_solar_month_day(JD, sidereal_positions["Sun"], timezone_offset, ayanamsa_name)
     tamil_date = f"{tamil_month} {tamil_day}"
-    
+
+    # Indexes behind the names above, so translators can look them up directly.
+    # get_regional_panchangam rewrites "month"/"samvatsara" for other calendars.
+    panch_ids = get_panchangam_ids(sidereal_positions["Sun"], sidereal_positions["Moon"])
+    panch_ids["month"] = {"table": "tamil_month", "index": TAMIL_MONTHS.index(tamil_month)}
+    panch_ids["samvatsara"] = TAMIL_YEARS.index(tamil_year)
+
     # 8. Compute 120-Year Vimshottari Dasas (skipped in light mode)
     dasa_table = [] if light else calculate_vimshottari_dasa(JD, sidereal_positions["Moon"], birth_naks_idx)
     
@@ -2179,6 +2222,7 @@ def get_astrological_chart(year, month, day, hour, minute, longitude, latitude, 
         "nakshatra": nakshatra,
         "yogam": yogam,
         "karanam": karanam,
+        "ids": panch_ids,
         "sunrise": sunrise_str,
         "sunset": sunset_str,
         "moonrise": moonrise_str,
