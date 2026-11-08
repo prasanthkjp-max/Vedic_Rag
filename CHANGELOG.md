@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.2]
+
+### Changed
+- `.gitignore` now excludes local Claude Code settings (`.claude/settings.local.json`), the per-machine Android Studio files `android/.idea/deviceManager.xml` and `planningMode.xml`, and the private `AUDIT_REPORT.md`, so machine-specific settings and security notes can't be committed by accident.
+
 ## [1.32.1]
 
 ### Fixed
