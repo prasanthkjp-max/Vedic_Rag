@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.34.1]
+
+### Fixed
+- Malayalam nakshatra Rohini is now "രോഹിണി" (was "രോഹണി", missing the vowel sign).
+- Hindi samvatsara Bhava is now "भव" (was "भाव", which means "feeling").
+
+Both are fixed in `src/core/translations.py`, so the app, PDF, public pages and digest all pick them up.
+
 ## [1.34.0]
 
 ### Added
