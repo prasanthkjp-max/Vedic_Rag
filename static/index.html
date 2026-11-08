@@ -5158,12 +5158,29 @@
         // key header and, on a 401, clears the stored key, prompts once and
         // retries so a wrong/rotated key is easy to recover from.
         // Toast system function
+        // The English text of a (possibly translated) tMsg message, so showToast
+        // can pick its colour from English keywords in every language. Prefix
+        // match on the text before any {placeholder} also covers messages with
+        // server detail appended ("Login failed: <detail>"); longest match wins.
+        function englishOfMessage(message) {
+            const s = String(message);
+            if (typeof localization === 'undefined' || currentLang === 'en') return s;
+            const dict = localization[currentLang] || {};
+            let best = null, bestLen = 0;
+            for (const key in dict) {
+                if (!key.startsWith('msg_')) continue;
+                const head = dict[key].split('{')[0];
+                if (head && head.length > bestLen && s.startsWith(head)) { best = key; bestLen = head.length; }
+            }
+            return best ? localization.en[best] : s;
+        }
+
         function showToast(message, type = null) {
             const container = document.getElementById('toast-container');
             if (!container) return;
 
             if (!type) {
-                const msgLower = String(message).toLowerCase();
+                const msgLower = englishOfMessage(message).toLowerCase();
                 if (msgLower.includes('success') || msgLower.includes('copied') || msgLower.includes('successful') || msgLower.includes('sent')) {
                     type = 'success';
                 } else if (msgLower.includes('fail') || msgLower.includes('error') || msgLower.includes('invalid') || msgLower.includes('could not') || msgLower.includes('expired') || msgLower.includes('required') || msgLower.includes('please fill') || msgLower.includes('please type') || msgLower.includes('please calculate')) {
@@ -5240,7 +5257,7 @@
             if (response.status === 402) {
                 showPaywall();
             } else if (response.status === 401 && !url.includes('/api/auth/')) {
-                showToast("Session expired or authentication required. Please sign in.");
+                showToast(tMsg('msg_session_expired'));
                 openLoginModal();
             }
             return response;
@@ -5261,6 +5278,89 @@
 
         const localization = {
             en: {
+                // Pop-up / confirm messages (shown via tMsg).
+                msg_session_expired: "Session expired or authentication required. Please sign in.",
+                msg_fill_birth_fields_draft: "Please fill all basic birth fields before drafting!",
+                msg_chart_compute_failed: "Failed to compute chart. Please ensure all coordinates and inputs are valid.",
+                msg_select_section: "Please select at least one section to include.",
+                msg_pdf_download_failed: "Failed to generate PDF download.",
+                msg_pdf_failed_retry: "PDF generation failed. Please try again.",
+                msg_premium_start_failed: "Could not start the premium report.",
+                msg_premium_start_retry: "Premium report failed to start. Please try again.",
+                msg_report_download_not_started: "Your report is ready but the download didn't start. Open your profile and try the link again shortly.",
+                msg_premium_refunded: "The premium report could not be generated — your credits have been refunded. Please try again.",
+                msg_report_slow: "The report is taking longer than expected. It will be delivered on WhatsApp if you've opted in; you can also check back shortly.",
+                msg_calc_compat_first: "Please calculate the compatibility report first.",
+                msg_calc_chart_first: "Please calculate a birth chart first.",
+                msg_valid_year: "Please select a valid year between 1900 and 2100.",
+                msg_type_question: "Please type your question first (a full sentence works best).",
+                msg_share_link_failed: "Could not create the share link.",
+                msg_referral_copied: "Referral code copied: {code}\nShare it — your friend gets bonus tokens, and so do you!",
+                msg_confirm_delete_profile: "Are you sure you want to delete this profile?",
+                msg_profile_deleted: "Profile deleted successfully.",
+                msg_profile_delete_failed: "Failed to delete profile.",
+                msg_profile_delete_error: "Error deleting profile.",
+                msg_fill_signup: "Please fill all signup fields.",
+                msg_account_created: "Account created successfully! Please sign in.",
+                msg_signup_failed: "Signup failed: ",
+                msg_signup_error: "Error during signup: ",
+                msg_enter_email_password: "Please enter email and password.",
+                msg_login_failed: "Login failed: ",
+                msg_login_error: "Error during login: ",
+                msg_oauth_failed: "OAuth failed: ",
+                msg_oauth_error: "Error during OAuth: ",
+                msg_enter_phone: "Please enter your 10-digit phone number.",
+                msg_valid_mobile: "Please enter a valid 10-digit mobile number.",
+                msg_otp_sent: "Verification code sent via {channel}!",
+                msg_otp_send_failed: "Failed to send OTP: ",
+                msg_otp_send_error: "Error sending OTP: ",
+                msg_valid_code: "Please enter a valid verification code.",
+                msg_verification_failed: "Verification failed: ",
+                msg_verification_during_error: "Error during verification: ",
+                msg_prefs_saved: "Preferences saved successfully!",
+                msg_prefs_error: "Error saving preferences: ",
+                msg_login_to_buy: "Please log in to buy tokens.",
+                msg_payment_lib_failed: "Payment library failed to load. Check your connection and retry.",
+                msg_checkout_failed: "Could not start checkout: ",
+                msg_payment_success: "Payment successful! {n} tokens added.",
+                msg_payment_pending: "Payment captured but verification is pending: ",
+                msg_verification_error: "Verification error: ",
+                msg_payment_failed: "Payment failed: ",
+                msg_purchase_error: "Error during purchase: ",
+                msg_gift_checkout_failed: "Could not start gift checkout: ",
+                msg_gift_pending: "Payment captured — your gift code will be available shortly once confirmed.",
+                msg_gift_purchase_error: "Error during gift purchase: ",
+                msg_share_link_copied: "Share link copied!",
+                msg_copy_failed_link: "Copy failed — the link is: ",
+                msg_enter_gift_code: "Enter a gift code.",
+                msg_gift_redeem_error: "Error redeeming gift: ",
+                msg_login_to_subscribe: "Please log in to subscribe.",
+                msg_subscription_start_failed: "Could not start subscription: ",
+                msg_astro_pass_active: "Astro Pass active — welcome aboard! 🌟",
+                msg_activation_pending: "Payment authorised but activation is pending: ",
+                msg_subscription_error: "Error during subscription: ",
+                msg_subscription_cancelled: "Subscription cancelled successfully.",
+                msg_cancellation_failed: "Cancellation failed: ",
+                msg_cancellation_error: "Error during cancellation: ",
+                msg_fill_birth_info: "Please fill all birth info fields.",
+                msg_birth_saved: "Birth details saved successfully!",
+                msg_birth_save_failed: "Failed to save birth details.",
+                msg_details_save_error: "Error saving details: ",
+                msg_no_history_selected: "No history records selected.",
+                msg_confirm_delete_history: "Are you sure you want to delete the {n} selected history records?",
+                msg_no_history_to_clear: "No history records found to clear.",
+                msg_confirm_clear_history: "Are you sure you want to clear ALL calculation history? This action cannot be undone.",
+                msg_chart_saved_permanently: "Chart saved permanently!",
+                msg_chart_save_failed: "Failed to save chart.",
+                msg_chart_save_error: "Error saving chart: ",
+                msg_confirm_delete_chart: "Are you sure you want to delete this chart record?",
+                msg_record_deleted: "Record deleted successfully.",
+                msg_record_delete_failed: "Failed to delete record.",
+                msg_record_delete_error: "Error deleting record: ",
+                msg_compare_limit: "You can compare up to {n} profiles at a time.",
+                msg_chart_saved_cloud: "Chart saved successfully to your cloud profile!",
+                msg_offline: "You're offline. Panchangam, charts and AI need a connection.",
+                msg_back_online: "Back online.",
                 lbl_calculating_alignments: "Calculating Alignments...",
                 lbl_unauthorized_alert: "Unauthorized: Please sign in to access this feature.",
                 lbl_calculation_failed: "Calculation failed",
@@ -5456,6 +5556,89 @@
                 lbl_home_phala_more: "See all signs →"
             },
             ta: {
+                // Pop-up / confirm messages (shown via tMsg).
+                msg_session_expired: "அமர்வு காலாவதியானது அல்லது உள்நுழைவு தேவை. தயவுசெய்து உள்நுழையவும்.",
+                msg_fill_birth_fields_draft: "ஜாதகம் உருவாக்கும் முன் அனைத்து அடிப்படை பிறப்பு விவரங்களையும் நிரப்பவும்!",
+                msg_chart_compute_failed: "ஜாதகத்தைக் கணிக்க முடியவில்லை. அட்ச/தீர்க்க ரேகைகளும் மற்ற விவரங்களும் சரியானவையா எனச் சரிபார்க்கவும்.",
+                msg_select_section: "குறைந்தது ஒரு பகுதியையாவது தேர்ந்தெடுக்கவும்.",
+                msg_pdf_download_failed: "PDF பதிவிறக்கத்தை உருவாக்க முடியவில்லை.",
+                msg_pdf_failed_retry: "PDF உருவாக்கம் தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.",
+                msg_premium_start_failed: "பிரீமியம் அறிக்கையைத் தொடங்க முடியவில்லை.",
+                msg_premium_start_retry: "பிரீமியம் அறிக்கை தொடங்கவில்லை. மீண்டும் முயற்சிக்கவும்.",
+                msg_report_download_not_started: "உங்கள் அறிக்கை தயார், ஆனால் பதிவிறக்கம் தொடங்கவில்லை. சிறிது நேரத்தில் உங்கள் சுயவிவரத்தைத் திறந்து இணைப்பை மீண்டும் முயற்சிக்கவும்.",
+                msg_premium_refunded: "பிரீமியம் அறிக்கையை உருவாக்க முடியவில்லை — உங்கள் கிரெடிட்கள் திருப்பி அளிக்கப்பட்டன. மீண்டும் முயற்சிக்கவும்.",
+                msg_report_slow: "அறிக்கை எதிர்பார்த்ததைவிட அதிக நேரம் எடுக்கிறது. நீங்கள் WhatsApp-ஐத் தேர்ந்தெடுத்திருந்தால் அங்கே அனுப்பப்படும்; சிறிது நேரம் கழித்தும் பார்க்கலாம்.",
+                msg_calc_compat_first: "முதலில் பொருத்த அறிக்கையைக் கணிக்கவும்.",
+                msg_calc_chart_first: "முதலில் ஒரு ஜாதகத்தைக் கணிக்கவும்.",
+                msg_valid_year: "1900 முதல் 2100 வரையிலான சரியான ஆண்டைத் தேர்ந்தெடுக்கவும்.",
+                msg_type_question: "முதலில் உங்கள் கேள்வியைத் தட்டச்சு செய்யவும் (முழு வாக்கியமாக இருந்தால் சிறந்தது).",
+                msg_share_link_failed: "பகிர்வு இணைப்பை உருவாக்க முடியவில்லை.",
+                msg_referral_copied: "பரிந்துரைக் குறியீடு நகலெடுக்கப்பட்டது: {code}\nபகிருங்கள் — உங்கள் நண்பருக்கும் உங்களுக்கும் போனஸ் கிரெடிட்கள் கிடைக்கும்!",
+                msg_confirm_delete_profile: "இந்தச் சுயவிவரத்தை நீக்க விரும்புகிறீர்களா?",
+                msg_profile_deleted: "சுயவிவரம் வெற்றிகரமாக நீக்கப்பட்டது.",
+                msg_profile_delete_failed: "சுயவிவரத்தை நீக்க முடியவில்லை.",
+                msg_profile_delete_error: "சுயவிவரத்தை நீக்குவதில் பிழை.",
+                msg_fill_signup: "பதிவுக்கான அனைத்து விவரங்களையும் நிரப்பவும்.",
+                msg_account_created: "கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது! தயவுசெய்து உள்நுழையவும்.",
+                msg_signup_failed: "பதிவு தோல்வியடைந்தது: ",
+                msg_signup_error: "பதிவின்போது பிழை: ",
+                msg_enter_email_password: "மின்னஞ்சல் மற்றும் கடவுச்சொல்லை உள்ளிடவும்.",
+                msg_login_failed: "உள்நுழைவு தோல்வியடைந்தது: ",
+                msg_login_error: "உள்நுழைவின்போது பிழை: ",
+                msg_oauth_failed: "OAuth உள்நுழைவு தோல்வியடைந்தது: ",
+                msg_oauth_error: "OAuth உள்நுழைவின்போது பிழை: ",
+                msg_enter_phone: "உங்கள் 10 இலக்க தொலைபேசி எண்ணை உள்ளிடவும்.",
+                msg_valid_mobile: "சரியான 10 இலக்க கைபேசி எண்ணை உள்ளிடவும்.",
+                msg_otp_sent: "சரிபார்ப்புக் குறியீடு {channel} வழியாக அனுப்பப்பட்டது!",
+                msg_otp_send_failed: "OTP அனுப்ப முடியவில்லை: ",
+                msg_otp_send_error: "OTP அனுப்புவதில் பிழை: ",
+                msg_valid_code: "சரியான சரிபார்ப்புக் குறியீட்டை உள்ளிடவும்.",
+                msg_verification_failed: "சரிபார்ப்பு தோல்வியடைந்தது: ",
+                msg_verification_during_error: "சரிபார்ப்பின்போது பிழை: ",
+                msg_prefs_saved: "விருப்பங்கள் வெற்றிகரமாகச் சேமிக்கப்பட்டன!",
+                msg_prefs_error: "விருப்பங்களைச் சேமிப்பதில் பிழை: ",
+                msg_login_to_buy: "கிரெடிட்களை வாங்க உள்நுழையவும்.",
+                msg_payment_lib_failed: "பணம் செலுத்தும் சேவை ஏற்றப்படவில்லை. இணைய இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+                msg_checkout_failed: "பணம் செலுத்துதலைத் தொடங்க முடியவில்லை: ",
+                msg_payment_success: "பணம் செலுத்துதல் வெற்றி! {n} கிரெடிட்கள் சேர்க்கப்பட்டன.",
+                msg_payment_pending: "பணம் பெறப்பட்டது, ஆனால் சரிபார்ப்பு நிலுவையில் உள்ளது: ",
+                msg_verification_error: "சரிபார்ப்புப் பிழை: ",
+                msg_payment_failed: "பணம் செலுத்துதல் தோல்வியடைந்தது: ",
+                msg_purchase_error: "வாங்கும்போது பிழை: ",
+                msg_gift_checkout_failed: "பரிசுக்கான பணம் செலுத்துதலைத் தொடங்க முடியவில்லை: ",
+                msg_gift_pending: "பணம் பெறப்பட்டது — உறுதிசெய்யப்பட்டதும் உங்கள் பரிசுக் குறியீடு விரைவில் கிடைக்கும்.",
+                msg_gift_purchase_error: "பரிசு வாங்கும்போது பிழை: ",
+                msg_share_link_copied: "பகிர்வு இணைப்பு நகலெடுக்கப்பட்டது!",
+                msg_copy_failed_link: "நகலெடுக்க முடியவில்லை — இணைப்பு: ",
+                msg_enter_gift_code: "பரிசுக் குறியீட்டை உள்ளிடவும்.",
+                msg_gift_redeem_error: "பரிசைப் பெறுவதில் பிழை: ",
+                msg_login_to_subscribe: "சந்தா பெற உள்நுழையவும்.",
+                msg_subscription_start_failed: "சந்தாவைத் தொடங்க முடியவில்லை: ",
+                msg_astro_pass_active: "Astro Pass செயல்பாட்டில் உள்ளது — வருக! 🌟",
+                msg_activation_pending: "பணம் அங்கீகரிக்கப்பட்டது, ஆனால் செயல்படுத்தல் நிலுவையில் உள்ளது: ",
+                msg_subscription_error: "சந்தாவின்போது பிழை: ",
+                msg_subscription_cancelled: "சந்தா வெற்றிகரமாக ரத்து செய்யப்பட்டது.",
+                msg_cancellation_failed: "ரத்து செய்ய முடியவில்லை: ",
+                msg_cancellation_error: "ரத்து செய்யும்போது பிழை: ",
+                msg_fill_birth_info: "அனைத்து பிறப்பு விவரங்களையும் நிரப்பவும்.",
+                msg_birth_saved: "பிறப்பு விவரங்கள் வெற்றிகரமாகச் சேமிக்கப்பட்டன!",
+                msg_birth_save_failed: "பிறப்பு விவரங்களைச் சேமிக்க முடியவில்லை.",
+                msg_details_save_error: "விவரங்களைச் சேமிப்பதில் பிழை: ",
+                msg_no_history_selected: "வரலாற்றுப் பதிவுகள் எதுவும் தேர்ந்தெடுக்கப்படவில்லை.",
+                msg_confirm_delete_history: "தேர்ந்தெடுத்த {n} வரலாற்றுப் பதிவுகளை நீக்க விரும்புகிறீர்களா?",
+                msg_no_history_to_clear: "நீக்குவதற்கு வரலாற்றுப் பதிவுகள் எதுவும் இல்லை.",
+                msg_confirm_clear_history: "அனைத்து ஜாதக வரலாற்றையும் நீக்க விரும்புகிறீர்களா? இதைத் திரும்பப் பெற முடியாது.",
+                msg_chart_saved_permanently: "ஜாதகம் நிரந்தரமாகச் சேமிக்கப்பட்டது!",
+                msg_chart_save_failed: "ஜாதகத்தைச் சேமிக்க முடியவில்லை.",
+                msg_chart_save_error: "ஜாதகத்தைச் சேமிப்பதில் பிழை: ",
+                msg_confirm_delete_chart: "இந்த ஜாதகப் பதிவை நீக்க விரும்புகிறீர்களா?",
+                msg_record_deleted: "பதிவு வெற்றிகரமாக நீக்கப்பட்டது.",
+                msg_record_delete_failed: "பதிவை நீக்க முடியவில்லை.",
+                msg_record_delete_error: "பதிவை நீக்குவதில் பிழை: ",
+                msg_compare_limit: "ஒரே நேரத்தில் அதிகபட்சம் {n} சுயவிவரங்களை ஒப்பிடலாம்.",
+                msg_chart_saved_cloud: "ஜாதகம் உங்கள் கணக்கில் வெற்றிகரமாகச் சேமிக்கப்பட்டது!",
+                msg_offline: "நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். பஞ்சாங்கம், ஜாதகம் மற்றும் AI-க்கு இணைய இணைப்பு தேவை.",
+                msg_back_online: "மீண்டும் இணைப்பில் உள்ளீர்கள்.",
                 lbl_calculating_alignments: "பொருத்தம் கணக்கிடப்படுகிறது...",
                 lbl_unauthorized_alert: "அனுமதி இல்லை: இந்த அம்சத்தை அணுக உள்நுழையவும்.",
                 lbl_calculation_failed: "கணக்கீடு தோல்வியடைந்தது",
@@ -5654,6 +5837,89 @@
                 lbl_home_phala_more: "அனைத்து ராசிகளும் →"
             },
             te: {
+                // Pop-up / confirm messages (shown via tMsg).
+                msg_session_expired: "సెషన్ ముగిసింది లేదా లాగిన్ అవసరం. దయచేసి లాగిన్ అవ్వండి.",
+                msg_fill_birth_fields_draft: "జాతకం రూపొందించే ముందు అన్ని ప్రాథమిక జన్మ వివరాలను నింపండి!",
+                msg_chart_compute_failed: "జాతకాన్ని గణించడం విఫలమైంది. అక్షాంశ/రేఖాంశాలు మరియు ఇతర వివరాలు సరైనవేనా అని తనిఖీ చేయండి.",
+                msg_select_section: "కనీసం ఒక విభాగాన్ని ఎంచుకోండి.",
+                msg_pdf_download_failed: "PDF డౌన్‌లోడ్‌ను రూపొందించడం విఫలమైంది.",
+                msg_pdf_failed_retry: "PDF రూపొందించడం విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.",
+                msg_premium_start_failed: "ప్రీమియం నివేదికను ప్రారంభించలేకపోయాము.",
+                msg_premium_start_retry: "ప్రీమియం నివేదిక ప్రారంభం కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
+                msg_report_download_not_started: "మీ నివేదిక సిద్ధంగా ఉంది, కానీ డౌన్‌లోడ్ ప్రారంభం కాలేదు. కొద్దిసేపటి తర్వాత మీ ప్రొఫైల్‌ను తెరిచి లింక్‌ను మళ్లీ ప్రయత్నించండి.",
+                msg_premium_refunded: "ప్రీమియం నివేదికను రూపొందించలేకపోయాము — మీ క్రెడిట్లు తిరిగి ఇవ్వబడ్డాయి. దయచేసి మళ్లీ ప్రయత్నించండి.",
+                msg_report_slow: "నివేదికకు ఊహించిన దానికంటే ఎక్కువ సమయం పడుతోంది. మీరు WhatsAppను ఎంచుకుని ఉంటే అక్కడ పంపబడుతుంది; కొద్దిసేపటి తర్వాత కూడా చూడవచ్చు.",
+                msg_calc_compat_first: "ముందుగా పొంతన నివేదికను గణించండి.",
+                msg_calc_chart_first: "ముందుగా జాతక చక్రాన్ని గణించండి.",
+                msg_valid_year: "1900 నుండి 2100 మధ్య సరైన సంవత్సరాన్ని ఎంచుకోండి.",
+                msg_type_question: "ముందుగా మీ ప్రశ్నను టైప్ చేయండి (పూర్తి వాక్యంగా ఉంటే మంచిది).",
+                msg_share_link_failed: "షేర్ లింక్‌ను సృష్టించలేకపోయాము.",
+                msg_referral_copied: "రెఫరల్ కోడ్ కాపీ చేయబడింది: {code}\nషేర్ చేయండి — మీ స్నేహితుడికీ మీకూ బోనస్ క్రెడిట్లు లభిస్తాయి!",
+                msg_confirm_delete_profile: "ఈ ప్రొఫైల్‌ను తొలగించాలనుకుంటున్నారా?",
+                msg_profile_deleted: "ప్రొఫైల్ విజయవంతంగా తొలగించబడింది.",
+                msg_profile_delete_failed: "ప్రొఫైల్‌ను తొలగించడం విఫలమైంది.",
+                msg_profile_delete_error: "ప్రొఫైల్‌ను తొలగించడంలో లోపం.",
+                msg_fill_signup: "రిజిస్ట్రేషన్ వివరాలన్నింటినీ నింపండి.",
+                msg_account_created: "ఖాతా విజయవంతంగా సృష్టించబడింది! దయచేసి లాగిన్ అవ్వండి.",
+                msg_signup_failed: "రిజిస్ట్రేషన్ విఫలమైంది: ",
+                msg_signup_error: "రిజిస్ట్రేషన్ సమయంలో లోపం: ",
+                msg_enter_email_password: "ఈమెయిల్ మరియు పాస్‌వర్డ్‌ను నమోదు చేయండి.",
+                msg_login_failed: "లాగిన్ విఫలమైంది: ",
+                msg_login_error: "లాగిన్ సమయంలో లోపం: ",
+                msg_oauth_failed: "OAuth లాగిన్ విఫలమైంది: ",
+                msg_oauth_error: "OAuth లాగిన్ సమయంలో లోపం: ",
+                msg_enter_phone: "మీ 10 అంకెల ఫోన్ నంబర్‌ను నమోదు చేయండి.",
+                msg_valid_mobile: "సరైన 10 అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి.",
+                msg_otp_sent: "ధృవీకరణ కోడ్ {channel} ద్వారా పంపబడింది!",
+                msg_otp_send_failed: "OTP పంపడం విఫలమైంది: ",
+                msg_otp_send_error: "OTP పంపడంలో లోపం: ",
+                msg_valid_code: "సరైన ధృవీకరణ కోడ్‌ను నమోదు చేయండి.",
+                msg_verification_failed: "ధృవీకరణ విఫలమైంది: ",
+                msg_verification_during_error: "ధృవీకరణ సమయంలో లోపం: ",
+                msg_prefs_saved: "ప్రాధాన్యతలు విజయవంతంగా సేవ్ చేయబడ్డాయి!",
+                msg_prefs_error: "ప్రాధాన్యతలను సేవ్ చేయడంలో లోపం: ",
+                msg_login_to_buy: "క్రెడిట్లు కొనడానికి లాగిన్ అవ్వండి.",
+                msg_payment_lib_failed: "చెల్లింపు సేవ లోడ్ కాలేదు. మీ ఇంటర్నెట్ కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.",
+                msg_checkout_failed: "చెల్లింపును ప్రారంభించలేకపోయాము: ",
+                msg_payment_success: "చెల్లింపు విజయవంతమైంది! {n} క్రెడిట్లు జోడించబడ్డాయి.",
+                msg_payment_pending: "చెల్లింపు అందింది, కానీ ధృవీకరణ పెండింగ్‌లో ఉంది: ",
+                msg_verification_error: "ధృవీకరణ లోపం: ",
+                msg_payment_failed: "చెల్లింపు విఫలమైంది: ",
+                msg_purchase_error: "కొనుగోలు సమయంలో లోపం: ",
+                msg_gift_checkout_failed: "బహుమతి చెల్లింపును ప్రారంభించలేకపోయాము: ",
+                msg_gift_pending: "చెల్లింపు అందింది — నిర్ధారణ అయిన వెంటనే మీ బహుమతి కోడ్ అందుబాటులోకి వస్తుంది.",
+                msg_gift_purchase_error: "బహుమతి కొనుగోలు సమయంలో లోపం: ",
+                msg_share_link_copied: "షేర్ లింక్ కాపీ చేయబడింది!",
+                msg_copy_failed_link: "కాపీ విఫలమైంది — లింక్: ",
+                msg_enter_gift_code: "బహుమతి కోడ్‌ను నమోదు చేయండి.",
+                msg_gift_redeem_error: "బహుమతిని రీడీమ్ చేయడంలో లోపం: ",
+                msg_login_to_subscribe: "సబ్‌స్క్రైబ్ చేయడానికి లాగిన్ అవ్వండి.",
+                msg_subscription_start_failed: "సబ్‌స్క్రిప్షన్‌ను ప్రారంభించలేకపోయాము: ",
+                msg_astro_pass_active: "Astro Pass యాక్టివ్‌గా ఉంది — స్వాగతం! 🌟",
+                msg_activation_pending: "చెల్లింపు ఆమోదించబడింది, కానీ యాక్టివేషన్ పెండింగ్‌లో ఉంది: ",
+                msg_subscription_error: "సబ్‌స్క్రిప్షన్ సమయంలో లోపం: ",
+                msg_subscription_cancelled: "సబ్‌స్క్రిప్షన్ విజయవంతంగా రద్దు చేయబడింది.",
+                msg_cancellation_failed: "రద్దు విఫలమైంది: ",
+                msg_cancellation_error: "రద్దు సమయంలో లోపం: ",
+                msg_fill_birth_info: "అన్ని జన్మ వివరాలను నింపండి.",
+                msg_birth_saved: "జన్మ వివరాలు విజయవంతంగా సేవ్ చేయబడ్డాయి!",
+                msg_birth_save_failed: "జన్మ వివరాలను సేవ్ చేయడం విఫలమైంది.",
+                msg_details_save_error: "వివరాలను సేవ్ చేయడంలో లోపం: ",
+                msg_no_history_selected: "ఏ చరిత్ర రికార్డులూ ఎంచుకోలేదు.",
+                msg_confirm_delete_history: "ఎంచుకున్న {n} చరిత్ర రికార్డులను తొలగించాలనుకుంటున్నారా?",
+                msg_no_history_to_clear: "తొలగించడానికి ఏ చరిత్ర రికార్డులూ లేవు.",
+                msg_confirm_clear_history: "మొత్తం గణన చరిత్రను తొలగించాలనుకుంటున్నారా? దీన్ని తిరిగి పొందలేరు.",
+                msg_chart_saved_permanently: "జాతకం శాశ్వతంగా సేవ్ చేయబడింది!",
+                msg_chart_save_failed: "జాతకాన్ని సేవ్ చేయడం విఫలమైంది.",
+                msg_chart_save_error: "జాతకాన్ని సేవ్ చేయడంలో లోపం: ",
+                msg_confirm_delete_chart: "ఈ జాతక రికార్డును తొలగించాలనుకుంటున్నారా?",
+                msg_record_deleted: "రికార్డు విజయవంతంగా తొలగించబడింది.",
+                msg_record_delete_failed: "రికార్డును తొలగించడం విఫలమైంది.",
+                msg_record_delete_error: "రికార్డును తొలగించడంలో లోపం: ",
+                msg_compare_limit: "ఒకేసారి గరిష్ఠంగా {n} ప్రొఫైల్‌లను పోల్చవచ్చు.",
+                msg_chart_saved_cloud: "జాతకం మీ ఖాతాలో విజయవంతంగా సేవ్ చేయబడింది!",
+                msg_offline: "మీరు ఆఫ్‌లైన్‌లో ఉన్నారు. పంచాంగం, జాతకాలు మరియు AIకి ఇంటర్నెట్ కనెక్షన్ అవసరం.",
+                msg_back_online: "మళ్లీ ఆన్‌లైన్‌లో ఉన్నారు.",
                 lbl_calculating_alignments: "పొంతన లెక్కించబడుతోంది...",
                 lbl_unauthorized_alert: "అనుమతి లేదు: ఈ సదుపాయాన్ని పొందడానికి లాగిన్ అవ్వండి.",
                 lbl_calculation_failed: "గణన విఫలమైంది",
@@ -5851,6 +6117,89 @@
                 lbl_home_phala_more: "అన్ని రాశులు →"
             },
             ml: {
+                // Pop-up / confirm messages (shown via tMsg).
+                msg_session_expired: "സെഷൻ കാലഹരണപ്പെട്ടു അല്ലെങ്കിൽ ലോഗിൻ ആവശ്യമാണ്. ദയവായി ലോഗിൻ ചെയ്യുക.",
+                msg_fill_birth_fields_draft: "ജാതകം തയ്യാറാക്കുന്നതിന് മുമ്പ് എല്ലാ അടിസ്ഥാന ജനന വിവരങ്ങളും നൽകുക!",
+                msg_chart_compute_failed: "ജാതകം ഗണിക്കാൻ കഴിഞ്ഞില്ല. അക്ഷാംശ/രേഖാംശങ്ങളും മറ്റ് വിവരങ്ങളും ശരിയാണോ എന്ന് പരിശോധിക്കുക.",
+                msg_select_section: "കുറഞ്ഞത് ഒരു വിഭാഗമെങ്കിലും തിരഞ്ഞെടുക്കുക.",
+                msg_pdf_download_failed: "PDF ഡൗൺലോഡ് തയ്യാറാക്കാൻ കഴിഞ്ഞില്ല.",
+                msg_pdf_failed_retry: "PDF തയ്യാറാക്കൽ പരാജയപ്പെട്ടു. വീണ്ടും ശ്രമിക്കുക.",
+                msg_premium_start_failed: "പ്രീമിയം റിപ്പോർട്ട് ആരംഭിക്കാൻ കഴിഞ്ഞില്ല.",
+                msg_premium_start_retry: "പ്രീമിയം റിപ്പോർട്ട് ആരംഭിച്ചില്ല. വീണ്ടും ശ്രമിക്കുക.",
+                msg_report_download_not_started: "നിങ്ങളുടെ റിപ്പോർട്ട് തയ്യാറാണ്, പക്ഷേ ഡൗൺലോഡ് ആരംഭിച്ചില്ല. അൽപ്പസമയത്തിനകം നിങ്ങളുടെ പ്രൊഫൈൽ തുറന്ന് ലിങ്ക് വീണ്ടും ശ്രമിക്കുക.",
+                msg_premium_refunded: "പ്രീമിയം റിപ്പോർട്ട് തയ്യാറാക്കാൻ കഴിഞ്ഞില്ല — നിങ്ങളുടെ ക്രെഡിറ്റുകൾ തിരികെ നൽകി. വീണ്ടും ശ്രമിക്കുക.",
+                msg_report_slow: "റിപ്പോർട്ടിന് പ്രതീക്ഷിച്ചതിലും കൂടുതൽ സമയമെടുക്കുന്നു. നിങ്ങൾ WhatsApp തിരഞ്ഞെടുത്തിട്ടുണ്ടെങ്കിൽ അവിടെ ലഭിക്കും; അൽപ്പസമയത്തിനകം വീണ്ടും നോക്കാനും കഴിയും.",
+                msg_calc_compat_first: "ആദ്യം പൊരുത്ത റിപ്പോർട്ട് ഗണിക്കുക.",
+                msg_calc_chart_first: "ആദ്യം ഒരു ജാതകം ഗണിക്കുക.",
+                msg_valid_year: "1900-നും 2100-നും ഇടയിലുള്ള ശരിയായ വർഷം തിരഞ്ഞെടുക്കുക.",
+                msg_type_question: "ആദ്യം നിങ്ങളുടെ ചോദ്യം ടൈപ്പ് ചെയ്യുക (പൂർണ്ണ വാക്യമാണ് നല്ലത്).",
+                msg_share_link_failed: "പങ്കിടൽ ലിങ്ക് സൃഷ്ടിക്കാൻ കഴിഞ്ഞില്ല.",
+                msg_referral_copied: "റഫറൽ കോഡ് പകർത്തി: {code}\nപങ്കിടൂ — നിങ്ങളുടെ സുഹൃത്തിനും നിങ്ങൾക്കും ബോണസ് ക്രെഡിറ്റുകൾ ലഭിക്കും!",
+                msg_confirm_delete_profile: "ഈ പ്രൊഫൈൽ ഇല്ലാതാക്കണമെന്ന് ഉറപ്പാണോ?",
+                msg_profile_deleted: "പ്രൊഫൈൽ വിജയകരമായി ഇല്ലാതാക്കി.",
+                msg_profile_delete_failed: "പ്രൊഫൈൽ ഇല്ലാതാക്കാൻ കഴിഞ്ഞില്ല.",
+                msg_profile_delete_error: "പ്രൊഫൈൽ ഇല്ലാതാക്കുന്നതിൽ പിശക്.",
+                msg_fill_signup: "രജിസ്ട്രേഷനുള്ള എല്ലാ വിവരങ്ങളും നൽകുക.",
+                msg_account_created: "അക്കൗണ്ട് വിജയകരമായി സൃഷ്ടിച്ചു! ദയവായി ലോഗിൻ ചെയ്യുക.",
+                msg_signup_failed: "രജിസ്ട്രേഷൻ പരാജയപ്പെട്ടു: ",
+                msg_signup_error: "രജിസ്ട്രേഷനിടെ പിശക്: ",
+                msg_enter_email_password: "ഇമെയിലും പാസ്‌വേഡും നൽകുക.",
+                msg_login_failed: "ലോഗിൻ പരാജയപ്പെട്ടു: ",
+                msg_login_error: "ലോഗിൻ ചെയ്യുന്നതിനിടെ പിശക്: ",
+                msg_oauth_failed: "OAuth ലോഗിൻ പരാജയപ്പെട്ടു: ",
+                msg_oauth_error: "OAuth ലോഗിനിടെ പിശക്: ",
+                msg_enter_phone: "നിങ്ങളുടെ 10 അക്ക ഫോൺ നമ്പർ നൽകുക.",
+                msg_valid_mobile: "ശരിയായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക.",
+                msg_otp_sent: "സ്ഥിരീകരണ കോഡ് {channel} വഴി അയച്ചു!",
+                msg_otp_send_failed: "OTP അയയ്ക്കാൻ കഴിഞ്ഞില്ല: ",
+                msg_otp_send_error: "OTP അയയ്ക്കുന്നതിൽ പിശക്: ",
+                msg_valid_code: "ശരിയായ സ്ഥിരീകരണ കോഡ് നൽകുക.",
+                msg_verification_failed: "സ്ഥിരീകരണം പരാജയപ്പെട്ടു: ",
+                msg_verification_during_error: "സ്ഥിരീകരണത്തിനിടെ പിശക്: ",
+                msg_prefs_saved: "മുൻഗണനകൾ വിജയകരമായി സേവ് ചെയ്തു!",
+                msg_prefs_error: "മുൻഗണനകൾ സേവ് ചെയ്യുന്നതിൽ പിശക്: ",
+                msg_login_to_buy: "ക്രെഡിറ്റുകൾ വാങ്ങാൻ ലോഗിൻ ചെയ്യുക.",
+                msg_payment_lib_failed: "പേയ്മെന്റ് സേവനം ലോഡ് ചെയ്തില്ല. ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+                msg_checkout_failed: "പേയ്മെന്റ് ആരംഭിക്കാൻ കഴിഞ്ഞില്ല: ",
+                msg_payment_success: "പേയ്മെന്റ് വിജയിച്ചു! {n} ക്രെഡിറ്റുകൾ ചേർത്തു.",
+                msg_payment_pending: "പണം ലഭിച്ചു, പക്ഷേ സ്ഥിരീകരണം ബാക്കിയാണ്: ",
+                msg_verification_error: "സ്ഥിരീകരണ പിശക്: ",
+                msg_payment_failed: "പേയ്മെന്റ് പരാജയപ്പെട്ടു: ",
+                msg_purchase_error: "വാങ്ങുന്നതിനിടെ പിശക്: ",
+                msg_gift_checkout_failed: "സമ്മാന പേയ്മെന്റ് ആരംഭിക്കാൻ കഴിഞ്ഞില്ല: ",
+                msg_gift_pending: "പണം ലഭിച്ചു — സ്ഥിരീകരിച്ചാലുടൻ നിങ്ങളുടെ സമ്മാന കോഡ് ലഭ്യമാകും.",
+                msg_gift_purchase_error: "സമ്മാനം വാങ്ങുന്നതിനിടെ പിശക്: ",
+                msg_share_link_copied: "പങ്കിടൽ ലിങ്ക് പകർത്തി!",
+                msg_copy_failed_link: "പകർത്താൻ കഴിഞ്ഞില്ല — ലിങ്ക്: ",
+                msg_enter_gift_code: "സമ്മാന കോഡ് നൽകുക.",
+                msg_gift_redeem_error: "സമ്മാനം റിഡീം ചെയ്യുന്നതിൽ പിശക്: ",
+                msg_login_to_subscribe: "സബ്സ്ക്രൈബ് ചെയ്യാൻ ലോഗിൻ ചെയ്യുക.",
+                msg_subscription_start_failed: "സബ്സ്ക്രിപ്ഷൻ ആരംഭിക്കാൻ കഴിഞ്ഞില്ല: ",
+                msg_astro_pass_active: "Astro Pass സജീവമാണ് — സ്വാഗതം! 🌟",
+                msg_activation_pending: "പേയ്മെന്റ് അംഗീകരിച്ചു, പക്ഷേ സജീവമാക്കൽ ബാക്കിയാണ്: ",
+                msg_subscription_error: "സബ്സ്ക്രിപ്ഷനിടെ പിശക്: ",
+                msg_subscription_cancelled: "സബ്സ്ക്രിപ്ഷൻ വിജയകരമായി റദ്ദാക്കി.",
+                msg_cancellation_failed: "റദ്ദാക്കൽ പരാജയപ്പെട്ടു: ",
+                msg_cancellation_error: "റദ്ദാക്കുന്നതിനിടെ പിശക്: ",
+                msg_fill_birth_info: "എല്ലാ ജനന വിവരങ്ങളും നൽകുക.",
+                msg_birth_saved: "ജനന വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു!",
+                msg_birth_save_failed: "ജനന വിവരങ്ങൾ സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല.",
+                msg_details_save_error: "വിവരങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്: ",
+                msg_no_history_selected: "ചരിത്ര രേഖകളൊന്നും തിരഞ്ഞെടുത്തിട്ടില്ല.",
+                msg_confirm_delete_history: "തിരഞ്ഞെടുത്ത {n} ചരിത്ര രേഖകൾ ഇല്ലാതാക്കണമെന്ന് ഉറപ്പാണോ?",
+                msg_no_history_to_clear: "ഇല്ലാതാക്കാൻ ചരിത്ര രേഖകളൊന്നുമില്ല.",
+                msg_confirm_clear_history: "മുഴുവൻ ജാതക ചരിത്രവും ഇല്ലാതാക്കണമെന്ന് ഉറപ്പാണോ? ഇത് പഴയപടിയാക്കാൻ കഴിയില്ല.",
+                msg_chart_saved_permanently: "ജാതകം സ്ഥിരമായി സേവ് ചെയ്തു!",
+                msg_chart_save_failed: "ജാതകം സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല.",
+                msg_chart_save_error: "ജാതകം സേവ് ചെയ്യുന്നതിൽ പിശക്: ",
+                msg_confirm_delete_chart: "ഈ ജാതക രേഖ ഇല്ലാതാക്കണമെന്ന് ഉറപ്പാണോ?",
+                msg_record_deleted: "രേഖ വിജയകരമായി ഇല്ലാതാക്കി.",
+                msg_record_delete_failed: "രേഖ ഇല്ലാതാക്കാൻ കഴിഞ്ഞില്ല.",
+                msg_record_delete_error: "രേഖ ഇല്ലാതാക്കുന്നതിൽ പിശക്: ",
+                msg_compare_limit: "ഒരേസമയം പരമാവധി {n} പ്രൊഫൈലുകൾ താരതമ്യം ചെയ്യാം.",
+                msg_chart_saved_cloud: "ജാതകം നിങ്ങളുടെ അക്കൗണ്ടിൽ വിജയകരമായി സേവ് ചെയ്തു!",
+                msg_offline: "നിങ്ങൾ ഓഫ്‌ലൈനിലാണ്. പഞ്ചാംഗം, ജാതകം, AI എന്നിവയ്ക്ക് ഇന്റർനെറ്റ് കണക്ഷൻ ആവശ്യമാണ്.",
+                msg_back_online: "വീണ്ടും ഓൺലൈനിലാണ്.",
                 lbl_calculating_alignments: "പൊരുത്തം കണക്കാക്കുന്നു...",
                 lbl_unauthorized_alert: "അനുമതിയില്ല: ഈ ഫീച്ചർ ഉപയോഗിക്കാൻ ലോഗിൻ ചെയ്യുക.",
                 lbl_calculation_failed: "കണക്കുകൂട്ടൽ പരാജയപ്പെട്ടു",
@@ -6048,6 +6397,89 @@
                 lbl_home_phala_more: "എല്ലാ രാശികളും →"
             },
             kn: {
+                // Pop-up / confirm messages (shown via tMsg).
+                msg_session_expired: "ಸೆಷನ್ ಅವಧಿ ಮುಗಿದಿದೆ ಅಥವಾ ಲಾಗಿನ್ ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಲಾಗ್ ಇನ್ ಮಾಡಿ.",
+                msg_fill_birth_fields_draft: "ಜಾತಕ ಸಿದ್ಧಪಡಿಸುವ ಮೊದಲು ಎಲ್ಲಾ ಮೂಲ ಜನ್ಮ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ!",
+                msg_chart_compute_failed: "ಜಾತಕವನ್ನು ಗಣಿಸಲು ವಿಫಲವಾಗಿದೆ. ಅಕ್ಷಾಂಶ/ರೇಖಾಂಶ ಮತ್ತು ಇತರ ವಿವರಗಳು ಸರಿಯಾಗಿವೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ.",
+                msg_select_section: "ಕನಿಷ್ಠ ಒಂದು ವಿಭಾಗವನ್ನಾದರೂ ಆಯ್ಕೆಮಾಡಿ.",
+                msg_pdf_download_failed: "PDF ಡೌನ್‌ಲೋಡ್ ಸಿದ್ಧಪಡಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+                msg_pdf_failed_retry: "PDF ಸಿದ್ಧಪಡಿಸುವಿಕೆ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                msg_premium_start_failed: "ಪ್ರೀಮಿಯಂ ವರದಿಯನ್ನು ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
+                msg_premium_start_retry: "ಪ್ರೀಮಿಯಂ ವರದಿ ಪ್ರಾರಂಭವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                msg_report_download_not_started: "ನಿಮ್ಮ ವರದಿ ಸಿದ್ಧವಾಗಿದೆ, ಆದರೆ ಡೌನ್‌ಲೋಡ್ ಪ್ರಾರಂಭವಾಗಲಿಲ್ಲ. ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ತೆರೆದು ಲಿಂಕ್ ಅನ್ನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                msg_premium_refunded: "ಪ್ರೀಮಿಯಂ ವರದಿಯನ್ನು ಸಿದ್ಧಪಡಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ — ನಿಮ್ಮ ಕ್ರೆಡಿಟ್‌ಗಳನ್ನು ಹಿಂತಿರುಗಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                msg_report_slow: "ವರದಿಗೆ ನಿರೀಕ್ಷೆಗಿಂತ ಹೆಚ್ಚು ಸಮಯ ಹಿಡಿಯುತ್ತಿದೆ. ನೀವು WhatsApp ಆಯ್ಕೆ ಮಾಡಿದ್ದರೆ ಅಲ್ಲಿ ಕಳುಹಿಸಲಾಗುತ್ತದೆ; ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರವೂ ನೋಡಬಹುದು.",
+                msg_calc_compat_first: "ಮೊದಲು ಹೊಂದಾಣಿಕೆ ವರದಿಯನ್ನು ಗಣಿಸಿ.",
+                msg_calc_chart_first: "ಮೊದಲು ಜಾತಕವನ್ನು ಗಣಿಸಿ.",
+                msg_valid_year: "1900 ರಿಂದ 2100 ರ ನಡುವಿನ ಸರಿಯಾದ ವರ್ಷವನ್ನು ಆಯ್ಕೆಮಾಡಿ.",
+                msg_type_question: "ಮೊದಲು ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಟೈಪ್ ಮಾಡಿ (ಪೂರ್ಣ ವಾಕ್ಯವಾದರೆ ಉತ್ತಮ).",
+                msg_share_link_failed: "ಹಂಚಿಕೆ ಲಿಂಕ್ ರಚಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
+                msg_referral_copied: "ರೆಫರಲ್ ಕೋಡ್ ನಕಲಿಸಲಾಗಿದೆ: {code}\nಹಂಚಿಕೊಳ್ಳಿ — ನಿಮ್ಮ ಸ್ನೇಹಿತರಿಗೂ ನಿಮಗೂ ಬೋನಸ್ ಕ್ರೆಡಿಟ್‌ಗಳು ಸಿಗುತ್ತವೆ!",
+                msg_confirm_delete_profile: "ಈ ಪ್ರೊಫೈಲ್ ಅನ್ನು ಅಳಿಸಲು ಖಚಿತವೇ?",
+                msg_profile_deleted: "ಪ್ರೊಫೈಲ್ ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ.",
+                msg_profile_delete_failed: "ಪ್ರೊಫೈಲ್ ಅಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+                msg_profile_delete_error: "ಪ್ರೊಫೈಲ್ ಅಳಿಸುವಲ್ಲಿ ದೋಷ.",
+                msg_fill_signup: "ನೋಂದಣಿಯ ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.",
+                msg_account_created: "ಖಾತೆಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ರಚಿಸಲಾಗಿದೆ! ದಯವಿಟ್ಟು ಲಾಗ್ ಇನ್ ಮಾಡಿ.",
+                msg_signup_failed: "ನೋಂದಣಿ ವಿಫಲವಾಗಿದೆ: ",
+                msg_signup_error: "ನೋಂದಣಿಯ ವೇಳೆ ದೋಷ: ",
+                msg_enter_email_password: "ಇಮೇಲ್ ಮತ್ತು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.",
+                msg_login_failed: "ಲಾಗಿನ್ ವಿಫಲವಾಗಿದೆ: ",
+                msg_login_error: "ಲಾಗಿನ್ ವೇಳೆ ದೋಷ: ",
+                msg_oauth_failed: "OAuth ಲಾಗಿನ್ ವಿಫಲವಾಗಿದೆ: ",
+                msg_oauth_error: "OAuth ಲಾಗಿನ್ ವೇಳೆ ದೋಷ: ",
+                msg_enter_phone: "ನಿಮ್ಮ 10 ಅಂಕಿಯ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.",
+                msg_valid_mobile: "ಸರಿಯಾದ 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.",
+                msg_otp_sent: "ಪರಿಶೀಲನಾ ಕೋಡ್ ಅನ್ನು {channel} ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ!",
+                msg_otp_send_failed: "OTP ಕಳುಹಿಸಲು ವಿಫಲವಾಗಿದೆ: ",
+                msg_otp_send_error: "OTP ಕಳುಹಿಸುವಲ್ಲಿ ದೋಷ: ",
+                msg_valid_code: "ಸರಿಯಾದ ಪರಿಶೀಲನಾ ಕೋಡ್ ನಮೂದಿಸಿ.",
+                msg_verification_failed: "ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ: ",
+                msg_verification_during_error: "ಪರಿಶೀಲನೆಯ ವೇಳೆ ದೋಷ: ",
+                msg_prefs_saved: "ಆದ್ಯತೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!",
+                msg_prefs_error: "ಆದ್ಯತೆಗಳನ್ನು ಉಳಿಸುವಲ್ಲಿ ದೋಷ: ",
+                msg_login_to_buy: "ಕ್ರೆಡಿಟ್‌ಗಳನ್ನು ಖರೀದಿಸಲು ಲಾಗ್ ಇನ್ ಮಾಡಿ.",
+                msg_payment_lib_failed: "ಪಾವತಿ ಸೇವೆ ಲೋಡ್ ಆಗಲಿಲ್ಲ. ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+                msg_checkout_failed: "ಪಾವತಿಯನ್ನು ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: ",
+                msg_payment_success: "ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿದೆ! {n} ಕ್ರೆಡಿಟ್‌ಗಳನ್ನು ಸೇರಿಸಲಾಗಿದೆ.",
+                msg_payment_pending: "ಪಾವತಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ, ಆದರೆ ಪರಿಶೀಲನೆ ಬಾಕಿ ಇದೆ: ",
+                msg_verification_error: "ಪರಿಶೀಲನಾ ದೋಷ: ",
+                msg_payment_failed: "ಪಾವತಿ ವಿಫಲವಾಗಿದೆ: ",
+                msg_purchase_error: "ಖರೀದಿಯ ವೇಳೆ ದೋಷ: ",
+                msg_gift_checkout_failed: "ಉಡುಗೊರೆ ಪಾವತಿಯನ್ನು ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: ",
+                msg_gift_pending: "ಪಾವತಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ — ದೃಢೀಕರಣವಾದ ತಕ್ಷಣ ನಿಮ್ಮ ಉಡುಗೊರೆ ಕೋಡ್ ಲಭ್ಯವಾಗುತ್ತದೆ.",
+                msg_gift_purchase_error: "ಉಡುಗೊರೆ ಖರೀದಿಯ ವೇಳೆ ದೋಷ: ",
+                msg_share_link_copied: "ಹಂಚಿಕೆ ಲಿಂಕ್ ನಕಲಿಸಲಾಗಿದೆ!",
+                msg_copy_failed_link: "ನಕಲಿಸಲು ವಿಫಲವಾಗಿದೆ — ಲಿಂಕ್: ",
+                msg_enter_gift_code: "ಉಡುಗೊರೆ ಕೋಡ್ ನಮೂದಿಸಿ.",
+                msg_gift_redeem_error: "ಉಡುಗೊರೆಯನ್ನು ಪಡೆಯುವಲ್ಲಿ ದೋಷ: ",
+                msg_login_to_subscribe: "ಚಂದಾದಾರರಾಗಲು ಲಾಗ್ ಇನ್ ಮಾಡಿ.",
+                msg_subscription_start_failed: "ಚಂದಾದಾರಿಕೆಯನ್ನು ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: ",
+                msg_astro_pass_active: "Astro Pass ಸಕ್ರಿಯವಾಗಿದೆ — ಸುಸ್ವಾಗತ! 🌟",
+                msg_activation_pending: "ಪಾವತಿ ಅಧಿಕೃತಗೊಂಡಿದೆ, ಆದರೆ ಸಕ್ರಿಯಗೊಳಿಸುವಿಕೆ ಬಾಕಿ ಇದೆ: ",
+                msg_subscription_error: "ಚಂದಾದಾರಿಕೆಯ ವೇಳೆ ದೋಷ: ",
+                msg_subscription_cancelled: "ಚಂದಾದಾರಿಕೆಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ.",
+                msg_cancellation_failed: "ರದ್ದುಗೊಳಿಸುವಿಕೆ ವಿಫಲವಾಗಿದೆ: ",
+                msg_cancellation_error: "ರದ್ದುಗೊಳಿಸುವಾಗ ದೋಷ: ",
+                msg_fill_birth_info: "ಎಲ್ಲಾ ಜನ್ಮ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.",
+                msg_birth_saved: "ಜನ್ಮ ವಿವರಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!",
+                msg_birth_save_failed: "ಜನ್ಮ ವಿವರಗಳನ್ನು ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+                msg_details_save_error: "ವಿವರಗಳನ್ನು ಉಳಿಸುವಲ್ಲಿ ದೋಷ: ",
+                msg_no_history_selected: "ಯಾವುದೇ ಇತಿಹಾಸ ದಾಖಲೆಗಳನ್ನು ಆಯ್ಕೆ ಮಾಡಿಲ್ಲ.",
+                msg_confirm_delete_history: "ಆಯ್ಕೆ ಮಾಡಿದ {n} ಇತಿಹಾಸ ದಾಖಲೆಗಳನ್ನು ಅಳಿಸಲು ಖಚಿತವೇ?",
+                msg_no_history_to_clear: "ಅಳಿಸಲು ಯಾವುದೇ ಇತಿಹಾಸ ದಾಖಲೆಗಳಿಲ್ಲ.",
+                msg_confirm_clear_history: "ಸಂಪೂರ್ಣ ಲೆಕ್ಕಾಚಾರದ ಇತಿಹಾಸವನ್ನು ಅಳಿಸಲು ಖಚಿತವೇ? ಇದನ್ನು ಹಿಂಪಡೆಯಲು ಸಾಧ್ಯವಿಲ್ಲ.",
+                msg_chart_saved_permanently: "ಜಾತಕವನ್ನು ಶಾಶ್ವತವಾಗಿ ಉಳಿಸಲಾಗಿದೆ!",
+                msg_chart_save_failed: "ಜಾತಕವನ್ನು ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+                msg_chart_save_error: "ಜಾತಕವನ್ನು ಉಳಿಸುವಲ್ಲಿ ದೋಷ: ",
+                msg_confirm_delete_chart: "ಈ ಜಾತಕ ದಾಖಲೆಯನ್ನು ಅಳಿಸಲು ಖಚಿತವೇ?",
+                msg_record_deleted: "ದಾಖಲೆಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ.",
+                msg_record_delete_failed: "ದಾಖಲೆಯನ್ನು ಅಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+                msg_record_delete_error: "ದಾಖಲೆಯನ್ನು ಅಳಿಸುವಲ್ಲಿ ದೋಷ: ",
+                msg_compare_limit: "ಒಮ್ಮೆಗೆ ಗರಿಷ್ಠ {n} ಪ್ರೊಫೈಲ್‌ಗಳನ್ನು ಹೋಲಿಸಬಹುದು.",
+                msg_chart_saved_cloud: "ಜಾತಕವನ್ನು ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!",
+                msg_offline: "ನೀವು ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಿ. ಪಂಚಾಂಗ, ಜಾತಕ ಮತ್ತು AIಗೆ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಬೇಕು.",
+                msg_back_online: "ಮತ್ತೆ ಆನ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಿ.",
                 lbl_calculating_alignments: "ಹೊಂದಾಣಿಕೆ ಲೆಕ್ಕಿಸಲಾಗುತ್ತಿದೆ...",
                 lbl_unauthorized_alert: "ಅನಧಿಕೃತ: ಈ ಸೌಲಭ್ಯವನ್ನು ಪಡೆಯಲು ಲಾಗ್ ಇನ್ ಮಾಡಿ.",
                 lbl_calculation_failed: "ಲೆಕ್ಕಾಚಾರ ವಿಫಲವಾಗಿದೆ",
@@ -6245,6 +6677,89 @@
                 lbl_home_phala_more: "ಎಲ್ಲಾ ರಾಶಿಗಳು →"
             },
             hi: {
+                // Pop-up / confirm messages (shown via tMsg).
+                msg_session_expired: "सत्र समाप्त हो गया है या प्रमाणीकरण आवश्यक है। कृपया साइन इन करें।",
+                msg_fill_birth_fields_draft: "कुंडली बनाने से पहले जन्म की सभी मूल जानकारी भरें!",
+                msg_chart_compute_failed: "कुंडली की गणना नहीं हो सकी। कृपया जाँचें कि सभी निर्देशांक और विवरण सही हैं।",
+                msg_select_section: "कृपया कम से कम एक भाग चुनें।",
+                msg_pdf_download_failed: "PDF डाउनलोड तैयार नहीं हो सका।",
+                msg_pdf_failed_retry: "PDF नहीं बन सका। कृपया फिर से प्रयास करें।",
+                msg_premium_start_failed: "प्रीमियम रिपोर्ट शुरू नहीं हो सकी।",
+                msg_premium_start_retry: "प्रीमियम रिपोर्ट शुरू नहीं हुई। कृपया फिर से प्रयास करें।",
+                msg_report_download_not_started: "आपकी रिपोर्ट तैयार है, लेकिन डाउनलोड शुरू नहीं हुआ। थोड़ी देर बाद अपनी प्रोफ़ाइल खोलकर लिंक फिर से आज़माएँ।",
+                msg_premium_refunded: "प्रीमियम रिपोर्ट नहीं बन सकी — आपके क्रेडिट वापस कर दिए गए हैं। कृपया फिर से प्रयास करें।",
+                msg_report_slow: "रिपोर्ट में अपेक्षा से अधिक समय लग रहा है। यदि आपने WhatsApp चुना है तो वह वहाँ भेजी जाएगी; आप थोड़ी देर बाद भी देख सकते हैं।",
+                msg_calc_compat_first: "कृपया पहले मिलान रिपोर्ट तैयार करें।",
+                msg_calc_chart_first: "कृपया पहले जन्म कुंडली तैयार करें।",
+                msg_valid_year: "कृपया 1900 से 2100 के बीच का मान्य वर्ष चुनें।",
+                msg_type_question: "कृपया पहले अपना प्रश्न लिखें (पूरा वाक्य सबसे अच्छा रहता है)।",
+                msg_share_link_failed: "शेयर लिंक नहीं बन सका।",
+                msg_referral_copied: "रेफ़रल कोड कॉपी हो गया: {code}\nइसे साझा करें — आपके मित्र को और आपको भी बोनस क्रेडिट मिलेंगे!",
+                msg_confirm_delete_profile: "क्या आप वाकई इस प्रोफ़ाइल को हटाना चाहते हैं?",
+                msg_profile_deleted: "प्रोफ़ाइल सफलतापूर्वक हटा दी गई।",
+                msg_profile_delete_failed: "प्रोफ़ाइल हटाई नहीं जा सकी।",
+                msg_profile_delete_error: "प्रोफ़ाइल हटाने में त्रुटि।",
+                msg_fill_signup: "कृपया पंजीकरण की सभी जानकारी भरें।",
+                msg_account_created: "खाता सफलतापूर्वक बन गया! कृपया साइन इन करें।",
+                msg_signup_failed: "पंजीकरण विफल: ",
+                msg_signup_error: "पंजीकरण के दौरान त्रुटि: ",
+                msg_enter_email_password: "कृपया ईमेल और पासवर्ड दर्ज करें।",
+                msg_login_failed: "साइन इन विफल: ",
+                msg_login_error: "साइन इन के दौरान त्रुटि: ",
+                msg_oauth_failed: "OAuth साइन इन विफल: ",
+                msg_oauth_error: "OAuth साइन इन के दौरान त्रुटि: ",
+                msg_enter_phone: "कृपया अपना 10 अंकों का फ़ोन नंबर दर्ज करें।",
+                msg_valid_mobile: "कृपया मान्य 10 अंकों का मोबाइल नंबर दर्ज करें।",
+                msg_otp_sent: "सत्यापन कोड {channel} से भेजा गया!",
+                msg_otp_send_failed: "OTP भेजा नहीं जा सका: ",
+                msg_otp_send_error: "OTP भेजने में त्रुटि: ",
+                msg_valid_code: "कृपया मान्य सत्यापन कोड दर्ज करें।",
+                msg_verification_failed: "सत्यापन विफल: ",
+                msg_verification_during_error: "सत्यापन के दौरान त्रुटि: ",
+                msg_prefs_saved: "पसंद सफलतापूर्वक सहेज ली गईं!",
+                msg_prefs_error: "पसंद सहेजने में त्रुटि: ",
+                msg_login_to_buy: "क्रेडिट खरीदने के लिए कृपया साइन इन करें।",
+                msg_payment_lib_failed: "भुगतान सेवा लोड नहीं हो सकी। अपना इंटरनेट कनेक्शन जाँचें और फिर से प्रयास करें।",
+                msg_checkout_failed: "भुगतान शुरू नहीं हो सका: ",
+                msg_payment_success: "भुगतान सफल! {n} क्रेडिट जोड़े गए।",
+                msg_payment_pending: "भुगतान प्राप्त हुआ, पर सत्यापन बाकी है: ",
+                msg_verification_error: "सत्यापन त्रुटि: ",
+                msg_payment_failed: "भुगतान विफल: ",
+                msg_purchase_error: "खरीद के दौरान त्रुटि: ",
+                msg_gift_checkout_failed: "उपहार का भुगतान शुरू नहीं हो सका: ",
+                msg_gift_pending: "भुगतान प्राप्त हुआ — पुष्टि होते ही आपका उपहार कोड जल्द उपलब्ध होगा।",
+                msg_gift_purchase_error: "उपहार खरीदने के दौरान त्रुटि: ",
+                msg_share_link_copied: "शेयर लिंक कॉपी हो गया!",
+                msg_copy_failed_link: "कॉपी नहीं हो सका — लिंक यह है: ",
+                msg_enter_gift_code: "उपहार कोड दर्ज करें।",
+                msg_gift_redeem_error: "उपहार भुनाने में त्रुटि: ",
+                msg_login_to_subscribe: "सदस्यता लेने के लिए कृपया साइन इन करें।",
+                msg_subscription_start_failed: "सदस्यता शुरू नहीं हो सकी: ",
+                msg_astro_pass_active: "Astro Pass सक्रिय है — आपका स्वागत है! 🌟",
+                msg_activation_pending: "भुगतान अधिकृत हो गया, पर सक्रियण बाकी है: ",
+                msg_subscription_error: "सदस्यता के दौरान त्रुटि: ",
+                msg_subscription_cancelled: "सदस्यता सफलतापूर्वक रद्द कर दी गई।",
+                msg_cancellation_failed: "रद्द करना विफल: ",
+                msg_cancellation_error: "रद्द करने के दौरान त्रुटि: ",
+                msg_fill_birth_info: "कृपया जन्म की सभी जानकारी भरें।",
+                msg_birth_saved: "जन्म विवरण सफलतापूर्वक सहेजे गए!",
+                msg_birth_save_failed: "जन्म विवरण सहेजे नहीं जा सके।",
+                msg_details_save_error: "विवरण सहेजने में त्रुटि: ",
+                msg_no_history_selected: "इतिहास का कोई रिकॉर्ड नहीं चुना गया।",
+                msg_confirm_delete_history: "क्या आप वाकई चुने गए {n} इतिहास रिकॉर्ड हटाना चाहते हैं?",
+                msg_no_history_to_clear: "हटाने के लिए इतिहास का कोई रिकॉर्ड नहीं मिला।",
+                msg_confirm_clear_history: "क्या आप वाकई गणना का पूरा इतिहास मिटाना चाहते हैं? यह वापस नहीं हो सकेगा।",
+                msg_chart_saved_permanently: "कुंडली स्थायी रूप से सहेज ली गई!",
+                msg_chart_save_failed: "कुंडली सहेजी नहीं जा सकी।",
+                msg_chart_save_error: "कुंडली सहेजने में त्रुटि: ",
+                msg_confirm_delete_chart: "क्या आप वाकई इस कुंडली रिकॉर्ड को हटाना चाहते हैं?",
+                msg_record_deleted: "रिकॉर्ड सफलतापूर्वक हटा दिया गया।",
+                msg_record_delete_failed: "रिकॉर्ड हटाया नहीं जा सका।",
+                msg_record_delete_error: "रिकॉर्ड हटाने में त्रुटि: ",
+                msg_compare_limit: "आप एक बार में अधिकतम {n} प्रोफ़ाइल की तुलना कर सकते हैं।",
+                msg_chart_saved_cloud: "कुंडली आपके खाते में सफलतापूर्वक सहेज ली गई!",
+                msg_offline: "आप ऑफ़लाइन हैं। पंचांग, कुंडली और AI के लिए इंटरनेट कनेक्शन चाहिए।",
+                msg_back_online: "आप फिर से ऑनलाइन हैं।",
                 lbl_calculating_alignments: "कुंडली मिलान की गणना की जा रही है...",
                 lbl_unauthorized_alert: "अनधिकृत: कृपया इस सुविधा का उपयोग करने के लिए साइन इन करें।",
                 lbl_calculation_failed: "गणना विफल रही",
@@ -7062,6 +7577,18 @@
         // A key missing from `dict` falls back to English, then to the text
         // already in the page. To label a new element, add the key to every
         // language in `localization` and the attribute to the element — no JS.
+        // A pop-up / confirm message in the current language: localization[lang][key],
+        // falling back to English. {name} placeholders are filled from `vars`,
+        // e.g. tMsg('msg_payment_success', {n: 120}).
+        function tMsg(key, vars) {
+            const dict = localization[currentLang] || localization.en;
+            let text = dict[key] || localization.en[key] || key;
+            if (vars) {
+                for (const [name, value] of Object.entries(vars)) text = text.split(`{${name}}`).join(String(value));
+            }
+            return text;
+        }
+
         function applyI18n(dict) {
             const en = localization.en;
             const pick = (key) => dict[key] || en[key];
@@ -9318,7 +9845,7 @@
             const timing = document.getElementById('in-timing').value;
 
             if (!name || !dob || !tob || !pob) {
-                showToast("Please fill all basic birth fields before drafting!");
+                showToast(tMsg('msg_fill_birth_fields_draft'));
                 return;
             }
 
@@ -9419,7 +9946,7 @@
 
             } catch (err) {
                 console.error("Calculation failed:", err);
-                showToast("Failed to compute chart. Please ensure all coordinates and inputs are valid.");
+                showToast(tMsg('msg_chart_compute_failed'));
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -10101,7 +10628,7 @@
             const sections = Array.from(document.querySelectorAll('.pdf-sec-cb'))
                 .filter(cb => cb.checked && !cb.disabled)
                 .map(cb => cb.value);
-            if (sections.length === 0) { showToast("Please select at least one section to include."); return; }
+            if (sections.length === 0) { showToast(tMsg('msg_select_section')); return; }
 
             const name = document.getElementById('in-name').value;
             const pob = document.getElementById('in-pob').value;
@@ -10140,11 +10667,11 @@
                     closePdfSectionModal();
                     showPaywall();
                 } else {
-                    showToast("Failed to generate PDF download.");
+                    showToast(tMsg('msg_pdf_download_failed'));
                 }
             } catch (err) {
                 console.error("PDF generation failed:", err);
-                showToast("PDF generation failed. Please try again.");
+                showToast(tMsg('msg_pdf_failed_retry'));
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
             }
@@ -10175,7 +10702,7 @@
                     })
                 });
                 if (start.status === 402) { closePdfSectionModal(); showPaywall(); return; }
-                if (!start.ok) { showToast("Could not start the premium report."); return; }
+                if (!start.ok) { showToast(tMsg('msg_premium_start_failed')); return; }
                 const { report_id } = await start.json();
                 if (currentUser && !currentUser.subscription_active) {
                     currentUser.credit_balance = Math.max(0, (currentUser.credit_balance || 0) - pricing.pdf_premium);
@@ -10186,7 +10713,7 @@
                 await pollPremiumReport(report_id, name);
             } catch (err) {
                 console.error("Premium report failed:", err);
-                showToast("Premium report failed to start. Please try again.");
+                showToast(tMsg('msg_premium_start_retry'));
             } finally {
                 if (progress) progress.style.display = 'none';
                 if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
@@ -10220,7 +10747,7 @@
                         }
                     } catch (e) { /* fall through to the error notice */ }
                     if (!downloaded) {
-                        showToast("Your report is ready but the download didn't start. Open your profile and try the link again shortly.");
+                        showToast(tMsg('msg_report_download_not_started'));
                     }
                     // Reconcile the header balance with the server's truth so the
                     // optimistic decrement can never drift.
@@ -10228,7 +10755,7 @@
                     return;
                 }
                 if (data.status === 'failed') {
-                    showToast("The premium report could not be generated — your credits have been refunded. Please try again.");
+                    showToast(tMsg('msg_premium_refunded'));
                     // Re-sync the true server balance (the refund landed server-side).
                     await initAuth();
                     return;
@@ -10237,7 +10764,7 @@
             // Timed out waiting: reconcile the balance in case the server has
             // since failed-and-refunded the job.
             await initAuth();
-            showToast("The report is taking longer than expected. It will be delivered on WhatsApp if you've opted in; you can also check back shortly.");
+            showToast(tMsg('msg_report_slow'));
         }
 
         // Debounced location lookup using Nominatim OpenStreetMap API
@@ -11435,7 +11962,7 @@
 
         async function generateMarriageAICompatibility() {
             if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
-                showToast("Please calculate the compatibility report first.");
+                showToast(tMsg('msg_calc_compat_first'));
                 return;
             }
             // Guard against a double-click firing two paid (25-credit) streams.
@@ -11531,13 +12058,13 @@
         let isVarshaphalaResponding = false;
         async function generateVarshaphala() {
             if (!calculatedChartData) {
-                showToast("Please calculate a birth chart first.");
+                showToast(tMsg('msg_calc_chart_first'));
                 return;
             }
             const yearInput = document.getElementById('in-varsha-year');
             const yearVal = parseInt(yearInput ? yearInput.value : "");
             if (!yearVal || isNaN(yearVal) || yearVal < 1900 || yearVal > 2100) {
-                showToast("Please select a valid year between 1900 and 2100.");
+                showToast(tMsg('msg_valid_year'));
                 return;
             }
 
@@ -11746,7 +12273,7 @@
         let isDeepCompatResponding = false; // double-submit guard (75-credit stream)
         async function generateDeepCompatibility() {
             if (!calculatedMaleChartData || !calculatedFemaleChartData || !calculatedCompatibility) {
-                showToast("Please calculate the compatibility report first.");
+                showToast(tMsg('msg_calc_compat_first'));
                 return;
             }
             if (isDeepCompatResponding) return;
@@ -11774,7 +12301,7 @@
         let isRemediesResponding = false; // double-submit guard (25-credit stream)
         async function generateRemedies() {
             if (!calculatedChartData) {
-                showToast("Please calculate a birth chart first.");
+                showToast(tMsg('msg_calc_chart_first'));
                 return;
             }
             if (isRemediesResponding) return;
@@ -11805,7 +12332,7 @@
             const input = document.getElementById('prashna-question');
             const question = (input.value || '').trim();
             if (question.length < 5) {
-                showToast("Please type your question first (a full sentence works best).");
+                showToast(tMsg('msg_type_question'));
                 return;
             }
             if (!currentUser) {
@@ -12936,7 +13463,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}'
                 });
-                if (!res.ok) { showToast('Could not create the share link.'); return; }
+                if (!res.ok) { showToast(tMsg('msg_share_link_failed')); return; }
                 const d = await res.json();
                 const note = 'Public link copied:\n' + d.url + '\n\nAnyone with this link can view the chart (birth details included, no AI content). Deleting the chart revokes the link.';
                 if (navigator.share) {
@@ -12949,14 +13476,14 @@
                     prompt('Copy the public link:', d.url);
                 }
             } catch (e) {
-                showToast('Could not create the share link.');
+                showToast(tMsg('msg_share_link_failed'));
             }
         }
 
         function copyReferralCode() {
             const code = currentUser && currentUser.referral_code;
             if (!code) return;
-            const done = () => showToast("Referral code copied: " + code + "\nShare it — your friend gets bonus tokens, and so do you!");
+            const done = () => showToast(tMsg('msg_referral_copied', {code}));
             if (navigator.share) {
                 navigator.share({ title: 'Vedic Astro AI', text: 'Join me on Vedic Astro AI — sign up with my referral code ' + code + ' and we both get bonus tokens 🪔' }).catch(() => {});
                 return;
@@ -13060,7 +13587,7 @@
         }
 
         async function deleteSavedProfileInModal(chartId) {
-            if (confirm("Are you sure you want to delete this profile?")) {
+            if (confirm(tMsg('msg_confirm_delete_profile'))) {
                 const token = localStorage.getItem('session_token');
                 try {
                     const res = await fetch(`/api/user/charts/${chartId}`, {
@@ -13068,16 +13595,16 @@
                         headers: { 'x-session-token': token }
                     });
                     if (res.ok) {
-                        showToast("Profile deleted successfully.");
+                        showToast(tMsg('msg_profile_deleted'));
                         loadSavedProfilesTab();
                         if (typeof refreshProfileChips === 'function') refreshProfileChips();
                         if (typeof refreshSavedChartsList === 'function') refreshSavedChartsList();
                     } else {
-                        showToast("Failed to delete profile.");
+                        showToast(tMsg('msg_profile_delete_failed'));
                     }
                 } catch (e) {
                     console.error(e);
-                    showToast("Error deleting profile.");
+                    showToast(tMsg('msg_profile_delete_error'));
                 }
             }
         }
@@ -13132,7 +13659,7 @@
             const referral_code = referralEl ? referralEl.value.trim().toUpperCase() : "";
 
             if (!name || !email || !password) {
-                showToast("Please fill all signup fields.");
+                showToast(tMsg('msg_fill_signup'));
                 return;
             }
 
@@ -13143,15 +13670,15 @@
                     body: JSON.stringify({ email, password, full_name: name, referral_code })
                 });
                 if (res.ok) {
-                    showToast("Account created successfully! Please sign in.");
+                    showToast(tMsg('msg_account_created'));
                     switchAuthTab('login');
                     document.getElementById('auth-login-email').value = email;
                 } else {
                     const data = await res.json();
-                    showToast("Signup failed: " + (data.detail || "Unknown error"));
+                    showToast(tMsg('msg_signup_failed') + (data.detail || "Unknown error"));
                 }
             } catch (e) {
-                showToast("Error during signup: " + e);
+                showToast(tMsg('msg_signup_error') + e);
             }
         }
 
@@ -13160,7 +13687,7 @@
             const password = document.getElementById('auth-login-pass').value.trim();
             
             if (!email || !password) {
-                showToast("Please enter email and password.");
+                showToast(tMsg('msg_enter_email_password'));
                 return;
             }
             
@@ -13179,10 +13706,10 @@
                     maybeRedeemPendingGift();  // redeem a gift-link code, if any
                 } else {
                     const data = await res.json();
-                    showToast("Login failed: " + (data.detail || "Invalid credentials"));
+                    showToast(tMsg('msg_login_failed') + (data.detail || "Invalid credentials"));
                 }
             } catch (e) {
-                showToast("Error during login: " + e);
+                showToast(tMsg('msg_login_error') + e);
             }
         }
 
@@ -13215,10 +13742,10 @@
                     maybeRedeemPendingGift();  // redeem a gift-link code, if any
                 } else {
                     const data = await res.json();
-                    showToast("OAuth failed: " + data.detail);
+                    showToast(tMsg('msg_oauth_failed') + data.detail);
                 }
             } catch (e) {
-                showToast("Error during OAuth: " + e);
+                showToast(tMsg('msg_oauth_error') + e);
             }
         }
 
@@ -13229,13 +13756,13 @@
         async function requestOTP() {
             const phoneVal = document.getElementById('auth-phone-number').value.trim();
             if (!phoneVal) {
-                showToast("Please enter your 10-digit phone number.");
+                showToast(tMsg('msg_enter_phone'));
                 return;
             }
             
             const cleanNum = phoneVal.replace(/\D/g, '');
             if (cleanNum.length !== 10 && !phoneVal.startsWith('+')) {
-                showToast("Please enter a valid 10-digit mobile number.");
+                showToast(tMsg('msg_valid_mobile'));
                 return;
             }
 
@@ -13253,7 +13780,7 @@
                 
                 if (res.ok) {
                     const data = await res.json();
-                    showToast(`Verification code sent via ${selectedOtpChannel.toUpperCase()}!`);
+                    showToast(tMsg('msg_otp_sent', {channel: selectedOtpChannel.toUpperCase()}));
                     
                     if (data.debug_otp) {
                         console.log("DEV MODE OTP:", data.debug_otp);
@@ -13268,12 +13795,12 @@
                     startOtpTimer();
                 } else {
                     const data = await res.json();
-                    showToast("Failed to send OTP: " + (data.detail || "Unknown error"));
+                    showToast(tMsg('msg_otp_send_failed') + (data.detail || "Unknown error"));
                     btnAction.disabled = false;
                     btnAction.innerText = "Send Verification OTP";
                 }
             } catch (e) {
-                showToast("Error sending OTP: " + e);
+                showToast(tMsg('msg_otp_send_error') + e);
                 btnAction.disabled = false;
                 btnAction.innerText = "Send Verification OTP";
             }
@@ -13306,7 +13833,7 @@
             const otpVal = document.getElementById('auth-otp-code').value.trim();
             
             if (!otpVal || otpVal.length < 4) {
-                showToast("Please enter a valid verification code.");
+                showToast(tMsg('msg_valid_code'));
                 return;
             }
             
@@ -13336,12 +13863,12 @@
                     resetPhoneForm();
                 } else {
                     const data = await res.json();
-                    showToast("Verification failed: " + (data.detail || "Invalid code"));
+                    showToast(tMsg('msg_verification_failed') + (data.detail || "Invalid code"));
                     btnAction.disabled = false;
                     btnAction.innerText = "Verify & Login";
                 }
             } catch (e) {
-                showToast("Error during verification: " + e);
+                showToast(tMsg('msg_verification_during_error') + e);
                 btnAction.disabled = false;
                 btnAction.innerText = "Verify & Login";
             }
@@ -13389,7 +13916,7 @@
                     })
                 });
                 if (res.ok) {
-                    showToast("Preferences saved successfully!");
+                    showToast(tMsg('msg_prefs_saved'));
                     await initAuth();
                 } else {
                     // Surface the server's validation message (bad E.164 / opt-in
@@ -13399,7 +13926,7 @@
                     showToast(msg);
                 }
             } catch (e) {
-                showToast("Error saving preferences: " + e);
+                showToast(tMsg('msg_prefs_error') + e);
             }
         }
 
@@ -13466,9 +13993,9 @@
 
         async function buyCreditPackage(amount) {
             const token = localStorage.getItem('session_token');
-            if (!token) { showToast("Please log in to buy tokens."); return; }
+            if (!token) { showToast(tMsg('msg_login_to_buy')); return; }
             if (typeof Razorpay === 'undefined') {
-                showToast("Payment library failed to load. Check your connection and retry.");
+                showToast(tMsg('msg_payment_lib_failed'));
                 return;
             }
             try {
@@ -13480,7 +14007,7 @@
                 });
                 if (!res.ok) {
                     const data = await res.json();
-                    showToast("Could not start checkout: " + data.detail);
+                    showToast(tMsg('msg_checkout_failed') + data.detail);
                     return;
                 }
                 const order = await res.json();
@@ -13511,26 +14038,26 @@
                                 })
                             });
                             if (vres.ok) {
-                                showToast(`Payment successful! ${order.credits.toLocaleString()} tokens added.`);
+                                showToast(tMsg('msg_payment_success', {n: order.credits.toLocaleString()}));
                                 await initAuth();
                                 closeProfileModal();
                                 openProfileModal();
                             } else {
                                 const vd = await vres.json();
-                                showToast("Payment captured but verification is pending: " + vd.detail +
+                                showToast(tMsg('msg_payment_pending') + vd.detail +
                                     "\nYour tokens will be credited automatically once confirmed.");
                             }
                         } catch (e) {
-                            showToast("Verification error: " + e + "\nTokens will be credited automatically once confirmed.");
+                            showToast(tMsg('msg_verification_error') + e + "\nTokens will be credited automatically once confirmed.");
                         }
                     }
                 });
                 rzp.on('payment.failed', function (resp) {
-                    showToast("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                    showToast(tMsg('msg_payment_failed') + (resp.error && resp.error.description || 'unknown error'));
                 });
                 rzp.open();
             } catch (e) {
-                showToast("Error during purchase: " + e);
+                showToast(tMsg('msg_purchase_error') + e);
             }
         }
 
@@ -13539,7 +14066,7 @@
             const token = localStorage.getItem('session_token');
             if (!token) { openLoginModal(); return; }
             if (typeof Razorpay === 'undefined') {
-                showToast("Payment library failed to load. Check your connection and retry.");
+                showToast(tMsg('msg_payment_lib_failed'));
                 return;
             }
             try {
@@ -13550,7 +14077,7 @@
                 });
                 if (!res.ok) {
                     const data = await res.json().catch(() => ({}));
-                    showToast("Could not start gift checkout: " + (data.detail || res.status));
+                    showToast(tMsg('msg_gift_checkout_failed') + (data.detail || res.status));
                     return;
                 }
                 const order = await res.json();
@@ -13582,19 +14109,19 @@
                             if (vres.ok && vd.code) {
                                 showGiftCard(vd.code, vd.share_url);
                             } else {
-                                showToast("Payment captured — your gift code will be available shortly once confirmed.");
+                                showToast(tMsg('msg_gift_pending'));
                             }
                         } catch (e) {
-                            showToast("Verification error: " + e + "\nYour gift code will be confirmed automatically.");
+                            showToast(tMsg('msg_verification_error') + e + "\nYour gift code will be confirmed automatically.");
                         }
                     }
                 });
                 rzp.on('payment.failed', function (resp) {
-                    showToast("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                    showToast(tMsg('msg_payment_failed') + (resp.error && resp.error.description || 'unknown error'));
                 });
                 rzp.open();
             } catch (e) {
-                showToast("Error during gift purchase: " + e);
+                showToast(tMsg('msg_gift_purchase_error') + e);
             }
         }
 
@@ -13618,15 +14145,15 @@
                 return;
             }
             navigator.clipboard.writeText(url).then(
-                () => showToast("Share link copied!"),
-                () => showToast("Copy failed — the link is: " + url)
+                () => showToast(tMsg('msg_share_link_copied')),
+                () => showToast(tMsg('msg_copy_failed_link') + url)
             );
         }
 
         function redeemGiftFromInput() {
             const el = document.getElementById('gift-redeem-input');
             const code = (el && el.value || '').trim().toUpperCase();
-            if (!code) { showToast("Enter a gift code."); return; }
+            if (!code) { showToast(tMsg('msg_enter_gift_code')); return; }
             redeemGiftCode(code);
         }
 
@@ -13652,7 +14179,7 @@
                     showToast(data.detail || "Could not redeem this gift code.");
                 }
             } catch (e) {
-                showToast("Error redeeming gift: " + e);
+                showToast(tMsg('msg_gift_redeem_error') + e);
             }
         }
 
@@ -13686,9 +14213,9 @@
 
         async function subscribeTier(tier) {
             const token = localStorage.getItem('session_token');
-            if (!token) { showToast("Please log in to subscribe."); return; }
+            if (!token) { showToast(tMsg('msg_login_to_subscribe')); return; }
             if (typeof Razorpay === 'undefined') {
-                showToast("Payment library failed to load. Check your connection and retry.");
+                showToast(tMsg('msg_payment_lib_failed'));
                 return;
             }
             try {
@@ -13699,7 +14226,7 @@
                 });
                 if (!res.ok) {
                     const data = await res.json();
-                    showToast("Could not start subscription: " + data.detail);
+                    showToast(tMsg('msg_subscription_start_failed') + data.detail);
                     return;
                 }
                 const sub = await res.json();
@@ -13728,26 +14255,26 @@
                                 })
                             });
                             if (vres.ok) {
-                                showToast("Astro Pass active — welcome aboard! 🌟");
+                                showToast(tMsg('msg_astro_pass_active'));
                                 await initAuth();
                                 closeProfileModal();
                                 openProfileModal();
                             } else {
                                 const vd = await vres.json();
-                                showToast("Payment authorised but activation is pending: " + vd.detail +
+                                showToast(tMsg('msg_activation_pending') + vd.detail +
                                     "\nYour pass will activate automatically once confirmed.");
                             }
                         } catch (e) {
-                            showToast("Verification error: " + e + "\nYour pass will activate automatically once confirmed.");
+                            showToast(tMsg('msg_verification_error') + e + "\nYour pass will activate automatically once confirmed.");
                         }
                     }
                 });
                 rzp.on('payment.failed', function (resp) {
-                    showToast("Payment failed: " + (resp.error && resp.error.description || 'unknown error'));
+                    showToast(tMsg('msg_payment_failed') + (resp.error && resp.error.description || 'unknown error'));
                 });
                 rzp.open();
             } catch (e) {
-                showToast("Error during subscription: " + e);
+                showToast(tMsg('msg_subscription_error') + e);
             }
         }
 
@@ -13759,16 +14286,16 @@
                     headers: { 'x-session-token': token }
                 });
                 if (res.ok) {
-                    showToast("Subscription cancelled successfully.");
+                    showToast(tMsg('msg_subscription_cancelled'));
                     await initAuth();
                     closeProfileModal();
                     openProfileModal();
                 } else {
                     const data = await res.json();
-                    showToast("Cancellation failed: " + data.detail);
+                    showToast(tMsg('msg_cancellation_failed') + data.detail);
                 }
             } catch (e) {
-                showToast("Error during cancellation: " + e);
+                showToast(tMsg('msg_cancellation_error') + e);
             }
         }
 
@@ -13782,7 +14309,7 @@
             const gender = document.getElementById('profile-in-gender').value;
 
             if (!name || !dob || !tob || !pob || isNaN(lon) || isNaN(lat)) {
-                showToast("Please fill all birth info fields.");
+                showToast(tMsg('msg_fill_birth_info'));
                 return;
             }
 
@@ -13805,14 +14332,14 @@
                     })
                 });
                 if (res.ok) {
-                    showToast("Birth details saved successfully!");
+                    showToast(tMsg('msg_birth_saved'));
                     // Refresh session
                     await initAuth();
                 } else {
-                    showToast("Failed to save birth details.");
+                    showToast(tMsg('msg_birth_save_failed'));
                 }
             } catch (e) {
-                showToast("Error saving details: " + e);
+                showToast(tMsg('msg_details_save_error') + e);
             }
         }
 
@@ -14025,20 +14552,20 @@
         async function deleteSelectedHistory() {
             const checkboxes = document.querySelectorAll('.history-item-checkbox:checked');
             if (checkboxes.length === 0) {
-                showToast("No history records selected.");
+                showToast(tMsg('msg_no_history_selected'));
                 return;
             }
-            if (!confirm(`Are you sure you want to delete the ${checkboxes.length} selected history records?`)) return;
+            if (!confirm(tMsg('msg_confirm_delete_history', {n: checkboxes.length}))) return;
             await _deleteHistoryCharts(checkboxes, n => `Deleted ${n} history records.`);
         }
 
         async function clearAllHistory() {
             const checkboxes = document.querySelectorAll('.history-item-checkbox');
             if (checkboxes.length === 0) {
-                showToast("No history records found to clear.");
+                showToast(tMsg('msg_no_history_to_clear'));
                 return;
             }
-            if (!confirm("Are you sure you want to clear ALL calculation history? This action cannot be undone.")) return;
+            if (!confirm(tMsg('msg_confirm_clear_history'))) return;
             await _deleteHistoryCharts(checkboxes, n => `Cleared all ${n} history records.`);
         }
 
@@ -14077,18 +14604,18 @@
                     headers: { 'x-session-token': token }
                 });
                 if (res.ok) {
-                    showToast("Chart saved permanently!");
+                    showToast(tMsg('msg_chart_saved_permanently'));
                     loadChartHistoryList();
                 } else {
-                    showToast("Failed to save chart.");
+                    showToast(tMsg('msg_chart_save_failed'));
                 }
             } catch (e) {
-                showToast("Error saving chart: " + e);
+                showToast(tMsg('msg_chart_save_error') + e);
             }
         }
 
         async function deleteSavedChart(chartId, type) {
-            if (!confirm("Are you sure you want to delete this chart record?")) return;
+            if (!confirm(tMsg('msg_confirm_delete_chart'))) return;
             const token = localStorage.getItem('session_token');
             try {
                 const res = await fetch(`/api/user/charts/${chartId}`, {
@@ -14096,17 +14623,17 @@
                     headers: { 'x-session-token': token }
                 });
                 if (res.ok) {
-                    showToast("Record deleted successfully.");
+                    showToast(tMsg('msg_record_deleted'));
                     if (type === 'saved') {
                         loadSavedChartsList();
                     } else {
                         loadChartHistoryList();
                     }
                 } else {
-                    showToast("Failed to delete record.");
+                    showToast(tMsg('msg_record_delete_failed'));
                 }
             } catch (e) {
-                showToast("Error deleting record: " + e);
+                showToast(tMsg('msg_record_delete_error') + e);
             }
         }
 
@@ -14729,7 +15256,7 @@
             if (selectedChatCompareIds.has(chartId)) {
                 selectedChatCompareIds.delete(chartId);
             } else if (selectedChatCompareIds.size >= MAX_CHAT_COMPARE_PROFILES) {
-                showToast(`You can compare up to ${MAX_CHAT_COMPARE_PROFILES} profiles at a time.`);
+                showToast(tMsg('msg_compare_limit', {n: MAX_CHAT_COMPARE_PROFILES}));
                 return;
             } else {
                 selectedChatCompareIds.add(chartId);
@@ -14928,7 +15455,7 @@
                     })
                 });
                 if (res.ok) {
-                    showToast("Chart saved successfully to your cloud profile!");
+                    showToast(tMsg('msg_chart_saved_cloud'));
                     refreshProfileChips();
                 } else {
                     let errMsg = "Failed to save chart to cloud.";
@@ -14939,7 +15466,7 @@
                     showToast(errMsg);
                 }
             } catch (e) {
-                showToast("Error saving chart: " + e);
+                showToast(tMsg('msg_chart_save_error') + e);
             }
         }
 
@@ -15060,10 +15587,10 @@
         // Connectivity awareness: fetch failures alone read as bugs; name
         // the actual condition the moment it starts and ends.
         window.addEventListener('offline', function () {
-            showToast("You're offline. Panchangam, charts and AI need a connection.", 'error');
+            showToast(tMsg('msg_offline'), 'error');
         });
         window.addEventListener('online', function () {
-            showToast("Back online.", 'success');
+            showToast(tMsg('msg_back_online'), 'success');
         });
 
         // ══════════════════════════════════════════════════════════════════════
