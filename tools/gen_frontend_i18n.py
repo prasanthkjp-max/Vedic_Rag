@@ -2,9 +2,10 @@
 """
 Regenerate the I18N_VALUES block in static/index.html from translations.py.
 
-The frontend is a static single-page app and cannot import Python, so the
-canonical panchangam value tables (nakshatra / yogam / karana) are code-genned
-into index.html between the `@generated-i18n` markers. Run this after editing
+The frontend is a static single-page app and cannot import Python, so every
+table in translations.TABLES (as I18N_VALUES) and translations.DICTS (as
+I18N_ERA / I18N_FESTIVAL / I18N_SANKRANTI_SUFFIX) is code-genned into
+index.html between the `@generated-i18n` markers. Run this after editing
 translations.py:
 
     python3 tools/gen_frontend_i18n.py
@@ -33,12 +34,19 @@ def _arr(values):
     return "[" + ", ".join(json.dumps(v, ensure_ascii=False) for v in values) + "]"
 
 
+def _dict_lines(name, table):
+    """Emit a name-keyed table as `const NAME = {...};`, one entry per line."""
+    out = [f"{INDENT}const {name} = {{"]
+    items = list(table.items())
+    for i, (key, val) in enumerate(items):
+        comma = "," if i < len(items) - 1 else ""
+        out.append(f"{INDENT}    {json.dumps(key, ensure_ascii=False)}: {json.dumps(val, ensure_ascii=False)}{comma}")
+    out.append(f"{INDENT}}};")
+    return out
+
+
 def build_block():
-    groups = {
-        "nakshatra": translations.NAKSHATRA,
-        "yogam": translations.YOGAM,
-        "karana": translations.KARANA,
-    }
+    groups = translations.TABLES
     langs = ["en"] + list(translations.LANGS)
     lines = [
         f"{INDENT}{BEGIN} — DO NOT EDIT BY HAND.",
@@ -55,6 +63,9 @@ def build_block():
             lines.append(f"{INDENT}        {lang}: {_arr(table[lang])}{comma}")
         lines.append(f"{INDENT}    }}{',' if gi < len(group_items) - 1 else ''}")
     lines.append(f"{INDENT}}};")
+    # Name-keyed tables (era prefixes, festivals, sankranti endings).
+    for name, table in translations.DICTS.items():
+        lines.extend(_dict_lines(f"I18N_{name.upper()}", table))
     lines.append(f"{INDENT}{END}")
     return "\n".join(lines)
 
@@ -79,7 +90,8 @@ def main():
         print("index.html I18N_VALUES is in sync with translations.py")
         return
     if new_html != html:
-        open(INDEX, "w", encoding="utf-8").write(new_html)
+        # newline="\n": keep LF endings when run on Windows, too.
+        open(INDEX, "w", encoding="utf-8", newline="\n").write(new_html)
         print("Regenerated I18N_VALUES block in static/index.html")
     else:
         print("Already in sync; nothing to write.")

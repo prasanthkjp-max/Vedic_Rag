@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from src.core.config import PORTAL_BASE_URL
 from src.core.cities import CITIES
+from src.core.translations import FESTIVAL, SANKRANTI, SANKRANTI_SUFFIX
 from src.engines.astro_engine import (
     NAKSHATRAS,
     get_astrological_chart,
@@ -148,145 +149,21 @@ def get_festival_image_filename(spec_name: str, lang_code: str) -> str:
         return None
     return FESTIVAL_IMAGES.get(spec_name)
 
-PAKSHA_TRANSLATIONS = {
-    "Sukla Paksha": {
-        "ta": "வளர்பிறை (சுக்ல பக்ஷம்)", "te": "శుక్ల పక్షం", "ml": "ശുക്ലപക്ഷം", "kn": "ಶುಕ್ಲ ಪಕ್ಷ", "hi": "शुक्ल पक्ष", "en": "Sukla Paksha"
-    },
-    "Krishna Paksha": {
-        "ta": "தேய்பிறை (கிருஷ்ண பக்ஷம்)", "te": "కృష్ణ పక్షం", "ml": "കൃഷ്ണപക്ഷം", "kn": "ಕೃಷ್ಣ ಪಕ್ಷ", "hi": "कृष्ण पक्ष", "en": "Krishna Paksha"
-    }
-}
+# Festival and sankranti names come from translations.py (shared with the app).
+FESTIVAL_TRANSLATIONS = FESTIVAL
 
-TITHI_TRANSLATIONS = {
-    "Prathama": {"ta": "பிரதமை", "te": "పాడ్యమి", "ml": "പ്രഥമ", "kn": "ಪಾಡ್ಯಮಿ", "hi": "प्रतिपदा", "en": "Prathama"},
-    "Dwitiya": {"ta": "துவிதியை", "te": "విదియ", "ml": "ദ്വിതീയ", "kn": "ಬಿದಿಗೆ", "hi": "द्वितीया", "en": "Dwitiya"},
-    "Tritiya": {"ta": "திருதியை", "te": "తదియ", "ml": "തൃതീയ", "kn": "ತದಿಗೆ", "hi": "तृतीया", "en": "Tritiya"},
-    "Chaturthi": {"ta": "சதுர்த்தி", "te": "చవితి", "ml": "ചതുർത്ഥി", "kn": "ಚೌತಿ", "hi": "चतुर्थी", "en": "Chaturthi"},
-    "Panchami": {"ta": "பஞ்சமி", "te": "పంచమి", "ml": "പഞ്ചമി", "kn": "ಪಂಚಮಿ", "hi": "पंचमी", "en": "Panchami"},
-    "Shashti": {"ta": "சஷ்டி", "te": "షష్ఠి", "ml": "ഷഷ്ഠി", "kn": "ಷಷ್ಠಿ", "hi": "षष्ठी", "en": "Shashti"},
-    "Saptami": {"ta": "சப்தமி", "te": "సప్తమి", "ml": "സപ്തമി", "kn": "ಸಪ್ತಮಿ", "hi": "सप्तमी", "en": "Saptami"},
-    "Ashtami": {"ta": "அஷ்டமி", "te": "అష్టమి", "ml": "അഷ്ടമി", "kn": "ಅಷ್ಟಮಿ", "hi": "अष्टमी", "en": "Ashtami"},
-    "Navami": {"ta": "நவமி", "te": "నవమి", "ml": "നവമി", "kn": "ನವಮಿ", "hi": "नवमी", "en": "Navami"},
-    "Dashami": {"ta": "தசமி", "te": "దశమి", "ml": "ദശമി", "kn": "ದಶಮಿ", "hi": "दशमी", "en": "Dashami"},
-    "Ekadashi": {"ta": "ஏகாதசி", "te": "ఏకాదశి", "ml": "ഏകാദശി", "kn": "ಏಕಾದಶಿ", "hi": "एकादशी", "en": "Ekadashi"},
-    "Dwadashi": {"ta": "துவாதசி", "te": "ద్వాడశి", "ml": "ദ്വാദശി", "kn": "ದ್ವಾದಶಿ", "hi": "द्वादशी", "en": "Dwadashi"},
-    "Trayodashi": {"ta": "திரயோதசி", "te": "త్రయోదశి", "ml": "ത്രയോദശി", "kn": "ತ್ರಯೋದಶಿ", "hi": "त्रयोदशी", "en": "Trayodashi"},
-    "Chaturdashi": {"ta": "சதுர்தசி", "te": "చతుర్దశి", "ml": "ചതുർദ്ദശി", "kn": "ಚತುರ್ದಶಿ", "hi": "चतुर्दशी", "en": "Chaturdashi"},
-    "Pournami (Full Moon)": {"ta": "பௌர்ணமி (முழு நிலவு)", "te": "పౌర్ణమి (పూర్ణ చంద్రుడు)", "ml": "പൗർണ്ണമി (പൂർണ്ണചന്ദ്രൻ)", "kn": "ಪೌರ್ಣಮಿ (ಹುಣ್ಣಿಮೆ)", "hi": "पूर्णिमा (पूर्ण चंद्र)", "en": "Pournami (Full Moon)"},
-    "Amavasya (New Moon)": {"ta": "அமாவாசை (புது நிலவு)", "te": "అమావాస్య", "ml": "അമാവാസി", "kn": "ಅಮಾವಾಸ್ಯೆ", "hi": "अमावस्या", "en": "Amavasya (New Moon)"}
-}
-
-NAKSHATRA_TRANSLATIONS = {
-    "Ashwini": {"ta": "அசுவினி", "te": "అశ్విని", "ml": "അശ്വതി", "kn": "ಅಶ್ವಿನಿ", "hi": "अश्विनी"},
-    "Bharani": {"ta": "பரணி", "te": "భరణి", "ml": "ഭരണി", "kn": "ಭರಣಿ", "hi": "भरणी"},
-    "Krittika": {"ta": "கார்த்திகை", "te": "కృత్తిక", "ml": "കാർത്തിക", "kn": "ಕೃತ್ತಿಕಾ", "hi": "कृत्तिका"},
-    "Rohini": {"ta": "ரோகிணி", "te": "రోహిణి", "ml": "രോഹിണി", "kn": "ರೋಹಿಣಿ", "hi": "रोहिणी"},
-    "Mrigashira": {"ta": "மிருகசீரிடம்", "te": "మృగశిర", "ml": "മകയിരം", "kn": "ಮೃಗಶಿರ", "hi": "मृगशिरा"},
-    "Ardra": {"ta": "திருவாதிரை", "te": "ఆర్ద్ర", "ml": "തിരുവാതിര", "kn": "ಆರಿದ್ರಾ", "hi": "आर्द्र"},
-    "Punarvasu": {"ta": "புனர்பூசம்", "te": "పునర్వసు", "ml": "പുണർതം", "kn": "ಪುನರ್ವಸು", "hi": "पुनर्वसु"},
-    "Pushya": {"ta": "பூசம்", "te": "పుష్యమి", "ml": "പൂയം", "kn": "ಪುಷ್ಯ", "hi": "पुष्य"},
-    "Ashlesha": {"ta": "ஆயில்யம்", "te": "ఆశ్లేష", "ml": "ആയില്യം", "kn": "ಆಶ್ಲೇಷ", "hi": "अश्लेषा"},
-    "Magha": {"ta": "மகம்", "te": "మఖ", "ml": "മകം", "kn": "ಮಖ", "hi": "मघा"},
-    "Purva Phalguni": {"ta": "பூரம்", "te": "పూర్వాఫాల్గుణి", "ml": "പൂരം", "kn": "ಪೂರ್ವಾಫಲ್ಗುಣಿ", "hi": "पूर्वाफाल्गुनी"},
-    "Uttara Phalguni": {"ta": "உத்திரம்", "te": "ఉత్తరాఫాల్గుణి", "ml": "ഉത്രം", "kn": "ಉತ್ತರಾಫಲ್ಗುಣಿ", "hi": "उत्तराफाल्गुनी"},
-    "Hasta": {"ta": "அஸ்தம்", "te": "హస్త", "ml": "അത്തം", "kn": "ಹಸ್ತ", "hi": "हस्त"},
-    "Chitra": {"ta": "சித்திரை", "te": "చిత్త", "ml": "ചിത്ര", "kn": "ಚಿತ್ತಾ", "hi": "चित्रा"},
-    "Swati": {"ta": "சுவாதி", "te": "స్వాతి", "ml": "ചോതി", "kn": "ಸ್ವಾತಿ", "hi": "स्वाति"},
-    "Vishakha": {"ta": "விசாகம்", "te": "విశాఖ", "ml": "വിശാഖം", "kn": "ವಿಶಾಖ", "hi": "विशाखा"},
-    "Anuradha": {"ta": "அனுஷம்", "te": "అనూరాధ", "ml": "അനിഴം", "kn": "ಅನುರಾಧ", "hi": "अनुराधा"},
-    "Jyeshtha": {"ta": "கேட்டை", "te": "జ్యేష్ఠ", "ml": "തൃക്കേട്ട", "kn": "ಜ್ಯೇಷ್ಠ", "hi": "ज्येष्ठा"},
-    "Mula": {"ta": "மூலம்", "te": "మూల", "ml": "മൂലം", "kn": "ಮೂಲಾ", "hi": "मूल"},
-    "Purva Ashadha": {"ta": "பூராடம்", "te": "పూర్వాషాఢ", "ml": "പൂരാടം", "kn": "ಪೂರ್ವಾಷಾಢ", "hi": "पूर्वाषाढ़"},
-    "Uttara Ashadha": {"ta": "உத்திராடம்", "te": "ఉత్తరాషాఢ", "ml": "ഉത്രാടം", "kn": "ಉತ್ತರಾಷಾಢ", "hi": "उत्तराषाढ़"},
-    "Shravana": {"ta": "திருவோணம்", "te": "శ్రవణం", "ml": "തിരുവോണം", "kn": "ಶ್ರವಣ", "hi": "श्रवण"},
-    "Dhanishta": {"ta": "அவிட்டம்", "te": "ధనిష్ఠ", "ml": "അവിട്ടം", "kn": "ಧನಿಷ್ಠ", "hi": "धनिष्ठा"},
-    "Shatabhisha": {"ta": "சதயம்", "te": "శతభిషం", "ml": "ചതയം", "kn": "ಶತಭಿಷ", "hi": "शतभिषा"},
-    "Purva Bhadrapada": {"ta": "பூரட்டாதி", "te": "పూర్వాభాద్ర", "ml": "പൂരുരുട്ടാതി", "kn": "ಪೂರ್ವಾಭಾದ್ರ", "hi": "पूर्वभाद्रपद"},
-    "Uttara Bhadrapada": {"ta": "உத்திரட்டாதி", "te": "ఉత్తరాభాద్ర", "ml": "ഉത്രട്ടാതി", "kn": "ಉತ್ತರಾಭಾದ್ರ", "hi": "उत्तरभाद्रपद"},
-    "Revati": {"ta": "ரேவதி", "te": "రేవతి", "ml": "രേവതി", "kn": "ರೇವತಿ", "hi": "रेवती"}
-}
-
-FESTIVAL_TRANSLATIONS = {
-    "Pournami": {"ta": "பௌர்ணமி", "te": "పౌర్ణమి", "hi": "पूर्णिमा", "ml": "പൗർണ്ണമി", "kn": "ಪೌರ್ಣಮಿ"},
-    "Amavasya": {"ta": "அமாவாசை", "te": "అమావాస్య", "hi": "अमावस्या", "ml": "അമാവാസി", "kn": "ಅಮಾವಾಸ್ಯೆ"},
-    "Ekadashi": {"ta": "ஏகாதசி", "te": "ఏకాదశి", "hi": "एकादशी", "ml": "ഏകാദശി", "kn": "ಏಕಾದಶಿ"},
-    "Pradosham": {"ta": "பிரதோஷம்", "te": "ప్రదోషం", "hi": "प्रदोष", "ml": "പ്രദോഷം", "kn": "ಪ್ರದೋಷ"},
-    "Ganesha Chaturthi": {"ta": "விநாயகர் சதுர்த்தி", "te": "వినాయక చవితి", "hi": "गणेश चतुर्थी", "ml": "ഗണേശ ചതുർത്ഥി", "kn": "ಗಣೇಶ ಚತುರ್ಥಿ"},
-    "Ashtami": {"ta": "அஷ்டமி", "te": "అష్టమి", "hi": "अष्टमी", "ml": "അഷ്ടമി", "kn": "ಅಷ್ಟಮಿ"},
-    "Shivaratri": {"ta": "சிவராத்திரி", "te": "శివరాత్రి", "hi": "शिवरात्रि", "ml": "ശിവരാത്രി", "kn": "ಶಿವರಾತ್ರಿ"},
-    "Sankranti": {"ta": "மாதப்பிறப்பு", "te": "సంక్రమణం", "hi": "संक्रांति", "ml": "സംക്രമം", "kn": "ಸಂಕ್ರಾಮಣ"},
-    "Sukla Chaturthi": {"ta": "சுக்ல சதுர்த்தி", "te": "శుక్ల చవితి", "hi": "शुक्ल चतुर्थी", "ml": "ശുക്ല ചതുർത്ഥി", "kn": "ಶುಕ್ಲ ಚತುರ್ಥಿ"},
-    "Sashti": {"ta": "சஷ்டி", "te": "షష్ఠి", "hi": "षष्ठी", "ml": "ഷഷ്ഠി", "kn": "ಷಷ್ಠಿ"},
-    "Janmashtami": {"ta": "கோகுலாஷ்டமி", "te": "కృష్ణాష్టమి", "hi": "जन्माष्टमी", "ml": "ശ്രീകൃഷ്ണ ജയന്തി", "kn": "ಕೃಷ್ಣ ಜನ್ಮಾಷ್ಟಮಿ"},
-    "Rama Navami": {"ta": "ஸ்ரீ ராம நவமி", "te": "శ్రీరామ నవమి", "hi": "श्री राम नवमी", "ml": "ശ്രീരാമ നവമി", "kn": "ಶ್ರೀ ರಾಮನವಮಿ"},
-    "Hanuman Jayanti": {"ta": "அனுமன் ஜெயந்தி", "te": "హనుమాన్ జయంతి", "hi": "हनुमान जयंती", "ml": "ഹനുമാൻ ജയന്തി", "kn": "ಹನುಮ ಜಯಂತಿ"},
-    "Durga Ashtami": {"ta": "துர்கா அஷ்டமி", "te": "దుర్గాష్టమి", "hi": "दुर्गा अष्टमी", "ml": "ദുർഗ്ഗാഷ്ടമി", "kn": "ದುರ್ಗಾಷ್ಟಮಿ"},
-    "Diwali": {"ta": "தீபாவளி", "te": "దీపావళి", "hi": "दीपावली", "ml": "ദീപാവലി", "kn": "ದೀಪಾವಳಿ"},
-    "Pongal / Sankranti": {"ta": "பொங்கல் திருநாள்", "te": "మకర సంక్రాంతి", "hi": "मकर संक्रांति", "ml": "മകര സംക്രാന്തി", "kn": "ಮಕರ ಸಂಕ್ರಾಂತಿ"},
-    "Vishu / Puthandu": {"ta": "தமிழ்ப் புத்தாண்டு (விஷு)", "te": "విషు / తమిళ నూతన సంవత్సరం", "hi": "मेष संक्रांति (विषु / पुथंडू)", "ml": "വിഷു", "kn": "ವಿಷು / ತಮಿಳು ಹೊಸ ವರ್ಷ"},
-    "Ugadi": {"ta": "யுகாதி", "te": "యుగాది", "hi": "युगादि", "ml": "യുഗാദി", "kn": "ಯುಗಾದಿ"},
-    "New Year's Day": {"ta": "புத்தாண்டு தினம்", "te": "నూతన సంవత్సర దినోత్సవం", "hi": "नव वर्ष दिवस", "ml": "പുതുവത്സര ദിനം", "kn": "ಹೊಸ ವರ್ಷದ ದಿನ"},
-    "Republic Day": {"ta": "குடியரசு தினம்", "te": "గణతంత్ర దినోత్సవం", "hi": "गणतंत्र दिवस", "ml": "റിപ്പബ്ലിക് ദിനം", "kn": "ಗಣರಾಜ್ಯೋತ್ಸವ"},
-    "May Day": {"ta": "மே தினம் (உழைப்பாளர் தினம்)", "te": "మే డే (కార్మిక దినోత్సవం)", "hi": "मई दिवस (मजदूर दिवस)", "ml": "മേയ് ദിനം (തൊഴിലാളി ദിനം)", "kn": "ಮೇ ದಿನ (ಕಾರ್ಮಿಕರ ದಿನ)"},
-    "Independence Day": {"ta": "சுதந்திர தினம்", "te": "స్వాతంత్ర్య దినోత్సవం", "hi": "स्वतंत्रता दिवस", "ml": "സ്വാതന്ത്ര്യദിനം", "kn": "ಸ್ವಾತಂತ್ರ್ಯ ದಿನಾಚರಣೆ"},
-    "Gandhi Jayanti": {"ta": "காந்தி ஜெயந்தி", "te": "గాంధీ జయంతి", "hi": "गांधी जयंती", "ml": "ഗാന്ധി ജയന്തി", "kn": "ಗಾಂಧಿ ಜಯಂತಿ"},
-    "Christmas": {"ta": "கிறிஸ்துமஸ்", "te": "క్రిస్మస్", "hi": "क्रिसमस", "ml": "ക്രിസ്മസ്", "kn": "ಕ್ರಿಸ್ಮಸ್"},
-    "Sankatahara Chaturthi": {"ta": "சங்கடஹர சதுர்த்தி", "te": "సంకష్టహర చవితి", "hi": "संकष्ट चतुर्थी", "ml": "സങ്കടഹര ചതുർത്ഥി", "kn": "ಸಂಕಷ್ಟಹರ ಚತುರ್ಥಿ"}
-}
 
 def translate_speciality(spec_name: str, lang: str) -> str:
     if not spec_name or lang == "en":
         return spec_name
-    if spec_name in FESTIVAL_TRANSLATIONS:
-        return FESTIVAL_TRANSLATIONS[spec_name].get(lang, spec_name)
+    if spec_name in FESTIVAL:
+        return FESTIVAL[spec_name].get(lang, spec_name)
     if "Sankranti" in spec_name:
         parts = spec_name.split(" ")
-        if len(parts) > 1:
-            rasi = parts[0]
-            rasis = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanus", "Makara", "Kumbha", "Meena"]
-            if rasi in rasis:
-                idx = rasis.index(rasi)
-                if lang == 'ta':
-                    taSolarMonths = ["சித்திரை", "வைகாசி", "ஆனி", "ஆடி", "ஆவணி", "புரட்டாசி", "ஐப்பசி", "கார்த்திகை", "மார்கழி", "தை", "மாசி", "பங்குனி"]
-                    return f"{taSolarMonths[idx]} மாதப்பிறப்பு"
-                elif lang == 'te':
-                    teSolarRasis = ["మేష", "వృషభ", "మిథున", "కర్కాటక", "సింహ", "కన్యా", "తులా", "వృశ్చిక", "ధనుస్సు", "మకర", "కుంభ", "మీన"]
-                    return f"{teSolarRasis[idx]} సంక్రమణం"
-                elif lang == 'kn':
-                    knSolarRasis = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕಾಟಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
-                    return f"{knSolarRasis[idx]} ಸಂಕ್ರಮಣ"
-                elif lang == 'ml':
-                    mlSolarMonths = ["മേട", "ഇടവ", "മിഥുന", "കർക്കടക", "ചിങ്ങ", "കന്നി", "തുലാ", "വൃശ്ചിക", "ധനു", "മകര", "കുംഭ", "മീന"]
-                    return f"{mlSolarMonths[idx]} സംക്രമം"
-                elif lang == 'hi':
-                    hiSolarRasis = ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"]
-                    return f"{hiSolarRasis[idx]} संक्रांति"
+        if len(parts) > 1 and parts[0] in SANKRANTI["en"] and lang in SANKRANTI:
+            idx = SANKRANTI["en"].index(parts[0])
+            return f"{SANKRANTI[lang][idx]}{SANKRANTI_SUFFIX[lang]}"
     return spec_name
-
-def translate_tithi_name(tithi_str: str, lang: str) -> str:
-    if not tithi_str or lang == "en":
-        return tithi_str
-    
-    for key, trans in TITHI_TRANSLATIONS.items():
-        if key in tithi_str:
-            return trans.get(lang, key)
-            
-    result = tithi_str
-    for key, trans in PAKSHA_TRANSLATIONS.items():
-        if key in tithi_str:
-            result = result.replace(key, trans.get(lang, key))
-    for key, trans in TITHI_TRANSLATIONS.items():
-        if key in tithi_str:
-            result = result.replace(key, trans.get(lang, key))
-    return result
-
-def translate_nakshatra_name(naks_str: str, lang: str) -> str:
-    if not naks_str or lang == "en":
-        return naks_str
-    for key, trans in NAKSHATRA_TRANSLATIONS.items():
-        if key.lower() in naks_str.lower():
-            return trans.get(lang, naks_str)
-    return naks_str
 
 def _tithi_num(tithi_str: str) -> int:
     """Exact tithi number (1–15) parsed from a panchangam tithi string, else 0.

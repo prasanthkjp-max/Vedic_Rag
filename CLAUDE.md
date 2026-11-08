@@ -212,21 +212,25 @@ these are deliberately distinct.
   Nakshatra/Yoga are not. Pass the TRUE calendar year into the calendar helpers
   (`get_tamil_year_month`, `get_regional_panchangam`) — approximating it from JD
   is off by one near Jan 1.
-- **Translations:** the panchangam **value** tables (nakshatra / yogam / karana)
-  have a single source of truth in `src/core/translations.py`, imported directly
-  by `src/engines/pdf_generator.py` and code-genned into `static/index.html`'s
-  `I18N_VALUES` block via `tools/gen_frontend_i18n.py`. **Edit translations
-  there, then run `python3 tools/gen_frontend_i18n.py` and commit** —
-  `test_i18n_sync.py` fails if the frontend block drifts (or a wrong-script
-  glyph / misalignment creeps in). Other localized dicts (tithi names,
-  planet/rasi/dignity, newsletter terms) still live inline in
-  `src/engines/pdf_generator.py`/`src/api/panchangam.py`; lookup keys must
-  match the engine's canonical spellings (module-level
-  `astro_engine.NAKSHATRAS`/`RASIS`, plus the Yoga/Karana name lists inside
-  `get_panchangam_details`) — mismatched spellings silently fail to translate,
-  and list ordering/length must stay aligned across all languages. Translation
-  tests assert by **label ID**, so don't rename existing `id="lbl-..."` /
-  `id="panch-..."` elements in `static/index.html`.
+- **Translations:** astrology **value** names — nakshatra, yogam, karana,
+  planets, rasis, dignities, weekdays, tithis, paksha, lunar/Tamil/Malayalam
+  months, samvatsara years, era prefixes, sankranti and festival names — have a
+  single source of truth in `src/core/translations.py` (`TABLES` + `DICTS`).
+  `src/engines/pdf_generator.py` builds its `PLANET_TRANSLATIONS`/`RASI_…`/
+  `DIGNITY_…`/`DAYS_OF_WEEK_LOCAL` views from it, `src/api/panchangam.py` uses
+  its festival/sankranti tables, and `tools/gen_frontend_i18n.py` code-gens all
+  of it into `static/index.html` (`I18N_VALUES`, `I18N_ERA`, `I18N_FESTIVAL`,
+  `I18N_SANKRANTI_SUFFIX`). **Edit translations there, then run
+  `python3 tools/gen_frontend_i18n.py` and commit** — `test_i18n_sync.py` fails
+  if the frontend block drifts, a table is misaligned or misses a language, a
+  wrong-script glyph creeps in, or `index.html` grows its own copy again. The
+  `en` arrays must match the engine's canonical spellings and order
+  (`astro_engine.NAKSHATRAS`/`TAMIL_YEARS`/`TAMIL_MONTHS`/`LUNI_SOLAR_MONTHS`/
+  `MALAYALAM_MONTHS`, the Yoga/Karana/Tithi name lists inside
+  `get_panchangam_details`) — mismatched spellings silently fail to translate.
+  UI labels (`localization`, PDF `LABEL_LOCALIZATION`, newsletter terms) are
+  still separate. Translation tests assert by **label ID**, so don't rename
+  existing `id="lbl-..."` / `id="panch-..."` elements in `static/index.html`.
 - **Billing & social login are gated off by default** and fail closed (Razorpay
   is the real gateway but inert without keys; OAuth verifies the provider token
   and never trusts a client-supplied email). Dev-only escape hatches:
