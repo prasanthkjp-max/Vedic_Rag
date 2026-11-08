@@ -248,6 +248,57 @@ except FileNotFoundError:
     print("[SKIP] data-i18n key coverage — node not installed")
 finally:
     _os.unlink(f.name)
+# 10. Pop-up / confirm messages: every tMsg('key') used on the page exists in all
+#     six languages, in the right script, with the same {placeholders}, and a
+#     message the code appends server detail to keeps its trailing ": ".
+with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+    f.write("const L = (" + html[brace:pos + 1] + ");\nconsole.log(JSON.stringify(L));")
+try:
+    loc = json.loads(subprocess.run(["node", f.name], capture_output=True, text=True, encoding="utf-8").stdout)
+    used = sorted(set(re.findall(r"tMsg\('(\w+)'", html)))
+    problems = []
+    for key in used:
+        en_text = loc["en"].get(key)
+        if not en_text:
+            problems.append(f"{key}: no English text"); continue
+        holders = set(re.findall(r"\{\w+\}", en_text))
+        for lang in translations.LANGS:
+            s = loc[lang].get(key)
+            if not s:
+                problems.append(f"{key}[{lang}] missing"); continue
+            wrong = [c for c in s if script_of(c) and script_of(c) != LANG_BLOCK[lang][2]]
+            if wrong:
+                problems.append(f"{key}[{lang}] wrong-script {[hex(ord(c)) for c in wrong[:3]]}")
+            got = set(re.findall(r"\{\w+\}", s))
+            if got != holders:
+                problems.append(f"{key}[{lang}] placeholders {sorted(got)} != {sorted(holders)}")
+            if en_text.endswith(": ") and not s.endswith(": "):
+                problems.append(f"{key}[{lang}] lost the trailing ': '")
+    check(f"pop-up messages ({len(used)} keys) complete and well-formed in all six languages",
+          bool(used) and not problems, "; ".join(problems[:5]))
+
+    # showToast picks the toast colour from English keywords; englishOfMessage
+    # must map every translated message (with filled placeholders and appended
+    # server detail) back to its English text.
+    eom = re.search(r"        function englishOfMessage\(message\) \{.*?\n        \}\n", html, re.S).group(0)
+    js = ("const localization = (" + html[brace:pos + 1] + ");\nvar currentLang = 'en';\n" + eom +
+          "const keys = " + json.dumps(used) + ";\nconst fill = s => s.replace(/\\{\\w+\\}/g, 'X');\nconst bad = [];\n"
+          "for (const lang of ['ta','te','ml','kn','hi']) { currentLang = lang;\n"
+          "  for (const k of keys) { const msg = fill(localization[lang][k]) + (localization.en[k].endsWith(': ') ? 'server detail' : '');\n"
+          "    if (englishOfMessage(msg) !== localization.en[k]) bad.push(lang + ':' + k); } }\n"
+          "console.log(JSON.stringify(bad));")
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as g:
+        g.write(js)
+    unmapped = json.loads(subprocess.run(["node", g.name], capture_output=True, text=True, encoding="utf-8").stdout)
+    _os.unlink(g.name)
+    check("every translated pop-up maps back to its English (keeps its toast colour)", not unmapped, str(unmapped[:5]))
+except FileNotFoundError:
+    print("[SKIP] pop-up message checks — node not installed")
+finally:
+    _os.unlink(f.name)
+english_literals = re.findall(r"\b(?:showToast|confirm)\(\s*[\"'`]\s*[A-Za-z]", html)
+check("no English-only pop-up messages left (use tMsg)", not english_literals, f"{len(english_literals)} found")
+
 cl_start = html.index("async function changeLanguage(")
 cl_body = html[cl_start:html.index("\n        }\n", cl_start)]
 by_hand = re.findall(r"setText\('[\w-]+', dict\.\w+(?: \|\| \"[^\"]*\")?\);", cl_body)

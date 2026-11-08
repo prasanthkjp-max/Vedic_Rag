@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.34.0]
+
+### Added
+- **Pop-up and confirmation messages in every language.** The page's 82 English-only toast and confirm messages (sign-in, payment, PDF, saving, history, offline and others) now show in Tamil, Telugu, Malayalam, Kannada and Hindi. They're `msg_*` keys in `localization`, shown through a new `tMsg(key, vars)` with `{n}`-style placeholders. English wording is unchanged. Error detail sent by the server is still appended as-is.
+- Toasts keep their colour (success, error, info) in every language: `showToast` maps a translated message back to its English text before choosing the colour, so a Tamil error is still red.
+- `tests/test_i18n_sync.py` checks that every `tMsg` key exists in all six languages, in the right script, with the same placeholders; that messages followed by server detail keep their ": "; that every translation maps back to its English (so it keeps its colour); and that no English-only pop-up is added again.
+
 ## [1.33.1]
 
 ### Changed

@@ -242,7 +242,11 @@ these are deliberately distinct.
   optional `data-i18n-suffix` — and `applyI18n(dict)` fills them in
   `changeLanguage()`. **To add a label:** add the key to all six languages in
   `localization` and the attribute to the element; don't add a `setText` call
-  (`test_i18n_sync.py` checks both). Translation tests assert by **label ID**,
+  (`test_i18n_sync.py` checks both). Pop-up / `confirm()` text goes through
+  `tMsg('msg_…', {vars})` with the `msg_*` keys in all six languages — never a
+  bare English string to `showToast`/`confirm` (the test fails on one).
+  `showToast` colours a toast from its English text, so a new message needs a
+  `msg_*` key, not just a translated string. Translation tests assert by **label ID**,
   so don't rename existing `id="lbl-..."` / `id="panch-..."` elements in
   `static/index.html`.
 - **Billing & social login are gated off by default** and fail closed (Razorpay
