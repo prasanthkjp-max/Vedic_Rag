@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.32.7]
+
+### Changed
+- `.gitignore` now excludes the `.vscode/` editor settings folder.
+
 ## [1.32.6]
 
 ### Removed
