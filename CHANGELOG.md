@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/) and match `src/core/config.py:VERSION`.
 
+## [1.34.2]
+
+### Fixed
+- **24-hour sacred time wheel: labels piled on top of each other.** The bands (Rahu, Yama, Gulika, Abhijit, Brahma, Vijaya, Godhuli, Dur) had no CSS (`.sacred-24h-band` was never styled), so they all stacked at the start of the bar with their names spilling out below it. Each band now sits at its real time. Bands that would overlap (e.g. Dur muhurta over Rahu Kalam) go in a second row, and each shows as much of its name as fits (full name, then 3 letters, then the initial). The tooltip always has the full name and times.
+- The hora strip under the bar was invisible (white planet letters on no background); hours are now green (benefic) or grey, with the current hour outlined. Phones show colour only.
+- The "NOW" tag and the legend dots were unstyled; the tag now stays inside the bar at either end.
+- The time labels under the bar ran together on phones; phones now show every other label.
+- The label "(Sunset)" sat 12 hours after sunrise, not at sunset, and the day/night shading was fixed at the middle of the bar. A dashed line now marks the real sunset, and the shading changes there.
+
 ## [1.34.1]
 
 ### Fixed
