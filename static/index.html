@@ -3383,12 +3383,79 @@
 
         .sacred-24h-track {
             position: relative;
-            height: 28px;
+            height: 28px;  /* JS sets it from the number of lanes */
+            margin-top: 20px;  /* room for the NOW tag above the bar */
             border-radius: 7px;
-            background: linear-gradient(90deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.65) 50%, rgba(30, 41, 59, 0.25) 50%, rgba(15, 23, 42, 0.35) 100%);
+            /* --sunset-pct (set by JS) puts the day/night edge at the real sunset */
+            background: linear-gradient(90deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.65) var(--sunset-pct, 50%), rgba(30, 41, 59, 0.25) var(--sunset-pct, 50%), rgba(15, 23, 42, 0.35) 100%);
             border: 1px solid rgba(180, 120, 40, 0.35);
             overflow: visible;
         }
+
+        /* One kaalam / muhurta, placed at its real time. Bands that would
+           overlap go in separate lanes (top = lane 0). */
+        .sacred-24h-band {
+            position: absolute;
+            height: 14px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 8.5px;
+            font-weight: 800;
+            line-height: 1;
+            color: #fff;
+            white-space: nowrap;
+            box-sizing: border-box;
+            cursor: default;
+        }
+
+        .sacred-24h-band span {
+            padding: 0 2px;
+            overflow: hidden;
+        }
+
+        /* Too narrow for its name: the tooltip still has the name and times. */
+        .sacred-24h-band.no-label span {
+            display: none;
+        }
+
+        .sacred-24h-band.good {
+            background: rgba(22, 163, 74, 0.85);
+            border: 1px solid #15803d;
+        }
+
+        .sacred-24h-band.bad {
+            background: rgba(220, 38, 38, 0.85);
+            border: 1px solid #b91c1c;
+        }
+
+        .sacred-24h-band.neutral {
+            background: rgba(217, 119, 6, 0.85);
+            border: 1px solid #b45309;
+        }
+
+        .sacred-sunset-mark {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            border-left: 1.5px dashed rgba(180, 83, 9, 0.85);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .leg-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .leg-dot.good { background: #16a34a; }
+        .leg-dot.neutral { background: #d97706; }
+        .leg-dot.bad { background: #dc2626; }
 
         .sacred-omen-band {
             position: absolute;
@@ -3436,7 +3503,8 @@
             box-shadow: 0 0 10px #fde047;
         }
 
-        .sacred-now-label {
+        .sacred-now-label,
+        .sacred-now-tag {
             position: absolute;
             top: -16px;
             left: 50%;
@@ -3468,6 +3536,20 @@
             justify-content: center;
             color: #fff;
             cursor: pointer;
+            overflow: hidden;
+        }
+
+        /* Benefic (Jupiter/Venus/Mercury/Moon) vs malefic hora lords. */
+        .sacred-hora-cell.good { background: rgba(22, 163, 74, 0.75); }
+        .sacred-hora-cell.bad { background: rgba(120, 113, 108, 0.6); }
+        .sacred-hora-cell.active {
+            outline: 2px solid #9f1239;
+            outline-offset: -2px;
+        }
+
+        /* Phones: 24 cells are ~12px wide — colour only, no planet letters. */
+        @media (max-width: 600px) {
+            .sacred-hora-cell { font-size: 0; }
         }
 
         .sacred-24h-ticks {
@@ -3477,6 +3559,18 @@
             color: var(--text-muted);
             margin-top: 4px;
             font-variant-numeric: tabular-nums;
+        }
+
+        /* Keep the NOW tag inside the bar near either end. */
+        .sacred-now-needle.edge-start .sacred-now-tag { left: 0; transform: none; }
+        .sacred-now-needle.edge-end .sacred-now-tag { left: auto; right: 0; transform: none; }
+
+        /* Phones: nine time labels don't fit — show every other one, no suffix. */
+        @media (max-width: 600px) {
+            .sacred-24h-ticks span:nth-child(even),
+            .sacred-24h-ticks .tick-suffix {
+                display: none;
+            }
         }
 
         /* 4A. Interactive SVG Graha Drishti & Planetary Dignity Badges */
@@ -15855,17 +15949,17 @@
                 return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
             };
 
-            const segments = [];
+            // Collect the bands, then pack them into lanes: each band goes in the
+            // first lane where it doesn't overlap another, so labels never sit on
+            // top of each other (Rahu/Yama/Gulika never overlap; Dur can).
+            const bands = [];
             const addBand = (startDec, endDec, type, label) => {
                 if (typeof startDec !== 'number' || typeof endDec !== 'number') return;
                 const left = toPct(startDec);
                 let width = ((endDec - startDec + 24) % 24) / 24 * 100;
                 if (width <= 0 || width > 50) width = 4.0;
-                segments.push(`
-                    <div class="sacred-24h-band ${type}" style="left:${left.toFixed(2)}%; width:${Math.min(100 - left, width).toFixed(2)}%;" title="${label}: ${fmtHm(startDec)} – ${fmtHm(endDec)}">
-                        <span>${label}</span>
-                    </div>
-                `);
+                width = Math.min(100 - left, width);
+                bands.push({ left, width, type, label, title: `${label}: ${fmtHm(startDec)} – ${fmtHm(endDec)}` });
             };
 
             addBand(kaalams.rahuStart, kaalams.rahuEnd, 'bad', 'Rahu');
@@ -15877,17 +15971,40 @@
             addBand(kaalams.wrappedGodhuliStart, kaalams.wrappedGodhuliEnd, 'good', 'Godhuli');
             (kaalams.durRanges || []).forEach(r => addBand(r[0], r[1], 'bad', 'Dur'));
 
+            const lanes = [];  // per lane: list of [left, right] already used
+            const LANE_H = 14, LANE_GAP = 2, PAD = 2;
+            const segments = bands.map(b => {
+                let lane = lanes.findIndex(used => used.every(([l, r]) => b.left >= r || b.left + b.width <= l));
+                if (lane === -1) { lanes.push([]); lane = lanes.length - 1; }
+                lanes[lane].push([b.left, b.left + b.width]);
+                const top = PAD + lane * (LANE_H + LANE_GAP);
+                return `<div class="sacred-24h-band ${b.type}" style="left:${b.left.toFixed(2)}%; width:${b.width.toFixed(2)}%; top:${top}px;" title="${b.title}" aria-label="${b.title}" data-label="${b.label}"><span>${b.label}</span></div>`;
+            });
+            const laneCount = Math.max(1, lanes.length);
+            track.style.height = `${PAD * 2 + laneCount * LANE_H + (laneCount - 1) * LANE_GAP}px`;
+
+            // Day/night shading and a marker at the real sunset (not sunrise + 12h).
+            const hasSunset = typeof sunsetDec === 'number' && sunsetDec > 0;
+            const sunsetPct = hasSunset ? toPct(sunsetDec) : 50;
+            track.style.setProperty('--sunset-pct', `${sunsetPct.toFixed(2)}%`);
+            const sunsetMark = hasSunset
+                ? `<div class="sacred-sunset-mark" style="left:${sunsetPct.toFixed(2)}%;" title="Sunset ${fmtHm(sunsetDec)}"></div>`
+                : '';
+
             const now = new Date();
             const nowDec = now.getHours() + now.getMinutes() / 60;
             const nowPct = toPct(nowDec);
             const nowLabel = fmtHm(nowDec);
+            const edge = nowPct < 8 ? 'edge-start' : (nowPct > 92 ? 'edge-end' : '');
 
             track.innerHTML = `
                 ${segments.join('')}
-                <div class="sacred-now-needle" id="sacred-timeline-now-needle" style="left: ${nowPct.toFixed(2)}%;">
+                ${sunsetMark}
+                <div class="sacred-now-needle ${edge}" id="sacred-timeline-now-needle" style="left: ${nowPct.toFixed(2)}%;">
                     <span class="sacred-now-tag" id="sacred-timeline-now-label">NOW ${nowLabel}</span>
                 </div>
             `;
+            fitSacredBandLabels();
 
             if (horaStrip) {
                 const HORA_PLANETS = ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"];
@@ -15906,15 +16023,47 @@
             }
 
             if (ticksEl) {
+                // Every 3 hours from sunrise. Sunset is marked on the bar itself:
+                // it isn't sunrise + 12h, so no tick is labelled "(Sunset)".
                 const tickLabels = [];
                 for (let i = 0; i <= 8; i++) {
                     const tDec = (sr + i * 3) % 24;
-                    const suffix = i === 0 ? ' (Sunrise)' : (i === 4 ? ' (Sunset)' : '');
+                    const suffix = i === 0 ? '<span class="tick-suffix"> (Sunrise)</span>' : '';
                     tickLabels.push(`<span>${fmtHm(tDec)}${suffix}</span>`);
                 }
                 ticksEl.innerHTML = tickLabels.join('');
             }
         }
+
+        // Show as much of each band's name as fits: the full name, else its
+        // first three letters, else its initial, else nothing (the tooltip keeps
+        // the full name and times). The bar's width changes with the screen and
+        // is 0 while its tab is hidden, so re-check whenever the bar is resized.
+        function fitSacredBandLabels() {
+            const track = document.getElementById('sacred-24h-track');
+            if (!track || track.clientWidth === 0) return;  // not laid out yet
+            track.querySelectorAll('.sacred-24h-band').forEach(band => {
+                const span = band.querySelector('span');
+                const name = band.getAttribute('data-label') || '';
+                if (!span) return;
+                band.classList.remove('no-label');
+                const fits = () => span.scrollWidth <= band.clientWidth;
+                for (const text of [name, name.slice(0, 3), name.slice(0, 1)]) {
+                    span.textContent = text;
+                    if (fits()) return;
+                }
+                band.classList.add('no-label');
+            });
+        }
+        (function watchSacredTrack() {
+            const track = document.getElementById('sacred-24h-track');
+            if (!track) return;
+            if (typeof ResizeObserver === 'function') {
+                new ResizeObserver(() => fitSacredBandLabels()).observe(track);
+            } else {
+                window.addEventListener('resize', fitSacredBandLabels);
+            }
+        })();
 
         // Interactive SVG Graha Drishti (Aspect Highlighting) & Table Sync (Section 4A)
         const PARASHARI_SPECIAL_ASPECTS = {
