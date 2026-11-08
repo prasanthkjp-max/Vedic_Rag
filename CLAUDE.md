@@ -237,8 +237,14 @@ these are deliberately distinct.
   `translateTamilMonth(str, ids.month)` etc. via `panchIds(p)` on the page).
   Name matching remains only as the fallback for charts saved without IDs.
   UI labels (`localization`, PDF `LABEL_LOCALIZATION`, newsletter terms) are
-  still separate. Translation tests assert by **label ID**, so don't rename
-  existing `id="lbl-..."` / `id="panch-..."` elements in `static/index.html`.
+  still separate. On the page, a static label names its key in the markup —
+  `data-i18n="key"` (text), `data-i18n-html`, `data-i18n-placeholder`, plus
+  optional `data-i18n-suffix` — and `applyI18n(dict)` fills them in
+  `changeLanguage()`. **To add a label:** add the key to all six languages in
+  `localization` and the attribute to the element; don't add a `setText` call
+  (`test_i18n_sync.py` checks both). Translation tests assert by **label ID**,
+  so don't rename existing `id="lbl-..."` / `id="panch-..."` elements in
+  `static/index.html`.
 - **Billing & social login are gated off by default** and fail closed (Razorpay
   is the real gateway but inert without keys; OAuth verifies the provider token
   and never trusts a client-supplied email). Dev-only escape hatches:
